@@ -145,6 +145,37 @@ img {
   font-size: 0.92rem;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.lang-switch {
+  display: inline-flex;
+  padding: 4px;
+  border: 1px solid rgba(16, 38, 68, 0.1);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.lang-btn {
+  min-width: 42px;
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: transparent;
+}
+
+.lang-btn.is-active {
+  color: #ffffff;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-deep) 100%);
+}
+
 .header-cta,
 .button {
   display: inline-flex;
@@ -507,7 +538,11 @@ img {
 }
 
 .portrait-one {
-  background: linear-gradient(135deg, #c6d1d8 0%, #8ea0ab 100%);
+  background:
+    linear-gradient(135deg, rgba(198, 209, 216, 0.18), rgba(142, 160, 171, 0.18)),
+    url("./img/vivian.jpg");
+  background-size: cover;
+  background-position: center;
 }
 
 .portrait-two {
@@ -670,7 +705,7 @@ img {
   margin: 0;
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 1120px) {
   .site-header {
     flex-wrap: wrap;
   }
@@ -680,6 +715,10 @@ img {
     width: 100%;
     justify-content: center;
     flex-wrap: wrap;
+  }
+
+  .header-actions {
+    margin-left: auto;
   }
 
   .team-grid,
@@ -725,6 +764,13 @@ img {
     min-height: 22px;
     padding: 4px 10px;
     font-size: 0.68rem;
+  }
+
+  .site-nav,
+  .header-actions {
+    width: 100%;
+    justify-content: space-between;
+    flex-wrap: wrap;
   }
 
   .hero-banner {
