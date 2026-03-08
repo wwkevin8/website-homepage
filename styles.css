@@ -533,16 +533,25 @@ img {
 
 .team-portrait {
   height: 280px;
+  overflow: hidden;
   background-size: cover;
   background-position: center;
 }
 
+.team-portrait img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+
 .portrait-one {
-  background:
-    linear-gradient(135deg, rgba(198, 209, 216, 0.18), rgba(142, 160, 171, 0.18)),
-    url("./img/vivian.jpg");
-  background-size: cover;
-  background-position: center;
+  background: linear-gradient(135deg, #c6d1d8 0%, #8ea0ab 100%);
+}
+
+.portrait-photo {
+  background: #d7dde4;
 }
 
 .portrait-two {
@@ -819,3 +828,4 @@ img {
     padding: 28px 20px;
   }
 }
+
