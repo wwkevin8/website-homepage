@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>左邻右里 | 寄存服务非会员价格</title>
+  <meta
+    name="description"
+    content="左邻右里寄存服务非会员价格页，提供箱型尺寸、价格表、短期规则、配送说明与在线费用估算。"
+  >
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="topbar">
+    <header class="site-header">
+      <a class="brand" href="./index.html" aria-label="左邻右里首页">
+        <div class="brand-lockup brand-lockup-header">
+          <div class="logo-bubbles">
+            <span data-i18n="logoBubble1">英国·诺丁汉</span>
+            <span data-i18n="logoBubble2">左邻右里</span>
+            <span data-i18n="logoBubble3">生活服务</span>
+          </div>
+          <div class="logo-wordmark">NGN</div>
+          <div class="logo-subtitle">NOTTINGHAM GOOD NEIGHBOR</div>
+        </div>
+      </a>
+
+      <nav class="site-nav" aria-label="主导航">
+        <a href="./index.html#hero" data-i18n="navHome">首页</a>
+        <a href="./index.html#story" data-i18n="navAbout">关于我们</a>
+        <a href="./index.html#timeline" data-i18n="navTimeline">品牌里程碑</a>
+        <a href="./index.html#team" data-i18n="navTeam">团队成员</a>
+        <a href="./storage.html" data-i18n="navStorage">寄存价格</a>
+      </nav>
+
+      <div class="header-actions">
+        <div class="lang-switch" aria-label="language switch">
+          <button class="lang-btn is-active" type="button" data-lang="zh-CN">中</button>
+          <button class="lang-btn" type="button" data-lang="en">EN</button>
+        </div>
+        <a class="header-cta" href="#storage-calculator" data-i18n="storageHeroBtn2">在线估价</a>
+      </div>
+    </header>
+  </div>
+
+  <main class="page-shell storage-page">
+    <section class="storage-hero">
+      <div class="storage-hero-copy">
+        <p class="eyebrow" data-i18n="storageHeroEyebrow">Storage Service</p>
+        <h1 data-i18n="storageHeroTitle">寄存服务非会员价格</h1>
+        <p class="storage-hero-text" data-i18n="storageHeroText">
+          GBCN 诺丁汉左邻右里提供本地行李寄存服务。我们拥有自有仓库，环境安全干燥，每一件寄存行李均购买保险至 £50。以下页面整理了非会员价格、箱型规格、配送与短期加费规则，方便同学在咨询前快速估算费用。
+        </p>
+        <div class="storage-hero-meta">
+          <span data-i18n="storageMeta1">2025 年 9 月更新版</span>
+          <span data-i18n="storageMeta2">电话：07941 008555</span>
+          <span data-i18n="storageMeta3">微信：NOTTINGHAMNGN</span>
+        </div>
+        <div class="hero-actions">
+          <a class="button button-primary" href="#storage-calculator" data-i18n="storageHeroBtn1">计算非会员价格</a>
+          <a class="button button-secondary" href="#storage-rules" data-i18n="storageHeroBtn3">查看收费规则</a>
+        </div>
+      </div>
+
+      <div class="storage-hero-visual storage-hero-pricing">
+        <div class="pricing-mini-card">
+          <div class="pricing-mini-header">
+            <h3 data-i18n="heroPricingTitle">箱子价格</h3>
+            <p data-i18n="heroPricingIntro">非会员常用箱型与购买价格</p>
+          </div>
+          <div class="pricing-mini-table">
+            <div class="pricing-mini-row pricing-mini-head">
+              <span data-i18n="heroPricingBox">箱号</span>
+              <span data-i18n="heroPricingDaily">寄存/天</span>
+              <span data-i18n="heroPricingBuy">箱价</span>
+            </div>
+            <div class="pricing-mini-row">
+              <span data-i18n="heroBox1">1 号箱</span>
+              <span>£0.7</span>
+              <span>£5</span>
+            </div>
+            <div class="pricing-mini-row">
+              <span data-i18n="heroBox2">2 号箱</span>
+              <span>£0.7</span>
+              <span>£5</span>
+            </div>
+            <div class="pricing-mini-row">
+              <span data-i18n="heroBox3">3 号箱</span>
+              <span>£0.6</span>
+              <span>£4</span>
+            </div>
+            <div class="pricing-mini-row">
+              <span data-i18n="heroBox4">4 号箱</span>
+              <span>£0.5</span>
+              <span>£3</span>
+            </div>
+            <div class="pricing-mini-row">
+              <span data-i18n="heroBox5">5 号箱</span>
+              <span>£0.4</span>
+              <span>£2</span>
+            </div>
+            <div class="pricing-mini-row">
+              <span data-i18n="heroBox6">6 号箱</span>
+              <span>£0.3</span>
+              <span>£1</span>
+            </div>
+          </div>
+          <div class="pricing-mini-notes">
+            <p data-i18n="heroPricingNote1">短期寄存 30 天内会加收每箱 £2 取货费和 £2 送货费。</p>
+            <p data-i18n="heroPricingNote2">1 个箱子短期寄存最低 £20，多个箱子最低 £30。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="storage-section">
+      <div class="section-heading">
+        <h2 data-i18n="storageProcessTitle">寄存流程</h2>
+        <p data-i18n="storageProcessIntro">从咨询、收货到返还，全流程提前确认，适合暑期回国、换房和短期寄放需求。</p>
+      </div>
+      <div class="storage-steps">
+        <article class="step-card">
+          <span>01</span>
+          <h3 data-i18n="process1Title">咨询并确认需求</h3>
+          <p data-i18n="process1Text">先联系工作人员，确认寄存数量、时间、箱型规格和基础条款。</p>
+        </article>
+        <article class="step-card">
+          <span>02</span>
+          <h3 data-i18n="process2Title">确认箱型与规则</h3>
+          <p data-i18n="process2Text">我们会发送寄存条款、箱子规格和收费规则，方便你提前准备。</p>
+        </article>
+        <article class="step-card">
+          <span>03</span>
+          <h3 data-i18n="process3Title">准备箱子并预约时间</h3>
+          <p data-i18n="process3Text">如需购买箱子可提前配送，打包完成后预约取货时间。</p>
+        </article>
+        <article class="step-card">
+          <span>04</span>
+          <h3 data-i18n="process4Title">按约定上门取货</h3>
+          <p data-i18n="process4Text">工作人员按约定时间取货；如需上楼搬运会按规则另计费用。</p>
+        </article>
+        <article class="step-card">
+          <span>05</span>
+          <h3 data-i18n="process5Title">入库与确认</h3>
+          <p data-i18n="process5Text">行李回仓后会与你确认寄存时间并发送收据和寄存信息。</p>
+        </article>
+        <article class="step-card">
+          <span>06</span>
+          <h3 data-i18n="process6Title">返还或继续配送</h3>
+          <p data-i18n="process6Text">你回到诺丁汉时可安排送回；如需邮寄或寄往外地，请至少提前一周预约。</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="storage-section">
+      <div class="section-heading">
+        <h2 data-i18n="storageBoxesTitle">箱子尺寸与价格</h2>
+        <p data-i18n="storageBoxesIntro">以下价格适用于非会员寄存，尺寸按箱体标注展示。2 号箱如暂时缺货，会另行通知。</p>
+      </div>
+
+      <div class="storage-gallery">
+        <figure class="storage-gallery-main">
+          <img src="./img/寄存价格/箱子尺寸和价格/屏幕截图 2026-03-09 183404.png" alt="箱子尺寸总览">
+        </figure>
+        <figure class="storage-gallery-side">
+          <img src="./img/寄存价格/箱子尺寸和价格/屏幕截图 2026-03-09 183438.png" alt="箱子俯视图">
+        </figure>
+      </div>
+
+      <div class="storage-detail-gallery">
+        <figure class="storage-detail-card">
+          <img src="./img/寄存价格/箱子尺寸和价格/屏幕截图 2026-03-09 183521.png" alt="1到3号箱体细节">
+        </figure>
+        <figure class="storage-detail-card">
+          <img src="./img/寄存价格/箱子尺寸和价格/屏幕截图 2026-03-09 183546.png" alt="4到6号箱体细节">
+        </figure>
+        <figure class="storage-detail-card">
+          <img src="./img/寄存价格/箱子尺寸和价格/屏幕截图 2026-03-09 184523.png" alt="箱体容量展示">
+        </figure>
+        <figure class="storage-detail-card">
+          <img src="./img/寄存价格/箱子尺寸和价格/屏幕截图 2026-03-09 184548.png" alt="箱体容量细节">
+        </figure>
+      </div>
+
+      <div class="storage-table-wrap">
+        <table class="storage-table">
+          <thead>
+            <tr>
+              <th data-i18n="boxTableNo">箱号</th>
+              <th data-i18n="boxTableSize">尺寸</th>
+              <th data-i18n="boxTableDay">寄存费/天 (£)</th>
+              <th data-i18n="boxTablePrice">箱子价格 (£)</th>
+              <th data-i18n="boxTableNote">备注</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>1</td>
+              <td>50 × 40 × 57 cm</td>
+              <td>0.7</td>
+              <td>5</td>
+              <td data-i18n="box1Note">适合长期寄存或较大行李</td>
+            </tr>
+            <tr>
+              <td>2</td>
+              <td>60 × 40 × 50 cm</td>
+              <td>0.7</td>
+              <td>5</td>
+              <td data-i18n="box2Note">暂时可能缺货，请下单前确认</td>
+            </tr>
+            <tr>
+              <td>3</td>
+              <td>50 × 40 × 40 cm</td>
+              <td>0.6</td>
+              <td>4</td>
+              <td data-i18n="box3Note">适合寄往英国其他城市</td>
+            </tr>
+            <tr>
+              <td>4</td>
+              <td>40 × 30 × 30 cm</td>
+              <td>0.5</td>
+              <td>3</td>
+              <td data-i18n="box4Note">适合中小件短期寄存</td>
+            </tr>
+            <tr>
+              <td>5</td>
+              <td>29 × 29 × 24 cm</td>
+              <td>0.4</td>
+              <td>2</td>
+              <td data-i18n="box5Note">适合日用品与小件物品</td>
+            </tr>
+            <tr>
+              <td>6</td>
+              <td>29 × 26 × 19 cm</td>
+              <td>0.3</td>
+              <td>1</td>
+              <td data-i18n="box6Note">适合非常小件寄存</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="storage-section calculator-section" id="storage-calculator">
+      <div class="section-heading">
+        <h2 data-i18n="storageCalcTitle">非会员价格计算器</h2>
+        <p data-i18n="storageCalcIntro">输入箱型、箱数和天数，系统会按当前规则自动估算基础费用、短期加费和折扣后总价。</p>
+      </div>
+
+      <div class="calculator-layout">
+        <form class="calculator-card" id="storageCalculator">
+          <label class="field">
+            <span data-i18n="calcBoxType">箱型</span>
+            <select id="boxType">
+              <option value="1" data-i18n="calcBox1">1 号箱</option>
+              <option value="2" data-i18n="calcBox2">2 号箱</option>
+              <option value="3" data-i18n="calcBox3">3 号箱</option>
+              <option value="4" data-i18n="calcBox4">4 号箱</option>
+              <option value="5" data-i18n="calcBox5">5 号箱</option>
+              <option value="6" data-i18n="calcBox6">6 号箱</option>
+            </select>
+          </label>
+          <label class="field">
+            <span data-i18n="calcBoxCount">箱数</span>
+            <input id="boxCount" type="number" min="1" value="5">
+          </label>
+          <label class="field">
+            <span data-i18n="calcDays">寄存天数</span>
+            <input id="storageDays" type="number" min="1" value="15">
+          </label>
+          <label class="field">
+            <span data-i18n="calcAccess">取货位置</span>
+            <select id="pickupAccess">
+              <option value="ground" data-i18n="calcAccessGround">楼下交接</option>
+              <option value="elevator" data-i18n="calcAccessElevator">电梯房上楼取货</option>
+              <option value="stairs" data-i18n="calcAccessStairs">楼梯房上楼取货</option>
+            </select>
+          </label>
+          <button class="button button-primary full-width" type="submit" data-i18n="calcSubmit">计算价格</button>
+        </form>
+
+        <div class="calculator-card calculator-result">
+          <h3 data-i18n="calcResultTitle">费用估算结果</h3>
+          <dl class="result-grid">
+            <div>
+              <dt data-i18n="resultBase">基础寄存费</dt>
+              <dd id="resultBase">£0.00</dd>
+            </div>
+            <div>
+              <dt data-i18n="resultDiscount">折扣系数</dt>
+              <dd id="resultDiscount">1.0</dd>
+            </div>
+            <div>
+              <dt data-i18n="resultPickup">取货费</dt>
+              <dd id="resultPickup">£0.00</dd>
+            </div>
+            <div>
+              <dt data-i18n="resultDelivery">送货费</dt>
+              <dd id="resultDelivery">£0.00</dd>
+            </div>
+            <div>
+              <dt data-i18n="resultAccess">上楼取货费</dt>
+              <dd id="resultAccess">£0.00</dd>
+            </div>
+            <div>
+              <dt data-i18n="resultMinimum">最低消费修正</dt>
+              <dd id="resultMinimum">£0.00</dd>
+            </div>
+            <div class="total-row">
+              <dt data-i18n="resultTotal">预计总价</dt>
+              <dd id="resultTotal">£0.00</dd>
+            </div>
+          </dl>
+          <p class="result-note" id="resultNote" data-i18n="calcNoteDefault">上楼费、超重和外地配送不计入本估算，请联系客服确认。</p>
+        </div>
+      </div>
+
+      <div class="example-cards">
+        <article class="example-card">
+          <h3 data-i18n="example1Title">示例：1 箱 / 15 天</h3>
+          <p data-i18n="example1Text">基础费不足短期最低消费时，按 £20 起算，再加 £2 取货费和 £2 送货费。</p>
+        </article>
+        <article class="example-card">
+          <h3 data-i18n="example2Title">示例：5 箱 / 5 天</h3>
+          <p data-i18n="example2Text">5 × 0.7 × 5 = £17.5，不足 £30 按 £30 计算，再加 £10 取货与 £10 送货，总价 £50。</p>
+        </article>
+        <article class="example-card">
+          <h3 data-i18n="example3Title">示例：10 箱 / 10 天</h3>
+          <p data-i18n="example3Text">10 × 0.7 × 10 = £70，再加 £20 取货和 £20 送货，总价 £110。</p>
+        </article>
+        <article class="example-card">
+          <h3 data-i18n="example4Title">示例：5 箱 / 60 天</h3>
+          <p data-i18n="example4Text">60 天适用 0.5 折扣档位，适合长期寄存需求。</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="storage-section" id="storage-rules">
+      <div class="section-heading">
+        <h2 data-i18n="storageRulesTitle">规则与注意事项</h2>
+        <p data-i18n="storageRulesIntro">以下规则不全部进入自动计算器，但会影响最终收费，请寄存前与我们确认。</p>
+      </div>
+
+      <div class="rules-grid">
+        <article class="rule-card">
+          <h3 data-i18n="ruleShortTitle">短期寄存规则</h3>
+          <p data-i18n="ruleShortText">30 天内为短期寄存，标准最低消费 £30；若仅 1 个箱子短期寄存，可降至 £20。并加收每箱 £2 取货费和每箱 £2 送货费。</p>
+        </article>
+        <article class="rule-card">
+          <h3 data-i18n="ruleLongTitle">长期寄存折扣</h3>
+          <p data-i18n="ruleLongText">寄存时间越长折扣越高，75 天及以上按 0.45 系数计算；200 天以上会赠送箱子并按 3.5 折说明处理。</p>
+        </article>
+        <article class="rule-card">
+          <h3 data-i18n="ruleWeightTitle">重量与特殊物品</h3>
+          <p data-i18n="ruleWeightText">登机箱或纸箱长宽高总和小于 119cm、重量低于 15kg；28 寸托运行李箱建议低于 23kg。25–30kg 可能额外加收 £0.5/箱/天，30kg 以上按 2 个箱子计算。超大件、无包装件和特殊物品请联系客服报价。</p>
+        </article>
+        <article class="rule-card">
+          <h3 data-i18n="ruleDeliveryTitle">配送与上楼费</h3>
+          <p data-i18n="ruleDeliveryText">诺丁汉本地取送货基础规则已在价格内体现；上楼费需另计。寄往英国其他城市的常规快递为 10kg 内 £10，10–30kg £15，苏格兰地区另加 £5，专车配送需单独询价。</p>
+        </article>
+      </div>
+
+      <div class="storage-faq">
+        <div class="faq-card">
+          <h3 data-i18n="faqTitle">FAQ / 提醒</h3>
+          <ul>
+            <li data-i18n="faq1">2 号箱暂时可能缺货，请寄存前先确认。</li>
+            <li data-i18n="faq2">寄存结束后如果寄往英国其他城市，请至少提前一周预约。</li>
+            <li data-i18n="faq3">到公寓楼下取送免费，如需上楼会额外收费。</li>
+            <li data-i18n="faq4">寄存前请先和我们确认收费与返还时间，避免临时变化。</li>
+          </ul>
+        </div>
+        <div class="faq-card">
+          <h3 data-i18n="policyTitle">价格规则总览</h3>
+          <div class="policy-table-wrap">
+            <table class="policy-table">
+              <thead>
+                <tr>
+                  <th data-i18n="policyColType">类型</th>
+                  <th data-i18n="policyColRule">规则</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td data-i18n="policyShortType">短期寄存</td>
+                  <td data-i18n="policyShortRule">30 天内按短期寄存计算，不足 £30 按 £30 收费；仅 1 个箱子时最低可降至 £20。</td>
+                </tr>
+                <tr>
+                  <td data-i18n="policyPickupType">取送费用</td>
+                  <td data-i18n="policyPickupRule">短期寄存每个箱子加收 £2 取货费和 £2 送货费。</td>
+                </tr>
+                <tr>
+                  <td data-i18n="policyStairsType">上楼说明</td>
+                  <td data-i18n="policyStairsRule">到公寓楼下取送按标准规则执行，上楼搬运费用需要单独确认。</td>
+                </tr>
+                <tr>
+                  <td data-i18n="policyDeliveryType">外地转运</td>
+                  <td data-i18n="policyDeliveryRule">寄往英国其他城市时，常规快递 10kg 内 £10，10–30kg £15，苏格兰地区另加 £5。</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="discount-panel">
+            <div class="discount-heading">
+              <h4 data-i18n="discountTitle">长期折扣档位</h4>
+              <p data-i18n="discountIntro">35 天以上进入长期寄存档位，天数越长，折扣越低。</p>
+            </div>
+            <div class="discount-cards">
+              <article class="discount-card">
+                <span data-i18n="discountRange1">35–40 天</span>
+                <strong>0.7</strong>
+              </article>
+              <article class="discount-card">
+                <span data-i18n="discountRange2">45–55 天</span>
+                <strong>0.6</strong>
+              </article>
+              <article class="discount-card">
+                <span data-i18n="discountRange3">60–70 天</span>
+                <strong>0.5</strong>
+              </article>
+              <article class="discount-card">
+                <span data-i18n="discountRange4">75–95 天</span>
+                <strong>0.45</strong>
+              </article>
+              <article class="discount-card">
+                <span data-i18n="discountRange5">100–200 天</span>
+                <strong>0.4</strong>
+              </article>
+              <article class="discount-card discount-card-wide">
+                <span data-i18n="discount200Plus">200 天以上</span>
+                <strong data-i18n="discount200Rule">联系客服确认 3.5 折与送箱规则</strong>
+              </article>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="storage-table-wrap policy-example-table">
+        <table class="storage-table">
+          <thead>
+            <tr>
+              <th data-i18n="exampleColScenario">示例</th>
+              <th data-i18n="exampleColFormula">计算方式</th>
+              <th data-i18n="exampleColTotal">总价</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td data-i18n="exampleRow1Title">1 箱 / 15 天</td>
+              <td data-i18n="exampleRow1Formula">基础费不足 £20，按 £20 计算，再加 £2 取货和 £2 送货。</td>
+              <td>£24</td>
+            </tr>
+            <tr>
+              <td data-i18n="exampleRow2Title">5 箱 / 5 天</td>
+              <td data-i18n="exampleRow2Formula">5 × 0.7 × 5 = £17.5，不足 £30 按 £30，再加 £10 取货和 £10 送货。</td>
+              <td>£50</td>
+            </tr>
+            <tr>
+              <td data-i18n="exampleRow3Title">10 箱 / 10 天</td>
+              <td data-i18n="exampleRow3Formula">10 × 0.7 × 10 = £70，再加 £20 取货和 £20 送货。</td>
+              <td>£110</td>
+            </tr>
+            <tr>
+              <td data-i18n="exampleRow4Title">5 箱 / 60 天</td>
+              <td data-i18n="exampleRow4Formula">5 × 0.7 × 60 = £210，按 0.5 折扣计算。</td>
+              <td>£105</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-brand">
+      <div class="brand-lockup brand-lockup-footer">
+        <div class="logo-wordmark">NGN</div>
+        <div class="logo-subtitle">NOTTINGHAM GOOD NEIGHBOR</div>
+      </div>
+    </div>
+    <p data-i18n="footerText">面向诺丁汉留学生的本地订房与租房服务团队</p>
+    <small id="footer-year"></small>
+  </footer>
+
+  <script src="./script.js"></script>
+</body>
+</html>

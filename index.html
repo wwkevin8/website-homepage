@@ -33,6 +33,7 @@
         <a href="#story" data-i18n="navAbout">关于我们</a>
         <a href="#timeline" data-i18n="navTimeline">品牌里程碑</a>
         <a href="#team" data-i18n="navTeam">团队成员</a>
+        <a href="./storage.html" data-i18n="navStorage">寄存价格</a>
         <a href="#values" data-i18n="navMember">订房会员</a>
       </nav>
 
@@ -70,25 +71,135 @@
           <strong data-i18n="memberIntroTitle">四选一专属服务</strong>
           <p data-i18n="memberIntroText">通过我们订房后可成为订房会员，在免费接机、免费寄存、免费搬家、新生大礼包中任选一项。</p>
         </article>
-        <article class="promise-card">
+        <article class="promise-card promise-service-card">
           <span>01</span>
+          <div class="promise-visual promise-visual-car" aria-hidden="true">
+            <svg viewBox="0 0 120 80" role="presentation">
+              <rect x="18" y="34" width="64" height="20" rx="8"></rect>
+              <path d="M36 34L48 22H72L86 34"></path>
+              <circle cx="36" cy="58" r="8"></circle>
+              <circle cx="78" cy="58" r="8"></circle>
+            </svg>
+          </div>
           <strong data-i18n="promise1Title">免费接机</strong>
           <p data-i18n="promise1Text">9 月开学季可预约机场接送，覆盖常见机场到公寓楼下的落地衔接。</p>
         </article>
-        <article class="promise-card">
+        <article class="promise-card promise-service-card">
           <span>02</span>
+          <div class="promise-visual promise-visual-storage" aria-hidden="true">
+            <svg viewBox="0 0 120 80" role="presentation">
+              <rect x="26" y="18" width="34" height="44" rx="8"></rect>
+              <rect x="62" y="26" width="32" height="36" rx="8"></rect>
+              <path d="M42 18V10M78 26V18"></path>
+            </svg>
+          </div>
           <strong data-i18n="promise2Title">免费寄存</strong>
           <p data-i18n="promise2Text">暑期可免费寄存行李，支持上门接搬与回宿舍送达的安排。</p>
         </article>
-        <article class="promise-card">
+        <article class="promise-card promise-service-card">
           <span>03</span>
+          <div class="promise-visual promise-visual-moving" aria-hidden="true">
+            <svg viewBox="0 0 120 80" role="presentation">
+              <rect x="28" y="16" width="26" height="26" rx="6"></rect>
+              <rect x="54" y="28" width="30" height="26" rx="6"></rect>
+              <path d="M32 56H84"></path>
+              <circle cx="40" cy="60" r="6"></circle>
+              <circle cx="76" cy="60" r="6"></circle>
+            </svg>
+          </div>
           <strong data-i18n="promise3Title">免费搬家</strong>
           <p data-i18n="promise3Text">可协助旧房到新房的搬运衔接，常规行李与部分小家具可一起安排。</p>
         </article>
-        <article class="promise-card">
+        <article class="promise-card promise-service-card">
           <span>04</span>
+          <div class="promise-visual promise-visual-gift" aria-hidden="true">
+            <svg viewBox="0 0 120 80" role="presentation">
+              <rect x="30" y="30" width="54" height="30" rx="8"></rect>
+              <path d="M57 18V60M30 42H84"></path>
+              <path d="M46 28C38 28 38 16 46 16C56 16 57 28 57 28"></path>
+              <path d="M68 28C76 28 76 16 68 16C58 16 57 28 57 28"></path>
+            </svg>
+          </div>
           <strong data-i18n="promise4Title">新生礼包</strong>
           <p data-i18n="promise4Text">可提前配齐基础寝具和厨具，到达公寓后能更快开始生活。</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section perks-section" id="extras">
+      <div class="section-heading centered">
+        <h2 data-i18n="extrasTitle">额外福利与本地活动</h2>
+        <p data-i18n="extrasIntro">四选一只是开始。围绕留学生在诺丁汉的真实生活，我们还会持续组织节日活动、免费出行和本地支持服务，让福利不只停留在订房当天。</p>
+      </div>
+
+      <div class="video-grid">
+        <button class="video-card" type="button" data-video-card>
+          <div class="video-card-media">
+            <video preload="metadata" playsinline muted loop data-home-video src="./img/activies/chinese spring.mp4"></video>
+            <div class="video-card-overlay">
+              <span class="video-card-tag" data-i18n="videoTag">精选活动视频</span>
+              <strong data-i18n="video1Title">春节活动</strong>
+              <p data-i18n="video1Text">节日聚餐、互动和团圆氛围，让同学们在诺丁汉也能感受到过年的热闹。</p>
+              <span class="video-play-label" data-i18n="videoPlay">点击播放</span>
+            </div>
+          </div>
+        </button>
+
+        <button class="video-card" type="button" data-video-card>
+          <div class="video-card-media">
+            <video preload="metadata" playsinline muted loop data-home-video src="./img/activies/london.mp4"></video>
+            <div class="video-card-overlay">
+              <span class="video-card-tag" data-i18n="videoTag">精选活动视频</span>
+              <strong data-i18n="video2Title">免费伦敦出行</strong>
+              <p data-i18n="video2Text">组织同学免费前往伦敦，看城市、看景点，也让异乡生活多一点连接感。</p>
+              <span class="video-play-label" data-i18n="videoPlay">点击播放</span>
+            </div>
+          </div>
+        </button>
+
+        <button class="video-card" type="button" data-video-card>
+          <div class="video-card-media">
+            <video preload="metadata" playsinline muted loop data-home-video src="./img/activies/basi.mp4"></video>
+            <div class="video-card-overlay">
+              <span class="video-card-tag" data-i18n="videoTag">精选活动视频</span>
+              <strong data-i18n="video3Title">免费巴斯出行</strong>
+              <p data-i18n="video3Text">把本地陪伴延展到城市体验里，让同学在英国的周末生活也更丰富轻松。</p>
+              <span class="video-play-label" data-i18n="videoPlay">点击播放</span>
+            </div>
+          </div>
+        </button>
+      </div>
+
+      <div class="extra-benefits-grid">
+        <article class="extra-benefit-card">
+          <span class="extra-benefit-icon">01</span>
+          <h3 data-i18n="extra1Title">节日活动持续组织</h3>
+          <p data-i18n="extra1Text">除了春节，我们也会组织元宵节等节日活动，让学生在异乡也能有聚会、有陪伴、有归属感。</p>
+        </article>
+        <article class="extra-benefit-card">
+          <span class="extra-benefit-icon">02</span>
+          <h3 data-i18n="extra2Title">免费出行福利</h3>
+          <p data-i18n="extra2Text">除了伦敦和巴斯，也会根据时间安排组织比斯特等地的免费或福利价出行活动。</p>
+        </article>
+        <article class="extra-benefit-card">
+          <span class="extra-benefit-icon">03</span>
+          <h3 data-i18n="extra3Title">本地生活答疑</h3>
+          <p data-i18n="extra3Text">从公寓区域、通勤路线到日常采买和生活建议，我们会尽量给出更贴近学生视角的本地信息。</p>
+        </article>
+        <article class="extra-benefit-card">
+          <span class="extra-benefit-icon">04</span>
+          <h3 data-i18n="extra4Title">入住沟通支持</h3>
+          <p data-i18n="extra4Text">遇到入住衔接、公寓沟通或生活适应问题时，我们会继续协助对接，不让订房服务只停留在签约阶段。</p>
+        </article>
+        <article class="extra-benefit-card">
+          <span class="extra-benefit-icon">05</span>
+          <h3 data-i18n="extra5Title">社群陪伴与活动联络</h3>
+          <p data-i18n="extra5Text">通过日常社群和线下活动，让新生更快建立连接，也让已经在诺丁汉生活的同学更容易融入。</p>
+        </article>
+        <article class="extra-benefit-card">
+          <span class="extra-benefit-icon">06</span>
+          <h3 data-i18n="extra6Title">毕业与换房阶段关怀</h3>
+          <p data-i18n="extra6Text">从换房到毕业离开，我们希望把支持延续到更后面的阶段，让每个节点都更顺一点。</p>
         </article>
       </div>
     </section>
@@ -152,7 +263,7 @@
         <article class="timeline-item timeline-left">
           <span class="timeline-year">2023</span>
           <h3 data-i18n="t2023Title">本地主流公寓合作网络基本形成</h3>
-          <p data-i18n="t2023Text">此后，合作进一步延伸至 Unite Students 等品牌公寓，并逐步实现与诺丁汉本地主流学生公寓的广泛合作，形成较为完整的订房资源网络。</p>
+          <p data-i18n="t2023Text">此后，合作进一步延伸至 Homes for Students 等品牌公寓，并逐步实现与诺丁汉本地主流学生公寓的广泛合作，形成较为完整的订房资源网络。</p>
         </article>
         <article class="timeline-item timeline-right">
           <span class="timeline-year">2024</span>
@@ -175,30 +286,36 @@
 
       <div class="team-grid">
         <article class="team-card">
-          <div class="team-portrait portrait-one portrait-photo">
+          <div class="team-avatar avatar-vivian">
             <img src="./img/vivian.jpg" alt="Vivian">
           </div>
           <h3>Vivian</h3>
-          <p class="team-role" data-i18n="teamVivianRole">创始人</p>
-          <p data-i18n="teamVivianText">长期生活在诺丁汉，熟悉本地租房与生活环境。她希望把多年积累的经验转化为更可靠的订房与落地支持，也让左邻右里始终保持贴近学生真实需求的服务视角。</p>
+          <p class="team-role" data-i18n="teamVivianRole">学生公寓顾问</p>
+          <p data-i18n="teamVivianText">作为左邻右里的创始人，Vivian 长期生活在诺丁汉，熟悉本地租房环境、学生公寓资源和留学生在落地阶段最真实的生活需求。她希望把多年在当地积累的经验、判断和服务节奏，转化为更稳定、更可靠的订房支持，也让左邻右里始终保持贴近学生的服务视角。</p>
         </article>
         <article class="team-card">
-          <div class="team-portrait portrait-two"></div>
-          <h3 data-i18n="team2Name">本地服务顾问</h3>
-          <p class="team-role" data-i18n="team2Role">接机与入住协调</p>
-          <p data-i18n="team2Text">负责接机预约、行李寄存、入住衔接与搬家安排，让学生从抵达开始就有人接应。</p>
+          <div class="team-avatar avatar-kevin">
+            <img src="./img/Kevin.jpg" alt="Kevin">
+          </div>
+          <h3 data-i18n="team2Name">Kevin</h3>
+          <p class="team-role" data-i18n="team2Role">学生公寓顾问</p>
+          <p data-i18n="team2Text">Kevin 是团队里的主要顾问人员，也是很多同学在咨询阶段最先建立信任的人。长期深度对接诺丁汉大大小小的学生公寓后，他对不同公寓的定位、区域氛围、价格区间、合同节奏、优缺点差异以及学生真正关心的问题都非常熟悉。毕业于诺丁汉大学电子与电气工程专业、常驻 Park 校区的他，不仅专业、靠谱，也很有亲和力，能够把复杂的信息讲得清楚、把选择逻辑梳理明白，帮助同学更高效地找到真正适合自己的房子。</p>
         </article>
         <article class="team-card">
-          <div class="team-portrait portrait-three"></div>
-          <h3 data-i18n="team3Name">学生公寓顾问</h3>
-          <p class="team-role" data-i18n="team3Role">订房与售后沟通</p>
-          <p data-i18n="team3Text">负责热门公寓咨询、价格说明、返现活动同步以及入住后问题沟通协助。</p>
+          <div class="team-avatar avatar-firo">
+            <img src="./img/Firo.jpg" alt="Firo">
+          </div>
+          <h3 data-i18n="team3Name">Firo</h3>
+          <p class="team-role" data-i18n="team3Role">学生公寓顾问</p>
+          <p data-i18n="team3Text">Firo 也是团队里的租房顾问之一，主要负责日常沟通、咨询承接和后续协助跟进。他的沟通方式自然、亲和，不会给人距离感，比较容易让学生在咨询过程中放松下来。对于公寓基础信息、入住节奏和常见问题，他也能够提供清晰直接的说明，是团队里很稳定的一位协助型顾问。</p>
         </article>
         <article class="team-card">
-          <div class="team-portrait portrait-four"></div>
-          <h3 data-i18n="team4Name">社区活动负责人</h3>
-          <p class="team-role" data-i18n="team4Role">活动与全年陪伴</p>
-          <p data-i18n="team4Text">负责组织节日活动、免费出行与毕业关怀，把异乡生活做得更有连接感和归属感。</p>
+          <div class="team-avatar avatar-xiaoni">
+            <img src="./img/小妮.jpg" alt="小妮">
+          </div>
+          <h3 data-i18n="team4Name">小妮</h3>
+          <p class="team-role" data-i18n="team4Role">学生公寓顾问</p>
+          <p data-i18n="team4Text">小妮同样是团队里的租房顾问人员。作为学校大使馆成员，她对学生需求比较熟悉，也更了解大家在入住沟通、信息理解和生活适应阶段常见的细节问题。她更擅长从学生视角去看待问题，帮助大家把一些看似琐碎、但实际很影响体验的事情提前理顺。</p>
         </article>
       </div>
     </section>
@@ -243,6 +360,21 @@
           </div>
           <a class="button button-primary full-width" href="#top" data-i18n="memberBtn">查看首页重点服务</a>
         </aside>
+      </div>
+    </section>
+
+    <section class="section outlook-section" id="outlook">
+      <div class="outlook-panel">
+        <div class="outlook-copy">
+          <p class="eyebrow" data-i18n="outlookEyebrow">品牌介绍</p>
+          <h2 data-i18n="outlookTitle">从订房开始，把诺丁汉的留学生活接得更完整</h2>
+          <p data-i18n="outlookText1">左邻右里立足诺丁汉，长期围绕中国留学生的租房、订房和本地生活需求提供支持。我们希望把看似分散的事项串联起来，让学生从咨询、预订、入住到后续适应都能少走一些弯路，也让家长在远距离了解孩子留学生活时能更放心一些。对很多留学生来说，真正困难的往往不只是“找到一个房子”，而是如何在信息复杂、节奏紧张、经验不足的情况下，做出更稳妥的判断。</p>
+          <p data-i18n="outlookText2">对我们来说，订房从来不是一笔单独完成的交易，而是很多后续事情的开始。公寓选择、入住衔接、返现同步、节日活动、免费出行、本地答疑、换房与毕业阶段的帮助，都是学生真正会遇到的现实需求。我们希望把这些支持逐步做得更完整，让服务不只体现在“帮你订到房”，也体现在“帮你把后面的生活接住”。未来我们也会继续把资源做深、把流程做细、把服务做稳，让每一位来到诺丁汉的同学都能在关键节点得到更及时、更可靠的支持。</p>
+        </div>
+        <div class="outlook-quote">
+          <strong data-i18n="outlookQuoteTitle">公司展望</strong>
+          <p data-i18n="outlookQuoteText">未来，我们会继续深耕诺丁汉本地主流公寓资源，提升团队响应效率，扩展更多贴近学生真实生活的福利与活动，并进一步把咨询、订房、入住、售后、节日陪伴和本地生活支持之间的连接做得更顺。我们希望左邻右里不仅是一个能帮学生订房的团队，更是一个在关键时刻值得被信任、愿意长期陪伴学生成长的本地服务品牌。</p>
+        </div>
       </div>
     </section>
   </main>
