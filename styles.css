@@ -669,7 +669,7 @@ img {
 
 .team-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 18px;
   margin-top: 38px;
 }
@@ -711,6 +711,10 @@ img {
 
 .avatar-xiaoni img {
   object-position: center 22%;
+}
+
+.avatar-kim img {
+  object-position: center 18%;
 }
 
 .team-card h3,
