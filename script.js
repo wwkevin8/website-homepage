@@ -19,8 +19,8 @@ const translations = {
     heroBtn1: "了解我们的服务",
     heroBtn2: "查看会员权益",
     partnersBadge: "合作公寓集团",
-    partnersTitle: "与诺丁汉主流学生公寓集团保持稳定合作",
-    partnersIntro: "我们持续对接诺丁汉本地主流学生公寓资源，围绕位置、价格、合同节奏与入住体验，为学生提供更真实、更清晰也更靠谱的订房支持。",
+    partnersTitle: "深受行业领导者信赖",
+    partnersIntro: "我们与英国本地备受推荐的公寓供应商深度合作，为诺丁汉的留学生提供更真实、更靠谱的住房支持。",
     memberIntroTag: "订房会员",
     memberIntroTitle: "四选一专属服务",
     memberIntroText: "通过我们订房后可成为订房会员，在免费接机、免费寄存、免费搬家、新生大礼包中任选一项。",
@@ -274,8 +274,8 @@ const translations = {
     heroBtn1: "Explore Our Service",
     heroBtn2: "View Membership",
     partnersBadge: "INDUSTRY PARTNERS",
-    partnersTitle: "Stable partnerships with Nottingham's mainstream student accommodation groups",
-    partnersIntro: "We stay closely connected with Nottingham's major student accommodation providers and support students with clearer, more reliable booking guidance across location, pricing, contract timing and move-in experience.",
+    partnersTitle: "Trusted by leading accommodation groups",
+    partnersIntro: "We work closely with highly recommended UK accommodation providers to offer Nottingham students more reliable and grounded housing support.",
     memberIntroTag: "Booking Member",
     memberIntroTitle: "Choose 1 of 4 Benefits",
     memberIntroText: "Students who book through us can become members and choose one benefit from free pickup, free storage, free moving support, or a welcome starter pack.",
@@ -511,6 +511,306 @@ const translations = {
   }
 };
 
+Object.assign(translations["zh-CN"], {
+  navMenu: "菜单",
+  menuPartners: "合作公寓",
+  menuExtras: "额外福利",
+  menuPickup: "接机服务",
+  menuAbout: "关于我们",
+  menuBusiness: "公司业务",
+  menuCampus: "校区入口",
+  menuTimeline: "品牌里程碑",
+  menuTeam: "核心团队",
+  menuMember: "订房会员",
+  menuOutlook: "公司介绍与展望",
+  heroBadge: "诺丁汉当地生活服务",
+  heroTitle: "以租房为核心，把诺丁汉留学生的生活服务接得更稳。",
+  heroText: "左邻右里是一家立足诺丁汉的当地生活服务公司，长期围绕中国留学生提供订房、寄存、接机、签证、搬家与本地支持。对我们来说，租房是最核心的服务起点，但不是全部服务本身；同学通过我们订房后，还可以进入订房会员体系，把部分生活服务以更省心的方式接上。",
+  partnersTitle: "与诺丁汉主流学生公寓集团保持长期合作",
+  partnersIntro: "长期对接主流学生公寓资源，让订房信息、合作渠道与入住支持都更稳定、更透明，也更适合留学生真实使用场景。",
+  aboutTitle: "以租房为核心，把本地生活服务做得更完整",
+  aboutLead: "左邻右里是一家诺丁汉当地生活服务公司，长期围绕中国留学生提供更落地的支持。",
+  aboutText1: "对我们来说，租房当然是最核心的业务，因为它往往是留学生来到诺丁汉后第一件真正需要做决定的大事。围绕订房咨询、公寓匹配、价格理解、合同节奏和入住安排，我们希望把复杂的信息整理得更清楚，让学生和家长都能更安心一些。",
+  aboutText2: "但左邻右里并不只是做租房。随着学生真正开始在本地生活，寄存、接机、签证、搬家、公寓沟通、日常答疑和节日活动，也都会变成真实发生的需求。所以我们更希望把服务做成一条连续的链路，让租房成为起点，而不是全部。",
+  business1Title: "订房",
+  business1Text: "围绕预算、合同节奏、公寓定位和信息差异，提供更清晰的订房咨询与匹配建议。",
+  business2Title: "寄存",
+  business2Text: "提供暑期和换房阶段的本地寄存服务，订房会员可在对应权益内免费使用。",
+  business3Title: "接机",
+  business3Text: "支持开学季机场接送和落地衔接，订房会员可在会员服务内免费选择。",
+  business4Title: "签证",
+  business4Text: "除订房外，也承接签证、本地协助与其他延伸服务，让支持更完整。",
+  campusEyebrow: "服务诺丁汉·尤其懂 UoN",
+  campusTitle: "同样是 UoN，不同校区的课程分布和日常节奏其实很不一样。",
+  campusIntro: "我们更希望先把校区差异讲清楚。不同专业常去的校区、日常通勤的方式、课程安排的集中度，都会影响同学对生活节奏和订房判断的理解。",
+  campusParkTitle: "University Park",
+  campusParkText: "University Park 更接近很多同学理解里的主校区节奏，像电子电气、物理、化学等工科方向，日常课程和校园动线更多会围绕这边展开。主校区体量更大，教学楼和日常活动空间也更分散，所以大家通常会更在意课程节奏、校园范围和往返时间的适应感。",
+  campusParkPoint1: "更偏向电子电气、物理、化学等工科方向的课程节奏",
+  campusParkPoint2: "主校区范围更大，更需要提前理解日常动线和通勤感受",
+  campusJubileeTitle: "Jubilee Campus",
+  campusJubileeText: "Jubilee Campus 对很多同学来说会更偏向商科和部分文科方向，像经济、金融、管理，以及教学、语言学等专业更容易和这边联系在一起。相较于主校区，不少同学会觉得这边的课程压力没有那么大，整体节奏也更轻松一些，所以很多人会更倾向住在市中心，再根据自己的课程安排来往返校区。",
+  campusJubileePoint1: "更偏向经济、金融、管理，以及教学、语言学等方向",
+  campusJubileePoint2: "不少同学更倾向住在市中心，再按课程安排往返校区",
+  value1Text: "同学从订房开始进入会员服务，到达英国后、正式入住、换房到毕业阶段，我们都会尽最大程度保持有人持续跟进。",
+  memberCtaText: "通过我们订房后可进入订房会员体系，享受四选一服务、官方活动同步和日常事项持续跟进，让服务不会在签约后直接断开。"
+});
+
+Object.assign(translations.en, {
+  navMenu: "Menu",
+  menuPartners: "Partners",
+  menuExtras: "Benefits",
+  menuPickup: "Airport Pickup",
+  menuAbout: "About",
+  menuBusiness: "Services",
+  menuCampus: "Campuses",
+  menuTimeline: "Milestones",
+  menuTeam: "Team",
+  menuMember: "Membership",
+  menuOutlook: "Overview",
+  heroBadge: "Nottingham Local Living Service",
+  heroTitle: "Housing is our core service, but we help students settle into life in Nottingham more steadily.",
+  heroText: "NGN is a Nottingham-based local living service company supporting Chinese students with booking, storage, airport pickup, visa-related support, moving and everyday local help. For us, accommodation is the core starting point, but not the whole service itself. Students who book through us can also enter our membership system and connect selected local services more smoothly.",
+  partnersTitle: "Long-term partnerships with Nottingham's mainstream accommodation groups",
+  partnersIntro: "By staying closely connected with mainstream student accommodation providers, we keep booking information, cooperation channels and move-in support more stable, transparent and genuinely useful for international students.",
+  aboutTitle: "With housing at the core, we build a fuller local living service around it",
+  aboutLead: "NGN is a Nottingham-based local living service company that has long supported Chinese students with more grounded day-to-day help.",
+  aboutText1: "For us, housing is still the most important core service, because it is often the first major decision students need to make after arriving in Nottingham. Around booking advice, apartment matching, price clarity, contract timing and move-in arrangements, we try to organise complex information into something clearer and easier for both students and parents to trust.",
+  aboutText2: "But NGN is not only about booking. Once students really start living locally, storage, airport pickup, visa support, moving, apartment communication, daily questions and seasonal activities also become real needs. That is why we want the service to feel like one connected chain, with housing as the starting point rather than the whole story.",
+  business1Title: "Booking",
+  business1Text: "Clearer advice around budgets, contract timing, residence positioning and key differences between accommodation options.",
+  business2Title: "Storage",
+  business2Text: "Local storage support for summer and room-switch periods, with matching benefits available for booking members.",
+  business3Title: "Airport Pickup",
+  business3Text: "Arrival pickup and landing support during key intake periods, free within selected member benefits.",
+  business4Title: "Visa Support",
+  business4Text: "Alongside booking, we also provide visa-related support and other local paid services to keep the overall help more complete.",
+  campusEyebrow: "Serving Nottingham, especially UoN",
+  campusTitle: "Even within UoN, different campuses mean very different academic and daily rhythms.",
+  campusIntro: "What we want to clarify first is the difference between campuses. The departments students usually attend, the way they commute and how concentrated their daily schedules are can all shape how they think about life in Nottingham and the choices they make.",
+  campusParkTitle: "University Park",
+  campusParkText: "University Park is closer to what many students imagine as the main campus rhythm. Engineering and science-focused subjects such as electronic and electrical engineering, physics and chemistry are more likely to centre here. Because the campus is larger and daily movement can feel more spread out, students usually care more about class rhythm, campus scale and how manageable the day-to-day commute feels.",
+  campusParkPoint1: "More aligned with engineering and science subjects such as EEE, physics and chemistry",
+  campusParkPoint2: "A larger main campus where understanding daily movement and commute rhythm matters more",
+  campusJubileeTitle: "Jubilee Campus",
+  campusJubileeText: "For many students, Jubilee Campus is more closely associated with business-related and some arts-based subjects, including economics, finance, management, education and linguistics. Compared with the main campus, many students feel the academic pressure here is a little lighter and the overall rhythm is more relaxed, so it is common for students to prefer living in the city centre and travelling to campus according to their timetable.",
+  campusJubileePoint1: "More aligned with economics, finance, management, education and linguistics",
+  campusJubileePoint2: "Many students prefer living in the city centre and travelling in based on their class schedule",
+  value1Text: "From the moment a student books with us, we try our best to keep follow-up support going through arrival in the UK, official move-in, room changes and even later graduation-stage needs.",
+  memberCtaText: "Students who book through us can enter the membership system, receive one of four key benefits, stay aligned with official residence offers and continue getting support with everyday follow-up instead of having the service stop at contract signing."
+});
+
+Object.assign(translations["zh-CN"], {
+  pickupTitle: "左邻右里 | 接机与拼车服务",
+  pickupDescription: "左邻右里接机与拼车服务页面，提供正常时间与九月旺季价格表、拼车流程、注意事项和需求整理。",
+  pickupHeroEyebrow: "接机与拼车服务",
+  pickupHeroTitle: "诺丁汉 NGN 接机与拼车服务",
+  pickupHeroText: "我们与英国本地正规租车及司机团队长期合作，为留学生提供接机、拼车与送机支持。合作司机均为英国本地华人老司机，驾龄 5 年以上，常用奔驰、奥迪、大众、福特等安全舒适车型。无论是开学季首次落地，还是平时跨城往返，我们都希望把接机安排做得更清楚、更稳妥。",
+  pickupMeta1: "电话: 07941 008555",
+  pickupMeta2: "拼车表单: 问卷星链接",
+  pickupMeta3: "客服微信: hottsngn",
+  pickupHeroBtn1: "填写拼车表单",
+  pickupHeroBtn2: "查看接机价格",
+  pickupHeroBtn3: "咨询包车/接机",
+  pickupHighlightTitle1: "服务包含",
+  pickupHighlightText1: "送机费、机场停车费、司机费，以及免费 1 小时等待费。",
+  pickupHighlightTitle2: "特殊说明",
+  pickupHighlightText2: "06:00-22:00 为正常时段，超出时段加班费 £20/车，拼车同学 AA 分摊。",
+  pickupHighlightTitle3: "旺季提醒",
+  pickupHighlightText3: "9 月属于旺季，价格会有调整，8 月中旬另行报价，司机资源紧张时请尽量提前预约。",
+  pickupProcessTitle: "拼车流程",
+  pickupProcessIntro: "先确认规则与价格，再提交拼车需求。我们会根据你的时间、机场和人数安排发布信息，尽量帮助同学更顺利地匹配到合适同行人。",
+  pickupStep1Title: "阅读说明与价格",
+  pickupStep1Text: "先确认接机规则、正常时间价格和九月旺季说明，再判断自己更适合拼车还是包车。",
+  pickupStep2Title: "填写拼车表单",
+  pickupStep2Text: "通过问卷星填写航班、时间、人数、行李数量和目的地等基础信息。",
+  pickupStep3Title: "我们发布并匹配同行人",
+  pickupStep3Text: "团队会在社媒或群内发布拼车信息，尽量帮助你匹配同机场、同时段或相近目的地的同学。",
+  pickupStep4Title: "等待通知与确认",
+  pickupStep4Text: "拼车人数、航站楼与时间逐步确认后，我们会同步最终安排与收费方式。",
+  pickupStep5Title: "支付车款并安排接机",
+  pickupStep5Text: "确认后支付车费，司机将按最终时间、人数与航站楼安排接机或送机服务。",
+  pickupFormBtn: "填写拼车表单",
+  pickupServiceTitle: "服务说明",
+  pickupServiceIntro: "我们更希望把接机服务的规则讲清楚，而不是只放一张价格表。下面这些内容会直接影响你的最终安排与实际费用。",
+  pickupServiceBlock1Title: "正规合作车辆",
+  pickupServiceBlock1Text: "我们与英国本地正规租车及司机团队合作接送学生，合作司机均为英国本地驾龄 5 年以上的华人老司机，常用奔驰、奥迪、大众、福特等安全舒适车型。",
+  pickupServiceBlock2Title: "价格包含内容",
+  pickupServiceBlock2Text: "价格包含接送费用、机场停车费、司机费，以及免费 1 小时等待费。价格不包含不同航站楼拼车费和超时等待费。",
+  pickupServiceBlock3Title: "正常时段与加班时段",
+  pickupServiceBlock3Text: "接人时间点在 06:00-22:00 为正常时段。早于或晚于这个时间段，都按加班特殊时段核算，需加 £20/车；如是拼车，则由同行人 AA 分摊。",
+  pickupServiceBlock4Title: "旺季波动说明",
+  pickupServiceBlock4Text: "9 月属于旺季，正常时间价格表不适用于每年 9 月的高峰阶段。9 月送机/接机价格会在 8 月中旬另行报价，旺季司机资源紧张，价格可能会有一定波动。",
+  pickupPricingTitle: "接机价格表",
+  pickupPricingIntro: "以下价格已按你提供的截图整理为文本表格，便于同学直接查阅。最终尾款仍会根据实际上车人数、航站楼和等待情况进行人工核算。",
+  pickupTableNormalTitle: "正常时间价格表",
+  pickupTableSeptemberTitle: "九月时间价格表",
+  pickupColPeople: "人数",
+  pickupAirportHeathrow: "希思罗机场",
+  pickupAirportGatwick: "盖特维克机场",
+  pickupAirportManchester: "曼彻斯特机场",
+  pickupAirportLuton: "伦敦卢顿机场",
+  pickupAirportCity: "伦敦城市机场",
+  pickupAirportBirmingham: "伯明翰国际机场",
+  pickupAirportStansted: "伦敦斯坦斯特德机场",
+  pickupRow1: "一人",
+  pickupRow2: "两人每人",
+  pickupRow3: "三人每人",
+  pickupRow4: "四人每人",
+  pickupRow5: "五人每人",
+  pickupRulesTitle: "规则与注意事项",
+  pickupRulesIntro: "接机服务最终价格并不只是看基础表格，还会受到等待时间、航站楼、行李数量和具体安排方式影响。下面这些说明请务必提前看清楚。",
+  pickupRule1Title: "尾款核算方式",
+  pickupRule1Text: "尾款会按实际上车人数以及是否跨航站楼进行核算。拼车同学若分布在不同航站楼，需要按每增加一个航站楼加 £15 来重新平摊，最终每人价格通常会比基础表略高。",
+  pickupRule2Title: "等待与超时",
+  pickupRule2Text: "接机默认包含免费 1 小时等待费。若因实际落地、出关或集合过慢超出等待时长，会按实际等待继续收费；送机默认等待 10 分钟，超出后每 10 分钟加收 £5。",
+  pickupRule3Title: "行李标准",
+  pickupRule3Text: "每位学生默认 2 个大行李箱、1 个登机箱和 1 个背包。如果有更多箱子，每多 1 个箱子加收 £5，请提前报备，避免现场车辆安排不足。",
+  pickupRule4Title: "预约与延误边界",
+  pickupRule4Text: "建议尽量预留更充足的时间。若合作司机出现异常，我们会尽量在 1 小时内协调应急车辆；如果因为学生预留时间过短或路上非司机因素造成延误，我们不承担误机赔付。若确认因司机原因导致误机，合作的士公司会按约定协助处理当日可购航班机票。",
+  pickupFaqTitle: "补充提醒",
+  pickupFaq1: "如果觉得自己出关或集合速度较慢，可以提前与我们沟通晚一点接，避免不必要的等待费。",
+  pickupFaq2: "若多人拼车且分别落在 T2、T3、T4、T5 等不同航站楼，最终价格会按照增加航站楼数量重新计算。",
+  pickupFaq3: "送机时请尽量提前准备好行李，减少装车和临时等待带来的额外费用。",
+  pickupFaq4: "客服微信: hottsngn；电话工作时间通常为周一到周六 08:00-20:00，拼车事项建议优先在工作时间联系。",
+  pickupExampleTitle: "核算示例",
+  pickupExampleText1: "例如 4 位同学拼车，基础价格为每人 £65；如果分别落在 4 个不同航站楼，就需要额外加 3 次航站楼费用，即 £45。平摊后每人再加 £11.25，单人最终约为 £76.25。",
+  pickupExampleText2: "如果你的航班 13:00 落地，司机与大家约定 14:00 接人，则免费等待可延续到 15:00；超过时间后会继续按等待规则核算，因此越早确认集合时间和行李情况越好。",
+  pickupQuoteTitle: "接机需求整理",
+  pickupQuoteIntro: "这版不做自动价格计算器。你可以先把需求填完整，页面会生成一份简要信息，方便你直接发给客服，或继续填写正式拼车表单。",
+  pickupFieldName: "姓名/称呼",
+  pickupFieldContact: "联系方式",
+  pickupFieldDate: "航班日期",
+  pickupFieldTime: "接机时间",
+  pickupFieldAirport: "机场",
+  pickupFieldPeople: "人数",
+  pickupFieldLuggage: "行李数量",
+  pickupFieldCarpool: "是否拼车",
+  pickupFieldTerminal: "是否跨航站楼",
+  pickupFieldRemark: "备注",
+  pickupCarpoolYes: "是，想拼车",
+  pickupCarpoolNo: "否，倾向包车",
+  pickupTerminalYes: "是，可能跨航站楼",
+  pickupTerminalNo: "否，航站楼一致",
+  pickupSubmit: "生成需求摘要",
+  pickupSummaryEyebrow: "报价说明",
+  pickupSummaryTitle: "请把以下信息发给客服确认",
+  pickupSummaryContactLabel: "联系人",
+  pickupSummaryAirportLabel: "航班信息",
+  pickupSummaryPeopleLabel: "人数与拼车",
+  pickupSummaryTerminalLabel: "航站楼与行李",
+  pickupSummaryNoteLabel: "价格提醒",
+  pickupSummaryDefault: "最终价格以人工核算为准，我们会结合人数、航站楼、等待时间和行李数量做最终确认。",
+  pickupSummaryRemarkDefault: "如果你还有其他细节需求，可以在备注中继续补充后再发给客服。",
+  pickupBrandTitle: "接机是本地支持的一部分，不是全部",
+  pickupBrandText: "左邻右里是立足诺丁汉的本地华人正规注册服务公司。接机、拼车、寄存、订房以及其他本地支持，都是围绕留学生真实生活节奏逐步搭建起来的服务内容。我们希望把这些安排讲清楚、做扎实，让同学在真正需要的时候，能更快找到靠谱、稳定且值得信任的安排。"
+});
+
+Object.assign(translations.en, {
+  pickupTitle: "NGN | Airport Pickup & Carpool",
+  pickupDescription: "NGN airport pickup and carpool page with standard-hour pricing, September peak pricing, rules and a request summary form.",
+  pickupHeroEyebrow: "Airport Pickup & Carpool",
+  pickupHeroTitle: "Nottingham NGN Airport Pickup & Carpool Service",
+  pickupHeroText: "We work with licensed local UK rental and driver teams to support airport pickup, shared rides and drop-offs for students. Our partner drivers are experienced Chinese drivers based in the UK with more than five years of driving experience, using safe and comfortable vehicles such as Mercedes, Audi, Volkswagen and Ford. Whether it is a first arrival at the start of term or a regular intercity transfer, we aim to make the arrangement clearer and more dependable.",
+  pickupMeta1: "Phone: 07941 008555",
+  pickupMeta2: "Carpool form: WJX link",
+  pickupMeta3: "WeChat: hottsngn",
+  pickupHeroBtn1: "Fill carpool form",
+  pickupHeroBtn2: "View pricing",
+  pickupHeroBtn3: "Ask about private transfer",
+  pickupHighlightTitle1: "Included",
+  pickupHighlightText1: "Driver fee, airport parking and up to 1 hour of free waiting are included.",
+  pickupHighlightTitle2: "Special hours",
+  pickupHighlightText2: "06:00-22:00 counts as standard hours. Outside this range, overtime is £20 per car and split equally for carpools.",
+  pickupHighlightTitle3: "Peak season",
+  pickupHighlightText3: "September is peak season. Updated pricing is quoted separately in mid-August and driver availability can be tighter.",
+  pickupProcessTitle: "How the carpool process works",
+  pickupProcessIntro: "Check the rules and pricing first, then submit your travel details. We will organise requests based on airport, timing and headcount, and try to match students travelling together more smoothly.",
+  pickupStep1Title: "Read the rules and prices",
+  pickupStep1Text: "Check the normal-hour rates, September rates and decide whether carpooling or a private car suits you better.",
+  pickupStep2Title: "Submit the carpool form",
+  pickupStep2Text: "Fill in your flight, timing, headcount, luggage quantity and destination details through the WJX form.",
+  pickupStep3Title: "We publish and match riders",
+  pickupStep3Text: "Our team shares the request internally and tries to match students arriving at the same airport, around the same time and with compatible routes.",
+  pickupStep4Title: "Wait for confirmation",
+  pickupStep4Text: "Once rider count, terminal details and timing are clearer, we confirm the final arrangement and charging basis.",
+  pickupStep5Title: "Pay and finalise the pickup",
+  pickupStep5Text: "After confirmation, payment is arranged and the driver is scheduled based on the final headcount, terminal layout and timing.",
+  pickupFormBtn: "Open the carpool form",
+  pickupServiceTitle: "Service notes",
+  pickupServiceIntro: "We would rather explain the service clearly than hide everything inside a screenshot. The notes below directly affect your final arrangement and cost.",
+  pickupServiceBlock1Title: "Licensed local drivers",
+  pickupServiceBlock1Text: "We work with licensed local UK rental and driver teams. Partner drivers are experienced Chinese drivers based in the UK with over five years of driving history and commonly use safe, comfortable vehicles.",
+  pickupServiceBlock2Title: "What the quoted price includes",
+  pickupServiceBlock2Text: "The quoted price includes the transfer fee, airport parking, driver fee and up to 1 hour of free waiting. It does not include cross-terminal carpool charges or overtime waiting.",
+  pickupServiceBlock3Title: "Standard hours and overtime",
+  pickupServiceBlock3Text: "Pickup times between 06:00 and 22:00 count as standard hours. Earlier or later pickups count as overtime and add £20 per car. For carpools, this is split equally between riders.",
+  pickupServiceBlock4Title: "September adjustment",
+  pickupServiceBlock4Text: "September is a peak-season month. The standard pricing table does not apply then. September pickup and drop-off prices are quoted separately in mid-August and may fluctuate based on driver availability.",
+  pickupPricingTitle: "Airport pickup pricing",
+  pickupPricingIntro: "The tables below have been converted into readable HTML from your source screenshots so students can review prices more easily. Final balances are still checked manually against actual rider count, terminals and waiting time.",
+  pickupTableNormalTitle: "Standard-hour pricing",
+  pickupTableSeptemberTitle: "September peak pricing",
+  pickupColPeople: "Passengers",
+  pickupAirportHeathrow: "Heathrow",
+  pickupAirportGatwick: "Gatwick",
+  pickupAirportManchester: "Manchester",
+  pickupAirportLuton: "London Luton",
+  pickupAirportCity: "London City",
+  pickupAirportBirmingham: "Birmingham",
+  pickupAirportStansted: "London Stansted",
+  pickupRow1: "1 person",
+  pickupRow2: "2 people / each",
+  pickupRow3: "3 people / each",
+  pickupRow4: "4 people / each",
+  pickupRow5: "5 people / each",
+  pickupRulesTitle: "Rules and reminders",
+  pickupRulesIntro: "Final airport pickup pricing is not decided only by the base table. Waiting time, terminal layout, luggage quantity and the actual arrangement all matter, so please read these notes carefully.",
+  pickupRule1Title: "How the final balance is checked",
+  pickupRule1Text: "Final charges are checked against the actual number of riders and whether terminals are split. If riders are spread across different terminals, each extra terminal adds £15 to be re-shared across the group, so the final per-person cost may be slightly higher than the base table.",
+  pickupRule2Title: "Waiting and overtime",
+  pickupRule2Text: "Airport pickup includes up to 1 hour of free waiting. If actual landing, border control or group meeting takes longer, extra waiting is charged manually. For drop-offs, the default waiting allowance is 10 minutes and every extra 10 minutes adds £5.",
+  pickupRule3Title: "Luggage allowance",
+  pickupRule3Text: "Each student is assumed to have 2 large suitcases, 1 cabin case and 1 backpack. If you carry more boxes, each extra box adds £5, so please report it in advance to avoid vehicle mismatch on the day.",
+  pickupRule4Title: "Booking and delay boundaries",
+  pickupRule4Text: "Please leave enough time whenever possible. If a driver-side issue happens, we will try to coordinate an emergency replacement vehicle within about 1 hour. If delays are caused by short personal time buffers or non-driver factors, missed-flight compensation is not covered. If a confirmed driver error directly causes a missed flight, the partner taxi company will assist according to the agreed policy.",
+  pickupFaqTitle: "Extra reminders",
+  pickupFaq1: "If you expect immigration clearance or meeting up to take longer, tell us in advance so we can avoid unnecessary waiting charges.",
+  pickupFaq2: "If multiple riders land at different terminals such as T2, T3, T4 and T5, the final price will be recalculated based on extra terminal runs.",
+  pickupFaq3: "For drop-offs, try to have your luggage ready early to reduce loading delays and extra waiting costs.",
+  pickupFaq4: "Customer service WeChat: hottsngn. Phone support is usually available Monday to Saturday, 08:00-20:00.",
+  pickupExampleTitle: "Examples",
+  pickupExampleText1: "For example, if 4 students share a ride and the base fare is £65 each, but they land at 4 different terminals, 3 extra terminal runs add £45 in total. Shared equally, that adds £11.25 per student, making the final amount about £76.25 each.",
+  pickupExampleText2: "If your flight lands at 13:00 and the agreed pickup time is 14:00, free waiting can continue until 15:00. After that, waiting rules start to apply, so clearer coordination on meeting time and luggage usually helps reduce cost.",
+  pickupQuoteTitle: "Pickup request summary",
+  pickupQuoteIntro: "This version does not calculate prices automatically. Instead, you can organise your request details and generate a short summary to send to customer service or copy into the official carpool form.",
+  pickupFieldName: "Name",
+  pickupFieldContact: "Contact",
+  pickupFieldDate: "Flight date",
+  pickupFieldTime: "Pickup time",
+  pickupFieldAirport: "Airport",
+  pickupFieldPeople: "Passengers",
+  pickupFieldLuggage: "Luggage",
+  pickupFieldCarpool: "Carpool?",
+  pickupFieldTerminal: "Cross-terminal?",
+  pickupFieldRemark: "Notes",
+  pickupCarpoolYes: "Yes, I want to share",
+  pickupCarpoolNo: "No, prefer private car",
+  pickupTerminalYes: "Yes, terminals may differ",
+  pickupTerminalNo: "No, same terminal",
+  pickupSubmit: "Generate summary",
+  pickupSummaryEyebrow: "Quote note",
+  pickupSummaryTitle: "Send the following details to customer service",
+  pickupSummaryContactLabel: "Contact",
+  pickupSummaryAirportLabel: "Flight details",
+  pickupSummaryPeopleLabel: "Passengers and ride type",
+  pickupSummaryTerminalLabel: "Terminal and luggage",
+  pickupSummaryNoteLabel: "Pricing reminder",
+  pickupSummaryDefault: "Final pricing is confirmed manually based on rider count, terminals, waiting time and luggage.",
+  pickupSummaryRemarkDefault: "Add any other details in the notes field before sending the request to customer service.",
+  pickupBrandTitle: "Pickup is part of local support, not the whole story",
+  pickupBrandText: "NGN is a locally registered Chinese service company based in Nottingham. Pickup, carpools, storage, accommodation booking and other local support all grew from real student needs. We want these arrangements to stay clear, steady and practical, so students can find a reliable and trustworthy solution quickly when it matters."
+});
+
 const storageBoxRates = {
   "1": 0.7,
   "2": 0.7,
@@ -521,10 +821,24 @@ const storageBoxRates = {
 };
 
 function getPageKey() {
-  return window.location.pathname.toLowerCase().includes("storage") ? "storage" : "home";
+  const pathname = window.location.pathname.toLowerCase();
+  if (pathname.includes("pickup")) {
+    return "pickup";
+  }
+  if (pathname.includes("storage")) {
+    return "storage";
+  }
+  return "home";
 }
 
 function getMetaContent(page, lang) {
+  if (page === "pickup") {
+    return {
+      title: translations[lang].pickupTitle,
+      description: translations[lang].pickupDescription
+    };
+  }
+
   if (page === "storage") {
     return {
       title: translations[lang].storageTitle,
@@ -677,6 +991,83 @@ function initStorageCalculator(activeLang) {
   renderEstimate();
 }
 
+function initPickupQuoteForm(activeLang) {
+  const form = document.querySelector("#pickupQuoteForm");
+  if (!form) {
+    return;
+  }
+
+  const fields = {
+    name: document.querySelector("#pickupName"),
+    contact: document.querySelector("#pickupContact"),
+    date: document.querySelector("#pickupDate"),
+    time: document.querySelector("#pickupTime"),
+    airport: document.querySelector("#pickupAirport"),
+    people: document.querySelector("#pickupPeople"),
+    luggage: document.querySelector("#pickupLuggage"),
+    carpool: document.querySelector("#pickupCarpool"),
+    terminal: document.querySelector("#pickupTerminal"),
+    remark: document.querySelector("#pickupRemark")
+  };
+
+  const summary = {
+    contact: document.querySelector("#pickupSummaryContact"),
+    airport: document.querySelector("#pickupSummaryAirport"),
+    people: document.querySelector("#pickupSummaryPeople"),
+    terminal: document.querySelector("#pickupSummaryTerminal"),
+    note: document.querySelector("#pickupSummaryNote"),
+    remark: document.querySelector("#pickupSummaryRemark")
+  };
+
+  if (form.__renderPickupSummary) {
+    form.dataset.lang = activeLang;
+    form.__renderPickupSummary();
+    return;
+  }
+
+  function renderPickupSummary() {
+    const currentLang = form.dataset.lang || activeLang;
+    const dict = translations[currentLang];
+    const airportLabel = fields.airport && fields.airport.selectedOptions[0]
+      ? fields.airport.selectedOptions[0].textContent
+      : "";
+    const peopleLabel = fields.people && fields.people.selectedOptions[0]
+      ? fields.people.selectedOptions[0].textContent
+      : "";
+    const carpoolLabel = fields.carpool && fields.carpool.selectedOptions[0]
+      ? fields.carpool.selectedOptions[0].textContent
+      : "";
+    const terminalLabel = fields.terminal && fields.terminal.selectedOptions[0]
+      ? fields.terminal.selectedOptions[0].textContent
+      : "";
+
+    summary.contact.textContent = `${fields.name.value || "--"} / ${fields.contact.value || "--"}`;
+    summary.airport.textContent = `${airportLabel || "--"} · ${fields.date.value || "--"} · ${fields.time.value || "--"}`;
+    summary.people.textContent = `${peopleLabel || "--"} · ${carpoolLabel || "--"}`;
+    summary.terminal.textContent = `${terminalLabel || "--"} · ${fields.luggage.value || "--"}`;
+    summary.note.textContent = dict.pickupSummaryDefault;
+    summary.remark.textContent = fields.remark.value.trim() || dict.pickupSummaryRemarkDefault;
+  }
+
+  form.dataset.lang = activeLang;
+  form.__renderPickupSummary = renderPickupSummary;
+
+  form.addEventListener("submit", event => {
+    event.preventDefault();
+    renderPickupSummary();
+  });
+
+  Object.values(fields).forEach(field => {
+    if (!field) {
+      return;
+    }
+    field.addEventListener("input", renderPickupSummary);
+    field.addEventListener("change", renderPickupSummary);
+  });
+
+  renderPickupSummary();
+}
+
 function initHomeVideos(activeLang) {
   const videoCards = Array.from(document.querySelectorAll("[data-video-card]"));
   if (!videoCards.length) {
@@ -744,6 +1135,118 @@ function initHomeVideos(activeLang) {
   });
 }
 
+function initHomeMenu() {
+  const menuPanel = document.querySelector("#home-menu-panel");
+  const toggleButtons = Array.from(document.querySelectorAll("[data-menu-toggle]"));
+  const menuLinks = Array.from(document.querySelectorAll("[data-menu-link]"));
+
+  if (!menuPanel || !toggleButtons.length) {
+    return;
+  }
+
+  if (document.body.dataset.homeMenuBound === "true") {
+    return;
+  }
+
+  const closeMenu = () => {
+    menuPanel.hidden = true;
+    toggleButtons.forEach(button => {
+      button.setAttribute("aria-expanded", "false");
+    });
+  };
+
+  const openMenu = () => {
+    menuPanel.hidden = false;
+    toggleButtons.forEach(button => {
+      button.setAttribute("aria-expanded", "true");
+    });
+  };
+
+  toggleButtons.forEach(button => {
+    button.setAttribute("aria-controls", "home-menu-panel");
+    button.setAttribute("aria-expanded", "false");
+    button.addEventListener("click", event => {
+      event.preventDefault();
+      if (menuPanel.hidden) {
+        openMenu();
+      } else {
+        closeMenu();
+      }
+    });
+  });
+
+  menuLinks.forEach(link => {
+    link.addEventListener("click", event => {
+      const targetId = link.getAttribute("href");
+      if (!targetId) {
+        return;
+      }
+
+      closeMenu();
+
+      if (targetId.startsWith("#")) {
+        event.preventDefault();
+        const target = document.querySelector(targetId);
+        if (target) {
+          target.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+        return;
+      }
+
+      if (targetId) {
+        event.preventDefault();
+        window.location.href = targetId;
+      }
+    });
+  });
+
+  document.addEventListener("click", event => {
+    const target = event.target;
+    if (!(target instanceof Element)) {
+      return;
+    }
+
+    const clickedToggle = target.closest("[data-menu-toggle]");
+    const clickedInsidePanel = target.closest("#home-menu-panel");
+
+    if (!clickedToggle && !clickedInsidePanel && !menuPanel.hidden) {
+      closeMenu();
+    }
+  });
+
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape" && !menuPanel.hidden) {
+      closeMenu();
+    }
+  });
+
+  document.body.dataset.homeMenuBound = "true";
+}
+
+Object.assign(translations["zh-CN"], {
+  heroBadge: "诺丁汉当地生活服务 · 接机服务",
+  heroTitle: "以租房为核心，把英国留学生的生活服务接得更稳。",
+  heroText: "左邻右里是一家立足诺丁汉的当地生活服务公司，长期围绕在英中国留学生提供订房、寄存、接机、签证、搬家与本地支持。对我们来说，租房是最核心的服务起点，但不是全部服务本身；同学通过我们订房后，还可以进入订房会员体系，把部分生活服务以更省心的方式接上。",
+  extra2Text: "除了伦敦和巴斯，我们也会根据时间安排，继续为会员同学组织比斯特等英国热门地点的免费或福利价出行活动；如果后面还有更多大家想去的地方，我们也会尽量继续安排进去。",
+  extra6Text: "从换房、续租到毕业离开英国，我们都希望把支持继续延续下去，让同学在这些后期阶段遇到手续、沟通或安排问题时，依然有人可以随时联系和求助。",
+  outlookTitle: "从订房开始，把英国的留学生活接得更完整",
+  outlookText1: "左邻右里立足英国，长期围绕中国留学生的租房、订房和本地生活需求提供支持。我们希望把看似分散的事项串联起来，让学生从咨询、预订、入住到后续适应都能少走一些弯路，也让家长在远距离了解孩子留学生活时能更放心一些。对很多留学生来说，真正困难的往往不只是“找到一个房子”，而是如何在信息复杂、节奏紧张、经验不足的情况下，做出更稳妥的判断。",
+  outlookText2: "对我们来说，订房从来不是一笔单独完成的交易，而是很多后续事情的开始。公寓选择、入住衔接、返现同步、节日活动、免费出行、本地答疑、换房与毕业阶段的帮助，都是学生真正会遇到的现实需求。我们希望把这些支持逐步做得更完整，让服务不只体现在“帮你订到房”，也体现在“帮你把后面的生活接住”。未来我们也会继续把资源做深、把流程做细、把服务做稳，让每一位来到英国的同学都能在关键节点得到更及时、更可靠的支持。",
+  outlookQuoteText: "未来，我们会继续深耕英国本地主流公寓资源，把每一类公寓的定位、适合人群、合同节奏、价格变化和常见问题梳理得更清楚，让同学在做选择时不只是“看到房源”，而是真正看懂差异。与此同时，我们也会继续提升团队响应效率，把咨询、订房、返现同步、入住衔接、售后跟进、本地答疑和节日活动之间的服务链路做得更完整，让支持不只停留在某一个节点，而是覆盖学生来到英国后的更长周期。除了订房本身，我们也希望把更多贴近真实生活的福利与陪伴持续做下去，包括节日活动、免费出行、本地互助、换房协助、毕业阶段支持以及更多能够提升留学体验的细节服务。我们希望左邻右里不只是一个能帮学生订房的团队，更是一个在关键时刻值得被信任、在重要阶段愿意长期负责、真正理解学生和家长顾虑的本地服务品牌。"
+});
+
+Object.assign(translations.en, {
+  heroBadge: "Nottingham Local Living Service · Airport Pickup",
+  heroTitle: "Housing is our core service, and we help UK international students settle more steadily.",
+  heroText: "NGN is a Nottingham-based local living service company supporting Chinese students in the UK with booking, storage, airport pickup, visa-related support, moving and everyday local help. For us, accommodation is the core starting point, but not the whole service itself. Students who book through us can also enter our membership system and connect selected local services in a smoother and more reassuring way.",
+  extra2Text: "In addition to London and Bath, we also try to organise free or reduced-price member trips to popular UK destinations such as Bicester whenever timing allows. If there are more places students genuinely want to visit later on, we will also try to add those in.",
+  extra6Text: "From room changes and tenancy renewals to the period before leaving the UK after graduation, we want support to continue into these later stages as well, so students still have someone to turn to when practical issues come up.",
+  outlookTitle: "Starting with booking, and connecting more of student life in the UK",
+  outlookText1: "Based in the UK, NGN has long focused on the housing, booking and local living needs of Chinese students. We aim to connect what can often feel like a scattered process, helping students move from enquiry to booking, move-in and ongoing adjustment with fewer complications, while also giving parents more reassurance from a distance. For many students, the real challenge is not simply finding a room, but making better decisions in the middle of complex information, limited experience and fast-moving timelines.",
+  outlookText2: "For us, booking has never been a one-off transaction. It is the start of many practical needs that follow: choosing the right residence, coordinating move-in, syncing cashback offers, organising seasonal events, arranging free trips, answering local questions, and supporting room changes or graduation stages. We hope to keep building these pieces into a fuller support system so that the service is felt not only in securing a room, but in helping students settle into life afterwards. Looking ahead, we want to deepen resources, refine processes and strengthen reliability so students can receive more timely and dependable support at every important stage of life in the UK.",
+  outlookQuoteText: "Looking ahead, we want to keep building deeper and clearer knowledge around mainstream student residences across the UK, so students are not just shown options but are genuinely helped to understand differences in positioning, suitable groups, contract timing, price changes and common issues. At the same time, we want to keep improving the team's response speed and make the service chain between consultation, booking, cashback updates, move-in coordination, aftercare, local questions and seasonal activities feel more connected and complete. Beyond accommodation itself, we also hope to keep growing the kinds of practical support that matter in real student life, including festive events, free trips, local mutual help, room-switch support, graduation-stage assistance and many smaller details that make living abroad feel easier. Our goal is for NGN to be more than a team that helps students book a room, and instead become a trusted local brand that students and parents can rely on at important moments over a longer period of time."
+});
+
 const footerYear = document.querySelector("#footer-year");
 const metaDescription = document.querySelector('meta[name="description"]');
 const langButtons = Array.from(document.querySelectorAll(".lang-btn"));
@@ -778,7 +1281,9 @@ function applyLanguage(lang) {
 
   window.localStorage.setItem("ngn-lang", lang);
   initStorageCalculator(lang);
+  initPickupQuoteForm(lang);
   initHomeVideos(lang);
+  initHomeMenu();
 }
 
 langButtons.forEach(button => {

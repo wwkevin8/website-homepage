@@ -29,12 +29,11 @@
       </a>
 
       <nav class="site-nav" aria-label="主导航">
-        <a href="#hero" data-i18n="navHome">首页</a>
-        <a href="#story" data-i18n="navAbout">关于我们</a>
-        <a href="#timeline" data-i18n="navTimeline">品牌里程碑</a>
-        <a href="#team" data-i18n="navTeam">团队成员</a>
-        <a href="./storage.html" data-i18n="navStorage">寄存价格</a>
-        <a href="#values" data-i18n="navMember">订房会员</a>
+        <button class="nav-trigger nav-link nav-link-primary" type="button" data-menu-toggle>
+          <span data-i18n="navHome">首页</span>
+        </button>
+        <a class="nav-link nav-link-accent" href="./pickup.html" data-i18n="menuPickup">接机服务</a>
+        <a class="nav-link nav-link-secondary" href="./storage.html" data-i18n="navStorage">寄存价格</a>
       </nav>
 
       <div class="header-actions">
@@ -42,9 +41,23 @@
           <button class="lang-btn is-active" type="button" data-lang="zh-CN">中</button>
           <button class="lang-btn" type="button" data-lang="en">EN</button>
         </div>
-        <a class="header-cta" href="#values" data-i18n="ctaConsult">咨询订房</a>
       </div>
     </header>
+
+    <div class="home-menu-panel" id="home-menu-panel" hidden>
+      <div class="home-menu-inner">
+        <a href="#partners" data-menu-link data-i18n="menuPartners">合作公寓</a>
+        <a href="#extras" data-menu-link data-i18n="menuExtras">额外福利</a>
+        <a href="./pickup.html" data-menu-link data-i18n="menuPickup">接机服务</a>
+        <a href="#story" data-menu-link data-i18n="menuAbout">关于我们</a>
+        <a href="#business" data-menu-link data-i18n="menuBusiness">公司业务</a>
+        <a href="#campus" data-menu-link data-i18n="menuCampus">校区入口</a>
+        <a href="#timeline" data-menu-link data-i18n="menuTimeline">品牌里程碑</a>
+        <a href="#team" data-menu-link data-i18n="menuTeam">核心团队</a>
+        <a href="#values" data-menu-link data-i18n="menuMember">订房会员</a>
+        <a href="#outlook" data-menu-link data-i18n="menuOutlook">公司介绍与展望</a>
+      </div>
+    </div>
   </div>
 
   <main class="page-shell" id="top">
@@ -52,11 +65,10 @@
       <div class="hero-banner">
         <div class="hero-overlay"></div>
         <div class="hero-content">
-          <span class="hero-badge" data-i18n="heroBadge">学生订房服务</span>
-          <h1 data-i18n="heroTitle">以学生租房中介为主，把订房这件事做得更省心。</h1>
+          <span class="hero-badge" data-i18n="heroBadge">诺丁汉当地生活服务 · 接机服务</span>
+          <h1 data-i18n="heroTitle">以租房为核心，把英国留学生的生活服务接得更稳。</h1>
           <p data-i18n="heroText">
-            左邻右里长期服务诺丁汉大学与诺丁汉特伦特大学学生，核心定位是本地学生租房中介与订房服务团队。
-            同学通过我们订房后可成为订房会员，享受免费接机、免费寄存、免费搬家、新生大礼包四选一，以及后续一整年的本地跟进服务。
+            左邻右里是一家立足诺丁汉的当地生活服务公司，长期围绕在英中国留学生提供订房、寄存、接机、签证、搬家与本地支持。对我们来说，租房是最核心的服务起点，但不是全部服务本身；同学通过我们订房后，还可以进入订房会员体系，把部分生活服务以更省心的方式接上。
           </p>
           <div class="hero-actions">
             <a class="button button-primary" href="#story" data-i18n="heroBtn1">了解我们的服务</a>
@@ -127,31 +139,83 @@
     </section>
 
     <section class="section partners-section" id="partners">
-      <div class="section-heading centered partners-heading">
-        <span class="partners-badge" data-i18n="partnersBadge">INDUSTRY PARTNERS</span>
-        <h2 data-i18n="partnersTitle">与诺丁汉主流学生公寓集团保持稳定合作</h2>
-        <p data-i18n="partnersIntro">我们持续对接诺丁汉本地主流学生公寓资源，围绕位置、价格、合同节奏与入住体验，为学生提供更真实、更清晰也更靠谱的订房支持。</p>
-      </div>
+      <div class="partners-shell">
+        <div class="section-heading centered partners-heading">
+          <span class="partners-badge" data-i18n="partnersBadge">INDUSTRY PARTNERS</span>
+          <h2 data-i18n="partnersTitle">与诺丁汉主流学生公寓集团保持长期合作</h2>
+          <p data-i18n="partnersIntro">长期对接主流学生公寓资源，让订房信息、合作渠道与入住支持都更稳定、更透明，也更适合留学生真实使用场景。</p>
+        </div>
 
-      <div class="partners-grid" aria-label="student accommodation partners">
-        <article class="partner-logo-card partner-logo-wide">
-          <img src="./img/student accommodation/屏幕截图 2026-03-10 102217.png" alt="iQ Student Accommodation">
-        </article>
-        <article class="partner-logo-card partner-logo-fresh">
-          <img src="./img/student accommodation/屏幕截图 2026-03-10 102359.png" alt="Fresh">
-        </article>
-        <article class="partner-logo-card partner-logo-square">
-          <img src="./img/student accommodation/屏幕截图 2026-03-10 102442.png" alt="Mezzino">
-        </article>
-        <article class="partner-logo-card partner-logo-square">
-          <img src="./img/student accommodation/屏幕截图 2026-03-10 102542.png" alt="Study Inn">
-        </article>
-        <article class="partner-logo-card partner-logo-homes">
-          <img src="./img/student accommodation/屏幕截图 2026-03-10 102725.png" alt="Homes for Students">
-        </article>
-        <article class="partner-logo-card partner-logo-true">
-          <img src="./img/student accommodation/屏幕截图 2026-03-10 102805.png" alt="true Student">
-        </article>
+        <div class="partners-marquee" aria-label="student accommodation partners">
+          <div class="partners-track">
+          <div class="partner-logo partner-logo-roost" aria-label="Student Roost">
+            <span class="partner-wordmark partner-wordmark-stack">
+              <span>STUDENT</span>
+              <strong>ROOST</strong>
+            </span>
+          </div>
+          <div class="partner-logo partner-logo-unite" aria-label="Unite Students">
+            <span class="partner-wordmark partner-wordmark-stack">
+              <strong>UNITE</strong>
+              <strong>STUDENTS</strong>
+            </span>
+          </div>
+          <div class="partner-logo partner-logo-fresh" aria-label="Fresh">
+            <span class="partner-wordmark partner-wordmark-fresh">Fresh.</span>
+          </div>
+          <div class="partner-logo partner-logo-hello" aria-label="Hello Student">
+            <span class="partner-wordmark partner-wordmark-stack partner-wordmark-hello">
+              <strong>HELLO</strong>
+              <strong>STUDENT</strong>
+            </span>
+          </div>
+          <div class="partner-logo partner-logo-mezzino" aria-label="Mezzino">
+            <span class="partner-wordmark partner-wordmark-mezzino">MEZZINO</span>
+          </div>
+          <div class="partner-logo partner-logo-prestige" aria-label="Prestige Student Living">
+            <span class="partner-wordmark partner-wordmark-stack partner-wordmark-prestige">
+              <strong>PRESTIGE</strong>
+              <span>student living</span>
+            </span>
+          </div>
+          <div class="partner-logo partner-logo-homes" aria-label="Homes for Students">
+            <span class="partner-wordmark partner-wordmark-stack partner-wordmark-homes">
+              <strong>Homes</strong>
+              <strong>for Students</strong>
+            </span>
+          </div>
+          <div class="partner-logo partner-logo-roost" aria-label="Student Roost">
+            <span class="partner-wordmark partner-wordmark-stack">
+              <span>STUDENT</span>
+              <strong>ROOST</strong>
+            </span>
+          </div>
+          <div class="partner-logo partner-logo-unite" aria-label="Unite Students">
+            <span class="partner-wordmark partner-wordmark-stack">
+              <strong>UNITE</strong>
+              <strong>STUDENTS</strong>
+            </span>
+          </div>
+          <div class="partner-logo partner-logo-fresh" aria-label="Fresh">
+            <span class="partner-wordmark partner-wordmark-fresh">Fresh.</span>
+          </div>
+          <div class="partner-logo partner-logo-hello" aria-label="Hello Student">
+            <span class="partner-wordmark partner-wordmark-stack partner-wordmark-hello">
+              <strong>HELLO</strong>
+              <strong>STUDENT</strong>
+            </span>
+          </div>
+          <div class="partner-logo partner-logo-mezzino" aria-label="Mezzino">
+            <span class="partner-wordmark partner-wordmark-mezzino">MEZZINO</span>
+          </div>
+          <div class="partner-logo partner-logo-prestige" aria-label="Prestige Student Living">
+            <span class="partner-wordmark partner-wordmark-stack partner-wordmark-prestige">
+              <strong>PRESTIGE</strong>
+              <span>student living</span>
+            </span>
+          </div>
+        </div>
+      </div>
       </div>
     </section>
 
@@ -208,7 +272,7 @@
         <article class="extra-benefit-card">
           <span class="extra-benefit-icon">02</span>
           <h3 data-i18n="extra2Title">免费出行福利</h3>
-          <p data-i18n="extra2Text">除了伦敦和巴斯，也会根据时间安排组织比斯特等地的免费或福利价出行活动。</p>
+          <p data-i18n="extra2Text">除了伦敦和巴斯，也会根据时间安排继续组织比斯特等热门地点的免费或福利价出行活动；后续如果还有更多想去的地方，也会尽量安排进去。</p>
         </article>
         <article class="extra-benefit-card">
           <span class="extra-benefit-icon">03</span>
@@ -228,7 +292,7 @@
         <article class="extra-benefit-card">
           <span class="extra-benefit-icon">06</span>
           <h3 data-i18n="extra6Title">毕业与换房阶段关怀</h3>
-          <p data-i18n="extra6Text">从换房到毕业离开，我们希望把支持延续到更后面的阶段，让每个节点都更顺一点。</p>
+          <p data-i18n="extra6Text">从换房、续租到毕业离开，我们都希望把支持继续延续下去，让同学在后期这些关键阶段也有人可以随时沟通和求助。</p>
         </article>
       </div>
     </section>
@@ -246,18 +310,65 @@
         </p>
       </div>
 
-      <div class="story-collage" aria-hidden="true">
-        <article class="collage-card collage-photo collage-photo-a">
-          <div class="card-label" data-i18n="collage1">订房咨询</div>
+      <div class="story-collage business-collage" id="business">
+        <article class="collage-card business-card business-card-booking">
+          <div class="card-label" data-i18n="business1Title">订房服务</div>
+          <p data-i18n="business1Text">围绕预算、区域、合同节奏和公寓差异，提供更清晰的订房咨询与匹配建议。</p>
         </article>
-        <article class="collage-card collage-illustration collage-illustration-a">
-          <div class="card-label" data-i18n="collage2">会员服务</div>
+        <article class="collage-card business-card business-card-storage">
+          <div class="card-label" data-i18n="business2Title">寄存服务</div>
+          <p data-i18n="business2Text">提供暑期和换房阶段的本地寄存服务，订房会员可享对应免费权益。</p>
         </article>
-        <article class="collage-card collage-illustration collage-illustration-b">
-          <div class="card-label" data-i18n="collage3">透明价格</div>
+        <article class="collage-card business-card business-card-pickup">
+          <div class="card-label" data-i18n="business3Title">接机服务</div>
+          <p data-i18n="business3Text">支持开学季机场接送和落地衔接，订房会员可在权益内免费选择。</p>
+          <a class="business-card-link" href="./pickup.html" data-i18n="pickupHeroBtn2">查看接机价格</a>
         </article>
-        <article class="collage-card collage-photo collage-photo-b">
-          <div class="card-label" data-i18n="collage4">本地跟进</div>
+        <article class="collage-card business-card business-card-visa">
+          <div class="card-label" data-i18n="business4Title">签证与其他协助</div>
+          <p data-i18n="business4Text">除订房外，也承接签证、本地协助等其他收费业务，让服务更完整。</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section campus-section" id="campus">
+      <div class="section-heading">
+        <p class="eyebrow" data-i18n="campusEyebrow">服务诺丁汉·尤其懂 UoN</p>
+        <h2 data-i18n="campusTitle">同样是 UoN，不同校区的课程分布和日常节奏其实很不一样。</h2>
+        <p data-i18n="campusIntro">我们更希望先把校区差异讲清楚。不同专业常去的校区、日常通勤的方式、课程安排的集中度，都会影响同学对生活节奏和订房判断的理解。</p>
+      </div>
+
+      <div class="campus-grid">
+        <article class="campus-card">
+          <a class="campus-image" href="https://www.nottingham.ac.uk/sharedresources/documents/mapuniversitypark.pdf" target="_blank" rel="noreferrer">
+            <img src="./img/UNO MAP/Park campus.png" alt="University Park campus">
+            <span class="campus-tag" data-i18n="campusParkTag">#主校区 #UoN_Park</span>
+          </a>
+          <div class="campus-copy">
+            <h3 data-i18n="campusParkTitle">University Park</h3>
+            <p data-i18n="campusParkText">University Park 更接近很多同学理解里的主校区节奏，像电子电气、物理、化学等工科方向，日常课程和校园动线更多会围绕这边展开。主校区体量更大，教学楼和日常活动空间也更分散，所以大家通常会更在意课程节奏、校园范围和往返时间的适应感。</p>
+            <ul class="campus-points">
+              <li data-i18n="campusParkPoint1">更偏向电子电气、物理、化学等工科方向的课程节奏</li>
+              <li data-i18n="campusParkPoint2">主校区范围更大，更需要提前理解日常动线和通勤感受</li>
+            </ul>
+            <a class="button button-outline campus-button" href="https://www.nottingham.ac.uk/sharedresources/documents/mapuniversitypark.pdf" target="_blank" rel="noreferrer" data-i18n="campusBtn">查看校区地图</a>
+          </div>
+        </article>
+
+        <article class="campus-card">
+          <a class="campus-image" href="https://www.nottingham.ac.uk/sharedresources/documents/mapjubileecampus.pdf" target="_blank" rel="noreferrer">
+            <img src="./img/UNO MAP/Jubliee campus.png" alt="Jubilee Campus">
+            <span class="campus-tag" data-i18n="campusJubileeTag">#商学院 #计算机 #Jubilee</span>
+          </a>
+          <div class="campus-copy">
+            <h3 data-i18n="campusJubileeTitle">Jubilee Campus</h3>
+            <p data-i18n="campusJubileeText">Jubilee Campus 对很多同学来说会更偏向商科和部分文科方向，像经济、金融、管理，以及教学、语言学等专业更容易和这边联系在一起。相较于主校区，不少同学会觉得这边的课程压力没有那么大，整体节奏也更轻松一些，所以很多人会更倾向住在市中心，再根据自己的课程安排来往返校区。</p>
+            <ul class="campus-points">
+              <li data-i18n="campusJubileePoint1">更偏向经济、金融、管理，以及教学、语言学等方向</li>
+              <li data-i18n="campusJubileePoint2">不少同学更倾向住在市中心，再按课程安排往返校区</li>
+            </ul>
+            <a class="button button-outline campus-button campus-button-gold" href="https://www.nottingham.ac.uk/sharedresources/documents/mapjubileecampus.pdf" target="_blank" rel="noreferrer" data-i18n="campusBtn">查看校区地图</a>
+          </div>
         </article>
       </div>
     </section>
@@ -364,7 +475,7 @@
           <ul class="values-list">
             <li>
               <strong data-i18n="value1Title">订房后持续跟进</strong>
-              <span data-i18n="value1Text">同学从订房开始进入会员服务，后续入住、换房到毕业阶段都尽量保持有人跟进。</span>
+              <span data-i18n="value1Text">同学从订房开始进入会员服务，到达英国后、正式入住、换房到毕业阶段，我们都会尽最大程度保持有人持续跟进。</span>
             </li>
             <li>
               <strong data-i18n="value2Title">本地响应</strong>
@@ -379,7 +490,7 @@
 
         <aside class="values-cta">
           <h3 data-i18n="memberCtaTitle">成为订房会员</h3>
-          <p data-i18n="memberCtaText">通过我们订房后可进入订房会员体系，享受四选一服务、价格同步官方活动以及日常事项持续跟进。</p>
+          <p data-i18n="memberCtaText">通过我们订房后可进入订房会员体系，享受四选一服务、价格同步官方活动，以及到达英国后尽量持续不断开的本地跟进。</p>
           <div class="stats-grid">
             <div class="stat-box">
               <strong>£500+</strong>
@@ -404,13 +515,13 @@
       <div class="outlook-panel">
         <div class="outlook-copy">
           <p class="eyebrow" data-i18n="outlookEyebrow">品牌介绍</p>
-          <h2 data-i18n="outlookTitle">从订房开始，把诺丁汉的留学生活接得更完整</h2>
-          <p data-i18n="outlookText1">左邻右里立足诺丁汉，长期围绕中国留学生的租房、订房和本地生活需求提供支持。我们希望把看似分散的事项串联起来，让学生从咨询、预订、入住到后续适应都能少走一些弯路，也让家长在远距离了解孩子留学生活时能更放心一些。对很多留学生来说，真正困难的往往不只是“找到一个房子”，而是如何在信息复杂、节奏紧张、经验不足的情况下，做出更稳妥的判断。</p>
-          <p data-i18n="outlookText2">对我们来说，订房从来不是一笔单独完成的交易，而是很多后续事情的开始。公寓选择、入住衔接、返现同步、节日活动、免费出行、本地答疑、换房与毕业阶段的帮助，都是学生真正会遇到的现实需求。我们希望把这些支持逐步做得更完整，让服务不只体现在“帮你订到房”，也体现在“帮你把后面的生活接住”。未来我们也会继续把资源做深、把流程做细、把服务做稳，让每一位来到诺丁汉的同学都能在关键节点得到更及时、更可靠的支持。</p>
+          <h2 data-i18n="outlookTitle">从订房开始，把英国的留学生活接得更完整</h2>
+          <p data-i18n="outlookText1">左邻右里立足英国，长期围绕中国留学生的租房、订房和本地生活需求提供支持。我们希望把看似分散的事项串联起来，让学生从咨询、预订、入住到后续适应都能少走一些弯路，也让家长在远距离了解孩子留学生活时能更放心一些。对很多留学生来说，真正困难的往往不只是“找到一个房子”，而是如何在信息复杂、节奏紧张、经验不足的情况下，做出更稳妥的判断。</p>
+          <p data-i18n="outlookText2">对我们来说，订房从来不是一笔单独完成的交易，而是很多后续事情的开始。公寓选择、入住衔接、返现同步、节日活动、免费出行、本地答疑、换房与毕业阶段的帮助，都是学生真正会遇到的现实需求。我们希望把这些支持逐步做得更完整，让服务不只体现在“帮你订到房”，也体现在“帮你把后面的生活接住”。未来我们也会继续把资源做深、把流程做细、把服务做稳，让每一位来到英国的同学都能在关键节点得到更及时、更可靠的支持。</p>
         </div>
         <div class="outlook-quote">
           <strong data-i18n="outlookQuoteTitle">公司展望</strong>
-          <p data-i18n="outlookQuoteText">未来，我们会继续深耕诺丁汉本地主流公寓资源，把每一类公寓的定位、适合人群、合同节奏、价格变化和常见问题梳理得更清楚，让同学在做选择时不只是“看到房源”，而是真正看懂差异。与此同时，我们也会继续提升团队响应效率，把咨询、订房、返现同步、入住衔接、售后跟进、本地答疑和节日活动之间的服务链路做得更完整，让支持不只停留在某一个节点，而是覆盖学生来到诺丁汉后的更长周期。除了订房本身，我们也希望把更多贴近真实生活的福利与陪伴持续做下去，包括节日活动、免费出行、本地互助、换房协助、毕业阶段支持以及更多能够提升留学体验的细节服务。我们希望左邻右里不仅是一个能帮学生订房的团队，更是一个在关键时刻值得被信任、在重要阶段愿意长期负责、真正理解学生和家长顾虑的本地服务品牌。</p>
+          <p data-i18n="outlookQuoteText">未来，我们会继续深耕英国本地主流公寓资源，把每一类公寓的定位、适合人群、合同节奏、价格变化和常见问题梳理得更清楚，让同学在做选择时不只是“看到房源”，而是真正看懂差异。与此同时，我们也会继续提升团队响应效率，把咨询、订房、返现同步、入住衔接、售后跟进、本地答疑和节日活动之间的服务链路做得更完整，让支持不只停留在某一个节点，而是覆盖学生来到英国后的更长周期。除了订房本身，我们也希望把更多贴近真实生活的福利与陪伴持续做下去，包括节日活动、免费出行、本地互助、换房协助、毕业阶段支持以及更多能够提升留学体验的细节服务。我们希望左邻右里不仅是一个能帮学生订房的团队，更是一个在关键时刻值得被信任、在重要阶段愿意长期负责、真正理解学生和家长顾虑的本地服务品牌。</p>
         </div>
       </div>
     </section>
@@ -426,6 +537,10 @@
     <p data-i18n="footerText">面向诺丁汉留学生的本地订房与租房服务团队</p>
     <small id="footer-year"></small>
   </footer>
+
+  <button class="floating-menu-button" type="button" data-menu-toggle>
+    <span data-i18n="navMenu">Menu</span>
+  </button>
 
   <script src="./script.js"></script>
 </body>
