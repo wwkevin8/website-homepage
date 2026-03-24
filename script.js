@@ -170,15 +170,15 @@
     box5Note: "适合日用品与小件物品",
     box6Note: "适合非常小件寄存",
     storageCalcTitle: "非会员价格计算器",
-    storageCalcIntro: "输入箱型、箱数、日期、取件方式和送还方式，系统会自动估算寄存天数、折扣、取送费用、上楼服务费和超重加费。",
-    calcBoxType: "箱型",
+    storageCalcIntro: "输入各箱型数量、日期、取件方式和送还方式后，系统会分别计算寄存费、购箱费、折扣和附加费用。",
+    calcBoxCounts: "各箱型数量",
+    calcBoxCountHelp: "至少填写一种箱型数量后才能计算。",
     calcBox1: "1 号箱",
     calcBox2: "2 号箱",
     calcBox3: "3 号箱",
     calcBox4: "4 号箱",
     calcBox5: "5 号箱",
     calcBox6: "6 号箱",
-    calcBoxCount: "箱数",
     calcStartDate: "开始日期",
     calcEndDate: "结束日期",
     calcPickupMethod: "取件方式",
@@ -190,31 +190,38 @@
     calcAccessStairs: "楼梯房上楼服务",
     calcWeight: "单箱重量",
     calcWeightMaxHint: "单箱重量不能超过30kg",
+    calcPurchaseBoxes: "是否需要购买箱子",
+    calcPurchaseBoxesYes: "是",
+    calcPurchaseBoxesNo: "否",
     calcReturnType: "送还方式",
     calcReturnLocal: "诺丁汉当地寄存送还",
     calcReturnEngland: "送往英国其他城市（英格兰）",
     calcReturnScotland: "送往苏格兰地区",
     calcSubmit: "更新估算",
     calcResultTitle: "费用估算结果",
+    resultBoxTotal: "总箱数",
     resultDays: "寄存天数",
     resultBase: "折后寄存费",
     resultDiscount: "折扣系数",
     resultPickup: "上门取件费",
     resultDelivery: "送货费",
-    resultDeliveryStatus: "是否免费送货",
     resultAccess: "上楼服务费",
     resultOverweight: "超重加费",
+    resultPurchase: "购箱费",
     resultMinimum: "最低消费修正",
     resultTotal: "预计总价",
+    resultBreakdownTitle: "订单明细",
+    resultBreakdownEmpty: "填写箱型数量后会在这里显示各箱型寄存费与购箱费明细。",
+    resultBreakdownEmptyInvalid: "当前未填写有效箱型数量，暂无订单明细。",
+    resultBreakdownStorage: "寄存费",
+    resultBreakdownPurchase: "购箱费",
     resultOtherCityTitle: "英国其他城市转运说明",
     resultOtherCityText: "外地转运费用未自动计入预计总价。通常使用皇家邮局或 DPD，一般 2 个工作日送达；建议优先使用 1 / 2 / 3 号箱，10kg 内 £10，10–30kg £15，特殊物品需联系客服确认。",
     resultOtherCityTextScotland: "外地转运费用未自动计入预计总价。通常使用皇家邮局或 DPD，一般 2 个工作日送达；建议优先使用 1 / 2 / 3 号箱，10kg 内 £10，10–30kg £15，苏格兰地区另加 £5，特殊物品需联系客服确认。",
-    calcStatusFree: "免费",
-    calcStatusCharged: "不免费",
-    calcStatusIncluded: "按规则包含",
     calcBlockedTotal: "不可计算",
     calcNoteDefault: "选择日期、取件方式和送还方式后即可自动看到寄存天数、折扣、费用项和超重说明。",
     calcNoteDateMissing: "请先选择有效的开始日期和结束日期。",
+    calcNoteNoBoxes: "当前所有箱型数量均为 0，请至少填写一个大于 0 的数量后再计算。",
     calcNoteShort: "30 天内按短期寄存处理：1 箱最低 £20，多箱最低 £30，并加收每箱 £2 取件费和 £2 送货费。",
     calcNoteLong: "30 天以上按长期寄存处理，本地上门取件和本地送货按当前规则视为免费。",
     calcNoteLiftFree: "当前天数达到 100 天以上，电梯房上楼服务免费。",
@@ -226,13 +233,13 @@
     calcNoteOtherCity: "若需送往英国其他城市，外地转运费用需单独核算，当前预计总价未包含该部分。",
     calcNoteOtherCityScotland: "若需送往苏格兰地区，外地转运费用需单独核算，当前预计总价未包含该部分。",
     example1Title: "示例：5 月 1 日 -> 5 月 15 日",
-    example1Text: "1 箱共 14 天，短期寄存基础费不足 £20 时按 £20 起算，再加 £2 取件费和 £2 送货费。",
+    example1Text: "1 号箱 1 个，14 天。原始寄存费 £9.8，不足 1 箱最低 £20 时按 £20 起算，再加 £2 上门取件费和 £2 送货费。",
     example2Title: "示例：5 月 1 日 -> 5 月 6 日",
-    example2Text: "5 箱共 5 天，基础费不足 £30 时按 £30 起算，再加 £10 取件费和 £10 送货费。",
-    example3Title: "示例：5 月 1 日 -> 5 月 11 日",
-    example3Text: "10 箱共 10 天，10 × £0.7 × 10 = £70，再加 £20 取件费和 £20 送货费，总价 £110。",
+    example2Text: "1 号箱 2 个 + 4 号箱 3 个，共 5 箱 5 天。原始寄存费分别计算后汇总为 £14.5，不足多箱最低 £30 时按 £30 起算，再加 £10 上门取件费和 £10 送货费。",
+    example3Title: "示例：需要购买箱子",
+    example3Text: "若勾选需要购买箱子，系统会按各箱型箱价分别计算购箱费，并在折后寄存费、取件费、送货费之后单独加入总价。",
     example4Title: "示例：5 月 1 日 -> 9 月 20 日",
-    example4Text: "系统会自动计算总天数、折扣档位，以及 100 天以上的上楼费规则变化。",
+    example4Text: "系统会自动计算总天数、折扣档位、超重周数，以及 100 天以上电梯房上楼服务免费的规则变化。",
     storageRulesTitle: "规则与注意事项",
     storageRulesIntro: "以下规则不全部进入自动计算器，但会影响最终收费，请寄存前与我们确认。",
     ruleShortTitle: "短期寄存规则",
@@ -454,15 +461,15 @@
     box5Note: "Suitable for daily essentials and smaller items",
     box6Note: "Best for very small items",
     storageCalcTitle: "Non-member Price Calculator",
-    storageCalcIntro: "Enter the box type, quantity, start date and end date. The calculator will estimate storage days, discount, pickup and delivery status, upstairs handling and overweight charges automatically.",
-    calcBoxType: "Box Type",
+    storageCalcIntro: "Enter quantities for each box type, dates, collection method and return method. The calculator will estimate storage fees, box purchase fees, discounts and extra charges separately.",
+    calcBoxCounts: "Box Quantities by Type",
+    calcBoxCountHelp: "At least one box type quantity must be greater than 0 before calculation.",
     calcBox1: "Box 1",
     calcBox2: "Box 2",
     calcBox3: "Box 3",
     calcBox4: "Box 4",
     calcBox5: "Box 5",
     calcBox6: "Box 6",
-    calcBoxCount: "Box Quantity",
     calcStartDate: "Start Date",
     calcEndDate: "End Date",
     calcPickupMethod: "Collection Method",
@@ -474,31 +481,38 @@
     calcAccessStairs: "Stair Building Upstairs Service",
     calcWeight: "Weight Per Box",
     calcWeightMaxHint: "A single box cannot exceed 30kg",
+    calcPurchaseBoxes: "Need to Buy Boxes?",
+    calcPurchaseBoxesYes: "Yes",
+    calcPurchaseBoxesNo: "No",
     calcReturnType: "Return Method",
     calcReturnLocal: "Local return in Nottingham",
     calcReturnEngland: "Forward to another UK city (England)",
     calcReturnScotland: "Forward to Scotland",
     calcSubmit: "Update Estimate",
     calcResultTitle: "Estimated Cost",
+    resultBoxTotal: "Total Boxes",
     resultDays: "Storage Days",
     resultBase: "Discounted Storage",
     resultDiscount: "Discount Factor",
     resultPickup: "Home Collection Fee",
     resultDelivery: "Delivery Fee",
-    resultDeliveryStatus: "Return Delivery Free?",
     resultAccess: "Upstairs Service Fee",
     resultOverweight: "Overweight Charge",
+    resultPurchase: "Box Purchase Fee",
     resultMinimum: "Minimum Charge Adjustment",
     resultTotal: "Estimated Total",
+    resultBreakdownTitle: "Order Breakdown",
+    resultBreakdownEmpty: "Box quantity details will appear here once at least one box type is filled in.",
+    resultBreakdownEmptyInvalid: "No valid box quantity has been entered yet, so there is no order breakdown to show.",
+    resultBreakdownStorage: "Storage",
+    resultBreakdownPurchase: "Box Purchase",
     resultOtherCityTitle: "Other UK city forwarding",
     resultOtherCityText: "Forwarding is not included in the estimated total automatically. We usually use Royal Mail or DPD, delivery is often around 2 working days, and lighter 1 / 2 / 3 boxes are recommended. Rates are £10 up to 10kg and £15 for 10–30kg. Special items need a manual quote.",
     resultOtherCityTextScotland: "Forwarding is not included in the estimated total automatically. We usually use Royal Mail or DPD, delivery is often around 2 working days, and lighter 1 / 2 / 3 boxes are recommended. Rates are £10 up to 10kg and £15 for 10–30kg, plus £5 for Scotland. Special items need a manual quote.",
-    calcStatusFree: "Free",
-    calcStatusCharged: "Charged",
-    calcStatusIncluded: "Included",
     calcBlockedTotal: "Not available",
     calcNoteDefault: "Choose valid dates, collection method and return method to see storage days, discounts, fee items and overweight notes automatically.",
     calcNoteDateMissing: "Please choose a valid start date and end date first.",
+    calcNoteNoBoxes: "All box quantities are currently 0. Please enter at least one quantity greater than 0 before calculating.",
     calcNoteShort: "Storage within 30 days follows short-term rules: 1 box starts from £20, multiple boxes start from £30, plus £2 collection and £2 return delivery per box.",
     calcNoteLong: "Storage above 30 days follows long-term rules. Local collection and local return delivery are treated as free under the current guidance.",
     calcNoteLiftFree: "At 100 days or above, upstairs service in lift buildings becomes free.",
@@ -510,11 +524,11 @@
     calcNoteOtherCity: "Forwarding to another UK city is not included in the estimated total and should be confirmed manually.",
     calcNoteOtherCityScotland: "Forwarding to Scotland is not included in the estimated total and should be confirmed manually.",
     example1Title: "Example: May 1 -> May 15",
-    example1Text: "1 box for 14 days. If the short-term base is below £20, it starts from £20, then adds £2 collection and £2 return delivery.",
+    example1Text: "1 Box 1 for 14 days. The raw storage fee is £9.8, but one-box short-term storage starts from £20, then adds £2 collection and £2 return delivery.",
     example2Title: "Example: May 1 -> May 6",
-    example2Text: "5 boxes for 5 days. If the base is below £30, it starts from £30, then adds £10 collection and £10 return delivery.",
-    example3Title: "Example: May 1 -> May 11",
-    example3Text: "10 boxes for 10 days. 10 × £0.7 × 10 = £70, plus £20 collection and £20 return delivery, total £110.",
+    example2Text: "2 Box 1 + 3 Box 4 for 5 days. Storage is calculated separately by box type and totals £14.5, then short-term minimum £30 applies, plus £10 collection and £10 return delivery.",
+    example3Title: "Example: Buying Boxes",
+    example3Text: "If you select \"Yes\" for buying boxes, each box type is charged at its own box price and added separately after the discounted storage fee.",
     example4Title: "Example: May 1 -> Sep 20",
     example4Text: "The calculator will automatically show total days, discount tier and the upstairs handling change after 100 days.",
     storageRulesTitle: "Rules and Important Notes",
@@ -869,13 +883,13 @@ Object.assign(translations.en, {
   pickupBrandText: "NGN is a locally registered Chinese service company based in Nottingham. Pickup, carpools, storage, accommodation booking and other local support all grew from real student needs. We want these arrangements to stay clear, steady and practical, so students can find a reliable and trustworthy solution quickly when it matters."
 });
 
-const storageBoxRates = {
-  "1": 0.7,
-  "2": 0.7,
-  "3": 0.6,
-  "4": 0.5,
-  "5": 0.4,
-  "6": 0.3
+const storageBoxCatalog = {
+  "1": { dailyRate: 0.7, buyPrice: 5, labelKey: "calcBox1" },
+  "2": { dailyRate: 0.7, buyPrice: 5, labelKey: "calcBox2" },
+  "3": { dailyRate: 0.6, buyPrice: 4, labelKey: "calcBox3" },
+  "4": { dailyRate: 0.5, buyPrice: 3, labelKey: "calcBox4" },
+  "5": { dailyRate: 0.4, buyPrice: 2, labelKey: "calcBox5" },
+  "6": { dailyRate: 0.3, buyPrice: 1, labelKey: "calcBox6" }
 };
 
 function getPageKey() {
@@ -940,35 +954,6 @@ function getMetaContent(page, lang) {
   };
 }
 
-function calculateStorageCost(boxType, boxCount, days) {
-  const dailyRate = storageBoxRates[boxType] || 0;
-  const base = dailyRate * boxCount * days;
-
-  let discount = 1;
-  if (days >= 200) {
-    discount = 0.35;
-  } else if (days >= 100) {
-    discount = 0.4;
-  } else if (days >= 75) {
-    discount = 0.45;
-  } else if (days >= 60) {
-    discount = 0.5;
-  } else if (days >= 45) {
-    discount = 0.6;
-  } else if (days >= 35) {
-    discount = 0.7;
-  } else if (days >= 25) {
-    discount = 0.8;
-  } else if (days >= 15) {
-    discount = 0.9;
-  }
-
-  return {
-    base,
-    discount
-  };
-}
-
 function getStorageDays(startDate, endDate) {
   if (!startDate || !endDate) {
     return 0;
@@ -985,8 +970,69 @@ function getStorageDays(startDate, endDate) {
   return Math.round(diff / 86400000);
 }
 
-function getStorageEffectiveBoxCount(boxCount) {
-  return boxCount;
+function getStorageDiscount(days) {
+  if (days >= 200) {
+    return 0.35;
+  }
+  if (days >= 100) {
+    return 0.4;
+  }
+  if (days >= 75) {
+    return 0.45;
+  }
+  if (days >= 60) {
+    return 0.5;
+  }
+  if (days >= 45) {
+    return 0.6;
+  }
+  if (days >= 35) {
+    return 0.7;
+  }
+  if (days >= 25) {
+    return 0.8;
+  }
+  if (days >= 15) {
+    return 0.9;
+  }
+  return 1;
+}
+
+function getStorageOrderBoxCount(boxCounts) {
+  return Object.values(boxCounts).reduce((sum, value) => sum + value, 0);
+}
+
+function getStorageLineItems(boxCounts, days, purchaseBoxes) {
+  const items = [];
+  let rawStorageTotal = 0;
+  let purchaseTotal = 0;
+
+  Object.entries(storageBoxCatalog).forEach(([boxType, boxInfo]) => {
+    const quantity = Math.max(0, boxCounts[boxType] || 0);
+    if (quantity <= 0) {
+      return;
+    }
+
+    const rawStorage = quantity * boxInfo.dailyRate * days;
+    const purchase = purchaseBoxes ? quantity * boxInfo.buyPrice : 0;
+
+    rawStorageTotal += rawStorage;
+    purchaseTotal += purchase;
+
+    items.push({
+      boxType,
+      labelKey: boxInfo.labelKey,
+      quantity,
+      rawStorage,
+      purchase
+    });
+  });
+
+  return {
+    items,
+    rawStorageTotal,
+    purchaseTotal
+  };
 }
 
 function getStorageWeeklyOverweight(boxCount, weight, days) {
@@ -1011,23 +1057,24 @@ function getAccessFee(accessType, boxCount, days) {
 }
 
 function calculateStorageEstimate({
-  boxType,
-  boxCount,
+  boxCounts,
   startDate,
   endDate,
   pickupMethod,
   accessType,
   boxWeight,
-  returnType
+  returnType,
+  purchaseBoxes
 }) {
   const days = getStorageDays(startDate, endDate);
-  const billableBoxes = getStorageEffectiveBoxCount(boxCount);
-  const { base, discount } = calculateStorageCost(boxType, billableBoxes, days);
-  const discountedBase = base * discount;
+  const totalBoxes = getStorageOrderBoxCount(boxCounts);
+  const discount = getStorageDiscount(days);
+  const { items, rawStorageTotal, purchaseTotal } = getStorageLineItems(boxCounts, days, purchaseBoxes);
+  const discountedBase = rawStorageTotal * discount;
   let pickup = 0;
   let delivery = 0;
-  let accessFee = pickupMethod === "home" ? getAccessFee(accessType, billableBoxes, days) : 0;
-  let overweightFee = getStorageWeeklyOverweight(boxCount, boxWeight, days);
+  let accessFee = pickupMethod === "home" ? getAccessFee(accessType, totalBoxes, days) : 0;
+  let overweightFee = getStorageWeeklyOverweight(totalBoxes, boxWeight, days);
   let minimumAdjustment = 0;
   let total = 0;
   const notes = [];
@@ -1036,12 +1083,15 @@ function calculateStorageEstimate({
     return {
       days: 0,
       blocked: false,
-      base: 0,
+      boxCounts,
+      totalBoxes,
+      items: [],
+      rawStorageTotal: 0,
       discount: 1,
       discountedBase: 0,
+      purchaseTotal: 0,
       pickup: 0,
       delivery: 0,
-      deliveryStatus: "calcStatusIncluded",
       accessFee: 0,
       overweightFee: 0,
       minimumAdjustment: 0,
@@ -1055,14 +1105,16 @@ function calculateStorageEstimate({
     return {
       days,
       blocked: true,
+      boxCounts,
+      totalBoxes,
+      items,
       pickupMethod,
-      billableBoxes,
-      base: 0,
+      rawStorageTotal: 0,
       discount: 1,
       discountedBase: 0,
+      purchaseTotal: 0,
       pickup: 0,
       delivery: 0,
-      deliveryStatus: "calcStatusIncluded",
       accessFee: 0,
       overweightFee: 0,
       minimumAdjustment: 0,
@@ -1072,16 +1124,39 @@ function calculateStorageEstimate({
     };
   }
 
+  if (totalBoxes <= 0) {
+    return {
+      days,
+      blocked: true,
+      boxCounts,
+      totalBoxes: 0,
+      items: [],
+      pickupMethod,
+      rawStorageTotal: 0,
+      discount,
+      discountedBase: 0,
+      purchaseTotal: 0,
+      pickup: 0,
+      delivery: 0,
+      accessFee: 0,
+      overweightFee: 0,
+      minimumAdjustment: 0,
+      total: null,
+      otherCityMessageKey: returnType === "scotland" ? "resultOtherCityTextScotland" : "resultOtherCityText",
+      notes: ["calcNoteNoBoxes"]
+    };
+  }
+
   if (days <= 30) {
-    pickup = pickupMethod === "home" ? billableBoxes * 2 : 0;
-    delivery = billableBoxes * 2;
-    const minimum = billableBoxes === 1 ? 20 : 30;
+    pickup = pickupMethod === "home" ? totalBoxes * 2 : 0;
+    delivery = returnType === "local" ? totalBoxes * 2 : 0;
+    const minimum = totalBoxes === 1 ? 20 : 30;
     const adjustedBase = Math.max(discountedBase, minimum);
     minimumAdjustment = adjustedBase - discountedBase;
-    total = adjustedBase + pickup + delivery + accessFee + overweightFee;
+    total = adjustedBase + purchaseTotal + pickup + delivery + accessFee + overweightFee;
     notes.push("calcNoteShort");
   } else {
-    total = discountedBase + accessFee + overweightFee;
+    total = discountedBase + purchaseTotal + accessFee + overweightFee;
     notes.push("calcNoteLong");
   }
 
@@ -1112,14 +1187,16 @@ function calculateStorageEstimate({
   return {
     days,
     blocked: false,
+    boxCounts,
+    totalBoxes,
+    items,
     pickupMethod,
-    billableBoxes,
-    base,
+    rawStorageTotal,
     discount,
     discountedBase,
+    purchaseTotal,
     pickup,
     delivery,
-    deliveryStatus: days > 30 ? "calcStatusFree" : "calcStatusCharged",
     accessFee,
     overweightFee,
     minimumAdjustment,
@@ -1147,30 +1224,33 @@ function initStorageCalculator(activeLang) {
     return;
   }
 
-  const boxTypeInput = document.querySelector("#boxType");
-  const boxCountInput = document.querySelector("#boxCount");
+  const boxCountInputs = Array.from(document.querySelectorAll("[data-box-count]"));
   const startDateInput = document.querySelector("#startDate");
   const endDateInput = document.querySelector("#endDate");
   const pickupMethodInput = document.querySelector("#pickupMethod");
   const pickupAccessField = document.querySelector("#pickupAccessField");
   const pickupAccessInput = document.querySelector("#pickupAccess");
   const boxWeightInput = document.querySelector("#boxWeight");
+  const purchaseBoxesInput = document.querySelector("#purchaseBoxes");
   const returnTypeInput = document.querySelector("#returnType");
+  const resultBoxTotal = document.querySelector("#resultBoxTotal");
   const resultDays = document.querySelector("#resultDays");
   const resultBase = document.querySelector("#resultBase");
   const resultDiscount = document.querySelector("#resultDiscount");
   const resultPickupRow = document.querySelector("#resultPickupRow");
   const resultPickup = document.querySelector("#resultPickup");
   const resultDelivery = document.querySelector("#resultDelivery");
-  const resultDeliveryStatus = document.querySelector("#resultDeliveryStatus");
   const resultAccessRow = document.querySelector("#resultAccessRow");
   const resultAccess = document.querySelector("#resultAccess");
   const resultOverweight = document.querySelector("#resultOverweight");
+  const resultPurchase = document.querySelector("#resultPurchase");
   const resultMinimum = document.querySelector("#resultMinimum");
   const resultTotal = document.querySelector("#resultTotal");
   const resultNote = document.querySelector("#resultNote");
   const resultOtherCityCard = document.querySelector("#resultOtherCityCard");
   const resultOtherCityText = document.querySelector("#resultOtherCityText");
+  const resultBreakdownEmpty = document.querySelector("#resultBreakdownEmpty");
+  const resultBreakdown = document.querySelector("#resultBreakdown");
 
   form.dataset.lang = activeLang;
 
@@ -1240,39 +1320,89 @@ function initStorageCalculator(activeLang) {
     boxWeightInput.setCustomValidity("");
   }
 
+  function getBoxCounts() {
+    return boxCountInputs.reduce((accumulator, input) => {
+      const boxType = input.dataset.boxCount;
+      let quantity = Math.max(0, Math.floor(Number(input.value) || 0));
+      input.value = String(quantity);
+      accumulator[boxType] = quantity;
+      return accumulator;
+    }, {});
+  }
+
+  function renderBreakdown(items, currentLang, emptyKey = "resultBreakdownEmpty") {
+    if (!resultBreakdown || !resultBreakdownEmpty) {
+      return;
+    }
+
+    resultBreakdown.innerHTML = "";
+
+    if (!items.length) {
+      resultBreakdownEmpty.textContent = translations[currentLang][emptyKey];
+      resultBreakdownEmpty.hidden = false;
+      return;
+    }
+
+    resultBreakdownEmpty.textContent = translations[currentLang].resultBreakdownEmpty;
+    resultBreakdownEmpty.hidden = true;
+
+    items.forEach(item => {
+      const block = document.createElement("div");
+      block.className = "result-breakdown-item";
+
+      const heading = document.createElement("div");
+      heading.className = "result-breakdown-head";
+      heading.textContent = `${translations[currentLang][item.labelKey]} × ${item.quantity}`;
+
+      const storageLine = document.createElement("div");
+      storageLine.className = "result-breakdown-meta";
+      storageLine.textContent = `${translations[currentLang].resultBreakdownStorage}: ${formatMoney(item.rawStorage)}`;
+
+      const purchaseLine = document.createElement("div");
+      purchaseLine.className = "result-breakdown-meta";
+      purchaseLine.textContent = `${translations[currentLang].resultBreakdownPurchase}: ${formatMoney(item.purchase)}`;
+
+      block.append(heading, storageLine, purchaseLine);
+      resultBreakdown.appendChild(block);
+    });
+  }
+
   function renderEstimate() {
     const currentLang = form.dataset.lang || activeLang;
-    const boxType = boxTypeInput.value;
-    const boxCount = Math.max(1, Number(boxCountInput.value) || 1);
+    const boxCounts = getBoxCounts();
     const startDate = startDateInput.value;
     const endDate = endDateInput.value;
     const pickupMethod = pickupMethodInput.value;
     const accessType = pickupAccessInput.value;
     syncWeightLimit(false);
     const boxWeight = Math.max(0, Math.round(Number(boxWeightInput.value) || 0));
+    const purchaseBoxes = purchaseBoxesInput.value === "yes";
     const returnType = returnTypeInput.value;
     const estimate = calculateStorageEstimate({
-      boxType,
-      boxCount,
+      boxCounts,
       startDate,
       endDate,
       pickupMethod,
       accessType,
       boxWeight,
-      returnType
+      returnType,
+      purchaseBoxes
     });
+    const noBoxes = estimate.blocked && estimate.totalBoxes === 0;
 
-    resultDays.textContent = String(estimate.days);
-    resultBase.textContent = formatEstimateValue(estimate.discountedBase);
+    resultBoxTotal.textContent = String(estimate.totalBoxes);
+    resultDays.textContent = noBoxes ? "—" : String(estimate.days);
+    resultBase.textContent = noBoxes ? "—" : formatEstimateValue(estimate.discountedBase);
     resultDiscount.textContent = estimate.blocked ? "—" : estimate.discount.toFixed(2);
-    resultPickup.textContent = formatEstimateValue(estimate.pickup);
-    resultDelivery.textContent = formatEstimateValue(estimate.delivery);
-    resultDeliveryStatus.textContent = translations[currentLang][estimate.deliveryStatus];
-    resultAccess.textContent = formatEstimateValue(estimate.accessFee);
-    resultOverweight.textContent = formatEstimateValue(estimate.overweightFee);
-    resultMinimum.textContent = formatEstimateValue(estimate.minimumAdjustment);
+    resultPickup.textContent = noBoxes ? "—" : formatEstimateValue(estimate.pickup);
+    resultDelivery.textContent = noBoxes ? "—" : formatEstimateValue(estimate.delivery);
+    resultAccess.textContent = noBoxes ? "—" : formatEstimateValue(estimate.accessFee);
+    resultOverweight.textContent = noBoxes ? "—" : formatEstimateValue(estimate.overweightFee);
+    resultPurchase.textContent = noBoxes ? "—" : formatEstimateValue(estimate.purchaseTotal);
+    resultMinimum.textContent = noBoxes ? "—" : formatEstimateValue(estimate.minimumAdjustment);
     resultTotal.textContent = estimate.blocked ? translations[currentLang].calcBlockedTotal : formatEstimateValue(estimate.total);
     resultNote.textContent = estimate.notes.map(key => translations[currentLang][key]).join(" ");
+    renderBreakdown(estimate.items, currentLang, noBoxes ? "resultBreakdownEmptyInvalid" : "resultBreakdownEmpty");
 
     if (resultPickupRow) {
       resultPickupRow.hidden = estimate.pickupMethod !== "home";
@@ -1305,13 +1435,13 @@ function initStorageCalculator(activeLang) {
   });
 
   [
-    boxTypeInput,
-    boxCountInput,
+    ...boxCountInputs,
     startDateInput,
     endDateInput,
     pickupMethodInput,
     pickupAccessInput,
     boxWeightInput,
+    purchaseBoxesInput,
     returnTypeInput
   ].forEach(input => {
     input.addEventListener("input", () => {

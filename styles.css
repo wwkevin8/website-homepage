@@ -1677,6 +1677,28 @@ img {
   margin-bottom: 16px;
 }
 
+.field-help {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
+.box-count-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.mini-field {
+  display: grid;
+  gap: 8px;
+}
+
+.mini-field span {
+  font-weight: 600;
+}
+
 .field-check {
   display: flex;
   align-items: center;
@@ -1765,6 +1787,43 @@ img {
   margin: 10px 0 0;
   color: var(--muted);
   line-height: 1.75;
+}
+
+.result-breakdown-card {
+  margin-top: 18px;
+}
+
+.result-breakdown-empty {
+  margin: 10px 0 0;
+}
+
+.result-breakdown-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.result-breakdown-item {
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: var(--surface-muted);
+}
+
+.result-breakdown-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.result-breakdown-meta {
+  display: grid;
+  gap: 4px;
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 0.95rem;
 }
 
 .example-cards {
@@ -2080,6 +2139,10 @@ img {
   .storage-detail-gallery,
   .example-cards {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .box-count-grid {
+    grid-template-columns: 1fr;
   }
 
   .discount-cards {
