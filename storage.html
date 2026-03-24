@@ -109,7 +109,7 @@
             </div>
           </div>
           <div class="pricing-mini-notes">
-            <p data-i18n="heroPricingNote1">短期寄存 30 天内会加收每箱 £2 取货费和 £2 送货费。</p>
+            <p data-i18n="heroPricingNote1">短期寄存 30 天内会加收每箱 £2 取件费和 £2 送货费。</p>
             <p data-i18n="heroPricingNote2">1 个箱子短期寄存最低 £20，多个箱子最低 £30。</p>
           </div>
         </div>
@@ -135,12 +135,12 @@
         <article class="step-card">
           <span>03</span>
           <h3 data-i18n="process3Title">准备箱子并预约时间</h3>
-          <p data-i18n="process3Text">如需购买箱子可提前配送，打包完成后预约取货时间。</p>
+          <p data-i18n="process3Text">如需购买箱子可提前配送，打包完成后预约取件时间。</p>
         </article>
         <article class="step-card">
           <span>04</span>
-          <h3 data-i18n="process4Title">按约定上门取货</h3>
-          <p data-i18n="process4Text">工作人员按约定时间取货；如需上楼搬运会按规则另计费用。</p>
+          <h3 data-i18n="process4Title">按约定上门取件</h3>
+          <p data-i18n="process4Text">工作人员按约定时间上门取件；如需上楼搬运会按规则另计费用。</p>
         </article>
         <article class="step-card">
           <span>05</span>
@@ -246,94 +246,133 @@
 
     <section class="storage-section calculator-section" id="storage-calculator">
       <div class="section-heading">
-        <h2 data-i18n="storageCalcTitle">非会员价格计算器</h2>
-        <p data-i18n="storageCalcIntro">输入箱型、箱数和天数，系统会按当前规则自动估算基础费用、短期加费和折扣后总价。</p>
+        <h2 data-i18n="storageCalcTitle">???????</h2>
+        <p data-i18n="storageCalcIntro">??????????????????????????????????????????????</p>
       </div>
 
       <div class="calculator-layout">
         <form class="calculator-card" id="storageCalculator">
           <label class="field">
-            <span data-i18n="calcBoxType">箱型</span>
+            <span data-i18n="calcBoxType">??</span>
             <select id="boxType">
-              <option value="1" data-i18n="calcBox1">1 号箱</option>
-              <option value="2" data-i18n="calcBox2">2 号箱</option>
-              <option value="3" data-i18n="calcBox3">3 号箱</option>
-              <option value="4" data-i18n="calcBox4">4 号箱</option>
-              <option value="5" data-i18n="calcBox5">5 号箱</option>
-              <option value="6" data-i18n="calcBox6">6 号箱</option>
+              <option value="1" data-i18n="calcBox1">1 ??</option>
+              <option value="2" data-i18n="calcBox2">2 ??</option>
+              <option value="3" data-i18n="calcBox3">3 ??</option>
+              <option value="4" data-i18n="calcBox4">4 ??</option>
+              <option value="5" data-i18n="calcBox5">5 ??</option>
+              <option value="6" data-i18n="calcBox6">6 ??</option>
             </select>
           </label>
           <label class="field">
-            <span data-i18n="calcBoxCount">箱数</span>
+            <span data-i18n="calcBoxCount">??</span>
             <input id="boxCount" type="number" min="1" value="5">
           </label>
           <label class="field">
-            <span data-i18n="calcDays">寄存天数</span>
-            <input id="storageDays" type="number" min="1" value="15">
+            <span data-i18n="calcStartDate">????</span>
+            <input id="startDate" type="date">
           </label>
           <label class="field">
-            <span data-i18n="calcAccess">取货位置</span>
-            <select id="pickupAccess">
-              <option value="ground" data-i18n="calcAccessGround">楼下交接</option>
-              <option value="elevator" data-i18n="calcAccessElevator">电梯房上楼取货</option>
-              <option value="stairs" data-i18n="calcAccessStairs">楼梯房上楼取货</option>
+            <span data-i18n="calcEndDate">????</span>
+            <input id="endDate" type="date">
+          </label>
+          <label class="field">
+            <span data-i18n="calcPickupMethod">????</span>
+            <select id="pickupMethod">
+              <option value="home" data-i18n="calcPickupMethodHome">????</option>
+              <option value="self" data-i18n="calcPickupMethodSelf">????????</option>
             </select>
           </label>
-          <button class="button button-primary full-width" type="submit" data-i18n="calcSubmit">计算价格</button>
+          <label class="field" id="pickupAccessField">
+            <span data-i18n="calcAccess">????</span>
+            <select id="pickupAccess">
+              <option value="ground" data-i18n="calcAccessGround">????</option>
+              <option value="elevator" data-i18n="calcAccessElevator">???????</option>
+              <option value="stairs" data-i18n="calcAccessStairs">???????</option>
+            </select>
+          </label>
+          <label class="field">
+            <span data-i18n="calcWeight">???? (kg)</span>
+            <input id="boxWeight" type="number" min="0" max="30" step="1" inputmode="numeric" value="20">
+          </label>
+          <label class="field">
+            <span data-i18n="calcReturnType">????</span>
+            <select id="returnType">
+              <option value="local" data-i18n="calcReturnLocal">????????</option>
+              <option value="england" data-i18n="calcReturnEngland">????????????</option>
+              <option value="scotland" data-i18n="calcReturnScotland">?????????</option>
+            </select>
+          </label>
+          <button class="button button-primary full-width" type="submit" data-i18n="calcSubmit">????</button>
         </form>
 
         <div class="calculator-card calculator-result">
-          <h3 data-i18n="calcResultTitle">费用估算结果</h3>
+          <h3 data-i18n="calcResultTitle">??????</h3>
           <dl class="result-grid">
             <div>
-              <dt data-i18n="resultBase">基础寄存费</dt>
-              <dd id="resultBase">£0.00</dd>
+              <dt data-i18n="resultDays">????</dt>
+              <dd id="resultDays">0</dd>
             </div>
             <div>
-              <dt data-i18n="resultDiscount">折扣系数</dt>
-              <dd id="resultDiscount">1.0</dd>
+              <dt data-i18n="resultBase">?????</dt>
+              <dd id="resultBase">?0.00</dd>
             </div>
             <div>
-              <dt data-i18n="resultPickup">取货费</dt>
-              <dd id="resultPickup">£0.00</dd>
+              <dt data-i18n="resultDiscount">????</dt>
+              <dd id="resultDiscount">1.00</dd>
+            </div>
+            <div id="resultPickupRow">
+              <dt data-i18n="resultPickup">???</dt>
+              <dd id="resultPickup">?0.00</dd>
             </div>
             <div>
-              <dt data-i18n="resultDelivery">送货费</dt>
-              <dd id="resultDelivery">£0.00</dd>
+              <dt data-i18n="resultDelivery">???</dt>
+              <dd id="resultDelivery">?0.00</dd>
             </div>
             <div>
-              <dt data-i18n="resultAccess">上楼取货费</dt>
-              <dd id="resultAccess">£0.00</dd>
+              <dt data-i18n="resultDeliveryStatus">??????</dt>
+              <dd id="resultDeliveryStatus">--</dd>
+            </div>
+            <div id="resultAccessRow">
+              <dt data-i18n="resultAccess">?????</dt>
+              <dd id="resultAccess">?0.00</dd>
             </div>
             <div>
-              <dt data-i18n="resultMinimum">最低消费修正</dt>
-              <dd id="resultMinimum">£0.00</dd>
+              <dt data-i18n="resultOverweight">????</dt>
+              <dd id="resultOverweight">?0.00</dd>
+            </div>
+            <div>
+              <dt data-i18n="resultMinimum">??????</dt>
+              <dd id="resultMinimum">?0.00</dd>
             </div>
             <div class="total-row">
-              <dt data-i18n="resultTotal">预计总价</dt>
-              <dd id="resultTotal">£0.00</dd>
+              <dt data-i18n="resultTotal">????</dt>
+              <dd id="resultTotal">?0.00</dd>
             </div>
           </dl>
-          <p class="result-note" id="resultNote" data-i18n="calcNoteDefault">上楼费、超重和外地配送不计入本估算，请联系客服确认。</p>
+          <p class="result-note" id="resultNote" data-i18n="calcNoteDefault">??????????????????????????</p>
+          <div class="calculator-note-card" id="resultOtherCityCard" hidden>
+            <strong data-i18n="resultOtherCityTitle">??????</strong>
+            <p id="resultOtherCityText" data-i18n="resultOtherCityText">????????????????????????????????</p>
+          </div>
         </div>
       </div>
 
       <div class="example-cards">
         <article class="example-card">
-          <h3 data-i18n="example1Title">示例：1 箱 / 15 天</h3>
-          <p data-i18n="example1Text">基础费不足短期最低消费时，按 £20 起算，再加 £2 取货费和 £2 送货费。</p>
+          <h3 data-i18n="example1Title">???5?1? -> 5?15?</h3>
+          <p data-i18n="example1Text">1 ??????? 14 ??????????? ?20 ? ?20??? ?2 ??? ?2 ???</p>
         </article>
         <article class="example-card">
-          <h3 data-i18n="example2Title">示例：5 箱 / 5 天</h3>
-          <p data-i18n="example2Text">5 × 0.7 × 5 = £17.5，不足 £30 按 £30 计算，再加 £10 取货与 £10 送货，总价 £50。</p>
+          <h3 data-i18n="example2Title">???5?1? -> 5?6?</h3>
+          <p data-i18n="example2Text">5 ??????? 5 ??????? ?30 ? ?30??? ?10 ??? ?10 ????? ?50?</p>
         </article>
         <article class="example-card">
-          <h3 data-i18n="example3Title">示例：10 箱 / 10 天</h3>
-          <p data-i18n="example3Text">10 × 0.7 × 10 = £70，再加 £20 取货和 £20 送货，总价 £110。</p>
+          <h3 data-i18n="example3Title">???5?1? -> 5?11?</h3>
+          <p data-i18n="example3Text">10 ??????? 10 ??10 ? 0.7 ? 10 = ?70??? ?20 ??? ?20 ????? ?110?</p>
         </article>
         <article class="example-card">
-          <h3 data-i18n="example4Title">示例：5 箱 / 60 天</h3>
-          <p data-i18n="example4Text">60 天适用 0.5 折扣档位，适合长期寄存需求。</p>
+          <h3 data-i18n="example4Title">???5?1? -> 9?20?</h3>
+          <p data-i18n="example4Text">????????????????????????????????????</p>
         </article>
       </div>
     </section>
@@ -347,7 +386,7 @@
       <div class="rules-grid">
         <article class="rule-card">
           <h3 data-i18n="ruleShortTitle">短期寄存规则</h3>
-          <p data-i18n="ruleShortText">30 天内为短期寄存，标准最低消费 £30；若仅 1 个箱子短期寄存，可降至 £20。并加收每箱 £2 取货费和每箱 £2 送货费。</p>
+        <p data-i18n="ruleShortText">30 天内为短期寄存，标准最低消费 £30；若仅 1 个箱子短期寄存，可降至 £20。并加收每箱 £2 取件费和每箱 £2 送货费。</p>
         </article>
         <article class="rule-card">
           <h3 data-i18n="ruleLongTitle">长期寄存折扣</h3>
@@ -355,7 +394,7 @@
         </article>
         <article class="rule-card">
           <h3 data-i18n="ruleWeightTitle">重量与特殊物品</h3>
-          <p data-i18n="ruleWeightText">登机箱或纸箱长宽高总和小于 119cm、重量低于 15kg；28 寸托运行李箱建议低于 23kg。25–30kg 可能额外加收 £0.5/箱/天，30kg 以上按 2 个箱子计算。超大件、无包装件和特殊物品请联系客服报价。</p>
+        <p data-i18n="ruleWeightText">建议单箱重量控制在 23kg 以内，23–25kg 只做警示不自动加费；25–30kg 会加收 £0.5 / 箱 / 周；超过 30kg 不允许寄存，需拆箱后重新计算。</p>
         </article>
         <article class="rule-card">
           <h3 data-i18n="ruleDeliveryTitle">配送与上楼费</h3>
@@ -390,7 +429,7 @@
                 </tr>
                 <tr>
                   <td data-i18n="policyPickupType">取送费用</td>
-                  <td data-i18n="policyPickupRule">短期寄存每个箱子加收 £2 取货费和 £2 送货费。</td>
+                <td data-i18n="policyPickupRule">短期寄存每个箱子加收 £2 取件费和 £2 送货费。</td>
                 </tr>
                 <tr>
                   <td data-i18n="policyStairsType">上楼说明</td>
@@ -451,17 +490,17 @@
           <tbody>
             <tr>
               <td data-i18n="exampleRow1Title">1 箱 / 15 天</td>
-              <td data-i18n="exampleRow1Formula">基础费不足 £20，按 £20 计算，再加 £2 取货和 £2 送货。</td>
+                <td data-i18n="exampleRow1Formula">基础费不足 £20，按 £20 计算，再加 £2 取件和 £2 送货。</td>
               <td>£24</td>
             </tr>
             <tr>
               <td data-i18n="exampleRow2Title">5 箱 / 5 天</td>
-              <td data-i18n="exampleRow2Formula">5 × 0.7 × 5 = £17.5，不足 £30 按 £30，再加 £10 取货和 £10 送货。</td>
+                <td data-i18n="exampleRow2Formula">5 × 0.7 × 5 = £17.5，不足 £30 按 £30，再加 £10 取件和 £10 送货。</td>
               <td>£50</td>
             </tr>
             <tr>
               <td data-i18n="exampleRow3Title">10 箱 / 10 天</td>
-              <td data-i18n="exampleRow3Formula">10 × 0.7 × 10 = £70，再加 £20 取货和 £20 送货。</td>
+                <td data-i18n="exampleRow3Formula">10 × 0.7 × 10 = £70，再加 £20 取件和 £20 送货。</td>
               <td>£110</td>
             </tr>
             <tr>

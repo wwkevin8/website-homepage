@@ -1677,8 +1677,23 @@ img {
   margin-bottom: 16px;
 }
 
+.field-check {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  border: 1px solid rgba(16, 38, 68, 0.12);
+  border-radius: 12px;
+  background: #ffffff;
+}
+
 .field span {
   font-weight: 600;
+}
+
+.field-check span {
+  color: var(--ink);
 }
 
 .field input,
@@ -1729,6 +1744,25 @@ img {
 
 .result-note {
   margin: 18px 0 0;
+  color: var(--muted);
+  line-height: 1.75;
+}
+
+.calculator-note-card {
+  margin-top: 18px;
+  padding: 16px 18px;
+  border-radius: 16px;
+  border: 1px solid rgba(16, 38, 68, 0.08);
+  background: #f7f9fd;
+}
+
+.calculator-note-card strong {
+  display: block;
+  color: var(--accent-deep);
+}
+
+.calculator-note-card p {
+  margin: 10px 0 0;
   color: var(--muted);
   line-height: 1.75;
 }

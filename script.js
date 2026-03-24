@@ -1,4 +1,4 @@
-const translations = {
+﻿const translations = {
   "zh-CN": {
     htmlLang: "zh-CN",
     title: "左邻右里 | 诺丁汉留学生订房服务",
@@ -140,7 +140,7 @@ const translations = {
     heroBox4: "4 号箱",
     heroBox5: "5 号箱",
     heroBox6: "6 号箱",
-    heroPricingNote1: "短期寄存 30 天内会加收每箱 £2 取货费和 £2 送货费。",
+    heroPricingNote1: "短期寄存 30 天内会加收每箱 £2 取件费和 £2 送货费。",
     heroPricingNote2: "1 个箱子短期寄存最低 £20，多个箱子最低 £30。",
     storageProcessTitle: "寄存流程",
     storageProcessIntro: "从咨询、收货到返还，全流程提前确认，适合暑期回国、换房和短期寄放需求。",
@@ -149,9 +149,9 @@ const translations = {
     process2Title: "确认箱型与规则",
     process2Text: "我们会发送寄存条款、箱子规格和收费规则，方便你提前准备。",
     process3Title: "准备箱子并预约时间",
-    process3Text: "如需购买箱子可提前配送，打包完成后预约取货时间。",
-    process4Title: "按约定上门取货",
-    process4Text: "工作人员按约定时间取货；如需上楼搬运会按规则另计费用。",
+    process3Text: "如需购买箱子可提前配送，打包完成后预约取件时间。",
+    process4Title: "按约定上门取件",
+    process4Text: "工作人员按约定时间上门取件；如需上楼搬运会按规则另计费用。",
     process5Title: "入库与确认",
     process5Text: "行李回仓后会与你确认寄存时间并发送收据和寄存信息。",
     process6Title: "返还或继续配送",
@@ -170,7 +170,7 @@ const translations = {
     box5Note: "适合日用品与小件物品",
     box6Note: "适合非常小件寄存",
     storageCalcTitle: "非会员价格计算器",
-    storageCalcIntro: "输入箱型、箱数和天数，系统会按当前规则自动估算基础费用、短期加费和折扣后总价。",
+    storageCalcIntro: "输入箱型、箱数、日期、取件方式和送还方式，系统会自动估算寄存天数、折扣、取送费用、上楼服务费和超重加费。",
     calcBoxType: "箱型",
     calcBox1: "1 号箱",
     calcBox2: "2 号箱",
@@ -179,41 +179,70 @@ const translations = {
     calcBox5: "5 号箱",
     calcBox6: "6 号箱",
     calcBoxCount: "箱数",
-    calcDays: "寄存天数",
-    calcAccess: "取货位置",
+    calcStartDate: "开始日期",
+    calcEndDate: "结束日期",
+    calcPickupMethod: "取件方式",
+    calcPickupMethodHome: "上门取件",
+    calcPickupMethodSelf: "自行送至仓库",
+    calcAccess: "楼层情况",
     calcAccessGround: "楼下交接",
-    calcAccessElevator: "电梯房上楼取货",
-    calcAccessStairs: "楼梯房上楼取货",
-    calcSubmit: "计算价格",
+    calcAccessElevator: "电梯房上楼服务",
+    calcAccessStairs: "楼梯房上楼服务",
+    calcWeight: "单箱重量",
+    calcWeightMaxHint: "单箱重量不能超过30kg",
+    calcReturnType: "送还方式",
+    calcReturnLocal: "诺丁汉当地寄存送还",
+    calcReturnEngland: "送往英国其他城市（英格兰）",
+    calcReturnScotland: "送往苏格兰地区",
+    calcSubmit: "更新估算",
     calcResultTitle: "费用估算结果",
+    resultDays: "寄存天数",
     resultBase: "折后寄存费",
     resultDiscount: "折扣系数",
-    resultPickup: "取货费",
+    resultPickup: "上门取件费",
     resultDelivery: "送货费",
-    resultAccess: "上楼取货费",
+    resultDeliveryStatus: "是否免费送货",
+    resultAccess: "上楼服务费",
+    resultOverweight: "超重加费",
     resultMinimum: "最低消费修正",
     resultTotal: "预计总价",
-    calcNoteDefault: "上楼费、超重和外地配送不计入本估算，请联系客服确认。",
-    calcNoteShort: "当前为 30 天内短期寄存，已按截图规则计入折扣档、最低消费、每箱 £2 取货费与每箱 £2 送货费。",
-    calcNoteLong: "当前按长期寄存折扣估算；上楼取货费会根据楼下、电梯房或楼梯房区分，100 天以上电梯房上楼取货免费。",
-    example1Title: "示例：1 箱 / 15 天",
-    example1Text: "基础费不足短期最低消费时，按 £20 起算，再加 £2 取货费和 £2 送货费。",
-    example2Title: "示例：5 箱 / 5 天",
-    example2Text: "5 × 0.7 × 5 = £17.5，不足 £30 按 £30 计算，再加 £10 取货与 £10 送货，总价 £50。",
-    example3Title: "示例：10 箱 / 10 天",
-    example3Text: "10 × 0.7 × 10 = £70，再加 £20 取货和 £20 送货，总价 £110。",
-    example4Title: "示例：5 箱 / 60 天",
-    example4Text: "60 天适用 0.5 折扣档位，适合长期寄存需求。",
+    resultOtherCityTitle: "英国其他城市转运说明",
+    resultOtherCityText: "外地转运费用未自动计入预计总价。通常使用皇家邮局或 DPD，一般 2 个工作日送达；建议优先使用 1 / 2 / 3 号箱，10kg 内 £10，10–30kg £15，特殊物品需联系客服确认。",
+    resultOtherCityTextScotland: "外地转运费用未自动计入预计总价。通常使用皇家邮局或 DPD，一般 2 个工作日送达；建议优先使用 1 / 2 / 3 号箱，10kg 内 £10，10–30kg £15，苏格兰地区另加 £5，特殊物品需联系客服确认。",
+    calcStatusFree: "免费",
+    calcStatusCharged: "不免费",
+    calcStatusIncluded: "按规则包含",
+    calcBlockedTotal: "不可计算",
+    calcNoteDefault: "选择日期、取件方式和送还方式后即可自动看到寄存天数、折扣、费用项和超重说明。",
+    calcNoteDateMissing: "请先选择有效的开始日期和结束日期。",
+    calcNoteShort: "30 天内按短期寄存处理：1 箱最低 £20，多箱最低 £30，并加收每箱 £2 取件费和 £2 送货费。",
+    calcNoteLong: "30 天以上按长期寄存处理，本地上门取件和本地送货按当前规则视为免费。",
+    calcNoteLiftFree: "当前天数达到 100 天以上，电梯房上楼服务免费。",
+    calcNoteSelfDropoff: "如选择自行送至仓库，则不收上门取件费和上楼服务费。",
+    calcNoteOverweightWarn: "建议控制在 23kg 内。23–25kg 区间只做重量警示，最终费用可能需要人工确认。",
+    calcNoteOverweightCharged: "25–30kg 会按 £0.5 / 箱 / 周加收超重费，周数按整周向上取整。",
+    calcNoteOverweightBlocked: "单箱重量不能超过 30kg，请拆分为两个或多个箱子后重新计算。",
+    calcNoteContact200: "超过 200 天请联系客服确认 3.5 折与送箱规则。",
+    calcNoteOtherCity: "若需送往英国其他城市，外地转运费用需单独核算，当前预计总价未包含该部分。",
+    calcNoteOtherCityScotland: "若需送往苏格兰地区，外地转运费用需单独核算，当前预计总价未包含该部分。",
+    example1Title: "示例：5 月 1 日 -> 5 月 15 日",
+    example1Text: "1 箱共 14 天，短期寄存基础费不足 £20 时按 £20 起算，再加 £2 取件费和 £2 送货费。",
+    example2Title: "示例：5 月 1 日 -> 5 月 6 日",
+    example2Text: "5 箱共 5 天，基础费不足 £30 时按 £30 起算，再加 £10 取件费和 £10 送货费。",
+    example3Title: "示例：5 月 1 日 -> 5 月 11 日",
+    example3Text: "10 箱共 10 天，10 × £0.7 × 10 = £70，再加 £20 取件费和 £20 送货费，总价 £110。",
+    example4Title: "示例：5 月 1 日 -> 9 月 20 日",
+    example4Text: "系统会自动计算总天数、折扣档位，以及 100 天以上的上楼费规则变化。",
     storageRulesTitle: "规则与注意事项",
     storageRulesIntro: "以下规则不全部进入自动计算器，但会影响最终收费，请寄存前与我们确认。",
     ruleShortTitle: "短期寄存规则",
-    ruleShortText: "30 天内为短期寄存，标准最低消费 £30；若仅 1 个箱子短期寄存，可降至 £20。并加收每箱 £2 取货费和每箱 £2 送货费。",
+    ruleShortText: "30 天内为短期寄存，标准最低消费 £30；若仅 1 个箱子短期寄存，可降至 £20。并加收每箱 £2 取件费和每箱 £2 送货费。",
     ruleLongTitle: "长期寄存折扣",
     ruleLongText: "寄存时间越长折扣越高，75 天及以上按 0.45 系数计算；200 天以上会赠送箱子并按 3.5 折说明处理。",
     ruleWeightTitle: "重量与特殊物品",
-    ruleWeightText: "登机箱或纸箱长宽高总和小于 119cm、重量低于 15kg；28 寸托运行李箱建议低于 23kg。25–30kg 可能额外加收 £0.5/箱/天，30kg 以上按 2 个箱子计算。超大件、无包装件和特殊物品请联系客服报价。",
+    ruleWeightText: "建议单箱重量控制在 23kg 以内，太重工人容易受伤。23–25kg 只做警示不自动加费；25–30kg 多收 £0.5 / 箱 / 周，周数按整周向上取整；超过 30kg 不允许寄存，需拆箱后重新计算。超大件、无包装件和特殊物品请联系客服报价。",
     ruleDeliveryTitle: "配送与上楼费",
-    ruleDeliveryText: "诺丁汉本地取送货基础规则已在价格内体现；上楼费需另计。寄往英国其他城市的常规快递为 10kg 内 £10，10–30kg £15，苏格兰地区另加 £5，专车配送需单独询价。",
+    ruleDeliveryText: "本地长期寄存的上门取件与送货按当前规则视为免费；短期寄存 30 天内每箱加收 £2 取件费和 £2 送货费。寄往英国其他城市时，10kg 内 £10，10–30kg £15，苏格兰地区另加 £5，特殊或专车配送需单独询价。",
     faqTitle: "FAQ / 提醒",
     faq1: "2 号箱暂时可能缺货，请寄存前先确认。",
     faq2: "寄存结束后如果寄往英国其他城市，请至少提前一周预约。",
@@ -225,11 +254,11 @@ const translations = {
     policyShortType: "短期寄存",
     policyShortRule: "30 天内按短期寄存计算，不足 £30 按 £30 收费；仅 1 个箱子时最低可降至 £20。",
     policyPickupType: "取送费用",
-    policyPickupRule: "短期寄存每个箱子加收 £2 取货费和 £2 送货费。",
+    policyPickupRule: "30 天内按短期寄存处理：每箱 £2 取件费和 £2 送货费；30 天以上本地取送按当前规则视为免费。",
     policyStairsType: "上楼说明",
-    policyStairsRule: "默认按楼下交接估算；100 天以下电梯房上楼取货 £2/箱、楼梯房 £4/箱，100 天以上电梯房免费上楼取货、楼梯房 £2/箱。",
+    policyStairsRule: "默认按楼下交接估算。100 天以下电梯房上楼取件 £2/箱、楼梯房 £4/箱；100 天以上电梯房免费、楼梯房 £2/箱。",
     policyDeliveryType: "外地转运",
-    policyDeliveryRule: "寄往英国其他城市时，常规快递 10kg 内 £10，10–30kg £15，苏格兰地区另加 £5。",
+    policyDeliveryRule: "寄往英国其他城市时，常规快递 10kg 内 £10、10–30kg £15，苏格兰地区另加 £5；当前计算器不自动把这部分计入总价。",
     discountColDays: "天数",
     discountColFactor: "折扣",
     discountTitle: "长期折扣档位",
@@ -245,11 +274,11 @@ const translations = {
     exampleColFormula: "计算方式",
     exampleColTotal: "总价",
     exampleRow1Title: "1 箱 / 15 天",
-    exampleRow1Formula: "基础费不足 £20，按 £20 计算，再加 £2 取货和 £2 送货。",
+    exampleRow1Formula: "基础费不足 £20，按 £20 计算，再加 £2 取件和 £2 送货。",
     exampleRow2Title: "5 箱 / 5 天",
-    exampleRow2Formula: "5 × 0.7 × 5 = £17.5，不足 £30 按 £30，再加 £10 取货和 £10 送货。",
+    exampleRow2Formula: "5 × 0.7 × 5 = £17.5，不足 £30 按 £30，再加 £10 取件和 £10 送货。",
     exampleRow3Title: "10 箱 / 10 天",
-    exampleRow3Formula: "10 × 0.7 × 10 = £70，再加 £20 取货和 £20 送货。",
+    exampleRow3Formula: "10 × 0.7 × 10 = £70，再加 £20 取件和 £20 送货。",
     exampleRow4Title: "5 箱 / 60 天",
     exampleRow4Formula: "5 × 0.7 × 60 = £210，按 0.5 折扣计算。",
     footerYear: year => `${year} Nottingham Good Neighbor. All rights reserved.`
@@ -425,7 +454,7 @@ const translations = {
     box5Note: "Suitable for daily essentials and smaller items",
     box6Note: "Best for very small items",
     storageCalcTitle: "Non-member Price Calculator",
-    storageCalcIntro: "Enter the box type, quantity and number of days. The calculator estimates base storage, short-term charges and discounted total cost under the current rules.",
+    storageCalcIntro: "Enter the box type, quantity, start date and end date. The calculator will estimate storage days, discount, pickup and delivery status, upstairs handling and overweight charges automatically.",
     calcBoxType: "Box Type",
     calcBox1: "Box 1",
     calcBox2: "Box 2",
@@ -434,31 +463,60 @@ const translations = {
     calcBox5: "Box 5",
     calcBox6: "Box 6",
     calcBoxCount: "Box Quantity",
-    calcDays: "Storage Days",
-    calcAccess: "Pickup Access",
+    calcStartDate: "Start Date",
+    calcEndDate: "End Date",
+    calcPickupMethod: "Collection Method",
+    calcPickupMethodHome: "Home Collection",
+    calcPickupMethodSelf: "Deliver to Warehouse Yourself",
+    calcAccess: "Floor Access",
     calcAccessGround: "Ground Floor",
-    calcAccessElevator: "Lift Building Upstairs",
-    calcAccessStairs: "Stair Building Upstairs",
-    calcSubmit: "Calculate",
+    calcAccessElevator: "Lift Building Upstairs Service",
+    calcAccessStairs: "Stair Building Upstairs Service",
+    calcWeight: "Weight Per Box",
+    calcWeightMaxHint: "A single box cannot exceed 30kg",
+    calcReturnType: "Return Method",
+    calcReturnLocal: "Local return in Nottingham",
+    calcReturnEngland: "Forward to another UK city (England)",
+    calcReturnScotland: "Forward to Scotland",
+    calcSubmit: "Update Estimate",
     calcResultTitle: "Estimated Cost",
+    resultDays: "Storage Days",
     resultBase: "Discounted Storage",
     resultDiscount: "Discount Factor",
-    resultPickup: "Collection Fee",
+    resultPickup: "Home Collection Fee",
     resultDelivery: "Delivery Fee",
-    resultAccess: "Upstairs Pickup Fee",
+    resultDeliveryStatus: "Return Delivery Free?",
+    resultAccess: "Upstairs Service Fee",
+    resultOverweight: "Overweight Charge",
     resultMinimum: "Minimum Charge Adjustment",
     resultTotal: "Estimated Total",
-    calcNoteDefault: "Upstairs handling, overweight items and deliveries to other cities are not included in this estimate. Please confirm with us separately.",
-    calcNoteShort: "This is treated as short-term storage within 30 days. The estimate now follows the screenshot rules, including day-tier discounts, minimum charge, £2 collection per box and £2 return delivery per box.",
-    calcNoteLong: "This estimate uses the long-term discount schedule. Upstairs pickup changes by access type, and lift buildings become free for upstairs pickup from 100 days onward.",
-    example1Title: "Example: 1 box / 15 days",
-    example1Text: "If the base charge is below the short-term minimum, the storage cost starts from £20, then adds £2 collection and £2 delivery.",
-    example2Title: "Example: 5 boxes / 5 days",
-    example2Text: "5 × 0.7 × 5 = £17.5, raised to the £30 minimum, then plus £10 collection and £10 delivery for a total of £50.",
-    example3Title: "Example: 10 boxes / 10 days",
-    example3Text: "10 × 0.7 × 10 = £70, plus £20 collection and £20 delivery for a total of £110.",
-    example4Title: "Example: 5 boxes / 60 days",
-    example4Text: "60 days uses the 0.5 discount tier and is suitable for long-term storage needs.",
+    resultOtherCityTitle: "Other UK city forwarding",
+    resultOtherCityText: "Forwarding is not included in the estimated total automatically. We usually use Royal Mail or DPD, delivery is often around 2 working days, and lighter 1 / 2 / 3 boxes are recommended. Rates are £10 up to 10kg and £15 for 10–30kg. Special items need a manual quote.",
+    resultOtherCityTextScotland: "Forwarding is not included in the estimated total automatically. We usually use Royal Mail or DPD, delivery is often around 2 working days, and lighter 1 / 2 / 3 boxes are recommended. Rates are £10 up to 10kg and £15 for 10–30kg, plus £5 for Scotland. Special items need a manual quote.",
+    calcStatusFree: "Free",
+    calcStatusCharged: "Charged",
+    calcStatusIncluded: "Included",
+    calcBlockedTotal: "Not available",
+    calcNoteDefault: "Choose valid dates, collection method and return method to see storage days, discounts, fee items and overweight notes automatically.",
+    calcNoteDateMissing: "Please choose a valid start date and end date first.",
+    calcNoteShort: "Storage within 30 days follows short-term rules: 1 box starts from £20, multiple boxes start from £30, plus £2 collection and £2 return delivery per box.",
+    calcNoteLong: "Storage above 30 days follows long-term rules. Local collection and local return delivery are treated as free under the current guidance.",
+    calcNoteLiftFree: "At 100 days or above, upstairs service in lift buildings becomes free.",
+    calcNoteSelfDropoff: "If you deliver the boxes to our warehouse yourself, home collection and upstairs service are not charged.",
+    calcNoteOverweightWarn: "We recommend keeping each box within 23kg. The 23–25kg range only triggers a warning and may still need manual confirmation.",
+    calcNoteOverweightCharged: "At 25–30kg, an extra £0.5 per box per week applies. Weeks are rounded up.",
+    calcNoteOverweightBlocked: "A single box cannot exceed 30kg. Please split the items into two or more boxes and calculate again.",
+    calcNoteContact200: "Above 200 days, please contact us to confirm the 35% rate and free-box rule.",
+    calcNoteOtherCity: "Forwarding to another UK city is not included in the estimated total and should be confirmed manually.",
+    calcNoteOtherCityScotland: "Forwarding to Scotland is not included in the estimated total and should be confirmed manually.",
+    example1Title: "Example: May 1 -> May 15",
+    example1Text: "1 box for 14 days. If the short-term base is below £20, it starts from £20, then adds £2 collection and £2 return delivery.",
+    example2Title: "Example: May 1 -> May 6",
+    example2Text: "5 boxes for 5 days. If the base is below £30, it starts from £30, then adds £10 collection and £10 return delivery.",
+    example3Title: "Example: May 1 -> May 11",
+    example3Text: "10 boxes for 10 days. 10 × £0.7 × 10 = £70, plus £20 collection and £20 return delivery, total £110.",
+    example4Title: "Example: May 1 -> Sep 20",
+    example4Text: "The calculator will automatically show total days, discount tier and the upstairs handling change after 100 days.",
     storageRulesTitle: "Rules and Important Notes",
     storageRulesIntro: "The following rules are not all built into the calculator, but they may affect the final charge. Please confirm with us before storage.",
     ruleShortTitle: "Short-term Storage Rules",
@@ -466,9 +524,9 @@ const translations = {
     ruleLongTitle: "Long-term Discounts",
     ruleLongText: "The longer the storage period, the better the rate. From 75 days onward the 0.45 factor applies. For storage beyond 200 days, we currently describe the policy as a free box plus 3.5-discount pricing.",
     ruleWeightTitle: "Weight and Special Items",
-    ruleWeightText: "Cabin-size luggage or cardboard boxes should total less than 119 cm in length + width + height and stay under 15 kg. A 28-inch checked suitcase is recommended below 23 kg. Items at 25–30 kg may incur an extra £0.5 per box per day, and items over 30 kg are treated as 2 boxes. Oversized, unpacked or special items require a custom quote.",
+    ruleWeightText: "We recommend keeping each box within 23kg because very heavy boxes can injure workers. The 23–25kg range only triggers a warning with no automatic surcharge; at 25–30kg, an extra £0.5 per box per week applies, rounded up by full weeks; above 30kg is not accepted and the box must be split before recalculating. Oversized, unpacked or special items require a custom quote.",
     ruleDeliveryTitle: "Delivery and Upstairs Charges",
-    ruleDeliveryText: "Standard Nottingham collection and return rules are reflected in the price guidance above. Upstairs carrying is charged separately. For other UK cities, courier rates are £10 up to 10 kg and £15 for 10–30 kg, with an extra £5 for Scotland. Dedicated van delivery is quoted separately.",
+    ruleDeliveryText: "For long-term local storage, collection and return delivery are treated as free under the current guidance. For storage within 30 days, collection is £2 per box and return delivery is £2 per box. For other UK cities, courier rates are £10 up to 10kg and £15 for 10–30kg, with an extra £5 for Scotland. Special or van delivery is quoted separately.",
     faqTitle: "FAQ / Notes",
     faq1: "Box 2 may be temporarily out of stock. Please confirm before storage.",
     faq2: "If you want items forwarded to another UK city after storage, please book at least one week in advance.",
@@ -480,11 +538,11 @@ const translations = {
     policyShortType: "Short-term storage",
     policyShortRule: "Storage within 30 days follows short-term pricing. If the amount is below £30, it is charged as £30; for one box only, the minimum can be reduced to £20.",
     policyPickupType: "Collection and return",
-    policyPickupRule: "For short-term storage, each box is charged £2 for collection and £2 for return delivery.",
+    policyPickupRule: "Within 30 days, each box is charged £2 for collection and £2 for return delivery. Above 30 days, local collection and local return are treated as free.",
     policyStairsType: "Upstairs handling",
-    policyStairsRule: "The default estimate assumes ground-floor handover. Below 100 days, upstairs pickup is £2 per box for lift buildings and £4 per box for stair buildings. From 100 days onward, lift buildings become free for upstairs pickup and stair buildings are £2 per box.",
+    policyStairsRule: "The default estimate assumes ground-floor handover. Below 100 days, upstairs pickup is £2 per box for lift buildings and £4 per box for stair buildings. From 100 days onward, lift buildings become free and stair buildings are £2 per box.",
     policyDeliveryType: "Forwarding to other cities",
-    policyDeliveryRule: "For delivery to another UK city, standard courier pricing is £10 up to 10kg and £15 for 10–30kg, with an extra £5 for Scotland.",
+    policyDeliveryRule: "For delivery to another UK city, standard courier pricing is £10 up to 10kg and £15 for 10–30kg, with an extra £5 for Scotland. This is not added to the calculator total automatically.",
     discountColDays: "Days",
     discountColFactor: "Discount",
     discountTitle: "Long-term Discount Tiers",
@@ -911,6 +969,35 @@ function calculateStorageCost(boxType, boxCount, days) {
   };
 }
 
+function getStorageDays(startDate, endDate) {
+  if (!startDate || !endDate) {
+    return 0;
+  }
+
+  const start = new Date(`${startDate}T00:00:00`);
+  const end = new Date(`${endDate}T00:00:00`);
+  const diff = end.getTime() - start.getTime();
+
+  if (Number.isNaN(diff) || diff <= 0) {
+    return 0;
+  }
+
+  return Math.round(diff / 86400000);
+}
+
+function getStorageEffectiveBoxCount(boxCount) {
+  return boxCount;
+}
+
+function getStorageWeeklyOverweight(boxCount, weight, days) {
+  if (weight < 25 || weight > 30) {
+    return 0;
+  }
+
+  const weeks = Math.ceil(days / 7);
+  return boxCount * weeks * 0.5;
+}
+
 function getAccessFee(accessType, boxCount, days) {
   if (accessType === "ground") {
     return 0;
@@ -923,43 +1010,135 @@ function getAccessFee(accessType, boxCount, days) {
   return accessType === "elevator" ? boxCount * 2 : boxCount * 4;
 }
 
-function calculateStorageEstimate(boxType, boxCount, days, accessType) {
-  const { base, discount } = calculateStorageCost(boxType, boxCount, days);
+function calculateStorageEstimate({
+  boxType,
+  boxCount,
+  startDate,
+  endDate,
+  pickupMethod,
+  accessType,
+  boxWeight,
+  returnType
+}) {
+  const days = getStorageDays(startDate, endDate);
+  const billableBoxes = getStorageEffectiveBoxCount(boxCount);
+  const { base, discount } = calculateStorageCost(boxType, billableBoxes, days);
   const discountedBase = base * discount;
   let pickup = 0;
   let delivery = 0;
-  let accessFee = getAccessFee(accessType, boxCount, days);
+  let accessFee = pickupMethod === "home" ? getAccessFee(accessType, billableBoxes, days) : 0;
+  let overweightFee = getStorageWeeklyOverweight(boxCount, boxWeight, days);
   let minimumAdjustment = 0;
   let total = 0;
-  let noteKey = "calcNoteLong";
+  const notes = [];
+
+  if (days <= 0) {
+    return {
+      days: 0,
+      blocked: false,
+      base: 0,
+      discount: 1,
+      discountedBase: 0,
+      pickup: 0,
+      delivery: 0,
+      deliveryStatus: "calcStatusIncluded",
+      accessFee: 0,
+      overweightFee: 0,
+      minimumAdjustment: 0,
+      total: 0,
+      otherCityMessageKey: returnType === "scotland" ? "resultOtherCityTextScotland" : "resultOtherCityText",
+      notes: ["calcNoteDateMissing"]
+    };
+  }
+
+  if (boxWeight > 30) {
+    return {
+      days,
+      blocked: true,
+      pickupMethod,
+      billableBoxes,
+      base: 0,
+      discount: 1,
+      discountedBase: 0,
+      pickup: 0,
+      delivery: 0,
+      deliveryStatus: "calcStatusIncluded",
+      accessFee: 0,
+      overweightFee: 0,
+      minimumAdjustment: 0,
+      total: null,
+      otherCityMessageKey: returnType === "scotland" ? "resultOtherCityTextScotland" : "resultOtherCityText",
+      notes: ["calcNoteOverweightBlocked"]
+    };
+  }
 
   if (days <= 30) {
-    pickup = boxCount * 2;
-    delivery = boxCount * 2;
-    const minimum = boxCount === 1 ? 20 : 30;
+    pickup = pickupMethod === "home" ? billableBoxes * 2 : 0;
+    delivery = billableBoxes * 2;
+    const minimum = billableBoxes === 1 ? 20 : 30;
     const adjustedBase = Math.max(discountedBase, minimum);
     minimumAdjustment = adjustedBase - discountedBase;
-    total = adjustedBase + pickup + delivery + accessFee;
-    noteKey = "calcNoteShort";
+    total = adjustedBase + pickup + delivery + accessFee + overweightFee;
+    notes.push("calcNoteShort");
   } else {
-    total = discountedBase + accessFee;
+    total = discountedBase + accessFee + overweightFee;
+    notes.push("calcNoteLong");
+  }
+
+  if (days >= 100 && accessType === "elevator") {
+    notes.push("calcNoteLiftFree");
+  }
+
+  if (pickupMethod === "self") {
+    notes.push("calcNoteSelfDropoff");
+  }
+
+  if (boxWeight > 23 && boxWeight < 25) {
+    notes.push("calcNoteOverweightWarn");
+  }
+
+  if (boxWeight >= 25 && boxWeight <= 30) {
+    notes.push("calcNoteOverweightCharged");
+  }
+
+  if (days > 200) {
+    notes.push("calcNoteContact200");
+  }
+
+  if (returnType !== "local") {
+    notes.push(returnType === "scotland" ? "calcNoteOtherCityScotland" : "calcNoteOtherCity");
   }
 
   return {
+    days,
+    blocked: false,
+    pickupMethod,
+    billableBoxes,
     base,
     discount,
     discountedBase,
     pickup,
     delivery,
+    deliveryStatus: days > 30 ? "calcStatusFree" : "calcStatusCharged",
     accessFee,
+    overweightFee,
     minimumAdjustment,
     total,
-    noteKey
+    otherCityMessageKey: returnType === "scotland" ? "resultOtherCityTextScotland" : "resultOtherCityText",
+    notes
   };
 }
 
 function formatMoney(value) {
   return `£${value.toFixed(2)}`;
+}
+
+function formatEstimateValue(value) {
+  if (value === null || value === undefined) {
+    return "—";
+  }
+
+  return formatMoney(value);
 }
 
 function initStorageCalculator(activeLang) {
@@ -970,54 +1149,200 @@ function initStorageCalculator(activeLang) {
 
   const boxTypeInput = document.querySelector("#boxType");
   const boxCountInput = document.querySelector("#boxCount");
-  const storageDaysInput = document.querySelector("#storageDays");
+  const startDateInput = document.querySelector("#startDate");
+  const endDateInput = document.querySelector("#endDate");
+  const pickupMethodInput = document.querySelector("#pickupMethod");
+  const pickupAccessField = document.querySelector("#pickupAccessField");
   const pickupAccessInput = document.querySelector("#pickupAccess");
+  const boxWeightInput = document.querySelector("#boxWeight");
+  const returnTypeInput = document.querySelector("#returnType");
+  const resultDays = document.querySelector("#resultDays");
   const resultBase = document.querySelector("#resultBase");
   const resultDiscount = document.querySelector("#resultDiscount");
+  const resultPickupRow = document.querySelector("#resultPickupRow");
   const resultPickup = document.querySelector("#resultPickup");
   const resultDelivery = document.querySelector("#resultDelivery");
+  const resultDeliveryStatus = document.querySelector("#resultDeliveryStatus");
+  const resultAccessRow = document.querySelector("#resultAccessRow");
   const resultAccess = document.querySelector("#resultAccess");
+  const resultOverweight = document.querySelector("#resultOverweight");
   const resultMinimum = document.querySelector("#resultMinimum");
   const resultTotal = document.querySelector("#resultTotal");
   const resultNote = document.querySelector("#resultNote");
+  const resultOtherCityCard = document.querySelector("#resultOtherCityCard");
+  const resultOtherCityText = document.querySelector("#resultOtherCityText");
 
   form.dataset.lang = activeLang;
 
   if (form.__renderEstimate) {
+    form.__syncStorageDates?.();
+    form.__syncPickupFields?.();
+    form.__syncWeightLimit?.(false);
     form.__renderEstimate();
     return;
+  }
+
+  function syncDateRange() {
+    const startDate = startDateInput.value;
+    if (!startDate) {
+      endDateInput.min = "";
+      return;
+    }
+
+    const start = new Date(`${startDate}T00:00:00`);
+    const minEnd = new Date(start.getTime() + 86400000);
+    const minEndText = minEnd.toISOString().slice(0, 10);
+    endDateInput.min = minEndText;
+
+    if (endDateInput.value && endDateInput.value < minEndText) {
+      endDateInput.value = "";
+    }
+  }
+
+  function syncPickupFields() {
+    const isHomeCollection = pickupMethodInput.value === "home";
+    if (pickupAccessField) {
+      pickupAccessField.hidden = !isHomeCollection;
+      pickupAccessField.style.display = isHomeCollection ? "" : "none";
+      pickupAccessField.setAttribute("aria-hidden", String(!isHomeCollection));
+    }
+
+    pickupAccessInput.disabled = !isHomeCollection;
+
+    if (!isHomeCollection) {
+      pickupAccessInput.value = "ground";
+    }
+  }
+
+  function syncWeightLimit(showPrompt = false) {
+    const rawValue = boxWeightInput.value;
+    if (rawValue === "") {
+      boxWeightInput.setCustomValidity("");
+      return;
+    }
+
+    let boxWeight = Math.round(Number(rawValue) || 0);
+    if (boxWeight < 0) {
+      boxWeight = 0;
+    }
+
+    if (boxWeight > 30) {
+      boxWeight = 30;
+      boxWeightInput.value = "30";
+      boxWeightInput.setCustomValidity(translations[form.dataset.lang || activeLang].calcWeightMaxHint);
+      if (showPrompt) {
+        boxWeightInput.reportValidity();
+      }
+      return;
+    }
+
+    boxWeightInput.value = String(boxWeight);
+    boxWeightInput.setCustomValidity("");
   }
 
   function renderEstimate() {
     const currentLang = form.dataset.lang || activeLang;
     const boxType = boxTypeInput.value;
     const boxCount = Math.max(1, Number(boxCountInput.value) || 1);
-    const days = Math.max(1, Number(storageDaysInput.value) || 1);
+    const startDate = startDateInput.value;
+    const endDate = endDateInput.value;
+    const pickupMethod = pickupMethodInput.value;
     const accessType = pickupAccessInput.value;
-    const estimate = calculateStorageEstimate(boxType, boxCount, days, accessType);
+    syncWeightLimit(false);
+    const boxWeight = Math.max(0, Math.round(Number(boxWeightInput.value) || 0));
+    const returnType = returnTypeInput.value;
+    const estimate = calculateStorageEstimate({
+      boxType,
+      boxCount,
+      startDate,
+      endDate,
+      pickupMethod,
+      accessType,
+      boxWeight,
+      returnType
+    });
 
-    resultBase.textContent = formatMoney(estimate.discountedBase);
-    resultDiscount.textContent = estimate.discount.toFixed(2);
-    resultPickup.textContent = formatMoney(estimate.pickup);
-    resultDelivery.textContent = formatMoney(estimate.delivery);
-    resultAccess.textContent = formatMoney(estimate.accessFee);
-    resultMinimum.textContent = formatMoney(estimate.minimumAdjustment);
-    resultTotal.textContent = formatMoney(estimate.total);
-    resultNote.textContent = translations[currentLang][estimate.noteKey];
+    resultDays.textContent = String(estimate.days);
+    resultBase.textContent = formatEstimateValue(estimate.discountedBase);
+    resultDiscount.textContent = estimate.blocked ? "—" : estimate.discount.toFixed(2);
+    resultPickup.textContent = formatEstimateValue(estimate.pickup);
+    resultDelivery.textContent = formatEstimateValue(estimate.delivery);
+    resultDeliveryStatus.textContent = translations[currentLang][estimate.deliveryStatus];
+    resultAccess.textContent = formatEstimateValue(estimate.accessFee);
+    resultOverweight.textContent = formatEstimateValue(estimate.overweightFee);
+    resultMinimum.textContent = formatEstimateValue(estimate.minimumAdjustment);
+    resultTotal.textContent = estimate.blocked ? translations[currentLang].calcBlockedTotal : formatEstimateValue(estimate.total);
+    resultNote.textContent = estimate.notes.map(key => translations[currentLang][key]).join(" ");
+
+    if (resultPickupRow) {
+      resultPickupRow.hidden = estimate.pickupMethod !== "home";
+      resultPickupRow.style.display = estimate.pickupMethod === "home" ? "" : "none";
+    }
+
+    if (resultAccessRow) {
+      resultAccessRow.hidden = estimate.pickupMethod !== "home";
+      resultAccessRow.style.display = estimate.pickupMethod === "home" ? "" : "none";
+    }
+
+    if (returnType !== "local") {
+      resultOtherCityCard.hidden = false;
+      resultOtherCityText.textContent = translations[currentLang][estimate.otherCityMessageKey];
+    } else {
+      resultOtherCityCard.hidden = true;
+    }
   }
 
   form.__renderEstimate = renderEstimate;
+  form.__syncStorageDates = syncDateRange;
+  form.__syncPickupFields = syncPickupFields;
+  form.__syncWeightLimit = syncWeightLimit;
 
   form.addEventListener("submit", event => {
     event.preventDefault();
+    syncDateRange();
+    syncPickupFields();
     renderEstimate();
   });
 
-  [boxTypeInput, boxCountInput, storageDaysInput, pickupAccessInput].forEach(input => {
-    input.addEventListener("input", renderEstimate);
-    input.addEventListener("change", renderEstimate);
+  [
+    boxTypeInput,
+    boxCountInput,
+    startDateInput,
+    endDateInput,
+    pickupMethodInput,
+    pickupAccessInput,
+    boxWeightInput,
+    returnTypeInput
+  ].forEach(input => {
+    input.addEventListener("input", () => {
+      if (input === startDateInput) {
+        syncDateRange();
+      }
+      if (input === pickupMethodInput) {
+        syncPickupFields();
+      }
+      if (input === boxWeightInput) {
+        syncWeightLimit(true);
+      }
+      renderEstimate();
+    });
+    input.addEventListener("change", () => {
+      if (input === startDateInput) {
+        syncDateRange();
+      }
+      if (input === pickupMethodInput) {
+        syncPickupFields();
+      }
+      if (input === boxWeightInput) {
+        syncWeightLimit(true);
+      }
+      renderEstimate();
+    });
   });
 
+  syncDateRange();
+  syncPickupFields();
+  syncWeightLimit(false);
   renderEstimate();
 }
 
