@@ -135,7 +135,7 @@
         <article class="step-card">
           <span>03</span>
           <h3 data-i18n="process3Title">准备箱子并预约时间</h3>
-          <p data-i18n="process3Text">如需购买箱子可提前配送，打包完成后预约取件时间。</p>
+          <p data-i18n="process3Text">如需购买箱子可提前配送至楼下，送箱不上楼；送箱服务需至少提前 7 天预约，且送箱日期需早于开始寄存日期至少 2 天。</p>
         </article>
         <article class="step-card">
           <span>04</span>
@@ -150,7 +150,7 @@
         <article class="step-card">
           <span>06</span>
           <h3 data-i18n="process6Title">返还或继续配送</h3>
-          <p data-i18n="process6Text">你回到诺丁汉时可安排送回；如需邮寄或寄往外地，建议至少提前 7 天预约，最少需提前 3 天。</p>
+          <p data-i18n="process6Text">你回到诺丁汉时可安排送回；无论本地送回、仓库自取还是外地转运，返还服务均需至少提前 7 天预约。</p>
         </article>
       </div>
     </section>
@@ -308,11 +308,12 @@
           <label class="field">
             <span data-i18n="calcEndDate">结束日期</span>
             <input id="endDate" type="date">
+            <p class="field-help" data-i18n="calcEndDateHelp">结束日期同时作为送回 / 取回日期。返还服务在任何情况下都需至少提前 7 天预约。</p>
           </label>
           <label class="field" id="boxDeliveryDateField">
             <span data-i18n="calcBoxDeliveryDate">送箱日期</span>
             <input id="boxDeliveryDate" type="date">
-            <p class="field-help" data-i18n="calcBoxDeliveryDateHelp">建议至少提前 7 天预约，最少需提前 3 天。如需先送箱再寄存，送箱日期需早于开始日期至少 2 天。</p>
+            <p class="field-help" data-i18n="calcBoxDeliveryDateHelp">送箱服务需至少提前 7 天预约；如需先送箱再寄存，送箱日期需早于开始日期至少 2 天。</p>
           </label>
           <label class="field">
             <span data-i18n="calcPickupMethod">取件方式</span>
@@ -343,11 +344,6 @@
               <option value="home" data-i18n="calcDeliveryMethodHome">上门送件</option>
               <option value="self" data-i18n="calcDeliveryMethodSelf">自行到仓库取件</option>
             </select>
-          </label>
-          <label class="field" id="returnBookingDateField">
-            <span data-i18n="calcReturnBookingDate">送回 / 取回日期</span>
-            <input id="returnBookingDate" type="date">
-            <p class="field-help" data-i18n="calcReturnBookingDateHelp">送回 / 取回日期默认与结束日期一致，可单独修改。建议至少提前 7 天预约，最少需提前 3 天。</p>
           </label>
           <label class="field" id="returnAccessField">
             <span data-i18n="calcReturnAccess">送回去交接方式</span>
@@ -475,7 +471,7 @@
           <h3 data-i18n="faqTitle">FAQ / 提醒</h3>
           <ul>
             <li data-i18n="faq1">2 号箱暂时可能缺货，请寄存前先确认。</li>
-            <li data-i18n="faq2">寄存结束后如果寄往英国其他城市，建议至少提前 7 天预约，最少需提前 3 天，具体日期请联系客服确认。</li>
+            <li data-i18n="faq2">寄存结束后如果需要返还或寄往英国其他城市，请至少提前 7 天预约，具体日期请联系客服确认。</li>
             <li data-i18n="faq3">到公寓楼下取送免费，如需上楼会额外收费。</li>
             <li data-i18n="faq4">寄存前请先和我们确认收费与返还时间，避免临时变化。</li>
           </ul>

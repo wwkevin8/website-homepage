@@ -149,13 +149,13 @@
     process2Title: "确认箱型与规则",
     process2Text: "我们会发送寄存条款、箱子规格和收费规则，方便你提前准备。",
     process3Title: "准备箱子并预约时间",
-    process3Text: "如需购买箱子可提前配送至楼下，送箱不上楼；打包完成后再预约取件时间。",
+    process3Text: "如需购买箱子可提前配送至楼下，送箱不上楼；送箱服务需至少提前 7 天预约，且送箱日期需早于开始寄存日期至少 2 天。",
     process4Title: "按约定上门取件",
     process4Text: "工作人员按约定时间上门取件；如需上楼搬运会按规则另计费用。",
     process5Title: "入库与确认",
     process5Text: "行李回仓后会与你确认寄存时间并发送收据和寄存信息。",
     process6Title: "返还或继续配送",
-    process6Text: "你回到诺丁汉时可安排送回；如需邮寄或寄往外地，建议至少提前 7 天预约，最少需提前 3 天。",
+    process6Text: "你回到诺丁汉时可安排送回；无论本地送回、仓库自取还是外地转运，返还服务均需至少提前 7 天预约。",
     storageBoxesTitle: "箱子尺寸与价格",
     storageBoxesIntro: "以下价格适用于非会员寄存，尺寸按箱体标注展示。2 号箱如暂时缺货，会另行通知。",
     boxTableNo: "箱号",
@@ -185,8 +185,9 @@
     calcStartDate: "开始日期",
     calcStartDateHelp: "开始日期同时作为寄存预约日期。建议至少提前 7 天预约，最少需提前 3 天。",
     calcEndDate: "结束日期",
+    calcEndDateHelp: "结束日期同时作为送回 / 取回日期。返还服务在任何情况下都需至少提前 7 天预约。",
     calcBoxDeliveryDate: "送箱日期",
-    calcBoxDeliveryDateHelp: "建议至少提前 7 天预约，最少需提前 3 天。如需先送箱再寄存，送箱日期需早于开始日期至少 2 天。",
+    calcBoxDeliveryDateHelp: "送箱服务需至少提前 7 天预约；如需先送箱再寄存，送箱日期需早于开始日期至少 2 天。",
     calcPickupMethod: "取件方式",
     calcPickupMethodHome: "上门取件",
     calcPickupMethodSelf: "自行送至仓库",
@@ -207,8 +208,6 @@
     calcReturnLocal: "诺丁汉当地寄存送还",
     calcReturnEngland: "送往英国其他城市（英格兰）",
     calcReturnScotland: "送往苏格兰地区",
-    calcReturnBookingDate: "送回 / 取回日期",
-    calcReturnBookingDateHelp: "送回 / 取回日期默认与结束日期一致，可单独修改。建议至少提前 7 天预约，最少需提前 3 天。",
     calcSubmit: "更新估算",
     calcResultTitle: "费用估算结果",
     resultBoxTotal: "总箱数",
@@ -244,9 +243,10 @@
     calcNoteDefault: "选择开始日期、结束日期、取件方式、送还方式和送件方式后即可自动看到寄存天数、折扣、费用项和超重说明。",
     calcNoteDateMissing: "请先选择有效的开始日期和结束日期。",
     calcNoteBoxDeliveryDateRequired: "有购箱数量时，必须填写送箱日期。",
-    calcNoteReturnBookingDateRequired: "诺丁汉当地寄存送还时，必须填写送回 / 取回日期。",
     calcNoteDeliveryMethodRequired: "诺丁汉当地寄存送还时，必须先选择送件方式。",
-    calcNoteAppointmentLeadTime: "建议至少提前 7 天预约，最少需提前 3 天。",
+    calcNoteStartLeadTime: "开始日期最少需提前 3 天预约。",
+    calcNoteBoxDeliveryLeadTime: "送箱服务需至少提前 7 天预约。",
+    calcNoteReturnLeadTime: "返还服务在任何情况下都需至少提前 7 天预约。",
     calcNoteBoxDeliveryGap: "如需先送箱再寄存，送箱日期需早于开始日期至少 2 天。",
     calcNoteStartDateTooEarlyForBoxDelivery: "当前开始日期过早，无法满足送箱日期需早于开始日期至少 2 天的规则，请调整开始日期。",
     calcNoteNoBoxes: "当前所有箱型数量均为 0，请至少填写一个大于 0 的数量后再计算。",
@@ -262,8 +262,8 @@
     calcNoteOverweightBlockedPrefix: "以下箱型最大重量超过30kg：",
     calcNoteOverweightBlockedSuffix: "，请拆分减重后重新计算。",
     calcNoteContact200: "超过 200 天请联系客服确认 3.5 折与送箱规则；送箱默认不上楼。",
-    calcNoteOtherCity: "若需送往英国其他城市，外地转运费用需单独核算，当前预计总价未包含该部分；外地转运服务需至少提前 3 天预约，建议提前 7 天，具体日期请联系客服确认。",
-    calcNoteOtherCityScotland: "若需送往苏格兰地区，外地转运费用需单独核算，当前预计总价未包含该部分；外地转运服务需至少提前 3 天预约，建议提前 7 天，具体日期请联系客服确认。",
+    calcNoteOtherCity: "若需送往英国其他城市，外地转运费用需单独核算，当前预计总价未包含该部分；返还服务需至少提前 7 天预约，具体日期请联系客服确认。",
+    calcNoteOtherCityScotland: "若需送往苏格兰地区，外地转运费用需单独核算，当前预计总价未包含该部分；返还服务需至少提前 7 天预约，具体日期请联系客服确认。",
     example1Title: "示例：5 月 1 日 -> 5 月 15 日",
     example1Text: "1 号箱 1 个，14 天。原始寄存费 £9.8，不足 1 箱最低 £20 时按 £20 起算，再加 £2 上门取件费和 £2 送货费。",
     example2Title: "示例：5 月 1 日 -> 5 月 6 日",
@@ -284,7 +284,7 @@
     ruleDeliveryText: "本地长期寄存的上门取件与送货按当前规则视为免费；短期寄存 30 天内每箱加收 £2 取件费和 £2 送货费。默认按楼下交接处理，送箱不上楼；取寄存与送回去的上楼费分开计算，其中仅取寄存侧电梯上楼在超过 100 天时免费。寄往英国其他城市时，10kg 内 £10，10–30kg £15，苏格兰地区另加 £5，特殊或专车配送需单独询价。",
     faqTitle: "FAQ / 提醒",
     faq1: "2 号箱暂时可能缺货，请寄存前先确认。",
-    faq2: "寄存结束后如果寄往英国其他城市，建议至少提前 7 天预约，最少需提前 3 天，具体日期请联系客服确认。",
+    faq2: "寄存结束后如果需要返还或寄往英国其他城市，请至少提前 7 天预约，具体日期请联系客服确认。",
     faq3: "默认到公寓楼下交接；送箱不上楼，取寄存和送回去如需上楼会额外收费。",
     faq4: "寄存前请先和我们确认收费与返还时间，避免临时变化。",
     policyTitle: "价格规则总览",
@@ -472,13 +472,13 @@
     process2Title: "Confirm box type and rules",
     process2Text: "We send the storage terms, box sizes and pricing rules so you can prepare in advance.",
     process3Title: "Prepare boxes and schedule pickup",
-    process3Text: "If you need boxes, they can be delivered to the ground floor in advance. Box delivery does not include upstairs service. Once packed, book a collection time.",
+    process3Text: "If you need boxes, they can be delivered to the ground floor in advance and box delivery does not include upstairs service. Box delivery requires at least 7 days' notice and must be at least 2 days before the storage start date.",
     process4Title: "Pickup at the arranged time",
     process4Text: "We collect according to the booked time. Carrying items upstairs is charged separately when needed.",
     process5Title: "Warehouse intake and confirmation",
     process5Text: "After items arrive at the warehouse, we confirm your storage period and send a receipt and storage record.",
     process6Title: "Return or onward delivery",
-    process6Text: "We can return items when you come back to Nottingham. For mailing or delivery to another city, we recommend booking at least 7 days ahead, with a minimum of 3 days.",
+    process6Text: "We can return items when you come back to Nottingham. In all cases, whether local return, warehouse collection or forwarding, return service requires at least 7 days' notice.",
     storageBoxesTitle: "Box Sizes and Pricing",
     storageBoxesIntro: "The following pricing applies to non-member storage. Dimensions are shown as marked on the boxes. Box 2 may occasionally be out of stock.",
     boxTableNo: "Box",
@@ -508,8 +508,9 @@
     calcStartDate: "Start Date",
     calcStartDateHelp: "The start date also serves as the storage booking date. We recommend booking at least 7 days ahead, with a minimum of 3 days.",
     calcEndDate: "End Date",
+    calcEndDateHelp: "The end date also serves as the return / collection date. In all cases, return service requires at least 7 days' notice.",
     calcBoxDeliveryDate: "Box Delivery Date",
-    calcBoxDeliveryDateHelp: "We recommend booking at least 7 days ahead, with a minimum of 3 days. If boxes need to be delivered before storage starts, the box delivery date must be at least 2 days earlier than the start date.",
+    calcBoxDeliveryDateHelp: "Box delivery requires at least 7 days' notice. If boxes need to be delivered before storage starts, the box delivery date must be at least 2 days earlier than the start date.",
     calcPickupMethod: "Collection Method",
     calcPickupMethodHome: "Home Collection",
     calcPickupMethodSelf: "Deliver to Warehouse Yourself",
@@ -530,8 +531,6 @@
     calcReturnLocal: "Local return in Nottingham",
     calcReturnEngland: "Forward to another UK city (England)",
     calcReturnScotland: "Forward to Scotland",
-    calcReturnBookingDate: "Return / Collection Date",
-    calcReturnBookingDateHelp: "Return / collection date defaults to the end date and can be adjusted separately. We recommend booking at least 7 days ahead, with a minimum of 3 days.",
     calcSubmit: "Update Estimate",
     calcResultTitle: "Estimated Cost",
     resultBoxTotal: "Total Boxes",
@@ -567,9 +566,10 @@
     calcNoteDefault: "Choose valid start and end dates, collection method, return method and delivery method to see storage days, discounts, fee items and overweight notes automatically.",
     calcNoteDateMissing: "Please choose a valid start date and end date first.",
     calcNoteBoxDeliveryDateRequired: "When any box purchase quantity is entered, a box delivery date is required.",
-    calcNoteReturnBookingDateRequired: "For local Nottingham return, a return / collection date is required.",
     calcNoteDeliveryMethodRequired: "For local Nottingham return, choose a delivery method first.",
-    calcNoteAppointmentLeadTime: "We recommend booking at least 7 days ahead, with a minimum of 3 days.",
+    calcNoteStartLeadTime: "The start date must be booked at least 3 days ahead.",
+    calcNoteBoxDeliveryLeadTime: "Box delivery requires at least 7 days' notice.",
+    calcNoteReturnLeadTime: "Return service requires at least 7 days' notice in all cases.",
     calcNoteBoxDeliveryGap: "If boxes need to be delivered before storage starts, the box delivery date must be at least 2 days earlier than the start date.",
     calcNoteStartDateTooEarlyForBoxDelivery: "The current start date is too early to allow a valid box delivery date at least 2 days beforehand. Please move the start date later.",
     calcNoteNoBoxes: "All storage quantities are currently 0. Please enter at least one quantity greater than 0 before calculating.",
@@ -585,8 +585,8 @@
     calcNoteOverweightBlockedPrefix: "The following box types exceed 30kg maximum weight: ",
     calcNoteOverweightBlockedSuffix: ". Please split and reduce the weight before calculating again.",
     calcNoteContact200: "Above 200 days, please contact us to confirm the 35% rate and free-box rule. Box delivery does not include upstairs service.",
-    calcNoteOtherCity: "Forwarding to another UK city is not included in the estimated total and should be confirmed manually. Forwarding service requires at least 3 days' notice and we recommend 7 days; please contact us to confirm the exact date.",
-    calcNoteOtherCityScotland: "Forwarding to Scotland is not included in the estimated total and should be confirmed manually. Forwarding service requires at least 3 days' notice and we recommend 7 days; please contact us to confirm the exact date.",
+    calcNoteOtherCity: "Forwarding to another UK city is not included in the estimated total and should be confirmed manually. Return service requires at least 7 days' notice; please contact us to confirm the exact date.",
+    calcNoteOtherCityScotland: "Forwarding to Scotland is not included in the estimated total and should be confirmed manually. Return service requires at least 7 days' notice; please contact us to confirm the exact date.",
     example1Title: "Example: May 1 -> May 15",
     example1Text: "1 Box 1 for 14 days. The raw storage fee is £9.8, but one-box short-term storage starts from £20, then adds £2 collection and £2 return delivery.",
     example2Title: "Example: May 1 -> May 6",
@@ -607,7 +607,7 @@
     ruleDeliveryText: "For long-term local storage, collection and return delivery are treated as free under the current guidance. For storage within 30 days, collection is £2 per box and return delivery is £2 per box. The default handover is at the ground floor, and box delivery does not include upstairs service. Pickup-side and return-side upstairs fees are calculated separately, and only pickup-side lift upstairs becomes free after 100 days. For other UK cities, courier rates are £10 up to 10kg and £15 for 10–30kg, with an extra £5 for Scotland. Special or van delivery is quoted separately.",
     faqTitle: "FAQ / Notes",
     faq1: "Box 2 may be temporarily out of stock. Please confirm before storage.",
-    faq2: "If you want items forwarded to another UK city after storage, we recommend booking at least 7 days ahead, with a minimum of 3 days. Please contact us to confirm the exact date.",
+    faq2: "If you need return or forwarding to another UK city after storage, please book at least 7 days in advance and contact us to confirm the exact date.",
     faq3: "Ground-floor handover is the default. Box delivery does not include upstairs service, and upstairs carrying is charged separately for pickup and return when needed.",
     faq4: "Please confirm your charges and return schedule with us before storage to avoid last-minute changes.",
     policyTitle: "Pricing Rules Overview",
@@ -1081,6 +1081,16 @@ function getStorageAppointmentLeadDate() {
   return new Date(today.getFullYear(), today.getMonth(), today.getDate() + 3);
 }
 
+function getStorageBoxDeliveryLeadDate() {
+  const today = new Date();
+  return new Date(today.getFullYear(), today.getMonth(), today.getDate() + 7);
+}
+
+function getStorageReturnLeadDate() {
+  const today = new Date();
+  return new Date(today.getFullYear(), today.getMonth(), today.getDate() + 7);
+}
+
 function getStorageDiscount(days) {
   if (days >= 200) {
     return 0.35;
@@ -1249,7 +1259,6 @@ function calculateStorageEstimate({
   boxWeights,
   returnType,
   deliveryMethod,
-  returnBookingDate,
   returnAccessType
 }) {
   const days = getStorageDays(startDate, endDate);
@@ -1259,10 +1268,12 @@ function calculateStorageEstimate({
   const purchaseErrorBoxType = getStoragePurchaseValidationError(boxCounts, purchaseCounts);
   const { missingBoxTypes, blockedBoxTypes } = getStorageWeightValidation(boxCounts, boxWeights);
   const { items, rawStorageTotal, purchaseTotal } = getStorageLineItems(boxCounts, purchaseCounts, boxWeights, days);
-  const leadDate = getStorageAppointmentLeadDate();
+  const startLeadDate = getStorageAppointmentLeadDate();
+  const boxLeadDate = getStorageBoxDeliveryLeadDate();
+  const returnLeadDate = getStorageReturnLeadDate();
   const parsedStartDate = parseDateAtMidnight(startDate);
+  const parsedEndDate = parseDateAtMidnight(endDate);
   const parsedBoxDeliveryDate = parseDateAtMidnight(boxDeliveryDate);
-  const parsedReturnBookingDate = parseDateAtMidnight(returnBookingDate);
   const discountedBase = rawStorageTotal * discount;
   let pickup = 0;
   let delivery = 0;
@@ -1373,32 +1384,6 @@ function calculateStorageEstimate({
     };
   }
 
-  if (returnType === "local" && !parsedReturnBookingDate) {
-    return {
-      days,
-      blocked: true,
-      boxCounts,
-      purchaseCounts,
-      totalBoxes,
-      items,
-      pickupMethod,
-      deliveryMethod,
-      rawStorageTotal,
-      discount,
-      discountedBase,
-      purchaseTotal,
-      pickup: 0,
-      delivery: 0,
-      pickupAccessFee: 0,
-      returnAccessFee: 0,
-      overweightFee: 0,
-      minimumAdjustment: 0,
-      total: null,
-      otherCityMessageKey: returnType === "scotland" ? "resultOtherCityTextScotland" : "resultOtherCityText",
-      notes: ["calcNoteReturnBookingDateRequired"]
-    };
-  }
-
   if (missingBoxTypes.length) {
     return {
       days,
@@ -1477,7 +1462,7 @@ function calculateStorageEstimate({
     };
   }
 
-  if (parsedStartDate && parsedStartDate < leadDate) {
+  if (parsedStartDate && parsedStartDate < startLeadDate) {
     return {
       days,
       blocked: true,
@@ -1499,11 +1484,11 @@ function calculateStorageEstimate({
       minimumAdjustment: 0,
       total: null,
       otherCityMessageKey: returnType === "scotland" ? "resultOtherCityTextScotland" : "resultOtherCityText",
-      notes: ["calcNoteAppointmentLeadTime"]
+      notes: ["calcNoteStartLeadTime"]
     };
   }
 
-  if (totalPurchaseBoxes > 0 && parsedStartDate && parsedStartDate < addDays(leadDate, 2)) {
+  if (totalPurchaseBoxes > 0 && parsedStartDate && parsedStartDate < addDays(boxLeadDate, 2)) {
     return {
       days,
       blocked: true,
@@ -1529,10 +1514,7 @@ function calculateStorageEstimate({
     };
   }
 
-  if (
-    (parsedBoxDeliveryDate && parsedBoxDeliveryDate < leadDate)
-    || (parsedReturnBookingDate && parsedReturnBookingDate < leadDate)
-  ) {
+  if (parsedBoxDeliveryDate && parsedBoxDeliveryDate < boxLeadDate) {
     return {
       days,
       blocked: true,
@@ -1554,7 +1536,33 @@ function calculateStorageEstimate({
       minimumAdjustment: 0,
       total: null,
       otherCityMessageKey: returnType === "scotland" ? "resultOtherCityTextScotland" : "resultOtherCityText",
-      notes: ["calcNoteAppointmentLeadTime"]
+      notes: ["calcNoteBoxDeliveryLeadTime"]
+    };
+  }
+
+  if (parsedEndDate && parsedEndDate < returnLeadDate) {
+    return {
+      days,
+      blocked: true,
+      boxCounts,
+      purchaseCounts,
+      totalBoxes,
+      items,
+      pickupMethod,
+      deliveryMethod,
+      rawStorageTotal,
+      discount,
+      discountedBase,
+      purchaseTotal,
+      pickup: 0,
+      delivery: 0,
+      pickupAccessFee: 0,
+      returnAccessFee: 0,
+      overweightFee: 0,
+      minimumAdjustment: 0,
+      total: null,
+      otherCityMessageKey: returnType === "scotland" ? "resultOtherCityTextScotland" : "resultOtherCityText",
+      notes: ["calcNoteReturnLeadTime"]
     };
   }
 
@@ -1686,8 +1694,6 @@ function initStorageCalculator(activeLang) {
   const returnTypeInput = document.querySelector("#returnType");
   const deliveryMethodField = document.querySelector("#deliveryMethodField");
   const deliveryMethodInput = document.querySelector("#deliveryMethod");
-  const returnBookingDateField = document.querySelector("#returnBookingDateField");
-  const returnBookingDateInput = document.querySelector("#returnBookingDate");
   const returnAccessField = document.querySelector("#returnAccessField");
   const returnAccessInput = document.querySelector("#returnAccess");
   const resultBoxTotal = document.querySelector("#resultBoxTotal");
@@ -1711,7 +1717,6 @@ function initStorageCalculator(activeLang) {
   const resultOtherCityText = document.querySelector("#resultOtherCityText");
   const resultBreakdownEmpty = document.querySelector("#resultBreakdownEmpty");
   const resultBreakdown = document.querySelector("#resultBreakdown");
-  let returnBookingDateTouched = false;
 
   form.dataset.lang = activeLang;
 
@@ -1726,11 +1731,14 @@ function initStorageCalculator(activeLang) {
   }
 
   function syncDateRange() {
-    const leadDateText = formatDateInputValue(getStorageAppointmentLeadDate());
+    const startLeadDate = getStorageAppointmentLeadDate();
+    const boxLeadDate = getStorageBoxDeliveryLeadDate();
+    const returnLeadDate = getStorageReturnLeadDate();
     const needsBoxDelivery = Object.values(getPurchaseCounts()).reduce((sum, value) => sum + value, 0) > 0;
-    const startDateMin = needsBoxDelivery
-      ? formatDateInputValue(addDays(getStorageAppointmentLeadDate(), 2))
-      : leadDateText;
+    const startDateMinDate = needsBoxDelivery
+      ? addDays(boxLeadDate, 2)
+      : startLeadDate;
+    const startDateMin = formatDateInputValue(startDateMinDate > startLeadDate ? startDateMinDate : startLeadDate);
     startDateInput.min = startDateMin;
 
     if (startDateInput.value && startDateInput.value < startDateInput.min) {
@@ -1739,13 +1747,12 @@ function initStorageCalculator(activeLang) {
 
     const startDate = startDateInput.value;
     if (!startDate) {
-      endDateInput.min = "";
+      endDateInput.min = formatDateInputValue(returnLeadDate);
       return;
     }
 
-    const start = new Date(`${startDate}T00:00:00`);
-    const minEnd = new Date(start.getTime() + 86400000);
-    const minEndText = minEnd.toISOString().slice(0, 10);
+    const minEnd = addDays(parseDateAtMidnight(startDate), 1);
+    const minEndText = formatDateInputValue(minEnd > returnLeadDate ? minEnd : returnLeadDate);
     endDateInput.min = minEndText;
 
     if (endDateInput.value && endDateInput.value < minEndText) {
@@ -1754,14 +1761,10 @@ function initStorageCalculator(activeLang) {
   }
 
   function syncAppointmentFields() {
-    const leadDate = getStorageAppointmentLeadDate();
-    const leadDateText = formatDateInputValue(leadDate);
-    const boxCounts = getBoxCounts();
+    const boxLeadDateText = formatDateInputValue(getStorageBoxDeliveryLeadDate());
     const purchaseCounts = getPurchaseCounts();
-    const totalBoxes = Object.values(boxCounts).reduce((sum, value) => sum + value, 0);
     const totalPurchaseBoxes = Object.values(purchaseCounts).reduce((sum, value) => sum + value, 0);
     const needsBoxDelivery = totalPurchaseBoxes > 0;
-    const isLocalReturn = returnTypeInput.value === "local";
 
     if (boxDeliveryDateField) {
       boxDeliveryDateField.hidden = !needsBoxDelivery;
@@ -1770,7 +1773,7 @@ function initStorageCalculator(activeLang) {
     }
 
     boxDeliveryDateInput.disabled = !needsBoxDelivery;
-    boxDeliveryDateInput.min = leadDateText;
+    boxDeliveryDateInput.min = boxLeadDateText;
     if (startDateInput.value) {
       boxDeliveryDateInput.max = formatDateInputValue(addDays(parseDateAtMidnight(startDateInput.value), -2));
     } else {
@@ -1779,30 +1782,12 @@ function initStorageCalculator(activeLang) {
     if (!needsBoxDelivery) {
       boxDeliveryDateInput.value = "";
     } else {
-      if (boxDeliveryDateInput.value && boxDeliveryDateInput.value < leadDateText) {
-        boxDeliveryDateInput.value = leadDateText;
+      if (boxDeliveryDateInput.value && boxDeliveryDateInput.value < boxLeadDateText) {
+        boxDeliveryDateInput.value = boxLeadDateText;
       }
       if (boxDeliveryDateInput.max && boxDeliveryDateInput.value && boxDeliveryDateInput.value > boxDeliveryDateInput.max) {
         boxDeliveryDateInput.value = boxDeliveryDateInput.max;
       }
-    }
-
-    if (returnBookingDateField) {
-      returnBookingDateField.hidden = !isLocalReturn;
-      returnBookingDateField.style.display = isLocalReturn ? "" : "none";
-      returnBookingDateField.setAttribute("aria-hidden", String(!isLocalReturn));
-    }
-
-    returnBookingDateInput.disabled = !isLocalReturn;
-    returnBookingDateInput.min = leadDateText;
-    if (!isLocalReturn) {
-      returnBookingDateInput.value = "";
-      returnBookingDateTouched = false;
-    } else if (!returnBookingDateTouched && endDateInput.value) {
-      const desiredValue = endDateInput.value < leadDateText ? leadDateText : endDateInput.value;
-      returnBookingDateInput.value = desiredValue;
-    } else if (returnBookingDateInput.value && returnBookingDateInput.value < leadDateText) {
-      returnBookingDateInput.value = leadDateText;
     }
   }
 
@@ -2009,7 +1994,6 @@ function initStorageCalculator(activeLang) {
     const pickupAccessType = pickupAccessInput.value;
     const returnType = returnTypeInput.value;
     const deliveryMethod = deliveryMethodInput.value;
-    const returnBookingDate = returnBookingDateInput.value;
     const returnAccessType = returnAccessInput.value;
     const estimate = calculateStorageEstimate({
       boxCounts,
@@ -2022,7 +2006,6 @@ function initStorageCalculator(activeLang) {
       boxWeights,
       returnType,
       deliveryMethod,
-      returnBookingDate,
       returnAccessType
     });
     const noBoxes = estimate.totalBoxes === 0;
@@ -2105,13 +2088,9 @@ function initStorageCalculator(activeLang) {
     ...boxWeightInputs,
     returnTypeInput,
     deliveryMethodInput,
-    returnBookingDateInput,
     returnAccessInput
   ].forEach(input => {
     input.addEventListener("input", () => {
-      if (input === returnBookingDateInput) {
-        returnBookingDateTouched = true;
-      }
       if (input === startDateInput || boxPurchaseInputs.includes(input)) {
         syncDateRange();
       }
@@ -2133,9 +2112,6 @@ function initStorageCalculator(activeLang) {
       renderEstimate();
     });
     input.addEventListener("change", () => {
-      if (input === returnBookingDateInput) {
-        returnBookingDateTouched = true;
-      }
       if (input === startDateInput || boxPurchaseInputs.includes(input)) {
         syncDateRange();
       }
