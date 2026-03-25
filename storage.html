@@ -316,11 +316,11 @@
             </select>
           </label>
           <label class="field" id="pickupAccessField">
-            <span data-i18n="calcAccess">楼层情况</span>
+            <span data-i18n="calcPickupAccess">取寄存交接方式</span>
             <select id="pickupAccess">
               <option value="ground" data-i18n="calcAccessGround">楼下交接</option>
-              <option value="elevator" data-i18n="calcAccessElevator">电梯房上楼服务</option>
-              <option value="stairs" data-i18n="calcAccessStairs">楼梯房上楼服务</option>
+              <option value="elevator" data-i18n="calcAccessElevator">电梯上楼</option>
+              <option value="stairs" data-i18n="calcAccessStairs">楼梯上楼</option>
             </select>
           </label>
           <label class="field">
@@ -329,6 +329,14 @@
               <option value="local" data-i18n="calcReturnLocal">诺丁汉当地寄存送还</option>
               <option value="england" data-i18n="calcReturnEngland">送往英国其他城市（英格兰）</option>
               <option value="scotland" data-i18n="calcReturnScotland">送往苏格兰地区</option>
+            </select>
+          </label>
+          <label class="field" id="returnAccessField">
+            <span data-i18n="calcReturnAccess">送回去交接方式</span>
+            <select id="returnAccess">
+              <option value="ground" data-i18n="calcAccessGround">楼下交接</option>
+              <option value="elevator" data-i18n="calcAccessElevator">电梯上楼</option>
+              <option value="stairs" data-i18n="calcAccessStairs">楼梯上楼</option>
             </select>
           </label>
           <button class="button button-primary full-width" type="submit" data-i18n="calcSubmit">更新估算</button>
@@ -361,9 +369,13 @@
               <dt data-i18n="resultDelivery">送货费</dt>
               <dd id="resultDelivery">£0.00</dd>
             </div>
-            <div id="resultAccessRow">
-              <dt data-i18n="resultAccess">上楼服务费</dt>
-              <dd id="resultAccess">£0.00</dd>
+            <div id="resultPickupAccessRow">
+              <dt data-i18n="resultPickupAccess">取寄存上楼费</dt>
+              <dd id="resultPickupAccess">£0.00</dd>
+            </div>
+            <div id="resultReturnAccessRow">
+              <dt data-i18n="resultReturnAccess">送回去上楼费</dt>
+              <dd id="resultReturnAccess">£0.00</dd>
             </div>
             <div>
               <dt data-i18n="resultOverweight">超重加费</dt>
@@ -410,7 +422,7 @@
         </article>
         <article class="example-card">
           <h3 data-i18n="example4Title">示例：5 月 1 日 -> 9 月 20 日</h3>
-          <p data-i18n="example4Text">系统会自动计算总天数、折扣档位、超重周数，以及 100 天以上电梯房上楼服务免费的规则变化。</p>
+          <p data-i18n="example4Text">系统会自动计算总天数、折扣档位、超重周数，以及仅取寄存侧在 100 天以上电梯上楼免费的规则变化。</p>
         </article>
       </div>
     </section>
