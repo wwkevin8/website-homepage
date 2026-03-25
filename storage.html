@@ -18,6 +18,7 @@
       right: 24px;
       bottom: 24px;
       z-index: 1200;
+      overflow: hidden;
       border: 0;
       border-radius: 24px;
       padding: 12px 14px 12px 12px;
@@ -34,6 +35,31 @@
       gap: 12px;
       text-align: left;
       transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+      animation: storageContactFloat 3.4s ease-in-out infinite;
+    }
+
+    .storage-contact-fab::before {
+      content: "";
+      position: absolute;
+      inset: -18%;
+      border-radius: 30px;
+      background: radial-gradient(circle, rgba(70, 157, 255, 0.3) 0%, rgba(70, 157, 255, 0) 68%);
+      opacity: 0.72;
+      animation: storageContactPulse 2.8s ease-out infinite;
+      pointer-events: none;
+    }
+
+    .storage-contact-fab::after {
+      content: "";
+      position: absolute;
+      top: -32%;
+      left: -26%;
+      width: 54%;
+      height: 168%;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0));
+      transform: rotate(18deg);
+      animation: storageContactShine 3.9s ease-in-out infinite;
+      pointer-events: none;
     }
 
     .storage-contact-fab:hover {
@@ -48,6 +74,7 @@
     }
 
     .storage-contact-fab-icon {
+      position: relative;
       width: 46px;
       height: 46px;
       border-radius: 16px;
@@ -57,9 +84,12 @@
       font-size: 22px;
       flex-shrink: 0;
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.24);
+      animation: storageContactIconPop 2.9s ease-in-out infinite;
     }
 
     .storage-contact-fab-copy {
+      position: relative;
+      z-index: 1;
       display: flex;
       flex-direction: column;
       gap: 3px;
@@ -84,6 +114,69 @@
       font-size: 12px;
       line-height: 1.2;
       color: rgba(239, 245, 255, 0.9);
+    }
+
+    @keyframes storageContactFloat {
+      0%,
+      100% {
+        transform: translateY(0);
+      }
+      50% {
+        transform: translateY(-6px);
+      }
+    }
+
+    @keyframes storageContactPulse {
+      0% {
+        transform: scale(0.92);
+        opacity: 0.5;
+      }
+      60% {
+        transform: scale(1.08);
+        opacity: 0.18;
+      }
+      100% {
+        transform: scale(1.16);
+        opacity: 0;
+      }
+    }
+
+    @keyframes storageContactShine {
+      0%,
+      18% {
+        transform: translateX(-130%) rotate(18deg);
+        opacity: 0;
+      }
+      28% {
+        opacity: 1;
+      }
+      52% {
+        transform: translateX(300%) rotate(18deg);
+        opacity: 0.95;
+      }
+      100% {
+        transform: translateX(300%) rotate(18deg);
+        opacity: 0;
+      }
+    }
+
+    @keyframes storageContactIconPop {
+      0%,
+      100% {
+        transform: scale(1);
+      }
+      10% {
+        transform: scale(1.05);
+      }
+      18% {
+        transform: scale(0.98);
+      }
+      26% {
+        transform: scale(1.08);
+      }
+      34% {
+        transform: scale(1);
+      }
     }
 
     .storage-contact-modal[hidden] {
@@ -148,6 +241,10 @@
 
       .storage-contact-fab-title {
         font-size: 15px;
+      }
+
+      .storage-contact-fab-subtitle {
+        font-size: 11px;
       }
 
       .storage-contact-modal {
