@@ -254,33 +254,51 @@
         <form class="calculator-card" id="storageCalculator">
           <div class="field">
             <span data-i18n="calcBoxCounts">各箱型数量</span>
-            <div class="box-count-grid">
+            <div class="box-order-grid">
+              <div class="box-order-head">
+                <span data-i18n="calcBoxTypeLabel">箱型</span>
+                <span data-i18n="calcStorageQty">寄存数量</span>
+                <span data-i18n="calcPurchaseQty">购买数量</span>
+                <span data-i18n="calcMaximumWeight">最大重量（kg/箱）</span>
+              </div>
               <label class="mini-field">
                 <span data-i18n="calcBox1">1 号箱</span>
-                <input id="boxCount1" data-box-count="1" type="number" min="0" step="1" value="0" inputmode="numeric">
+                <input id="boxCount1" class="box-order-input" data-box-count="1" type="number" min="0" step="1" value="0" inputmode="numeric">
+                <input id="boxPurchase1" class="box-order-input" data-box-purchase="1" type="number" min="0" step="1" value="0" inputmode="numeric">
+                <input id="boxWeight1" class="box-order-input" data-box-weight="1" type="number" min="0" max="99" step="1" inputmode="numeric" disabled aria-disabled="true">
               </label>
               <label class="mini-field">
                 <span data-i18n="calcBox2">2 号箱</span>
-                <input id="boxCount2" data-box-count="2" type="number" min="0" step="1" value="0" inputmode="numeric">
+                <input id="boxCount2" class="box-order-input" data-box-count="2" type="number" min="0" step="1" value="0" inputmode="numeric">
+                <input id="boxPurchase2" class="box-order-input" data-box-purchase="2" type="number" min="0" step="1" value="0" inputmode="numeric">
+                <input id="boxWeight2" class="box-order-input" data-box-weight="2" type="number" min="0" max="99" step="1" inputmode="numeric" disabled aria-disabled="true">
               </label>
               <label class="mini-field">
                 <span data-i18n="calcBox3">3 号箱</span>
-                <input id="boxCount3" data-box-count="3" type="number" min="0" step="1" value="0" inputmode="numeric">
+                <input id="boxCount3" class="box-order-input" data-box-count="3" type="number" min="0" step="1" value="0" inputmode="numeric">
+                <input id="boxPurchase3" class="box-order-input" data-box-purchase="3" type="number" min="0" step="1" value="0" inputmode="numeric">
+                <input id="boxWeight3" class="box-order-input" data-box-weight="3" type="number" min="0" max="99" step="1" inputmode="numeric" disabled aria-disabled="true">
               </label>
               <label class="mini-field">
                 <span data-i18n="calcBox4">4 号箱</span>
-                <input id="boxCount4" data-box-count="4" type="number" min="0" step="1" value="0" inputmode="numeric">
+                <input id="boxCount4" class="box-order-input" data-box-count="4" type="number" min="0" step="1" value="0" inputmode="numeric">
+                <input id="boxPurchase4" class="box-order-input" data-box-purchase="4" type="number" min="0" step="1" value="0" inputmode="numeric">
+                <input id="boxWeight4" class="box-order-input" data-box-weight="4" type="number" min="0" max="99" step="1" inputmode="numeric" disabled aria-disabled="true">
               </label>
               <label class="mini-field">
                 <span data-i18n="calcBox5">5 号箱</span>
-                <input id="boxCount5" data-box-count="5" type="number" min="0" step="1" value="0" inputmode="numeric">
+                <input id="boxCount5" class="box-order-input" data-box-count="5" type="number" min="0" step="1" value="0" inputmode="numeric">
+                <input id="boxPurchase5" class="box-order-input" data-box-purchase="5" type="number" min="0" step="1" value="0" inputmode="numeric">
+                <input id="boxWeight5" class="box-order-input" data-box-weight="5" type="number" min="0" max="99" step="1" inputmode="numeric" disabled aria-disabled="true">
               </label>
               <label class="mini-field">
                 <span data-i18n="calcBox6">6 号箱</span>
-                <input id="boxCount6" data-box-count="6" type="number" min="0" step="1" value="0" inputmode="numeric">
+                <input id="boxCount6" class="box-order-input" data-box-count="6" type="number" min="0" step="1" value="0" inputmode="numeric">
+                <input id="boxPurchase6" class="box-order-input" data-box-purchase="6" type="number" min="0" step="1" value="0" inputmode="numeric">
+                <input id="boxWeight6" class="box-order-input" data-box-weight="6" type="number" min="0" max="99" step="1" inputmode="numeric" disabled aria-disabled="true">
               </label>
             </div>
-            <p class="field-help" data-i18n="calcBoxCountHelp">至少填写一种箱型数量后才能计算。</p>
+            <p class="field-help" data-i18n="calcBoxCountHelp">至少填写一种寄存数量；购买数量不能大于寄存数量；有寄存数量的箱型必须填写最大重量，并建议每箱尽量控制在 23kg 内。</p>
           </div>
           <label class="field">
             <span data-i18n="calcStartDate">开始日期</span>
@@ -303,17 +321,6 @@
               <option value="ground" data-i18n="calcAccessGround">楼下交接</option>
               <option value="elevator" data-i18n="calcAccessElevator">电梯房上楼服务</option>
               <option value="stairs" data-i18n="calcAccessStairs">楼梯房上楼服务</option>
-            </select>
-          </label>
-          <label class="field">
-            <span data-i18n="calcWeight">单箱重量 (kg)</span>
-            <input id="boxWeight" type="number" min="0" max="30" step="1" inputmode="numeric" value="20">
-          </label>
-          <label class="field">
-            <span data-i18n="calcPurchaseBoxes">是否需要购买箱子</span>
-            <select id="purchaseBoxes">
-              <option value="no" data-i18n="calcPurchaseBoxesNo">否</option>
-              <option value="yes" data-i18n="calcPurchaseBoxesYes">是</option>
             </select>
           </label>
           <label class="field">
@@ -398,8 +405,8 @@
           <p data-i18n="example2Text">1 号箱 2 个 + 4 号箱 3 个，共 5 箱 5 天。原始寄存费分别计算后汇总为 £14.5，不足多箱最低 £30 时按 £30 起算，再加 £10 上门取件费和 £10 送货费。</p>
         </article>
         <article class="example-card">
-          <h3 data-i18n="example3Title">示例：需要购买箱子</h3>
-          <p data-i18n="example3Text">若勾选需要购买箱子，系统会按各箱型箱价分别计算购箱费，并在折后寄存费、取件费、送货费之后单独加入总价。</p>
+          <h3 data-i18n="example3Title">示例：部分自备、部分购买</h3>
+          <p data-i18n="example3Text">如果 1 号箱寄存 4 个但只购买 2 个，系统仍会按 4 个 1 号箱计算寄存费，只对其中 2 个追加 1 号箱购箱费。</p>
         </article>
         <article class="example-card">
           <h3 data-i18n="example4Title">示例：5 月 1 日 -> 9 月 20 日</h3>

@@ -172,7 +172,10 @@
     storageCalcTitle: "非会员价格计算器",
     storageCalcIntro: "输入各箱型数量、日期、取件方式和送还方式后，系统会分别计算寄存费、购箱费、折扣和附加费用。",
     calcBoxCounts: "各箱型数量",
-    calcBoxCountHelp: "至少填写一种箱型数量后才能计算。",
+    calcBoxTypeLabel: "箱型",
+    calcStorageQty: "寄存数量",
+    calcPurchaseQty: "购买数量",
+    calcBoxCountHelp: "请至少填写一种寄存数量；购买数量不能大于寄存数量；有寄存数量的箱型必须填写最大重量。建议每箱尽量控制在 23kg 以内，且单箱最大重量不得超过 30kg。",
     calcBox1: "1 号箱",
     calcBox2: "2 号箱",
     calcBox3: "3 号箱",
@@ -188,11 +191,11 @@
     calcAccessGround: "楼下交接",
     calcAccessElevator: "电梯房上楼服务",
     calcAccessStairs: "楼梯房上楼服务",
-    calcWeight: "单箱重量",
-    calcWeightMaxHint: "单箱重量不能超过30kg",
-    calcPurchaseBoxes: "是否需要购买箱子",
-    calcPurchaseBoxesYes: "是",
-    calcPurchaseBoxesNo: "否",
+    calcWeight: "最大重量（kg/箱）",
+    calcWeightMaxHint: "最大重量只允许输入整数",
+    calcWeightRequired: "有寄存数量的箱型必须填写最大重量",
+    calcWeightHelp1: "建议每箱尽量控制在 23kg 以内，避免搬运受伤",
+    calcWeightHelp2: "单箱最大重量不得超过 30kg",
     calcReturnType: "送还方式",
     calcReturnLocal: "诺丁汉当地寄存送还",
     calcReturnEngland: "送往英国其他城市（英格兰）",
@@ -211,10 +214,19 @@
     resultMinimum: "最低消费修正",
     resultTotal: "预计总价",
     resultBreakdownTitle: "订单明细",
-    resultBreakdownEmpty: "填写箱型数量后会在这里显示各箱型寄存费与购箱费明细。",
+    resultBreakdownEmpty: "填写各箱型寄存数量后会在这里显示寄存与购箱明细。",
     resultBreakdownEmptyInvalid: "当前未填写有效箱型数量，暂无订单明细。",
+    resultBreakdownStorageQty: "寄存数量",
+    resultBreakdownPurchaseQty: "购买数量",
+    resultBreakdownWeight: "最大重量",
+    resultBreakdownWeightStatus: "重量状态",
     resultBreakdownStorage: "寄存费",
     resultBreakdownPurchase: "购箱费",
+    resultBreakdownOverweight: "超重加费",
+    weightStatusNormal: "正常",
+    weightStatusWarn: "警示",
+    weightStatusCharged: "已触发超重加费",
+    weightStatusBlocked: "超重不可计算",
     resultOtherCityTitle: "英国其他城市转运说明",
     resultOtherCityText: "外地转运费用未自动计入预计总价。通常使用皇家邮局或 DPD，一般 2 个工作日送达；建议优先使用 1 / 2 / 3 号箱，10kg 内 £10，10–30kg £15，特殊物品需联系客服确认。",
     resultOtherCityTextScotland: "外地转运费用未自动计入预计总价。通常使用皇家邮局或 DPD，一般 2 个工作日送达；建议优先使用 1 / 2 / 3 号箱，10kg 内 £10，10–30kg £15，苏格兰地区另加 £5，特殊物品需联系客服确认。",
@@ -222,13 +234,16 @@
     calcNoteDefault: "选择日期、取件方式和送还方式后即可自动看到寄存天数、折扣、费用项和超重说明。",
     calcNoteDateMissing: "请先选择有效的开始日期和结束日期。",
     calcNoteNoBoxes: "当前所有箱型数量均为 0，请至少填写一个大于 0 的数量后再计算。",
+    calcNotePurchaseExceeded: "购买数量不能大于对应箱型的寄存数量，请检查后重新计算。",
+    calcNoteWeightRequired: "有寄存数量的箱型必须填写最大重量后才能计算。",
     calcNoteShort: "30 天内按短期寄存处理：1 箱最低 £20，多箱最低 £30，并加收每箱 £2 取件费和 £2 送货费。",
     calcNoteLong: "30 天以上按长期寄存处理，本地上门取件和本地送货按当前规则视为免费。",
     calcNoteLiftFree: "当前天数达到 100 天以上，电梯房上楼服务免费。",
     calcNoteSelfDropoff: "如选择自行送至仓库，则不收上门取件费和上楼服务费。",
-    calcNoteOverweightWarn: "建议控制在 23kg 内。23–25kg 区间只做重量警示，最终费用可能需要人工确认。",
-    calcNoteOverweightCharged: "25–30kg 会按 £0.5 / 箱 / 周加收超重费，周数按整周向上取整。",
-    calcNoteOverweightBlocked: "单箱重量不能超过 30kg，请拆分为两个或多个箱子后重新计算。",
+    calcNoteOverweightWarn: "建议每箱尽量控制在 23kg 以内，避免搬运受伤。",
+    calcNoteOverweightCharged: "25–30kg 的箱型会按 £0.5 / 箱 / 周加收超重费，周数按整周向上取整。",
+    calcNoteOverweightBlockedPrefix: "以下箱型最大重量超过30kg：",
+    calcNoteOverweightBlockedSuffix: "，请拆分减重后重新计算。",
     calcNoteContact200: "超过 200 天请联系客服确认 3.5 折与送箱规则。",
     calcNoteOtherCity: "若需送往英国其他城市，外地转运费用需单独核算，当前预计总价未包含该部分。",
     calcNoteOtherCityScotland: "若需送往苏格兰地区，外地转运费用需单独核算，当前预计总价未包含该部分。",
@@ -236,8 +251,8 @@
     example1Text: "1 号箱 1 个，14 天。原始寄存费 £9.8，不足 1 箱最低 £20 时按 £20 起算，再加 £2 上门取件费和 £2 送货费。",
     example2Title: "示例：5 月 1 日 -> 5 月 6 日",
     example2Text: "1 号箱 2 个 + 4 号箱 3 个，共 5 箱 5 天。原始寄存费分别计算后汇总为 £14.5，不足多箱最低 £30 时按 £30 起算，再加 £10 上门取件费和 £10 送货费。",
-    example3Title: "示例：需要购买箱子",
-    example3Text: "若勾选需要购买箱子，系统会按各箱型箱价分别计算购箱费，并在折后寄存费、取件费、送货费之后单独加入总价。",
+    example3Title: "示例：部分自备，部分购买",
+    example3Text: "例如 1 号箱寄存 4 个、购买 2 个，3 号箱寄存 2 个、购买 0 个。系统会分别计算各箱型寄存费，并只对填写的购买数量计算购箱费。",
     example4Title: "示例：5 月 1 日 -> 9 月 20 日",
     example4Text: "系统会自动计算总天数、折扣档位、超重周数，以及 100 天以上电梯房上楼服务免费的规则变化。",
     storageRulesTitle: "规则与注意事项",
@@ -247,7 +262,7 @@
     ruleLongTitle: "长期寄存折扣",
     ruleLongText: "寄存时间越长折扣越高，75 天及以上按 0.45 系数计算；200 天以上会赠送箱子并按 3.5 折说明处理。",
     ruleWeightTitle: "重量与特殊物品",
-    ruleWeightText: "建议单箱重量控制在 23kg 以内，太重工人容易受伤。23–25kg 只做警示不自动加费；25–30kg 多收 £0.5 / 箱 / 周，周数按整周向上取整；超过 30kg 不允许寄存，需拆箱后重新计算。超大件、无包装件和特殊物品请联系客服报价。",
+    ruleWeightText: "建议每箱尽量控制在 23kg 以内，避免搬运受伤。25–30kg 多收 £0.5 / 箱 / 周，周数按整周向上取整；单箱最大重量不得超过 30kg，超过后不允许寄存，需拆箱后重新计算。超大件、无包装件和特殊物品请联系客服报价。",
     ruleDeliveryTitle: "配送与上楼费",
     ruleDeliveryText: "本地长期寄存的上门取件与送货按当前规则视为免费；短期寄存 30 天内每箱加收 £2 取件费和 £2 送货费。寄往英国其他城市时，10kg 内 £10，10–30kg £15，苏格兰地区另加 £5，特殊或专车配送需单独询价。",
     faqTitle: "FAQ / 提醒",
@@ -463,7 +478,10 @@
     storageCalcTitle: "Non-member Price Calculator",
     storageCalcIntro: "Enter quantities for each box type, dates, collection method and return method. The calculator will estimate storage fees, box purchase fees, discounts and extra charges separately.",
     calcBoxCounts: "Box Quantities by Type",
-    calcBoxCountHelp: "At least one box type quantity must be greater than 0 before calculation.",
+    calcBoxTypeLabel: "Box Type",
+    calcStorageQty: "Storage Qty",
+    calcPurchaseQty: "Purchase Qty",
+    calcBoxCountHelp: "Enter at least one storage quantity. Purchase quantity cannot exceed storage quantity, and every box type with storage quantity must include a maximum weight. We recommend keeping each box within 23kg, and no single box can exceed 30kg.",
     calcBox1: "Box 1",
     calcBox2: "Box 2",
     calcBox3: "Box 3",
@@ -479,11 +497,11 @@
     calcAccessGround: "Ground Floor",
     calcAccessElevator: "Lift Building Upstairs Service",
     calcAccessStairs: "Stair Building Upstairs Service",
-    calcWeight: "Weight Per Box",
-    calcWeightMaxHint: "A single box cannot exceed 30kg",
-    calcPurchaseBoxes: "Need to Buy Boxes?",
-    calcPurchaseBoxesYes: "Yes",
-    calcPurchaseBoxesNo: "No",
+    calcWeight: "Maximum Weight (kg/box)",
+    calcWeightMaxHint: "Maximum weight must be a whole number",
+    calcWeightRequired: "Enter a maximum weight for each box type with storage quantity",
+    calcWeightHelp1: "We recommend keeping each box within 23kg to reduce lifting injuries",
+    calcWeightHelp2: "The maximum weight for any single box is 30kg",
     calcReturnType: "Return Method",
     calcReturnLocal: "Local return in Nottingham",
     calcReturnEngland: "Forward to another UK city (England)",
@@ -504,22 +522,34 @@
     resultBreakdownTitle: "Order Breakdown",
     resultBreakdownEmpty: "Box quantity details will appear here once at least one box type is filled in.",
     resultBreakdownEmptyInvalid: "No valid box quantity has been entered yet, so there is no order breakdown to show.",
+    resultBreakdownStorageQty: "Storage Qty",
+    resultBreakdownPurchaseQty: "Purchase Qty",
+    resultBreakdownWeight: "Maximum Weight",
+    resultBreakdownWeightStatus: "Weight Status",
     resultBreakdownStorage: "Storage",
     resultBreakdownPurchase: "Box Purchase",
+    resultBreakdownOverweight: "Overweight Charge",
+    weightStatusNormal: "Normal",
+    weightStatusWarn: "Warning",
+    weightStatusCharged: "Overweight Charge Applied",
+    weightStatusBlocked: "Overweight - Cannot Calculate",
     resultOtherCityTitle: "Other UK city forwarding",
     resultOtherCityText: "Forwarding is not included in the estimated total automatically. We usually use Royal Mail or DPD, delivery is often around 2 working days, and lighter 1 / 2 / 3 boxes are recommended. Rates are £10 up to 10kg and £15 for 10–30kg. Special items need a manual quote.",
     resultOtherCityTextScotland: "Forwarding is not included in the estimated total automatically. We usually use Royal Mail or DPD, delivery is often around 2 working days, and lighter 1 / 2 / 3 boxes are recommended. Rates are £10 up to 10kg and £15 for 10–30kg, plus £5 for Scotland. Special items need a manual quote.",
     calcBlockedTotal: "Not available",
     calcNoteDefault: "Choose valid dates, collection method and return method to see storage days, discounts, fee items and overweight notes automatically.",
     calcNoteDateMissing: "Please choose a valid start date and end date first.",
-    calcNoteNoBoxes: "All box quantities are currently 0. Please enter at least one quantity greater than 0 before calculating.",
+    calcNoteNoBoxes: "All storage quantities are currently 0. Please enter at least one quantity greater than 0 before calculating.",
+    calcNotePurchaseExceeded: "The purchase quantity cannot be greater than the storage quantity for the same box type. Please review the order and calculate again.",
+    calcNoteWeightRequired: "Each box type with storage quantity must include a maximum weight before pricing can be calculated.",
     calcNoteShort: "Storage within 30 days follows short-term rules: 1 box starts from £20, multiple boxes start from £30, plus £2 collection and £2 return delivery per box.",
     calcNoteLong: "Storage above 30 days follows long-term rules. Local collection and local return delivery are treated as free under the current guidance.",
     calcNoteLiftFree: "At 100 days or above, upstairs service in lift buildings becomes free.",
     calcNoteSelfDropoff: "If you deliver the boxes to our warehouse yourself, home collection and upstairs service are not charged.",
-    calcNoteOverweightWarn: "We recommend keeping each box within 23kg. The 23–25kg range only triggers a warning and may still need manual confirmation.",
-    calcNoteOverweightCharged: "At 25–30kg, an extra £0.5 per box per week applies. Weeks are rounded up.",
-    calcNoteOverweightBlocked: "A single box cannot exceed 30kg. Please split the items into two or more boxes and calculate again.",
+    calcNoteOverweightWarn: "We recommend keeping each box within 23kg to reduce lifting injuries.",
+    calcNoteOverweightCharged: "Any box type at 25–30kg will incur an extra £0.5 per box per week. Weeks are rounded up.",
+    calcNoteOverweightBlockedPrefix: "The following box types exceed 30kg maximum weight: ",
+    calcNoteOverweightBlockedSuffix: ". Please split and reduce the weight before calculating again.",
     calcNoteContact200: "Above 200 days, please contact us to confirm the 35% rate and free-box rule.",
     calcNoteOtherCity: "Forwarding to another UK city is not included in the estimated total and should be confirmed manually.",
     calcNoteOtherCityScotland: "Forwarding to Scotland is not included in the estimated total and should be confirmed manually.",
@@ -527,8 +557,8 @@
     example1Text: "1 Box 1 for 14 days. The raw storage fee is £9.8, but one-box short-term storage starts from £20, then adds £2 collection and £2 return delivery.",
     example2Title: "Example: May 1 -> May 6",
     example2Text: "2 Box 1 + 3 Box 4 for 5 days. Storage is calculated separately by box type and totals £14.5, then short-term minimum £30 applies, plus £10 collection and £10 return delivery.",
-    example3Title: "Example: Buying Boxes",
-    example3Text: "If you select \"Yes\" for buying boxes, each box type is charged at its own box price and added separately after the discounted storage fee.",
+    example3Title: "Example: Part self-supplied, part purchased",
+    example3Text: "If Box 1 has a storage quantity of 4 but a purchase quantity of 2, storage is still charged on all 4 boxes, while box purchase fees are added only for the 2 boxes that need to be bought.",
     example4Title: "Example: May 1 -> Sep 20",
     example4Text: "The calculator will automatically show total days, discount tier and the upstairs handling change after 100 days.",
     storageRulesTitle: "Rules and Important Notes",
@@ -538,7 +568,7 @@
     ruleLongTitle: "Long-term Discounts",
     ruleLongText: "The longer the storage period, the better the rate. From 75 days onward the 0.45 factor applies. For storage beyond 200 days, we currently describe the policy as a free box plus 3.5-discount pricing.",
     ruleWeightTitle: "Weight and Special Items",
-    ruleWeightText: "We recommend keeping each box within 23kg because very heavy boxes can injure workers. The 23–25kg range only triggers a warning with no automatic surcharge; at 25–30kg, an extra £0.5 per box per week applies, rounded up by full weeks; above 30kg is not accepted and the box must be split before recalculating. Oversized, unpacked or special items require a custom quote.",
+    ruleWeightText: "We recommend keeping each box within 23kg to reduce lifting injuries. At 25–30kg, an extra £0.5 per box per week applies, rounded up by full weeks. The maximum weight for any single box is 30kg; heavier boxes are not accepted and must be split before recalculating. Oversized, unpacked or special items require a custom quote.",
     ruleDeliveryTitle: "Delivery and Upstairs Charges",
     ruleDeliveryText: "For long-term local storage, collection and return delivery are treated as free under the current guidance. For storage within 30 days, collection is £2 per box and return delivery is £2 per box. For other UK cities, courier rates are £10 up to 10kg and £15 for 10–30kg, with an extra £5 for Scotland. Special or van delivery is quoted separately.",
     faqTitle: "FAQ / Notes",
@@ -1002,19 +1032,87 @@ function getStorageOrderBoxCount(boxCounts) {
   return Object.values(boxCounts).reduce((sum, value) => sum + value, 0);
 }
 
-function getStorageLineItems(boxCounts, days, purchaseBoxes) {
+function getStoragePurchaseValidationError(boxCounts, purchaseCounts) {
+  for (const boxType of Object.keys(storageBoxCatalog)) {
+    const storageQty = Math.max(0, boxCounts[boxType] || 0);
+    const purchaseQty = Math.max(0, purchaseCounts[boxType] || 0);
+    if (purchaseQty > storageQty) {
+      return boxType;
+    }
+  }
+
+  return null;
+}
+
+function getStorageWeightStatusKey(weight) {
+  if (weight > 30) {
+    return "weightStatusBlocked";
+  }
+  if (weight >= 25) {
+    return "weightStatusCharged";
+  }
+  if (weight > 23) {
+    return "weightStatusWarn";
+  }
+  return "weightStatusNormal";
+}
+
+function getStorageWeightValidation(boxCounts, boxWeights) {
+  const missingBoxTypes = [];
+  const blockedBoxTypes = [];
+
+  for (const boxType of Object.keys(storageBoxCatalog)) {
+    const storageQty = Math.max(0, boxCounts[boxType] || 0);
+    if (storageQty <= 0) {
+      continue;
+    }
+
+    const rawWeight = boxWeights[boxType];
+    if (
+      rawWeight === ""
+      || rawWeight === null
+      || rawWeight === undefined
+      || !/^\d+$/.test(String(rawWeight).trim())
+      || Number.isNaN(Number(rawWeight))
+    ) {
+      missingBoxTypes.push(boxType);
+      continue;
+    }
+
+    const weight = Math.max(0, Math.round(Number(rawWeight) || 0));
+    if (weight > 30) {
+      blockedBoxTypes.push(boxType);
+    }
+  }
+
+  return {
+    missingBoxTypes,
+    blockedBoxTypes
+  };
+}
+
+function getStorageLineItems(boxCounts, purchaseCounts, boxWeights, days) {
   const items = [];
   let rawStorageTotal = 0;
   let purchaseTotal = 0;
 
   Object.entries(storageBoxCatalog).forEach(([boxType, boxInfo]) => {
-    const quantity = Math.max(0, boxCounts[boxType] || 0);
-    if (quantity <= 0) {
+    const storageQty = Math.max(0, boxCounts[boxType] || 0);
+    const purchaseQty = Math.max(0, purchaseCounts[boxType] || 0);
+
+    if (storageQty <= 0 && purchaseQty <= 0) {
       return;
     }
 
-    const rawStorage = quantity * boxInfo.dailyRate * days;
-    const purchase = purchaseBoxes ? quantity * boxInfo.buyPrice : 0;
+    const rawStorage = storageQty * boxInfo.dailyRate * days;
+    const purchase = purchaseQty * boxInfo.buyPrice;
+    const weight = storageQty > 0 && boxWeights[boxType] !== "" && boxWeights[boxType] !== null && boxWeights[boxType] !== undefined
+      ? Math.max(0, Math.round(Number(boxWeights[boxType]) || 0))
+      : null;
+    const weightStatusKey = weight === null ? null : getStorageWeightStatusKey(weight);
+    const overweightFee = storageQty > 0 && weight !== null && weight >= 25 && weight <= 30
+      ? storageQty * Math.ceil(days / 7) * 0.5
+      : 0;
 
     rawStorageTotal += rawStorage;
     purchaseTotal += purchase;
@@ -1022,9 +1120,13 @@ function getStorageLineItems(boxCounts, days, purchaseBoxes) {
     items.push({
       boxType,
       labelKey: boxInfo.labelKey,
-      quantity,
+      storageQty,
+      purchaseQty,
+      weight,
+      weightStatusKey,
       rawStorage,
-      purchase
+      purchase,
+      overweightFee
     });
   });
 
@@ -1033,15 +1135,6 @@ function getStorageLineItems(boxCounts, days, purchaseBoxes) {
     rawStorageTotal,
     purchaseTotal
   };
-}
-
-function getStorageWeeklyOverweight(boxCount, weight, days) {
-  if (weight < 25 || weight > 30) {
-    return 0;
-  }
-
-  const weeks = Math.ceil(days / 7);
-  return boxCount * weeks * 0.5;
 }
 
 function getAccessFee(accessType, boxCount, days) {
@@ -1058,23 +1151,25 @@ function getAccessFee(accessType, boxCount, days) {
 
 function calculateStorageEstimate({
   boxCounts,
+  purchaseCounts,
   startDate,
   endDate,
   pickupMethod,
   accessType,
-  boxWeight,
-  returnType,
-  purchaseBoxes
+  boxWeights,
+  returnType
 }) {
   const days = getStorageDays(startDate, endDate);
   const totalBoxes = getStorageOrderBoxCount(boxCounts);
   const discount = getStorageDiscount(days);
-  const { items, rawStorageTotal, purchaseTotal } = getStorageLineItems(boxCounts, days, purchaseBoxes);
+  const purchaseErrorBoxType = getStoragePurchaseValidationError(boxCounts, purchaseCounts);
+  const { missingBoxTypes, blockedBoxTypes } = getStorageWeightValidation(boxCounts, boxWeights);
+  const { items, rawStorageTotal, purchaseTotal } = getStorageLineItems(boxCounts, purchaseCounts, boxWeights, days);
   const discountedBase = rawStorageTotal * discount;
   let pickup = 0;
   let delivery = 0;
   let accessFee = pickupMethod === "home" ? getAccessFee(accessType, totalBoxes, days) : 0;
-  let overweightFee = getStorageWeeklyOverweight(totalBoxes, boxWeight, days);
+  let overweightFee = items.reduce((sum, item) => sum + item.overweightFee, 0);
   let minimumAdjustment = 0;
   let total = 0;
   const notes = [];
@@ -1101,18 +1196,19 @@ function calculateStorageEstimate({
     };
   }
 
-  if (boxWeight > 30) {
+  if (purchaseErrorBoxType) {
     return {
       days,
       blocked: true,
       boxCounts,
+      purchaseCounts,
       totalBoxes,
       items,
       pickupMethod,
-      rawStorageTotal: 0,
-      discount: 1,
-      discountedBase: 0,
-      purchaseTotal: 0,
+      rawStorageTotal,
+      discount,
+      discountedBase,
+      purchaseTotal,
       pickup: 0,
       delivery: 0,
       accessFee: 0,
@@ -1120,7 +1216,58 @@ function calculateStorageEstimate({
       minimumAdjustment: 0,
       total: null,
       otherCityMessageKey: returnType === "scotland" ? "resultOtherCityTextScotland" : "resultOtherCityText",
-      notes: ["calcNoteOverweightBlocked"]
+      notes: ["calcNotePurchaseExceeded"]
+    };
+  }
+
+  if (missingBoxTypes.length) {
+    return {
+      days,
+      blocked: true,
+      boxCounts,
+      purchaseCounts,
+      boxWeights,
+      totalBoxes,
+      items,
+      pickupMethod,
+      rawStorageTotal,
+      discount,
+      discountedBase,
+      purchaseTotal,
+      pickup: 0,
+      delivery: 0,
+      accessFee: 0,
+      overweightFee: 0,
+      minimumAdjustment: 0,
+      total: null,
+      otherCityMessageKey: returnType === "scotland" ? "resultOtherCityTextScotland" : "resultOtherCityText",
+      notes: ["calcNoteWeightRequired"]
+    };
+  }
+
+  if (blockedBoxTypes.length) {
+    return {
+      days,
+      blocked: true,
+      boxCounts,
+      purchaseCounts,
+      boxWeights,
+      totalBoxes,
+      items,
+      pickupMethod,
+      rawStorageTotal,
+      discount,
+      discountedBase,
+      purchaseTotal,
+      pickup: 0,
+      delivery: 0,
+      accessFee: 0,
+      overweightFee: 0,
+      minimumAdjustment: 0,
+      total: null,
+      otherCityMessageKey: returnType === "scotland" ? "resultOtherCityTextScotland" : "resultOtherCityText",
+      notes: [],
+      blockedBoxTypes
     };
   }
 
@@ -1129,6 +1276,7 @@ function calculateStorageEstimate({
       days,
       blocked: true,
       boxCounts,
+      purchaseCounts,
       totalBoxes: 0,
       items: [],
       pickupMethod,
@@ -1168,11 +1316,11 @@ function calculateStorageEstimate({
     notes.push("calcNoteSelfDropoff");
   }
 
-  if (boxWeight > 23 && boxWeight < 25) {
+  if (items.some(item => item.storageQty > 0 && item.weight > 23 && item.weight < 25)) {
     notes.push("calcNoteOverweightWarn");
   }
 
-  if (boxWeight >= 25 && boxWeight <= 30) {
+  if (items.some(item => item.storageQty > 0 && item.weight >= 25 && item.weight <= 30)) {
     notes.push("calcNoteOverweightCharged");
   }
 
@@ -1188,6 +1336,8 @@ function calculateStorageEstimate({
     days,
     blocked: false,
     boxCounts,
+    purchaseCounts,
+    boxWeights,
     totalBoxes,
     items,
     pickupMethod,
@@ -1225,13 +1375,13 @@ function initStorageCalculator(activeLang) {
   }
 
   const boxCountInputs = Array.from(document.querySelectorAll("[data-box-count]"));
+  const boxPurchaseInputs = Array.from(document.querySelectorAll("[data-box-purchase]"));
   const startDateInput = document.querySelector("#startDate");
   const endDateInput = document.querySelector("#endDate");
   const pickupMethodInput = document.querySelector("#pickupMethod");
   const pickupAccessField = document.querySelector("#pickupAccessField");
   const pickupAccessInput = document.querySelector("#pickupAccess");
-  const boxWeightInput = document.querySelector("#boxWeight");
-  const purchaseBoxesInput = document.querySelector("#purchaseBoxes");
+  const boxWeightInputs = Array.from(document.querySelectorAll("[data-box-weight]"));
   const returnTypeInput = document.querySelector("#returnType");
   const resultBoxTotal = document.querySelector("#resultBoxTotal");
   const resultDays = document.querySelector("#resultDays");
@@ -1257,7 +1407,7 @@ function initStorageCalculator(activeLang) {
   if (form.__renderEstimate) {
     form.__syncStorageDates?.();
     form.__syncPickupFields?.();
-    form.__syncWeightLimit?.(false);
+    form.__syncWeightInputs?.(false);
     form.__renderEstimate();
     return;
   }
@@ -1294,30 +1444,48 @@ function initStorageCalculator(activeLang) {
     }
   }
 
-  function syncWeightLimit(showPrompt = false) {
-    const rawValue = boxWeightInput.value;
-    if (rawValue === "") {
-      boxWeightInput.setCustomValidity("");
-      return;
-    }
+  function syncWeightInputs(showPrompt = false) {
+    const currentLang = form.dataset.lang || activeLang;
+    const boxCounts = getBoxCounts();
 
-    let boxWeight = Math.round(Number(rawValue) || 0);
-    if (boxWeight < 0) {
-      boxWeight = 0;
-    }
+    boxWeightInputs.forEach(input => {
+      const boxType = input.dataset.boxWeight;
+      const storageQty = Math.max(0, boxCounts[boxType] || 0);
+      const rawValue = input.value.trim();
 
-    if (boxWeight > 30) {
-      boxWeight = 30;
-      boxWeightInput.value = "30";
-      boxWeightInput.setCustomValidity(translations[form.dataset.lang || activeLang].calcWeightMaxHint);
-      if (showPrompt) {
-        boxWeightInput.reportValidity();
+      if (storageQty <= 0) {
+        input.value = "";
+        input.disabled = true;
+        input.required = false;
+        input.setAttribute("aria-disabled", "true");
+        input.setCustomValidity("");
+        return;
       }
-      return;
-    }
 
-    boxWeightInput.value = String(boxWeight);
-    boxWeightInput.setCustomValidity("");
+      input.disabled = false;
+      input.required = true;
+      input.setAttribute("aria-disabled", "false");
+
+      if (rawValue === "") {
+        input.setCustomValidity(translations[currentLang].calcWeightRequired);
+        if (showPrompt) {
+          input.reportValidity();
+        }
+        return;
+      }
+
+      if (!/^\d+$/.test(rawValue)) {
+        input.setCustomValidity(translations[currentLang].calcWeightMaxHint);
+        if (showPrompt) {
+          input.reportValidity();
+        }
+        return;
+      }
+
+      let boxWeight = Math.max(0, Math.floor(Number(rawValue) || 0));
+      input.value = String(boxWeight);
+      input.setCustomValidity("");
+    });
   }
 
   function getBoxCounts() {
@@ -1326,6 +1494,36 @@ function initStorageCalculator(activeLang) {
       let quantity = Math.max(0, Math.floor(Number(input.value) || 0));
       input.value = String(quantity);
       accumulator[boxType] = quantity;
+      return accumulator;
+    }, {});
+  }
+
+  function getPurchaseCounts() {
+    return boxPurchaseInputs.reduce((accumulator, input) => {
+      const boxType = input.dataset.boxPurchase;
+      let quantity = Math.max(0, Math.floor(Number(input.value) || 0));
+      input.value = String(quantity);
+      accumulator[boxType] = quantity;
+      return accumulator;
+    }, {});
+  }
+
+  function getBoxWeights() {
+    return boxWeightInputs.reduce((accumulator, input) => {
+      const boxType = input.dataset.boxWeight;
+      if (input.disabled || input.value.trim() === "") {
+        accumulator[boxType] = "";
+        return accumulator;
+      }
+
+      if (!/^\d+$/.test(input.value.trim())) {
+        accumulator[boxType] = input.value.trim();
+        return accumulator;
+      }
+
+      let weight = Math.max(0, Math.floor(Number(input.value) || 0));
+      input.value = String(weight);
+      accumulator[boxType] = weight;
       return accumulator;
     }, {});
   }
@@ -1352,7 +1550,23 @@ function initStorageCalculator(activeLang) {
 
       const heading = document.createElement("div");
       heading.className = "result-breakdown-head";
-      heading.textContent = `${translations[currentLang][item.labelKey]} × ${item.quantity}`;
+      heading.textContent = translations[currentLang][item.labelKey];
+
+      const storageQtyLine = document.createElement("div");
+      storageQtyLine.className = "result-breakdown-meta";
+      storageQtyLine.textContent = `${translations[currentLang].resultBreakdownStorageQty}: ${item.storageQty}`;
+
+      const purchaseQtyLine = document.createElement("div");
+      purchaseQtyLine.className = "result-breakdown-meta";
+      purchaseQtyLine.textContent = `${translations[currentLang].resultBreakdownPurchaseQty}: ${item.purchaseQty}`;
+
+      const weightLine = document.createElement("div");
+      weightLine.className = "result-breakdown-meta";
+      weightLine.textContent = `${translations[currentLang].resultBreakdownWeight}: ${item.weight === null ? "—" : `${item.weight}kg`}`;
+
+      const weightStatusLine = document.createElement("div");
+      weightStatusLine.className = "result-breakdown-meta";
+      weightStatusLine.textContent = `${translations[currentLang].resultBreakdownWeightStatus}: ${item.weightStatusKey ? translations[currentLang][item.weightStatusKey] : "—"}`;
 
       const storageLine = document.createElement("div");
       storageLine.className = "result-breakdown-meta";
@@ -1362,7 +1576,15 @@ function initStorageCalculator(activeLang) {
       purchaseLine.className = "result-breakdown-meta";
       purchaseLine.textContent = `${translations[currentLang].resultBreakdownPurchase}: ${formatMoney(item.purchase)}`;
 
-      block.append(heading, storageLine, purchaseLine);
+      block.append(heading, storageQtyLine, purchaseQtyLine, weightLine, weightStatusLine, storageLine, purchaseLine);
+
+      if (item.overweightFee > 0) {
+        const overweightLine = document.createElement("div");
+        overweightLine.className = "result-breakdown-meta";
+        overweightLine.textContent = `${translations[currentLang].resultBreakdownOverweight}: ${formatMoney(item.overweightFee)}`;
+        block.appendChild(overweightLine);
+      }
+
       resultBreakdown.appendChild(block);
     });
   }
@@ -1370,38 +1592,46 @@ function initStorageCalculator(activeLang) {
   function renderEstimate() {
     const currentLang = form.dataset.lang || activeLang;
     const boxCounts = getBoxCounts();
+    const purchaseCounts = getPurchaseCounts();
+    syncWeightInputs(false);
+    const boxWeights = getBoxWeights();
     const startDate = startDateInput.value;
     const endDate = endDateInput.value;
     const pickupMethod = pickupMethodInput.value;
     const accessType = pickupAccessInput.value;
-    syncWeightLimit(false);
-    const boxWeight = Math.max(0, Math.round(Number(boxWeightInput.value) || 0));
-    const purchaseBoxes = purchaseBoxesInput.value === "yes";
     const returnType = returnTypeInput.value;
     const estimate = calculateStorageEstimate({
       boxCounts,
+      purchaseCounts,
       startDate,
       endDate,
       pickupMethod,
       accessType,
-      boxWeight,
-      returnType,
-      purchaseBoxes
+      boxWeights,
+      returnType
     });
-    const noBoxes = estimate.blocked && estimate.totalBoxes === 0;
+    const noBoxes = estimate.totalBoxes === 0;
+    const uncalculated = estimate.blocked || estimate.days <= 0 || noBoxes;
 
     resultBoxTotal.textContent = String(estimate.totalBoxes);
-    resultDays.textContent = noBoxes ? "—" : String(estimate.days);
-    resultBase.textContent = noBoxes ? "—" : formatEstimateValue(estimate.discountedBase);
-    resultDiscount.textContent = estimate.blocked ? "—" : estimate.discount.toFixed(2);
-    resultPickup.textContent = noBoxes ? "—" : formatEstimateValue(estimate.pickup);
-    resultDelivery.textContent = noBoxes ? "—" : formatEstimateValue(estimate.delivery);
-    resultAccess.textContent = noBoxes ? "—" : formatEstimateValue(estimate.accessFee);
-    resultOverweight.textContent = noBoxes ? "—" : formatEstimateValue(estimate.overweightFee);
-    resultPurchase.textContent = noBoxes ? "—" : formatEstimateValue(estimate.purchaseTotal);
-    resultMinimum.textContent = noBoxes ? "—" : formatEstimateValue(estimate.minimumAdjustment);
-    resultTotal.textContent = estimate.blocked ? translations[currentLang].calcBlockedTotal : formatEstimateValue(estimate.total);
-    resultNote.textContent = estimate.notes.map(key => translations[currentLang][key]).join(" ");
+    resultDays.textContent = uncalculated ? "—" : String(estimate.days);
+    resultBase.textContent = uncalculated ? "—" : formatEstimateValue(estimate.discountedBase);
+    resultDiscount.textContent = uncalculated ? "—" : estimate.discount.toFixed(2);
+    resultPickup.textContent = uncalculated ? "—" : formatEstimateValue(estimate.pickup);
+    resultDelivery.textContent = uncalculated ? "—" : formatEstimateValue(estimate.delivery);
+    resultAccess.textContent = uncalculated ? "—" : formatEstimateValue(estimate.accessFee);
+    resultOverweight.textContent = uncalculated ? "—" : formatEstimateValue(estimate.overweightFee);
+    resultPurchase.textContent = uncalculated ? "—" : formatEstimateValue(estimate.purchaseTotal);
+    resultMinimum.textContent = uncalculated ? "—" : formatEstimateValue(estimate.minimumAdjustment);
+    resultTotal.textContent = estimate.blocked ? translations[currentLang].calcBlockedTotal : uncalculated ? "—" : formatEstimateValue(estimate.total);
+    const blockedNames = (estimate.blockedBoxTypes || []).map(boxType => translations[currentLang][storageBoxCatalog[boxType].labelKey]);
+    const noteMessages = estimate.notes.map(key => translations[currentLang][key]);
+    if (blockedNames.length) {
+      noteMessages.unshift(
+        `${translations[currentLang].calcNoteOverweightBlockedPrefix}${blockedNames.join(currentLang === "zh-CN" ? "、" : ", ")}${translations[currentLang].calcNoteOverweightBlockedSuffix}`
+      );
+    }
+    resultNote.textContent = noteMessages.join(" ");
     renderBreakdown(estimate.items, currentLang, noBoxes ? "resultBreakdownEmptyInvalid" : "resultBreakdownEmpty");
 
     if (resultPickupRow) {
@@ -1425,7 +1655,7 @@ function initStorageCalculator(activeLang) {
   form.__renderEstimate = renderEstimate;
   form.__syncStorageDates = syncDateRange;
   form.__syncPickupFields = syncPickupFields;
-  form.__syncWeightLimit = syncWeightLimit;
+  form.__syncWeightInputs = syncWeightInputs;
 
   form.addEventListener("submit", event => {
     event.preventDefault();
@@ -1436,12 +1666,12 @@ function initStorageCalculator(activeLang) {
 
   [
     ...boxCountInputs,
+    ...boxPurchaseInputs,
     startDateInput,
     endDateInput,
     pickupMethodInput,
     pickupAccessInput,
-    boxWeightInput,
-    purchaseBoxesInput,
+    ...boxWeightInputs,
     returnTypeInput
   ].forEach(input => {
     input.addEventListener("input", () => {
@@ -1451,8 +1681,8 @@ function initStorageCalculator(activeLang) {
       if (input === pickupMethodInput) {
         syncPickupFields();
       }
-      if (input === boxWeightInput) {
-        syncWeightLimit(true);
+      if (boxWeightInputs.includes(input) || boxCountInputs.includes(input)) {
+        syncWeightInputs(boxWeightInputs.includes(input));
       }
       renderEstimate();
     });
@@ -1463,8 +1693,8 @@ function initStorageCalculator(activeLang) {
       if (input === pickupMethodInput) {
         syncPickupFields();
       }
-      if (input === boxWeightInput) {
-        syncWeightLimit(true);
+      if (boxWeightInputs.includes(input) || boxCountInputs.includes(input)) {
+        syncWeightInputs(boxWeightInputs.includes(input));
       }
       renderEstimate();
     });
@@ -1472,7 +1702,7 @@ function initStorageCalculator(activeLang) {
 
   syncDateRange();
   syncPickupFields();
-  syncWeightLimit(false);
+  syncWeightInputs(false);
   renderEstimate();
 }
 

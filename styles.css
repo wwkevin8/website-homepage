@@ -1684,19 +1684,45 @@ img {
   line-height: 1.6;
 }
 
-.box-count-grid {
+.box-order-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
 }
 
-.mini-field {
+.box-order-head {
   display: grid;
-  gap: 8px;
+  grid-template-columns: 1.1fr 1fr 1fr 1fr;
+  gap: 12px;
+  padding: 0 16px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 700;
 }
 
-.mini-field span {
-  font-weight: 600;
+.box-order-grid .mini-field {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr 1fr 1fr;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: var(--surface-muted);
+}
+
+.box-order-grid .mini-field span {
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.box-order-input {
+  width: 100%;
+  min-width: 0;
+}
+
+.box-order-input:disabled {
+  cursor: not-allowed;
+  color: var(--muted);
+  background: rgba(16, 38, 68, 0.06);
 }
 
 .field-check {
@@ -2141,8 +2167,16 @@ img {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .box-count-grid {
-    grid-template-columns: 1fr;
+  .box-order-head {
+    display: none;
+  }
+
+  .box-order-grid .mini-field {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .box-order-grid .mini-field span {
+    grid-column: 1 / -1;
   }
 
   .discount-cards {
