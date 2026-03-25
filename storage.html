@@ -150,7 +150,7 @@
         <article class="step-card">
           <span>06</span>
           <h3 data-i18n="process6Title">返还或继续配送</h3>
-          <p data-i18n="process6Text">你回到诺丁汉时可安排送回；如需邮寄或寄往外地，请至少提前一周预约。</p>
+          <p data-i18n="process6Text">你回到诺丁汉时可安排送回；如需邮寄或寄往外地，建议至少提前 7 天预约，最少需提前 3 天。</p>
         </article>
       </div>
     </section>
@@ -303,6 +303,7 @@
           <label class="field">
             <span data-i18n="calcStartDate">开始日期</span>
             <input id="startDate" type="date">
+            <p class="field-help" data-i18n="calcStartDateHelp">开始日期同时作为寄存预约日期。建议至少提前 7 天预约，最少需提前 3 天。</p>
           </label>
           <label class="field">
             <span data-i18n="calcEndDate">结束日期</span>
@@ -311,11 +312,7 @@
           <label class="field" id="boxDeliveryDateField">
             <span data-i18n="calcBoxDeliveryDate">送箱日期</span>
             <input id="boxDeliveryDate" type="date">
-          </label>
-          <label class="field" id="storageBookingDateField">
-            <span data-i18n="calcStorageBookingDate">寄存预约日期</span>
-            <input id="storageBookingDate" type="date">
-            <p class="field-help" data-i18n="calcStorageBookingDateHelp">寄存预约日期默认与开始日期一致，可单独修改。</p>
+            <p class="field-help" data-i18n="calcBoxDeliveryDateHelp">建议至少提前 7 天预约，最少需提前 3 天。如需先送箱再寄存，送箱日期需早于开始日期至少 2 天。</p>
           </label>
           <label class="field">
             <span data-i18n="calcPickupMethod">取件方式</span>
@@ -350,7 +347,7 @@
           <label class="field" id="returnBookingDateField">
             <span data-i18n="calcReturnBookingDate">送回 / 取回日期</span>
             <input id="returnBookingDate" type="date">
-            <p class="field-help" data-i18n="calcReturnBookingDateHelp">送回 / 取回日期默认与结束日期一致，可单独修改。</p>
+            <p class="field-help" data-i18n="calcReturnBookingDateHelp">送回 / 取回日期默认与结束日期一致，可单独修改。建议至少提前 7 天预约，最少需提前 3 天。</p>
           </label>
           <label class="field" id="returnAccessField">
             <span data-i18n="calcReturnAccess">送回去交接方式</span>
@@ -420,7 +417,7 @@
             <p class="result-breakdown-empty" id="resultBreakdownEmpty" data-i18n="resultBreakdownEmpty">填写箱型数量后会在这里显示各箱型寄存费与购箱费明细。</p>
             <div class="result-breakdown-list" id="resultBreakdown"></div>
           </div>
-          <p class="result-note" id="resultNote" data-i18n="calcNoteDefault">选择日期、取件方式和送还方式后即可自动看到寄存天数、折扣、费用项和超重说明。</p>
+          <p class="result-note" id="resultNote" data-i18n="calcNoteDefault">选择开始日期、结束日期、取件方式、送还方式和送件方式后即可自动看到寄存天数、折扣、费用项和超重说明。</p>
           <div class="calculator-note-card" id="resultOtherCityCard" hidden>
             <strong data-i18n="resultOtherCityTitle">英国其他城市转运说明</strong>
             <p id="resultOtherCityText" data-i18n="resultOtherCityText">外地转运费用未自动计入预计总价。通常使用皇家邮局或 DPD，一般 2 个工作日送达；建议优先使用 1 / 2 / 3 号箱，10kg 内 £10，10–30kg £15，特殊物品需联系客服确认。</p>
@@ -478,7 +475,7 @@
           <h3 data-i18n="faqTitle">FAQ / 提醒</h3>
           <ul>
             <li data-i18n="faq1">2 号箱暂时可能缺货，请寄存前先确认。</li>
-            <li data-i18n="faq2">寄存结束后如果寄往英国其他城市，请至少提前一周预约。</li>
+            <li data-i18n="faq2">寄存结束后如果寄往英国其他城市，建议至少提前 7 天预约，最少需提前 3 天，具体日期请联系客服确认。</li>
             <li data-i18n="faq3">到公寓楼下取送免费，如需上楼会额外收费。</li>
             <li data-i18n="faq4">寄存前请先和我们确认收费与返还时间，避免临时变化。</li>
           </ul>

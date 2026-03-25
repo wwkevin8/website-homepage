@@ -155,7 +155,7 @@
     process5Title: "入库与确认",
     process5Text: "行李回仓后会与你确认寄存时间并发送收据和寄存信息。",
     process6Title: "返还或继续配送",
-    process6Text: "你回到诺丁汉时可安排送回；如需邮寄或寄往外地，请至少提前一周预约。",
+    process6Text: "你回到诺丁汉时可安排送回；如需邮寄或寄往外地，建议至少提前 7 天预约，最少需提前 3 天。",
     storageBoxesTitle: "箱子尺寸与价格",
     storageBoxesIntro: "以下价格适用于非会员寄存，尺寸按箱体标注展示。2 号箱如暂时缺货，会另行通知。",
     boxTableNo: "箱号",
@@ -183,10 +183,10 @@
     calcBox5: "5 号箱",
     calcBox6: "6 号箱",
     calcStartDate: "开始日期",
+    calcStartDateHelp: "开始日期同时作为寄存预约日期。建议至少提前 7 天预约，最少需提前 3 天。",
     calcEndDate: "结束日期",
     calcBoxDeliveryDate: "送箱日期",
-    calcStorageBookingDate: "寄存预约日期",
-    calcStorageBookingDateHelp: "寄存预约日期默认与开始日期一致，可单独修改。",
+    calcBoxDeliveryDateHelp: "建议至少提前 7 天预约，最少需提前 3 天。如需先送箱再寄存，送箱日期需早于开始日期至少 2 天。",
     calcPickupMethod: "取件方式",
     calcPickupMethodHome: "上门取件",
     calcPickupMethodSelf: "自行送至仓库",
@@ -208,7 +208,7 @@
     calcReturnEngland: "送往英国其他城市（英格兰）",
     calcReturnScotland: "送往苏格兰地区",
     calcReturnBookingDate: "送回 / 取回日期",
-    calcReturnBookingDateHelp: "送回 / 取回日期默认与结束日期一致，可单独修改。",
+    calcReturnBookingDateHelp: "送回 / 取回日期默认与结束日期一致，可单独修改。建议至少提前 7 天预约，最少需提前 3 天。",
     calcSubmit: "更新估算",
     calcResultTitle: "费用估算结果",
     resultBoxTotal: "总箱数",
@@ -241,15 +241,14 @@
     resultOtherCityText: "外地转运费用未自动计入预计总价。通常使用皇家邮局或 DPD，一般 2 个工作日送达；建议优先使用 1 / 2 / 3 号箱，10kg 内 £10，10–30kg £15，特殊物品需联系客服确认。",
     resultOtherCityTextScotland: "外地转运费用未自动计入预计总价。通常使用皇家邮局或 DPD，一般 2 个工作日送达；建议优先使用 1 / 2 / 3 号箱，10kg 内 £10，10–30kg £15，苏格兰地区另加 £5，特殊物品需联系客服确认。",
     calcBlockedTotal: "不可计算",
-    calcNoteDefault: "选择寄存日期、预约日期、取件方式、送还方式和送件方式后即可自动看到寄存天数、折扣、费用项和超重说明。",
+    calcNoteDefault: "选择开始日期、结束日期、取件方式、送还方式和送件方式后即可自动看到寄存天数、折扣、费用项和超重说明。",
     calcNoteDateMissing: "请先选择有效的开始日期和结束日期。",
     calcNoteBoxDeliveryDateRequired: "有购箱数量时，必须填写送箱日期。",
-    calcNoteStorageBookingDateRequired: "有寄存箱数时，必须填写寄存预约日期。",
     calcNoteReturnBookingDateRequired: "诺丁汉当地寄存送还时，必须填写送回 / 取回日期。",
     calcNoteDeliveryMethodRequired: "诺丁汉当地寄存送还时，必须先选择送件方式。",
-    calcNoteAppointmentLeadTime: "送箱服务、寄存服务和送回 / 取回寄存均需至少提前 7 天预约。",
-    calcNoteBoxDeliveryGap: "如同单既送箱又寄存，送箱日期与寄存预约日期至少需间隔 2 天。",
-    calcNoteStorageBookingBeforeStart: "寄存预约日期不能晚于开始日期。",
+    calcNoteAppointmentLeadTime: "建议至少提前 7 天预约，最少需提前 3 天。",
+    calcNoteBoxDeliveryGap: "如需先送箱再寄存，送箱日期需早于开始日期至少 2 天。",
+    calcNoteStartDateTooEarlyForBoxDelivery: "当前开始日期过早，无法满足送箱日期需早于开始日期至少 2 天的规则，请调整开始日期。",
     calcNoteNoBoxes: "当前所有箱型数量均为 0，请至少填写一个大于 0 的数量后再计算。",
     calcNotePurchaseExceeded: "购买数量不能大于对应箱型的寄存数量，请检查后重新计算。",
     calcNoteWeightRequired: "有寄存数量的箱型必须填写最大重量后才能计算。",
@@ -263,8 +262,8 @@
     calcNoteOverweightBlockedPrefix: "以下箱型最大重量超过30kg：",
     calcNoteOverweightBlockedSuffix: "，请拆分减重后重新计算。",
     calcNoteContact200: "超过 200 天请联系客服确认 3.5 折与送箱规则；送箱默认不上楼。",
-    calcNoteOtherCity: "若需送往英国其他城市，外地转运费用需单独核算，当前预计总价未包含该部分；外地转运服务需至少提前 7 天预约，具体日期请联系客服确认。",
-    calcNoteOtherCityScotland: "若需送往苏格兰地区，外地转运费用需单独核算，当前预计总价未包含该部分；外地转运服务需至少提前 7 天预约，具体日期请联系客服确认。",
+    calcNoteOtherCity: "若需送往英国其他城市，外地转运费用需单独核算，当前预计总价未包含该部分；外地转运服务需至少提前 3 天预约，建议提前 7 天，具体日期请联系客服确认。",
+    calcNoteOtherCityScotland: "若需送往苏格兰地区，外地转运费用需单独核算，当前预计总价未包含该部分；外地转运服务需至少提前 3 天预约，建议提前 7 天，具体日期请联系客服确认。",
     example1Title: "示例：5 月 1 日 -> 5 月 15 日",
     example1Text: "1 号箱 1 个，14 天。原始寄存费 £9.8，不足 1 箱最低 £20 时按 £20 起算，再加 £2 上门取件费和 £2 送货费。",
     example2Title: "示例：5 月 1 日 -> 5 月 6 日",
@@ -285,7 +284,7 @@
     ruleDeliveryText: "本地长期寄存的上门取件与送货按当前规则视为免费；短期寄存 30 天内每箱加收 £2 取件费和 £2 送货费。默认按楼下交接处理，送箱不上楼；取寄存与送回去的上楼费分开计算，其中仅取寄存侧电梯上楼在超过 100 天时免费。寄往英国其他城市时，10kg 内 £10，10–30kg £15，苏格兰地区另加 £5，特殊或专车配送需单独询价。",
     faqTitle: "FAQ / 提醒",
     faq1: "2 号箱暂时可能缺货，请寄存前先确认。",
-    faq2: "寄存结束后如果寄往英国其他城市，请至少提前一周预约，具体日期请联系客服确认。",
+    faq2: "寄存结束后如果寄往英国其他城市，建议至少提前 7 天预约，最少需提前 3 天，具体日期请联系客服确认。",
     faq3: "默认到公寓楼下交接；送箱不上楼，取寄存和送回去如需上楼会额外收费。",
     faq4: "寄存前请先和我们确认收费与返还时间，避免临时变化。",
     policyTitle: "价格规则总览",
@@ -479,7 +478,7 @@
     process5Title: "Warehouse intake and confirmation",
     process5Text: "After items arrive at the warehouse, we confirm your storage period and send a receipt and storage record.",
     process6Title: "Return or onward delivery",
-    process6Text: "We can return items when you come back to Nottingham. For mailing or delivery to another city, please book at least one week ahead.",
+    process6Text: "We can return items when you come back to Nottingham. For mailing or delivery to another city, we recommend booking at least 7 days ahead, with a minimum of 3 days.",
     storageBoxesTitle: "Box Sizes and Pricing",
     storageBoxesIntro: "The following pricing applies to non-member storage. Dimensions are shown as marked on the boxes. Box 2 may occasionally be out of stock.",
     boxTableNo: "Box",
@@ -507,10 +506,10 @@
     calcBox5: "Box 5",
     calcBox6: "Box 6",
     calcStartDate: "Start Date",
+    calcStartDateHelp: "The start date also serves as the storage booking date. We recommend booking at least 7 days ahead, with a minimum of 3 days.",
     calcEndDate: "End Date",
     calcBoxDeliveryDate: "Box Delivery Date",
-    calcStorageBookingDate: "Storage Booking Date",
-    calcStorageBookingDateHelp: "Storage booking date defaults to the start date and can be adjusted separately.",
+    calcBoxDeliveryDateHelp: "We recommend booking at least 7 days ahead, with a minimum of 3 days. If boxes need to be delivered before storage starts, the box delivery date must be at least 2 days earlier than the start date.",
     calcPickupMethod: "Collection Method",
     calcPickupMethodHome: "Home Collection",
     calcPickupMethodSelf: "Deliver to Warehouse Yourself",
@@ -532,7 +531,7 @@
     calcReturnEngland: "Forward to another UK city (England)",
     calcReturnScotland: "Forward to Scotland",
     calcReturnBookingDate: "Return / Collection Date",
-    calcReturnBookingDateHelp: "Return / collection date defaults to the end date and can be adjusted separately.",
+    calcReturnBookingDateHelp: "Return / collection date defaults to the end date and can be adjusted separately. We recommend booking at least 7 days ahead, with a minimum of 3 days.",
     calcSubmit: "Update Estimate",
     calcResultTitle: "Estimated Cost",
     resultBoxTotal: "Total Boxes",
@@ -565,15 +564,14 @@
     resultOtherCityText: "Forwarding is not included in the estimated total automatically. We usually use Royal Mail or DPD, delivery is often around 2 working days, and lighter 1 / 2 / 3 boxes are recommended. Rates are £10 up to 10kg and £15 for 10–30kg. Special items need a manual quote.",
     resultOtherCityTextScotland: "Forwarding is not included in the estimated total automatically. We usually use Royal Mail or DPD, delivery is often around 2 working days, and lighter 1 / 2 / 3 boxes are recommended. Rates are £10 up to 10kg and £15 for 10–30kg, plus £5 for Scotland. Special items need a manual quote.",
     calcBlockedTotal: "Not available",
-    calcNoteDefault: "Choose valid storage dates, booking dates, collection method, return method and delivery method to see storage days, discounts, fee items and overweight notes automatically.",
+    calcNoteDefault: "Choose valid start and end dates, collection method, return method and delivery method to see storage days, discounts, fee items and overweight notes automatically.",
     calcNoteDateMissing: "Please choose a valid start date and end date first.",
     calcNoteBoxDeliveryDateRequired: "When any box purchase quantity is entered, a box delivery date is required.",
-    calcNoteStorageBookingDateRequired: "When any storage quantity is entered, a storage booking date is required.",
     calcNoteReturnBookingDateRequired: "For local Nottingham return, a return / collection date is required.",
     calcNoteDeliveryMethodRequired: "For local Nottingham return, choose a delivery method first.",
-    calcNoteAppointmentLeadTime: "Box delivery, storage booking and return / collection all require at least 7 days' notice.",
-    calcNoteBoxDeliveryGap: "If the same order needs both box delivery and storage booking, the two dates must be at least 2 days apart.",
-    calcNoteStorageBookingBeforeStart: "The storage booking date cannot be later than the start date.",
+    calcNoteAppointmentLeadTime: "We recommend booking at least 7 days ahead, with a minimum of 3 days.",
+    calcNoteBoxDeliveryGap: "If boxes need to be delivered before storage starts, the box delivery date must be at least 2 days earlier than the start date.",
+    calcNoteStartDateTooEarlyForBoxDelivery: "The current start date is too early to allow a valid box delivery date at least 2 days beforehand. Please move the start date later.",
     calcNoteNoBoxes: "All storage quantities are currently 0. Please enter at least one quantity greater than 0 before calculating.",
     calcNotePurchaseExceeded: "The purchase quantity cannot be greater than the storage quantity for the same box type. Please review the order and calculate again.",
     calcNoteWeightRequired: "Each box type with storage quantity must include a maximum weight before pricing can be calculated.",
@@ -587,8 +585,8 @@
     calcNoteOverweightBlockedPrefix: "The following box types exceed 30kg maximum weight: ",
     calcNoteOverweightBlockedSuffix: ". Please split and reduce the weight before calculating again.",
     calcNoteContact200: "Above 200 days, please contact us to confirm the 35% rate and free-box rule. Box delivery does not include upstairs service.",
-    calcNoteOtherCity: "Forwarding to another UK city is not included in the estimated total and should be confirmed manually. Forwarding service requires at least 7 days' notice; please contact us to confirm the exact date.",
-    calcNoteOtherCityScotland: "Forwarding to Scotland is not included in the estimated total and should be confirmed manually. Forwarding service requires at least 7 days' notice; please contact us to confirm the exact date.",
+    calcNoteOtherCity: "Forwarding to another UK city is not included in the estimated total and should be confirmed manually. Forwarding service requires at least 3 days' notice and we recommend 7 days; please contact us to confirm the exact date.",
+    calcNoteOtherCityScotland: "Forwarding to Scotland is not included in the estimated total and should be confirmed manually. Forwarding service requires at least 3 days' notice and we recommend 7 days; please contact us to confirm the exact date.",
     example1Title: "Example: May 1 -> May 15",
     example1Text: "1 Box 1 for 14 days. The raw storage fee is £9.8, but one-box short-term storage starts from £20, then adds £2 collection and £2 return delivery.",
     example2Title: "Example: May 1 -> May 6",
@@ -609,7 +607,7 @@
     ruleDeliveryText: "For long-term local storage, collection and return delivery are treated as free under the current guidance. For storage within 30 days, collection is £2 per box and return delivery is £2 per box. The default handover is at the ground floor, and box delivery does not include upstairs service. Pickup-side and return-side upstairs fees are calculated separately, and only pickup-side lift upstairs becomes free after 100 days. For other UK cities, courier rates are £10 up to 10kg and £15 for 10–30kg, with an extra £5 for Scotland. Special or van delivery is quoted separately.",
     faqTitle: "FAQ / Notes",
     faq1: "Box 2 may be temporarily out of stock. Please confirm before storage.",
-    faq2: "If you want items forwarded to another UK city after storage, please book at least one week in advance and contact us to confirm the exact date.",
+    faq2: "If you want items forwarded to another UK city after storage, we recommend booking at least 7 days ahead, with a minimum of 3 days. Please contact us to confirm the exact date.",
     faq3: "Ground-floor handover is the default. Box delivery does not include upstairs service, and upstairs carrying is charged separately for pickup and return when needed.",
     faq4: "Please confirm your charges and return schedule with us before storage to avoid last-minute changes.",
     policyTitle: "Pricing Rules Overview",
@@ -958,8 +956,23 @@ const storageBoxCatalog = {
   "6": { dailyRate: 0.3, buyPrice: 1, labelKey: "calcBox6" }
 };
 
+const pickupBoardStorageKey = "ngn-pickup-board-v1";
+const pickupBoardAirports = [
+  { value: "heathrow", labelKey: "pickupAirportHeathrow" },
+  { value: "gatwick", labelKey: "pickupAirportGatwick" },
+  { value: "manchester", labelKey: "pickupAirportManchester" },
+  { value: "luton", labelKey: "pickupAirportLuton" },
+  { value: "city", labelKey: "pickupAirportCity" },
+  { value: "birmingham", labelKey: "pickupAirportBirmingham" },
+  { value: "stansted", labelKey: "pickupAirportStansted" },
+  { value: "other", labelKey: "pickupAirportOther" }
+];
+
 function getPageKey() {
   const pathname = window.location.pathname.toLowerCase();
+  if (pathname.includes("pickup-admin")) {
+    return "pickup-admin";
+  }
   if (pathname.includes("campus")) {
     return "campus";
   }
@@ -1004,6 +1017,13 @@ function getMetaContent(page, lang) {
     return {
       title: translations[lang].pickupTitle,
       description: translations[lang].pickupDescription
+    };
+  }
+
+  if (page === "pickup-admin") {
+    return {
+      title: translations[lang].pickupAdminPageTitle,
+      description: translations[lang].pickupAdminPageDescription
     };
   }
 
@@ -1053,12 +1073,12 @@ function formatDateInputValue(date) {
 }
 
 function addDays(date, days) {
-  return new Date(date.getTime() + days * 86400000);
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
 }
 
 function getStorageAppointmentLeadDate() {
   const today = new Date();
-  return new Date(today.getFullYear(), today.getMonth(), today.getDate() + 7);
+  return new Date(today.getFullYear(), today.getMonth(), today.getDate() + 3);
 }
 
 function getStorageDiscount(days) {
@@ -1224,7 +1244,6 @@ function calculateStorageEstimate({
   startDate,
   endDate,
   boxDeliveryDate,
-  storageBookingDate,
   pickupMethod,
   pickupAccessType,
   boxWeights,
@@ -1242,9 +1261,7 @@ function calculateStorageEstimate({
   const { items, rawStorageTotal, purchaseTotal } = getStorageLineItems(boxCounts, purchaseCounts, boxWeights, days);
   const leadDate = getStorageAppointmentLeadDate();
   const parsedStartDate = parseDateAtMidnight(startDate);
-  const parsedEndDate = parseDateAtMidnight(endDate);
   const parsedBoxDeliveryDate = parseDateAtMidnight(boxDeliveryDate);
-  const parsedStorageBookingDate = parseDateAtMidnight(storageBookingDate);
   const parsedReturnBookingDate = parseDateAtMidnight(returnBookingDate);
   const discountedBase = rawStorageTotal * discount;
   let pickup = 0;
@@ -1327,32 +1344,6 @@ function calculateStorageEstimate({
       total: null,
       otherCityMessageKey: returnType === "scotland" ? "resultOtherCityTextScotland" : "resultOtherCityText",
       notes: ["calcNoteBoxDeliveryDateRequired"]
-    };
-  }
-
-  if (totalBoxes > 0 && !parsedStorageBookingDate) {
-    return {
-      days,
-      blocked: true,
-      boxCounts,
-      purchaseCounts,
-      totalBoxes,
-      items,
-      pickupMethod,
-      deliveryMethod,
-      rawStorageTotal,
-      discount,
-      discountedBase,
-      purchaseTotal,
-      pickup: 0,
-      delivery: 0,
-      pickupAccessFee: 0,
-      returnAccessFee: 0,
-      overweightFee: 0,
-      minimumAdjustment: 0,
-      total: null,
-      otherCityMessageKey: returnType === "scotland" ? "resultOtherCityTextScotland" : "resultOtherCityText",
-      notes: ["calcNoteStorageBookingDateRequired"]
     };
   }
 
@@ -1486,9 +1477,60 @@ function calculateStorageEstimate({
     };
   }
 
+  if (parsedStartDate && parsedStartDate < leadDate) {
+    return {
+      days,
+      blocked: true,
+      boxCounts,
+      purchaseCounts,
+      totalBoxes,
+      items,
+      pickupMethod,
+      deliveryMethod,
+      rawStorageTotal,
+      discount,
+      discountedBase,
+      purchaseTotal,
+      pickup: 0,
+      delivery: 0,
+      pickupAccessFee: 0,
+      returnAccessFee: 0,
+      overweightFee: 0,
+      minimumAdjustment: 0,
+      total: null,
+      otherCityMessageKey: returnType === "scotland" ? "resultOtherCityTextScotland" : "resultOtherCityText",
+      notes: ["calcNoteAppointmentLeadTime"]
+    };
+  }
+
+  if (totalPurchaseBoxes > 0 && parsedStartDate && parsedStartDate < addDays(leadDate, 2)) {
+    return {
+      days,
+      blocked: true,
+      boxCounts,
+      purchaseCounts,
+      totalBoxes,
+      items,
+      pickupMethod,
+      deliveryMethod,
+      rawStorageTotal,
+      discount,
+      discountedBase,
+      purchaseTotal,
+      pickup: 0,
+      delivery: 0,
+      pickupAccessFee: 0,
+      returnAccessFee: 0,
+      overweightFee: 0,
+      minimumAdjustment: 0,
+      total: null,
+      otherCityMessageKey: returnType === "scotland" ? "resultOtherCityTextScotland" : "resultOtherCityText",
+      notes: ["calcNoteStartDateTooEarlyForBoxDelivery"]
+    };
+  }
+
   if (
     (parsedBoxDeliveryDate && parsedBoxDeliveryDate < leadDate)
-    || (parsedStorageBookingDate && parsedStorageBookingDate < leadDate)
     || (parsedReturnBookingDate && parsedReturnBookingDate < leadDate)
   ) {
     return {
@@ -1518,8 +1560,8 @@ function calculateStorageEstimate({
 
   if (
     parsedBoxDeliveryDate
-    && parsedStorageBookingDate
-    && parsedStorageBookingDate.getTime() < addDays(parsedBoxDeliveryDate, 2).getTime()
+    && parsedStartDate
+    && parsedBoxDeliveryDate.getTime() > addDays(parsedStartDate, -2).getTime()
   ) {
     return {
       days,
@@ -1543,36 +1585,6 @@ function calculateStorageEstimate({
       total: null,
       otherCityMessageKey: returnType === "scotland" ? "resultOtherCityTextScotland" : "resultOtherCityText",
       notes: ["calcNoteBoxDeliveryGap"]
-    };
-  }
-
-  if (
-    parsedStorageBookingDate
-    && parsedStartDate
-    && parsedStorageBookingDate.getTime() > parsedStartDate.getTime()
-  ) {
-    return {
-      days,
-      blocked: true,
-      boxCounts,
-      purchaseCounts,
-      totalBoxes,
-      items,
-      pickupMethod,
-      deliveryMethod,
-      rawStorageTotal,
-      discount,
-      discountedBase,
-      purchaseTotal,
-      pickup: 0,
-      delivery: 0,
-      pickupAccessFee: 0,
-      returnAccessFee: 0,
-      overweightFee: 0,
-      minimumAdjustment: 0,
-      total: null,
-      otherCityMessageKey: returnType === "scotland" ? "resultOtherCityTextScotland" : "resultOtherCityText",
-      notes: ["calcNoteStorageBookingBeforeStart"]
     };
   }
 
@@ -1667,8 +1679,6 @@ function initStorageCalculator(activeLang) {
   const endDateInput = document.querySelector("#endDate");
   const boxDeliveryDateField = document.querySelector("#boxDeliveryDateField");
   const boxDeliveryDateInput = document.querySelector("#boxDeliveryDate");
-  const storageBookingDateField = document.querySelector("#storageBookingDateField");
-  const storageBookingDateInput = document.querySelector("#storageBookingDate");
   const pickupMethodInput = document.querySelector("#pickupMethod");
   const pickupAccessField = document.querySelector("#pickupAccessField");
   const pickupAccessInput = document.querySelector("#pickupAccess");
@@ -1701,7 +1711,6 @@ function initStorageCalculator(activeLang) {
   const resultOtherCityText = document.querySelector("#resultOtherCityText");
   const resultBreakdownEmpty = document.querySelector("#resultBreakdownEmpty");
   const resultBreakdown = document.querySelector("#resultBreakdown");
-  let storageBookingDateTouched = false;
   let returnBookingDateTouched = false;
 
   form.dataset.lang = activeLang;
@@ -1718,8 +1727,11 @@ function initStorageCalculator(activeLang) {
 
   function syncDateRange() {
     const leadDateText = formatDateInputValue(getStorageAppointmentLeadDate());
-    const storageBookingDate = storageBookingDateInput.value;
-    startDateInput.min = storageBookingDate || leadDateText;
+    const needsBoxDelivery = Object.values(getPurchaseCounts()).reduce((sum, value) => sum + value, 0) > 0;
+    const startDateMin = needsBoxDelivery
+      ? formatDateInputValue(addDays(getStorageAppointmentLeadDate(), 2))
+      : leadDateText;
+    startDateInput.min = startDateMin;
 
     if (startDateInput.value && startDateInput.value < startDateInput.min) {
       startDateInput.value = startDateInput.min;
@@ -1749,7 +1761,6 @@ function initStorageCalculator(activeLang) {
     const totalBoxes = Object.values(boxCounts).reduce((sum, value) => sum + value, 0);
     const totalPurchaseBoxes = Object.values(purchaseCounts).reduce((sum, value) => sum + value, 0);
     const needsBoxDelivery = totalPurchaseBoxes > 0;
-    const needsStorageBooking = totalBoxes > 0;
     const isLocalReturn = returnTypeInput.value === "local";
 
     if (boxDeliveryDateField) {
@@ -1760,36 +1771,20 @@ function initStorageCalculator(activeLang) {
 
     boxDeliveryDateInput.disabled = !needsBoxDelivery;
     boxDeliveryDateInput.min = leadDateText;
+    if (startDateInput.value) {
+      boxDeliveryDateInput.max = formatDateInputValue(addDays(parseDateAtMidnight(startDateInput.value), -2));
+    } else {
+      boxDeliveryDateInput.max = "";
+    }
     if (!needsBoxDelivery) {
       boxDeliveryDateInput.value = "";
-    } else if (boxDeliveryDateInput.value && boxDeliveryDateInput.value < leadDateText) {
-      boxDeliveryDateInput.value = leadDateText;
-    }
-
-    if (storageBookingDateField) {
-      storageBookingDateField.hidden = !needsStorageBooking;
-      storageBookingDateField.style.display = needsStorageBooking ? "" : "none";
-      storageBookingDateField.setAttribute("aria-hidden", String(!needsStorageBooking));
-    }
-
-    storageBookingDateInput.disabled = !needsStorageBooking;
-    let storageBookingMin = leadDate;
-    if (needsBoxDelivery && boxDeliveryDateInput.value) {
-      const minFromDelivery = addDays(parseDateAtMidnight(boxDeliveryDateInput.value), 2);
-      if (minFromDelivery > storageBookingMin) {
-        storageBookingMin = minFromDelivery;
+    } else {
+      if (boxDeliveryDateInput.value && boxDeliveryDateInput.value < leadDateText) {
+        boxDeliveryDateInput.value = leadDateText;
       }
-    }
-    const storageBookingMinText = formatDateInputValue(storageBookingMin);
-    storageBookingDateInput.min = storageBookingMinText;
-    if (!needsStorageBooking) {
-      storageBookingDateInput.value = "";
-      storageBookingDateTouched = false;
-    } else if (!storageBookingDateTouched && startDateInput.value) {
-      const desiredValue = startDateInput.value < storageBookingMinText ? storageBookingMinText : startDateInput.value;
-      storageBookingDateInput.value = desiredValue;
-    } else if (storageBookingDateInput.value && storageBookingDateInput.value < storageBookingMinText) {
-      storageBookingDateInput.value = storageBookingMinText;
+      if (boxDeliveryDateInput.max && boxDeliveryDateInput.value && boxDeliveryDateInput.value > boxDeliveryDateInput.max) {
+        boxDeliveryDateInput.value = boxDeliveryDateInput.max;
+      }
     }
 
     if (returnBookingDateField) {
@@ -2010,7 +2005,6 @@ function initStorageCalculator(activeLang) {
     const startDate = startDateInput.value;
     const endDate = endDateInput.value;
     const boxDeliveryDate = boxDeliveryDateInput.value;
-    const storageBookingDate = storageBookingDateInput.value;
     const pickupMethod = pickupMethodInput.value;
     const pickupAccessType = pickupAccessInput.value;
     const returnType = returnTypeInput.value;
@@ -2023,7 +2017,6 @@ function initStorageCalculator(activeLang) {
       startDate,
       endDate,
       boxDeliveryDate,
-      storageBookingDate,
       pickupMethod,
       pickupAccessType,
       boxWeights,
@@ -2095,7 +2088,9 @@ function initStorageCalculator(activeLang) {
   form.addEventListener("submit", event => {
     event.preventDefault();
     syncDateRange();
+    syncAppointmentFields();
     syncPickupFields();
+    syncReturnFields();
     renderEstimate();
   });
 
@@ -2105,7 +2100,6 @@ function initStorageCalculator(activeLang) {
     startDateInput,
     endDateInput,
     boxDeliveryDateInput,
-    storageBookingDateInput,
     pickupMethodInput,
     pickupAccessInput,
     ...boxWeightInputs,
@@ -2115,16 +2109,13 @@ function initStorageCalculator(activeLang) {
     returnAccessInput
   ].forEach(input => {
     input.addEventListener("input", () => {
-      if (input === storageBookingDateInput) {
-        storageBookingDateTouched = true;
-      }
       if (input === returnBookingDateInput) {
         returnBookingDateTouched = true;
       }
-      if (input === startDateInput || input === storageBookingDateInput) {
+      if (input === startDateInput || boxPurchaseInputs.includes(input)) {
         syncDateRange();
       }
-      if (boxCountInputs.includes(input) || boxPurchaseInputs.includes(input) || input === boxDeliveryDateInput || input === storageBookingDateInput || input === returnTypeInput) {
+      if (boxCountInputs.includes(input) || boxPurchaseInputs.includes(input) || input === boxDeliveryDateInput || input === startDateInput || input === returnTypeInput) {
         syncAppointmentFields();
       }
       if (input === pickupMethodInput) {
@@ -2142,16 +2133,13 @@ function initStorageCalculator(activeLang) {
       renderEstimate();
     });
     input.addEventListener("change", () => {
-      if (input === storageBookingDateInput) {
-        storageBookingDateTouched = true;
-      }
       if (input === returnBookingDateInput) {
         returnBookingDateTouched = true;
       }
-      if (input === startDateInput || input === storageBookingDateInput) {
+      if (input === startDateInput || boxPurchaseInputs.includes(input)) {
         syncDateRange();
       }
-      if (boxCountInputs.includes(input) || boxPurchaseInputs.includes(input) || input === boxDeliveryDateInput || input === storageBookingDateInput || input === returnTypeInput) {
+      if (boxCountInputs.includes(input) || boxPurchaseInputs.includes(input) || input === boxDeliveryDateInput || input === startDateInput || input === returnTypeInput) {
         syncAppointmentFields();
       }
       if (input === pickupMethodInput) {
@@ -2408,6 +2396,337 @@ function initHomeMenu() {
   });
 
   document.body.dataset.homeMenuBound = "true";
+}
+
+function readPickupBoardEntries() {
+  try {
+    const raw = window.localStorage.getItem(pickupBoardStorageKey);
+    if (!raw) {
+      return [];
+    }
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+    return parsed
+      .map(normalizePickupBoardEntry)
+      .filter(Boolean)
+      .sort((a, b) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`));
+  } catch (error) {
+    return [];
+  }
+}
+
+function savePickupBoardEntries(entries) {
+  window.localStorage.setItem(pickupBoardStorageKey, JSON.stringify(entries));
+}
+
+function normalizePickupBoardEntry(entry) {
+  if (!entry || typeof entry !== "object") {
+    return null;
+  }
+
+  const totalSeats = Math.max(1, Number.parseInt(entry.totalSeats, 10) || 0);
+  const bookedSeats = Math.max(0, Math.min(totalSeats, Number.parseInt(entry.bookedSeats, 10) || 0));
+  const airport = typeof entry.airport === "string" ? entry.airport : "other";
+  const status = ["open", "full", "closed"].includes(entry.status)
+    ? entry.status
+    : bookedSeats >= totalSeats
+      ? "full"
+      : "open";
+
+  if (!entry.date) {
+    return null;
+  }
+
+  return {
+    id: typeof entry.id === "string" && entry.id ? entry.id : `pickup-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    date: String(entry.date),
+    time: typeof entry.time === "string" && entry.time ? entry.time : "",
+    airport,
+    destination: typeof entry.destination === "string" ? entry.destination.trim() : "",
+    totalSeats,
+    bookedSeats,
+    remark: typeof entry.remark === "string" ? entry.remark.trim() : "",
+    status
+  };
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function getPickupAirportLabel(airport, lang) {
+  const dict = translations[lang] || translations["zh-CN"];
+  const config = pickupBoardAirports.find(item => item.value === airport);
+  if (!config) {
+    return airport || dict.pickupAirportOther;
+  }
+  return dict[config.labelKey] || dict.pickupAirportOther;
+}
+
+function getPickupBoardStatus(entry) {
+  if (entry.status === "closed") {
+    return "closed";
+  }
+  if (entry.status === "full" || entry.bookedSeats >= entry.totalSeats) {
+    return "full";
+  }
+  return "open";
+}
+
+function formatPickupBoardDate(dateValue, timeValue, lang) {
+  if (!dateValue) {
+    return "--";
+  }
+
+  const parts = String(dateValue).split("-").map(Number);
+  if (parts.length !== 3 || parts.some(Number.isNaN)) {
+    return timeValue ? `${dateValue} ${timeValue}` : dateValue;
+  }
+
+  const date = new Date(parts[0], parts[1] - 1, parts[2]);
+  const locale = lang === "en" ? "en-GB" : "zh-CN";
+  const formattedDate = new Intl.DateTimeFormat(locale, {
+    year: "numeric",
+    month: "long",
+    day: "numeric"
+  }).format(date);
+
+  return timeValue ? `${formattedDate} ${timeValue}` : formattedDate;
+}
+
+function initPickupBoard(activeLang) {
+  const list = document.querySelector("#pickupBoardList");
+  if (!list) {
+    return;
+  }
+
+  const render = () => {
+    const dict = translations[activeLang] || translations["zh-CN"];
+    const entries = readPickupBoardEntries();
+
+    if (!entries.length) {
+      list.innerHTML = `<div class="pickup-board-empty">${escapeHtml(dict.pickupBoardEmpty)}</div>`;
+      return;
+    }
+
+    list.innerHTML = entries.map(entry => {
+      const status = getPickupBoardStatus(entry);
+      const remainingSeats = Math.max(0, entry.totalSeats - entry.bookedSeats);
+      const badgeKey = status === "closed"
+        ? "pickupBoardStatusClosed"
+        : status === "full"
+          ? "pickupBoardStatusFull"
+          : "pickupBoardStatusOpen";
+      const routeText = entry.destination || dict.pickupBoardRouteDefault;
+      const noteText = entry.remark || dict.pickupBoardRemarkDefault;
+
+      return `
+        <article class="pickup-board-card is-${status}">
+          <div class="pickup-board-top">
+            <div>
+              <h3>${escapeHtml(formatPickupBoardDate(entry.date, entry.time, activeLang))}</h3>
+              <p class="pickup-board-meta">${escapeHtml(getPickupAirportLabel(entry.airport, activeLang))} · ${escapeHtml(routeText)}</p>
+            </div>
+            <span class="pickup-board-badge is-${status}">${escapeHtml(dict[badgeKey])}</span>
+          </div>
+          <div class="pickup-board-stats">
+            <div class="pickup-board-stat">
+              <strong>${escapeHtml(dict.pickupBoardTotalSeats)}</strong>
+              <span>${escapeHtml(`${entry.totalSeats}${dict.pickupBoardSeatUnit}`)}</span>
+            </div>
+            <div class="pickup-board-stat">
+              <strong>${escapeHtml(dict.pickupBoardBookedSeats)}</strong>
+              <span>${escapeHtml(`${entry.bookedSeats}${dict.pickupBoardSeatUnit}`)}</span>
+            </div>
+            <div class="pickup-board-stat">
+              <strong>${escapeHtml(dict.pickupBoardRemainingSeats)}</strong>
+              <span>${escapeHtml(`${remainingSeats}${dict.pickupBoardSeatUnit}`)}</span>
+            </div>
+          </div>
+          <p class="pickup-board-note">${escapeHtml(noteText)}</p>
+        </article>
+      `;
+    }).join("");
+  };
+
+  render();
+  window.addEventListener("storage", render);
+}
+
+function initPickupBoardAdmin(activeLang) {
+  const form = document.querySelector("#pickupAdminForm");
+  if (!form) {
+    return;
+  }
+
+  const dict = translations[activeLang] || translations["zh-CN"];
+  const statusNode = document.querySelector("#pickupAdminStatus");
+  const list = document.querySelector("#pickupAdminList");
+  const resetButton = document.querySelector("#pickupAdminReset");
+  const fields = {
+    id: document.querySelector("#pickupAdminId"),
+    date: document.querySelector("#pickupAdminDate"),
+    time: document.querySelector("#pickupAdminTime"),
+    airport: document.querySelector("#pickupAdminAirport"),
+    destination: document.querySelector("#pickupAdminDestination"),
+    totalSeats: document.querySelector("#pickupAdminTotalSeats"),
+    bookedSeats: document.querySelector("#pickupAdminBookedSeats"),
+    status: document.querySelector("#pickupAdminEntryStatus"),
+    remark: document.querySelector("#pickupAdminRemark")
+  };
+
+  const setStatus = message => {
+    if (statusNode) {
+      statusNode.textContent = message;
+    }
+  };
+
+  const resetForm = () => {
+    form.reset();
+    if (fields.id) {
+      fields.id.value = "";
+    }
+    if (fields.totalSeats) {
+      fields.totalSeats.value = "4";
+    }
+    if (fields.bookedSeats) {
+      fields.bookedSeats.value = "0";
+    }
+    if (fields.status) {
+      fields.status.value = "open";
+    }
+    setStatus(dict.pickupAdminStatusIdle);
+  };
+
+  const renderList = () => {
+    if (!list) {
+      return;
+    }
+
+    const entries = readPickupBoardEntries();
+    if (!entries.length) {
+      list.innerHTML = `<div class="pickup-admin-empty">${escapeHtml(dict.pickupAdminEmpty)}</div>`;
+      return;
+    }
+
+    list.innerHTML = entries.map(entry => {
+      const status = getPickupBoardStatus(entry);
+      return `
+        <article class="pickup-admin-item">
+          <h3>${escapeHtml(formatPickupBoardDate(entry.date, entry.time, activeLang))} · ${escapeHtml(getPickupAirportLabel(entry.airport, activeLang))}</h3>
+          <p>${escapeHtml(dict.pickupAdminRouteLabel)}: ${escapeHtml(entry.destination || dict.pickupBoardRouteDefault)}</p>
+          <p>${escapeHtml(dict.pickupAdminSeatSummaryLabel)}: ${escapeHtml(`${entry.totalSeats}=${entry.bookedSeats}`)} · ${escapeHtml(dict[status === "closed" ? "pickupBoardStatusClosed" : status === "full" ? "pickupBoardStatusFull" : "pickupBoardStatusOpen"])}</p>
+          <p>${escapeHtml(dict.pickupAdminRemarkLabel)}: ${escapeHtml(entry.remark || dict.pickupBoardRemarkDefault)}</p>
+          <div class="pickup-admin-item-actions">
+            <button class="button button-secondary" type="button" data-action="edit" data-id="${escapeHtml(entry.id)}">${escapeHtml(dict.pickupAdminEditBtn)}</button>
+            <button class="button button-secondary" type="button" data-action="delete" data-id="${escapeHtml(entry.id)}">${escapeHtml(dict.pickupAdminDeleteBtn)}</button>
+          </div>
+        </article>
+      `;
+    }).join("");
+  };
+
+  const fillForm = entry => {
+    if (!entry) {
+      return;
+    }
+    fields.id.value = entry.id;
+    fields.date.value = entry.date;
+    fields.time.value = entry.time;
+    fields.airport.value = entry.airport;
+    fields.destination.value = entry.destination;
+    fields.totalSeats.value = String(entry.totalSeats);
+    fields.bookedSeats.value = String(entry.bookedSeats);
+    fields.status.value = entry.status;
+    fields.remark.value = entry.remark;
+    setStatus(dict.pickupAdminStatusEditing);
+    form.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  if (!form.dataset.bound) {
+    form.addEventListener("submit", event => {
+      event.preventDefault();
+
+      const totalSeats = Number.parseInt(fields.totalSeats.value, 10) || 0;
+      const bookedSeats = Number.parseInt(fields.bookedSeats.value, 10) || 0;
+      if (!fields.date.value || totalSeats < 1 || bookedSeats < 0 || bookedSeats > totalSeats) {
+        setStatus(dict.pickupAdminValidationError);
+        return;
+      }
+
+      const nextEntry = normalizePickupBoardEntry({
+        id: fields.id.value || undefined,
+        date: fields.date.value,
+        time: fields.time.value,
+        airport: fields.airport.value,
+        destination: fields.destination.value,
+        totalSeats,
+        bookedSeats,
+        status: fields.status.value,
+        remark: fields.remark.value
+      });
+
+      const entries = readPickupBoardEntries();
+      const existingIndex = entries.findIndex(item => item.id === nextEntry.id);
+      if (existingIndex >= 0) {
+        entries.splice(existingIndex, 1, nextEntry);
+        setStatus(dict.pickupAdminStatusUpdated);
+      } else {
+        entries.push(nextEntry);
+        setStatus(dict.pickupAdminStatusCreated);
+      }
+
+      savePickupBoardEntries(entries);
+      renderList();
+      resetForm();
+    });
+
+    list?.addEventListener("click", event => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) {
+        return;
+      }
+      const button = target.closest("[data-action]");
+      if (!button) {
+        return;
+      }
+
+      const id = button.getAttribute("data-id");
+      const action = button.getAttribute("data-action");
+      const entries = readPickupBoardEntries();
+      const entry = entries.find(item => item.id === id);
+
+      if (action === "edit" && entry) {
+        fillForm(entry);
+      }
+
+      if (action === "delete" && entry) {
+        const nextEntries = entries.filter(item => item.id !== id);
+        savePickupBoardEntries(nextEntries);
+        renderList();
+        setStatus(dict.pickupAdminStatusDeleted);
+        if (fields.id.value === id) {
+          resetForm();
+        }
+      }
+    });
+
+    resetButton?.addEventListener("click", () => {
+      resetForm();
+    });
+
+    form.dataset.bound = "true";
+  }
+
+  setStatus(dict.pickupAdminStatusIdle);
+  renderList();
 }
 
 Object.assign(translations["zh-CN"], {
