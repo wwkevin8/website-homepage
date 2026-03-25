@@ -118,6 +118,12 @@
     outlookQuoteTitle: "公司展望",
     outlookQuoteText: "未来，我们会继续深耕诺丁汉本地主流公寓资源，把每一类公寓的定位、适合人群、合同节奏、价格变化和常见问题梳理得更清楚，让同学在做选择时不只是“看到房源”，而是真正看懂差异。与此同时，我们也会继续提升团队响应效率，把咨询、订房、返现同步、入住衔接、售后跟进、本地答疑和节日活动之间的服务链路做得更完整，让支持不只停留在某一个节点，而是覆盖学生来到诺丁汉后的更长周期。除了订房本身，我们也希望把更多贴近真实生活的福利与陪伴持续做下去，包括节日活动、免费出行、本地互助、换房协助、毕业阶段支持以及更多能够提升留学体验的细节服务。我们希望左邻右里不仅是一个能帮学生订房的团队，更是一个在关键时刻值得被信任、在重要阶段愿意长期负责、真正理解学生和家长顾虑的本地服务品牌。",
     footerText: "面向诺丁汉留学生的本地订房与租房服务团队",
+    footerHoursLabel: "营业时间",
+    footerHoursValue: "周一到周六 08:00-20:00",
+    footerPhoneLabel: "公司电话",
+    footerPhoneValue: "07941 008555",
+    footerEmailLabel: "联系邮箱",
+    footerEmailValue: "info@ngn.best",
     storageTitle: "左邻右里 | 寄存服务非会员价格",
     storageDescription: "左邻右里寄存服务非会员价格页，提供箱型尺寸、价格表、短期规则、配送说明与在线费用估算。",
     storageHeroEyebrow: "Storage Service",
@@ -441,6 +447,12 @@
     outlookQuoteTitle: "Our Outlook",
     outlookQuoteText: "Looking ahead, we want to keep building deeper and clearer knowledge around Nottingham's mainstream student residences, so students are not just shown options but are genuinely helped to understand differences in positioning, suitable groups, contract timing, price changes and common issues. At the same time, we want to keep improving the team's response speed and make the service chain between consultation, booking, cashback updates, move-in coordination, aftercare, local questions and seasonal activities feel more connected and complete. Beyond accommodation itself, we also hope to keep growing the kinds of practical support that matter in real student life, including festive events, free trips, local mutual help, room-switch support, graduation-stage assistance and many smaller details that make living abroad feel easier. Our goal is for NGN to be more than a team that helps students book a room, and instead become a trusted local brand that students and parents can rely on at important moments over a longer period of time.",
     footerText: "A local booking and housing support team for international students in Nottingham",
+    footerHoursLabel: "Business Hours",
+    footerHoursValue: "Monday to Saturday 08:00-20:00",
+    footerPhoneLabel: "Company Phone",
+    footerPhoneValue: "07941 008555",
+    footerEmailLabel: "Contact Email",
+    footerEmailValue: "info@ngn.best",
     storageTitle: "NGN | Non-member Storage Pricing",
     storageDescription: "Non-member storage pricing by Nottingham Good Neighbor, including box sizes, daily rates, short-term rules, delivery charges and an online estimate tool.",
     storageHeroEyebrow: "Storage Service",
@@ -3191,7 +3203,13 @@ Object.assign(translations["zh-CN"], {
   benefits6Title: "入住后继续跟进",
   benefits6Text: "会员支持不会只停在订房当天，入住后的问题也会尽量继续承接。",
   benefitsVideoTitle: "部分活动记录",
-  footerText: "面向诺丁汉留学生的本地订房与租房服务团队"
+  footerText: "面向诺丁汉留学生的本地订房与租房服务团队",
+  footerHoursLabel: "营业时间",
+  footerHoursValue: "周一到周六 08:00-20:00",
+  footerPhoneLabel: "公司电话",
+  footerPhoneValue: "07941 008555",
+  footerEmailLabel: "联系邮箱",
+  footerEmailValue: "info@ngn.best"
 });
 
 Object.assign(translations.en, {
@@ -3362,7 +3380,13 @@ Object.assign(translations.en, {
   benefits6Title: "Follow-up after move-in",
   benefits6Text: "Support should not stop the day the room is booked; we try to keep helping with later questions too.",
   benefitsVideoTitle: "Selected activity records",
-  footerText: "A local Nottingham team supporting student booking and accommodation decisions"
+  footerText: "A local Nottingham team supporting student booking and accommodation decisions",
+  footerHoursLabel: "Business Hours",
+  footerHoursValue: "Monday to Saturday 08:00-20:00",
+  footerPhoneLabel: "Company Phone",
+  footerPhoneValue: "07941 008555",
+  footerEmailLabel: "Contact Email",
+  footerEmailValue: "info@ngn.best"
 });
 
 Object.assign(translations["zh-CN"], {
