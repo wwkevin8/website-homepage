@@ -743,7 +743,7 @@ Object.assign(translations["zh-CN"], {
   pickupHeroText: "我们与英国本地正规租车及司机团队长期合作，为留学生提供接机、拼车与送机支持。合作司机均为英国本地华人老司机，驾龄 5 年以上，常用奔驰、奥迪、大众、福特等安全舒适车型。无论是开学季首次落地，还是平时跨城往返，我们都希望把接机安排做得更清楚、更稳妥。",
   pickupMeta1: "电话: 07941 008555",
   pickupMeta2: "拼车表单: 问卷星链接",
-  pickupMeta3: "客服微信: hottsngn",
+  pickupMeta3: "客服微信: Nottsngn",
   pickupHeroBtn1: "填写拼车表单",
   pickupHeroBtn2: "查看接机价格",
   pickupHeroBtn3: "咨询包车/接机",
@@ -807,7 +807,7 @@ Object.assign(translations["zh-CN"], {
   pickupFaq1: "如果觉得自己出关或集合速度较慢，可以提前与我们沟通晚一点接，避免不必要的等待费。",
   pickupFaq2: "若多人拼车且分别落在 T2、T3、T4、T5 等不同航站楼，最终价格会按照增加航站楼数量重新计算。",
   pickupFaq3: "送机时请尽量提前准备好行李，减少装车和临时等待带来的额外费用。",
-  pickupFaq4: "客服微信: hottsngn；电话工作时间通常为周一到周六 08:00-20:00，拼车事项建议优先在工作时间联系。",
+  pickupFaq4: "客服微信: Nottsngn；电话工作时间通常为周一到周六 08:00-20:00，拼车事项建议优先在工作时间联系。",
   pickupExampleTitle: "核算示例",
   pickupExampleText1: "例如 4 位同学拼车，基础价格为每人 £65；如果分别落在 4 个不同航站楼，就需要额外加 3 次航站楼费用，即 £45。平摊后每人再加 £11.25，单人最终约为 £76.25。",
   pickupExampleText2: "如果你的航班 13:00 落地，司机与大家约定 14:00 接人，则免费等待可延续到 15:00；超过时间后会继续按等待规则核算，因此越早确认集合时间和行李情况越好。",
@@ -838,7 +838,57 @@ Object.assign(translations["zh-CN"], {
   pickupSummaryDefault: "最终价格以人工核算为准，我们会结合人数、航站楼、等待时间和行李数量做最终确认。",
   pickupSummaryRemarkDefault: "如果你还有其他细节需求，可以在备注中继续补充后再发给客服。",
   pickupBrandTitle: "接机是本地支持的一部分，不是全部",
-  pickupBrandText: "左邻右里是立足诺丁汉的本地华人正规注册服务公司。接机、拼车、寄存、订房以及其他本地支持，都是围绕留学生真实生活节奏逐步搭建起来的服务内容。我们希望把这些安排讲清楚、做扎实，让同学在真正需要的时候，能更快找到靠谱、稳定且值得信任的安排。"
+  pickupBrandText: "左邻右里是立足诺丁汉的本地华人正规注册服务公司。接机、拼车、寄存、订房以及其他本地支持，都是围绕留学生真实生活节奏逐步搭建起来的服务内容。我们希望把这些安排讲清楚、做扎实，让同学在真正需要的时候，能更快找到靠谱、稳定且值得信任的安排。",
+  pickupBoardTitle: "最新拼车信息",
+  pickupBoardIntro: "这里会展示最近人工发布的接机 / 拼车安排，方便同学先看有没有可以一起拼的时间段。",
+  pickupBoardHint: "当前版本支持人工后台录入，例如 2027-04-21 / 希思罗机场 / 4 人车已报 2 人。",
+  pickupBoardAdminBtn: "后台录入",
+  pickupBoardEmpty: "暂时还没有已发布的拼车信息，想发起接机可以先联系工作人员。",
+  pickupBoardStatusOpen: "可继续拼车",
+  pickupBoardStatusFull: "已满员",
+  pickupBoardStatusClosed: "已关闭",
+  pickupBoardTotalSeats: "总座位",
+  pickupBoardBookedSeats: "已报名",
+  pickupBoardRemainingSeats: "剩余",
+  pickupBoardSeatUnit: " 人",
+  pickupBoardRouteDefault: "路线待补充",
+  pickupBoardRemarkDefault: "如需报名，请联系工作人员确认最终时间、航站楼和行李安排。",
+  pickupAirportOther: "其他机场",
+  pickupAdminPageTitle: "左邻右里 | 接机信息后台",
+  pickupAdminPageDescription: "人工录入接机拼车信息的后台页面，可新增、编辑和删除前台展示条目。",
+  pickupAdminHeroEyebrow: "Pickup Admin",
+  pickupAdminHeroTitle: "接机信息后台",
+  pickupAdminHeroText: "这里用于人工录入前台展示的接机 / 拼车信息。当前版本数据保存在当前浏览器本地，适合先把发布流程跑起来。",
+  pickupAdminFormTitle: "新增 / 编辑信息",
+  pickupAdminListTitle: "已发布信息",
+  pickupAdminLocalNote: "提示：这版是本地后台。只有当前浏览器里录入的数据会展示在前台；如果后面你要跨电脑共用，我们再把这层换成真实数据库。",
+  pickupAdminStatusIdle: "填写左侧表单后即可发布到前台。",
+  pickupAdminStatusCreated: "已新增一条接机信息。",
+  pickupAdminStatusUpdated: "这条接机信息已更新。",
+  pickupAdminStatusDeleted: "这条接机信息已删除。",
+  pickupAdminStatusEditing: "当前正在编辑已存在的条目。",
+  pickupAdminValidationError: "请检查日期、总座位和已报名人数，已报名人数不能大于总座位。",
+  pickupAdminFieldDate: "日期",
+  pickupAdminFieldTime: "时间",
+  pickupAdminFieldAirport: "机场",
+  pickupAdminFieldDestination: "路线 / 目的地",
+  pickupAdminFieldTotalSeats: "总座位",
+  pickupAdminFieldBookedSeats: "已报名人数",
+  pickupAdminFieldStatus: "状态",
+  pickupAdminFieldRemark: "备注",
+  pickupAdminDestinationPlaceholder: "例如：希思罗 T2 -> Nottingham",
+  pickupAdminRemarkPlaceholder: "例如：适合 2-3 个大箱子，最终以人工确认为准",
+  pickupAdminOpenOption: "开放报名",
+  pickupAdminFullOption: "满员",
+  pickupAdminClosedOption: "关闭展示",
+  pickupAdminSaveBtn: "保存信息",
+  pickupAdminResetBtn: "清空表单",
+  pickupAdminEmpty: "还没有已发布信息。",
+  pickupAdminRouteLabel: "路线",
+  pickupAdminSeatSummaryLabel: "座位情况",
+  pickupAdminRemarkLabel: "备注",
+  pickupAdminEditBtn: "编辑",
+  pickupAdminDeleteBtn: "删除"
 });
 
 Object.assign(translations.en, {
@@ -849,7 +899,7 @@ Object.assign(translations.en, {
   pickupHeroText: "We work with licensed local UK rental and driver teams to support airport pickup, shared rides and drop-offs for students. Our partner drivers are experienced Chinese drivers based in the UK with more than five years of driving experience, using safe and comfortable vehicles such as Mercedes, Audi, Volkswagen and Ford. Whether it is a first arrival at the start of term or a regular intercity transfer, we aim to make the arrangement clearer and more dependable.",
   pickupMeta1: "Phone: 07941 008555",
   pickupMeta2: "Carpool form: WJX link",
-  pickupMeta3: "WeChat: hottsngn",
+  pickupMeta3: "WeChat: Nottsngn",
   pickupHeroBtn1: "Fill carpool form",
   pickupHeroBtn2: "View pricing",
   pickupHeroBtn3: "Ask about private transfer",
@@ -913,7 +963,7 @@ Object.assign(translations.en, {
   pickupFaq1: "If you expect immigration clearance or meeting up to take longer, tell us in advance so we can avoid unnecessary waiting charges.",
   pickupFaq2: "If multiple riders land at different terminals such as T2, T3, T4 and T5, the final price will be recalculated based on extra terminal runs.",
   pickupFaq3: "For drop-offs, try to have your luggage ready early to reduce loading delays and extra waiting costs.",
-  pickupFaq4: "Customer service WeChat: hottsngn. Phone support is usually available Monday to Saturday, 08:00-20:00.",
+  pickupFaq4: "Customer service WeChat: Nottsngn. Phone support is usually available Monday to Saturday, 08:00-20:00.",
   pickupExampleTitle: "Examples",
   pickupExampleText1: "For example, if 4 students share a ride and the base fare is £65 each, but they land at 4 different terminals, 3 extra terminal runs add £45 in total. Shared equally, that adds £11.25 per student, making the final amount about £76.25 each.",
   pickupExampleText2: "If your flight lands at 13:00 and the agreed pickup time is 14:00, free waiting can continue until 15:00. After that, waiting rules start to apply, so clearer coordination on meeting time and luggage usually helps reduce cost.",
@@ -944,7 +994,57 @@ Object.assign(translations.en, {
   pickupSummaryDefault: "Final pricing is confirmed manually based on rider count, terminals, waiting time and luggage.",
   pickupSummaryRemarkDefault: "Add any other details in the notes field before sending the request to customer service.",
   pickupBrandTitle: "Pickup is part of local support, not the whole story",
-  pickupBrandText: "NGN is a locally registered Chinese service company based in Nottingham. Pickup, carpools, storage, accommodation booking and other local support all grew from real student needs. We want these arrangements to stay clear, steady and practical, so students can find a reliable and trustworthy solution quickly when it matters."
+  pickupBrandText: "NGN is a locally registered Chinese service company based in Nottingham. Pickup, carpools, storage, accommodation booking and other local support all grew from real student needs. We want these arrangements to stay clear, steady and practical, so students can find a reliable and trustworthy solution quickly when it matters.",
+  pickupBoardTitle: "Latest Carpool Posts",
+  pickupBoardIntro: "Recently published pickup and carpool arrangements appear here so students can quickly see whether a matching trip already exists.",
+  pickupBoardHint: "This version supports manual admin entry, for example: 2027-04-21 / Heathrow Airport / 4 seats with 2 already booked.",
+  pickupBoardAdminBtn: "Admin",
+  pickupBoardEmpty: "No published carpool information yet. Please contact the team if you want to arrange pickup.",
+  pickupBoardStatusOpen: "Open",
+  pickupBoardStatusFull: "Full",
+  pickupBoardStatusClosed: "Closed",
+  pickupBoardTotalSeats: "Total seats",
+  pickupBoardBookedSeats: "Booked",
+  pickupBoardRemainingSeats: "Remaining",
+  pickupBoardSeatUnit: "",
+  pickupBoardRouteDefault: "Route to be confirmed",
+  pickupBoardRemarkDefault: "Please confirm the final timing, terminal and luggage arrangement with customer service.",
+  pickupAirportOther: "Other airport",
+  pickupAdminPageTitle: "NGN | Pickup Admin",
+  pickupAdminPageDescription: "Admin page for manually creating, editing and deleting pickup board entries shown on the public page.",
+  pickupAdminHeroEyebrow: "Pickup Admin",
+  pickupAdminHeroTitle: "Pickup Board Admin",
+  pickupAdminHeroText: "Use this page to manually manage the pickup and carpool items shown on the public page. This version stores data in the current browser locally.",
+  pickupAdminFormTitle: "Create or Edit Entry",
+  pickupAdminListTitle: "Published Entries",
+  pickupAdminLocalNote: "Note: this is a local-browser admin version. Entries only appear in the same browser unless we later switch this to a shared database.",
+  pickupAdminStatusIdle: "Fill in the form on the left to publish a new entry.",
+  pickupAdminStatusCreated: "A new pickup item has been created.",
+  pickupAdminStatusUpdated: "The pickup item has been updated.",
+  pickupAdminStatusDeleted: "The pickup item has been deleted.",
+  pickupAdminStatusEditing: "You are editing an existing item.",
+  pickupAdminValidationError: "Please check the date, total seats and booked seats. Booked seats cannot exceed total seats.",
+  pickupAdminFieldDate: "Date",
+  pickupAdminFieldTime: "Time",
+  pickupAdminFieldAirport: "Airport",
+  pickupAdminFieldDestination: "Route / destination",
+  pickupAdminFieldTotalSeats: "Total seats",
+  pickupAdminFieldBookedSeats: "Booked seats",
+  pickupAdminFieldStatus: "Status",
+  pickupAdminFieldRemark: "Notes",
+  pickupAdminDestinationPlaceholder: "For example: Heathrow T2 -> Nottingham",
+  pickupAdminRemarkPlaceholder: "For example: suitable for 2-3 large suitcases; final confirmation is manual",
+  pickupAdminOpenOption: "Open",
+  pickupAdminFullOption: "Full",
+  pickupAdminClosedOption: "Closed",
+  pickupAdminSaveBtn: "Save",
+  pickupAdminResetBtn: "Reset",
+  pickupAdminEmpty: "No published items yet.",
+  pickupAdminRouteLabel: "Route",
+  pickupAdminSeatSummaryLabel: "Seat summary",
+  pickupAdminRemarkLabel: "Notes",
+  pickupAdminEditBtn: "Edit",
+  pickupAdminDeleteBtn: "Delete"
 });
 
 const storageBoxCatalog = {
@@ -2667,8 +2767,15 @@ function initPickupBoard(activeLang) {
     return;
   }
 
+  if (list.__renderPickupBoard) {
+    list.dataset.lang = activeLang;
+    list.__renderPickupBoard();
+    return;
+  }
+
   const render = () => {
-    const dict = translations[activeLang] || translations["zh-CN"];
+    const currentLang = list.dataset.lang || activeLang;
+    const dict = translations[currentLang] || translations["zh-CN"];
     const entries = readPickupBoardEntries();
 
     if (!entries.length) {
@@ -2691,8 +2798,8 @@ function initPickupBoard(activeLang) {
         <article class="pickup-board-card is-${status}">
           <div class="pickup-board-top">
             <div>
-              <h3>${escapeHtml(formatPickupBoardDate(entry.date, entry.time, activeLang))}</h3>
-              <p class="pickup-board-meta">${escapeHtml(getPickupAirportLabel(entry.airport, activeLang))} · ${escapeHtml(routeText)}</p>
+              <h3>${escapeHtml(formatPickupBoardDate(entry.date, entry.time, currentLang))}</h3>
+              <p class="pickup-board-meta">${escapeHtml(getPickupAirportLabel(entry.airport, currentLang))} · ${escapeHtml(routeText)}</p>
             </div>
             <span class="pickup-board-badge is-${status}">${escapeHtml(dict[badgeKey])}</span>
           </div>
@@ -2716,6 +2823,8 @@ function initPickupBoard(activeLang) {
     }).join("");
   };
 
+  list.dataset.lang = activeLang;
+  list.__renderPickupBoard = render;
   render();
   window.addEventListener("storage", render);
 }
@@ -2726,7 +2835,7 @@ function initPickupBoardAdmin(activeLang) {
     return;
   }
 
-  const dict = translations[activeLang] || translations["zh-CN"];
+  const getDict = () => translations[form.dataset.lang || activeLang] || translations["zh-CN"];
   const statusNode = document.querySelector("#pickupAdminStatus");
   const list = document.querySelector("#pickupAdminList");
   const resetButton = document.querySelector("#pickupAdminReset");
@@ -2748,7 +2857,7 @@ function initPickupBoardAdmin(activeLang) {
     }
   };
 
-  const resetForm = () => {
+  const resetForm = (message = getDict().pickupAdminStatusIdle) => {
     form.reset();
     if (fields.id) {
       fields.id.value = "";
@@ -2762,7 +2871,7 @@ function initPickupBoardAdmin(activeLang) {
     if (fields.status) {
       fields.status.value = "open";
     }
-    setStatus(dict.pickupAdminStatusIdle);
+    setStatus(message);
   };
 
   const renderList = () => {
@@ -2770,6 +2879,7 @@ function initPickupBoardAdmin(activeLang) {
       return;
     }
 
+    const dict = getDict();
     const entries = readPickupBoardEntries();
     if (!entries.length) {
       list.innerHTML = `<div class="pickup-admin-empty">${escapeHtml(dict.pickupAdminEmpty)}</div>`;
@@ -2806,7 +2916,7 @@ function initPickupBoardAdmin(activeLang) {
     fields.bookedSeats.value = String(entry.bookedSeats);
     fields.status.value = entry.status;
     fields.remark.value = entry.remark;
-    setStatus(dict.pickupAdminStatusEditing);
+    setStatus(getDict().pickupAdminStatusEditing);
     form.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
@@ -2817,7 +2927,7 @@ function initPickupBoardAdmin(activeLang) {
       const totalSeats = Number.parseInt(fields.totalSeats.value, 10) || 0;
       const bookedSeats = Number.parseInt(fields.bookedSeats.value, 10) || 0;
       if (!fields.date.value || totalSeats < 1 || bookedSeats < 0 || bookedSeats > totalSeats) {
-        setStatus(dict.pickupAdminValidationError);
+        setStatus(getDict().pickupAdminValidationError);
         return;
       }
 
@@ -2837,15 +2947,15 @@ function initPickupBoardAdmin(activeLang) {
       const existingIndex = entries.findIndex(item => item.id === nextEntry.id);
       if (existingIndex >= 0) {
         entries.splice(existingIndex, 1, nextEntry);
-        setStatus(dict.pickupAdminStatusUpdated);
+        savePickupBoardEntries(entries);
+        renderList();
+        resetForm(getDict().pickupAdminStatusUpdated);
       } else {
         entries.push(nextEntry);
-        setStatus(dict.pickupAdminStatusCreated);
+        savePickupBoardEntries(entries);
+        renderList();
+        resetForm(getDict().pickupAdminStatusCreated);
       }
-
-      savePickupBoardEntries(entries);
-      renderList();
-      resetForm();
     });
 
     list?.addEventListener("click", event => {
@@ -2871,7 +2981,7 @@ function initPickupBoardAdmin(activeLang) {
         const nextEntries = entries.filter(item => item.id !== id);
         savePickupBoardEntries(nextEntries);
         renderList();
-        setStatus(dict.pickupAdminStatusDeleted);
+        setStatus(getDict().pickupAdminStatusDeleted);
         if (fields.id.value === id) {
           resetForm();
         }
@@ -2885,7 +2995,7 @@ function initPickupBoardAdmin(activeLang) {
     form.dataset.bound = "true";
   }
 
-  setStatus(dict.pickupAdminStatusIdle);
+  setStatus(getDict().pickupAdminStatusIdle);
   renderList();
 }
 
@@ -3394,6 +3504,8 @@ function applyLanguage(lang) {
   window.localStorage.setItem("ngn-lang", lang);
   initStorageCalculator(lang);
   initPickupQuoteForm(lang);
+  initPickupBoard(lang);
+  initPickupBoardAdmin(lang);
   initHomeVideos(lang);
   initHomeMenu();
   initTeamSummaryCarousel(lang);

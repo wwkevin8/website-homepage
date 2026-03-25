@@ -1945,6 +1945,207 @@ img {
   gap: 22px;
 }
 
+.pickup-board-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.pickup-board-hint {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.75;
+}
+
+.pickup-board-list {
+  display: grid;
+  gap: 16px;
+}
+
+.pickup-board-card {
+  padding: 20px;
+  border-radius: 18px;
+  border: 1px solid rgba(16, 38, 68, 0.08);
+  background: linear-gradient(180deg, #ffffff 0%, #f7faff 100%);
+  box-shadow: 0 12px 28px rgba(15, 34, 65, 0.05);
+}
+
+.pickup-board-card.is-full {
+  opacity: 0.78;
+}
+
+.pickup-board-card.is-closed {
+  opacity: 0.64;
+}
+
+.pickup-board-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.pickup-board-top h3 {
+  margin: 0;
+  font-size: 1.08rem;
+  color: var(--ink);
+}
+
+.pickup-board-meta {
+  margin: 10px 0 0;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.pickup-board-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 88px;
+  min-height: 34px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--accent-deep);
+  background: rgba(19, 74, 169, 0.1);
+}
+
+.pickup-board-badge.is-open {
+  color: #0b5b38;
+  background: rgba(11, 91, 56, 0.12);
+}
+
+.pickup-board-badge.is-full {
+  color: #9a5c00;
+  background: rgba(154, 92, 0, 0.14);
+}
+
+.pickup-board-badge.is-closed {
+  color: #6b7280;
+  background: rgba(107, 114, 128, 0.15);
+}
+
+.pickup-board-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.pickup-board-stat {
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: #f3f7fd;
+  border: 1px solid rgba(16, 38, 68, 0.08);
+}
+
+.pickup-board-stat strong {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--accent-deep);
+  font-size: 0.85rem;
+}
+
+.pickup-board-stat span {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.pickup-board-note {
+  margin: 16px 0 0;
+  color: var(--muted);
+  line-height: 1.75;
+}
+
+.pickup-board-empty {
+  padding: 22px 20px;
+  border-radius: 18px;
+  border: 1px dashed rgba(16, 38, 68, 0.14);
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--muted);
+}
+
+.pickup-admin-shell {
+  padding-top: 36px;
+}
+
+.pickup-admin-grid {
+  display: grid;
+  grid-template-columns: minmax(320px, 420px) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.pickup-admin-card {
+  padding: 24px;
+}
+
+.pickup-admin-form {
+  display: grid;
+  gap: 14px;
+}
+
+.pickup-admin-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.pickup-admin-status {
+  margin: 0 0 16px;
+  color: var(--muted);
+  line-height: 1.75;
+}
+
+.pickup-admin-list {
+  display: grid;
+  gap: 14px;
+}
+
+.pickup-admin-item {
+  padding: 18px;
+  border-radius: 16px;
+  border: 1px solid rgba(16, 38, 68, 0.08);
+  background: #f9fbff;
+}
+
+.pickup-admin-item h3 {
+  margin: 0;
+  font-size: 1.02rem;
+}
+
+.pickup-admin-item p {
+  margin: 10px 0 0;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.pickup-admin-item-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.pickup-admin-empty {
+  padding: 18px;
+  border-radius: 16px;
+  border: 1px dashed rgba(16, 38, 68, 0.14);
+  color: var(--muted);
+}
+
+.pickup-admin-local-note {
+  margin: 0 0 18px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: rgba(19, 74, 169, 0.08);
+  color: var(--ink);
+  line-height: 1.7;
+}
+
 .pickup-table-title {
   padding: 16px 20px;
   font-size: 1.2rem;
@@ -2128,7 +2329,9 @@ img {
   .storage-hero,
   .pickup-hero,
   .calculator-layout,
-  .storage-faq {
+  .storage-faq,
+  .pickup-admin-grid,
+  .pickup-board-stats {
     grid-template-columns: 1fr;
   }
 
@@ -2369,6 +2572,12 @@ img {
 
   .pickup-highlight-card {
     padding: 0;
+  }
+
+  .pickup-board-toolbar,
+  .pickup-board-top {
+    flex-direction: column;
+    align-items: stretch;
   }
 
 .pickup-table-title {

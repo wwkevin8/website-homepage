@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./styles.css?v=20260325-services">
 </head>
 <body>
   <div class="topbar">
@@ -53,7 +53,7 @@
         <div class="storage-hero-meta">
           <span data-i18n="pickupMeta1">电话：07941 008555</span>
           <span data-i18n="pickupMeta2">拼车表单：问卷星链接</span>
-          <span data-i18n="pickupMeta3">客服微信：hottsngn</span>
+          <span data-i18n="pickupMeta3">客服微信：Nottsngn</span>
         </div>
         <div class="hero-actions">
           <a class="button button-primary" href="https://www.wjx.cn/vm/rXP6RxA.aspx#" target="_blank" rel="noreferrer" data-i18n="pickupHeroBtn1">填写拼车表单</a>
@@ -199,6 +199,18 @@
           </table>
         </div>
       </div>
+    </section>
+
+    <section class="storage-section" id="pickup-board">
+      <div class="section-heading">
+        <h2 data-i18n="pickupBoardTitle">最新拼车信息</h2>
+        <p data-i18n="pickupBoardIntro">这里会展示最近人工发布的接机 / 拼车安排，方便同学先看有没有可以一起拼的时间段。</p>
+      </div>
+      <div class="pickup-board-toolbar">
+        <p class="pickup-board-hint" data-i18n="pickupBoardHint">当前版本支持人工后台录入，例如 2027-04-21 / 希思罗机场 / 4 人车已报 2 人。</p>
+        <a class="button button-secondary" href="./pickup-admin.html" data-i18n="pickupBoardAdminBtn">后台录入</a>
+      </div>
+      <div class="pickup-board-list" id="pickupBoardList" aria-live="polite"></div>
     </section>
 
     <section class="storage-section" id="pickup-rules">
@@ -375,6 +387,6 @@
     </p>
   </footer>
 
-  <script src="./script.js"></script>
+  <script src="./script.js?v=20260325-services"></script>
 </body>
 </html>
