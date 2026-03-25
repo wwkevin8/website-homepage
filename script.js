@@ -2374,6 +2374,190 @@ function initHomeMenu() {
   document.body.dataset.homeMenuBound = "true";
 }
 
+function getTeamSummaryShortText(text, lang) {
+  if (!text) {
+    return "";
+  }
+
+  if (lang === "en") {
+    const sentence = text.split(". ").find(Boolean);
+    if (sentence) {
+      return sentence.endsWith(".") ? sentence : `${sentence}.`;
+    }
+  } else {
+    const sentence = text.split("。").find(Boolean);
+    if (sentence) {
+      return `${sentence}。`;
+    }
+  }
+
+  return text.length > 88 ? `${text.slice(0, 88).trim()}...` : text;
+}
+
+function initTeamSummaryCarousel(activeLang) {
+  const grid = document.querySelector("#teamSummaryGrid") || document.querySelector(".team-summary-grid");
+  const dots = document.querySelector("#teamSummaryDots");
+
+  if (!grid) {
+    return;
+  }
+
+  if (dots) {
+    dots.remove();
+  }
+
+  const dict = translations[activeLang] || translations["zh-CN"];
+  const members = [
+    {
+      name: "Vivian",
+      role: dict.teamVivianRole,
+      text: dict.teamVivianShort || getTeamSummaryShortText(dict.teamVivianText, activeLang),
+      image: "./img/vivian.jpg",
+      avatarClass: "avatar-vivian"
+    },
+    {
+      name: dict.team2Name || "Kevin",
+      role: dict.teamKevinRole || dict.team2Role,
+      text: dict.teamKevinShort || getTeamSummaryShortText(dict.team2Text, activeLang),
+      image: "./img/Kevin.jpg",
+      avatarClass: "avatar-kevin"
+    },
+    {
+      name: dict.team3Name || "Firo",
+      role: dict.team3Role,
+      text: getTeamSummaryShortText(dict.team3Text, activeLang),
+      image: "./img/Firo.jpg",
+      avatarClass: "avatar-firo"
+    },
+    {
+      name: dict.team4Name || "Xiaoni",
+      role: dict.team4Role,
+      text: getTeamSummaryShortText(dict.team4Text, activeLang),
+      image: "./img/小妮.jpg",
+      avatarClass: "avatar-xiaoni"
+    },
+    {
+      name: dict.team5Name || "Kim",
+      role: dict.team5Role,
+      text: getTeamSummaryShortText(dict.team5Text, activeLang),
+      image: "./img/kim.jpg",
+      avatarClass: "avatar-kim"
+    }
+  ];
+
+  const clonedMembers = [...members, ...members, ...members];
+
+  grid.innerHTML = `
+    <div class="team-summary-track">
+      ${clonedMembers.map(member => `
+        <article class="team-summary-card">
+          <div class="team-avatar ${member.avatarClass}">
+            <img src="${member.image}" alt="${member.name}">
+          </div>
+          <div class="team-summary-body">
+            <h3>${member.name}</h3>
+            <p class="team-role">${member.role || ""}</p>
+            <p>${member.text || ""}</p>
+          </div>
+        </article>
+      `).join("")}
+    </div>
+  `;
+
+  const track = grid.querySelector(".team-summary-track");
+  const cards = Array.from(grid.querySelectorAll(".team-summary-card"));
+
+  if (!track || !cards.length) {
+    return;
+  }
+
+  if (grid.__teamSummaryResizeHandler) {
+    window.removeEventListener("resize", grid.__teamSummaryResizeHandler);
+  }
+
+  if (grid.__teamSummaryRaf) {
+    window.cancelAnimationFrame(grid.__teamSummaryRaf);
+  }
+
+  let paused = false;
+  let offset = 0;
+  let segmentWidth = 0;
+  let lastTime = 0;
+
+  const getVisibleCount = () => {
+    if (window.innerWidth <= 780) {
+      return 1;
+    }
+
+    if (window.innerWidth <= 1180) {
+      return 2;
+    }
+
+    return 3;
+  };
+
+  const getSpeed = () => {
+    if (window.innerWidth <= 780) {
+      return 28;
+    }
+
+    if (window.innerWidth <= 1180) {
+      return 32;
+    }
+
+    return 36;
+  };
+
+  const applyTransform = () => {
+    track.style.transform = `translateX(-${segmentWidth + offset}px)`;
+  };
+
+  const measure = () => {
+    grid.style.setProperty("--team-visible", String(getVisibleCount()));
+    const gap = parseFloat(window.getComputedStyle(track).gap) || 24;
+    const cardWidth = cards[0].getBoundingClientRect().width || 0;
+    segmentWidth = (cardWidth + gap) * members.length;
+    track.style.transition = "none";
+    applyTransform();
+  };
+
+  const tick = time => {
+    if (!lastTime) {
+      lastTime = time;
+    }
+
+    const delta = time - lastTime;
+    lastTime = time;
+
+    if (!paused && segmentWidth > 0) {
+      offset += (getSpeed() * delta) / 1000;
+      if (offset >= segmentWidth) {
+        offset -= segmentWidth;
+      }
+      applyTransform();
+    }
+
+    grid.__teamSummaryRaf = window.requestAnimationFrame(tick);
+  };
+
+  grid.__teamSummaryResizeHandler = () => {
+    measure();
+  };
+
+  window.addEventListener("resize", grid.__teamSummaryResizeHandler);
+
+  grid.onmouseenter = () => {
+    paused = true;
+  };
+
+  grid.onmouseleave = () => {
+    paused = false;
+  };
+
+  measure();
+  grid.__teamSummaryRaf = window.requestAnimationFrame(tick);
+}
+
 function readPickupBoardEntries() {
   try {
     const raw = window.localStorage.getItem(pickupBoardStorageKey);
@@ -2821,11 +3005,11 @@ Object.assign(translations["zh-CN"], {
   case3Title: "更在意生活便利，不想被校区判断带偏",
   case3Text: "先确认课程主要在 Jubilee，再结合日常生活节奏，最后选了更适合从市中心往返的方案，而不是直接把住处压到校区旁边。",
   teamSummaryEyebrow: "团队背书",
-  teamSummaryTitle: "首页先认识两位最常直接和同学沟通的人",
-  teamSummaryIntro: "详细成员介绍、分工和背景放到独立页面里，首页只保留最关键的沟通角色。",
+  teamSummaryTitle: "首页先快速认识会和你沟通的团队成员",
+  teamSummaryIntro: "首页用简版轮播展示团队成员，详细背景、分工和完整介绍统一放到独立页面里查看。",
   teamVivianRole: "创始人",
   teamVivianShort: "长期在诺丁汉生活，也持续多年服务中国留学生。她更擅长把订房这件事背后的沟通、判断和后续衔接一起理顺。",
-  teamKevinRole: "主要顾问",
+  teamKevinRole: "学生公寓顾问",
   teamKevinShort: "长期深度对接诺丁汉大大小小的学生公寓，对公寓定位、合同节奏、校区通勤和房型差异都更容易讲清楚。",
   teamSummaryBtn: "认识团队",
   benefitsSummaryEyebrow: "活动与福利",
@@ -2992,11 +3176,11 @@ Object.assign(translations.en, {
   case3Title: "Wanted daily convenience, not a campus-led decision",
   case3Text: "After confirming classes were mainly around Jubilee, the student chose a city-centre-based option that fit day-to-day life better than forcing accommodation right beside campus.",
   teamSummaryEyebrow: "Team credibility",
-  teamSummaryTitle: "Meet the two people students most often speak with first",
-  teamSummaryIntro: "The detailed page covers the rest of the team. The homepage only keeps the key communication roles.",
+  teamSummaryTitle: "Meet the team members you are most likely to speak with",
+  teamSummaryIntro: "The homepage keeps a shorter rotating introduction, while the detailed page covers each team member in full.",
   teamVivianRole: "Founder",
   teamVivianShort: "Vivian has lived in Nottingham for years and has spent a long time working with Chinese students. She is especially good at connecting booking decisions with what happens afterwards.",
-  teamKevinRole: "Lead Advisor",
+  teamKevinRole: "Student Accommodation Advisor",
   teamKevinShort: "Kevin works closely with a wide range of Nottingham student residences and is especially good at explaining positioning, contract rhythm, commute and room-type differences clearly.",
   teamSummaryBtn: "Meet the Team",
   benefitsSummaryEyebrow: "Activities and benefits",
@@ -3108,7 +3292,8 @@ Object.assign(translations["zh-CN"], {
   case2Text: "把预算、作息和独立生活需求说清楚后，没有硬上 studio，而是先定了更适合当前阶段的 ensuite。",
   case3Tag2: "Finance / 市中心往返",
   case3Text: "先确认课程主要在 Jubilee，再结合生活节奏判断，最后选择了更适合从市中心往返的方案。",
-  teamSummaryIntro: "首页先保留最常直接沟通的两位成员，详细分工和背景放到独立页面查看。",
+  teamSummaryTitle: "首页先快速认识会和你沟通的团队成员",
+  teamSummaryIntro: "首页用简版轮播展示团队成员，详细背景、分工和完整介绍统一放到独立页面里查看。",
   teamVivianShort: "擅长把订房判断、沟通衔接和入住前后的安排一起理顺，很多同学会先和她确认整体方向。",
   teamKevinShort: "更擅长把公寓定位、合同节奏、校区差异和房型选择讲清楚，帮助同学更快缩小范围。",
   benefitsSummaryTitle: "订房之后，很多落地问题也可以继续往下接",
@@ -3159,7 +3344,8 @@ Object.assign(translations.en, {
   case2Text: "Once budget, routine and independence preference were clear, the student did not stretch for a studio and chose an ensuite that fit the current stage better.",
   case3Tag2: "Finance / City-centre commute",
   case3Text: "After confirming classes were mainly around Jubilee, the final choice was a city-centre-based option that fit daily life better.",
-  teamSummaryIntro: "The homepage only keeps the two people students usually speak with first. The fuller team structure sits on the dedicated page.",
+  teamSummaryTitle: "Meet the team members you are most likely to speak with",
+  teamSummaryIntro: "The homepage keeps a shorter rotating introduction, while the detailed page covers each team member in full.",
   teamVivianShort: "Vivian is especially strong at connecting booking judgement, communication and move-in coordination into one clearer plan.",
   teamKevinShort: "Kevin is especially good at explaining residence positioning, contract rhythm, campus differences and room-type choices clearly.",
   benefitsSummaryTitle: "Booking is only the start. Many settling-in problems can still be carried forward.",
@@ -3210,6 +3396,7 @@ function applyLanguage(lang) {
   initPickupQuoteForm(lang);
   initHomeVideos(lang);
   initHomeMenu();
+  initTeamSummaryCarousel(lang);
 }
 
 langButtons.forEach(button => {

@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./styles.css?v=20260325-homepage">
 </head>
 <body>
   <div class="topbar">
@@ -364,7 +364,7 @@
         <h2 data-i18n="teamSummaryTitle">首页先认识两位最常直接和同学沟通的人</h2>
         <p data-i18n="teamSummaryIntro">详细成员介绍、分工和背景放到独立页面里，首页只保留最关键的沟通角色。</p>
       </div>
-      <div class="team-summary-grid">
+      <div class="team-summary-grid" id="teamSummaryGrid">
         <article class="team-summary-card">
           <div class="team-avatar avatar-vivian">
             <img src="./img/vivian.jpg" alt="Vivian">
@@ -382,6 +382,7 @@
           <p data-i18n="teamKevinShort">长期深度对接诺丁汉大大小小的学生公寓，对公寓定位、合同节奏、校区通勤和房型差异都更容易讲清楚。</p>
         </article>
       </div>
+      <div class="team-summary-dots" id="teamSummaryDots" aria-hidden="true"></div>
       <div class="summary-actions">
         <a class="button button-outline" href="./team.html" data-i18n="teamSummaryBtn">认识团队</a>
       </div>
@@ -443,7 +444,7 @@
     <span data-i18n="navMenu">Menu</span>
   </button>
 
-  <script src="./script.js"></script>
+  <script src="./script.js?v=20260325-homepage"></script>
 </body>
 </html>
 
