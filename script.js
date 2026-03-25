@@ -188,6 +188,9 @@
     calcPickupMethodHome: "上门取件",
     calcPickupMethodSelf: "自行送至仓库",
     calcPickupAccess: "取寄存交接方式",
+    calcDeliveryMethod: "送件方式",
+    calcDeliveryMethodHome: "上门送件",
+    calcDeliveryMethodSelf: "自行到仓库取件",
     calcReturnAccess: "送回去交接方式",
     calcAccessGround: "楼下交接",
     calcAccessElevator: "电梯上楼",
@@ -233,15 +236,16 @@
     resultOtherCityText: "外地转运费用未自动计入预计总价。通常使用皇家邮局或 DPD，一般 2 个工作日送达；建议优先使用 1 / 2 / 3 号箱，10kg 内 £10，10–30kg £15，特殊物品需联系客服确认。",
     resultOtherCityTextScotland: "外地转运费用未自动计入预计总价。通常使用皇家邮局或 DPD，一般 2 个工作日送达；建议优先使用 1 / 2 / 3 号箱，10kg 内 £10，10–30kg £15，苏格兰地区另加 £5，特殊物品需联系客服确认。",
     calcBlockedTotal: "不可计算",
-    calcNoteDefault: "选择日期、取件方式和送还方式后即可自动看到寄存天数、折扣、费用项和超重说明。",
+    calcNoteDefault: "选择日期、取件方式、送还方式和送件方式后即可自动看到寄存天数、折扣、费用项和超重说明。",
     calcNoteDateMissing: "请先选择有效的开始日期和结束日期。",
     calcNoteNoBoxes: "当前所有箱型数量均为 0，请至少填写一个大于 0 的数量后再计算。",
     calcNotePurchaseExceeded: "购买数量不能大于对应箱型的寄存数量，请检查后重新计算。",
     calcNoteWeightRequired: "有寄存数量的箱型必须填写最大重量后才能计算。",
     calcNoteShort: "30 天内按短期寄存处理：1 箱最低 £20，多箱最低 £30，并加收每箱 £2 取件费和 £2 送货费。",
-    calcNoteLong: "30 天以上按长期寄存处理，本地上门取件和本地送货按当前规则视为免费。",
+    calcNoteLong: "30 天以上按长期寄存处理，本地上门取件和本地上门送件按当前规则视为免费。",
     calcNotePickupLiftFree: "当前天数超过 100 天时，仅取寄存侧电梯上楼免费。",
     calcNoteSelfDropoff: "如选择自行送至仓库，则不收上门取件费和取寄存上楼费。",
+    calcNoteSelfPickup: "如选择自行到仓库取件，则不收送货费和送回去上楼费。",
     calcNoteOverweightWarn: "建议每箱尽量控制在 23kg 以内，避免搬运受伤。",
     calcNoteOverweightCharged: "25–30kg 的箱型会按 £0.5 / 箱 / 周加收超重费，周数按整周向上取整。",
     calcNoteOverweightBlockedPrefix: "以下箱型最大重量超过30kg：",
@@ -496,6 +500,9 @@
     calcPickupMethodHome: "Home Collection",
     calcPickupMethodSelf: "Deliver to Warehouse Yourself",
     calcPickupAccess: "Pickup Handover",
+    calcDeliveryMethod: "Delivery Method",
+    calcDeliveryMethodHome: "Home Delivery",
+    calcDeliveryMethodSelf: "Pick Up at Warehouse Yourself",
     calcReturnAccess: "Return Handover",
     calcAccessGround: "Ground Floor",
     calcAccessElevator: "Lift Upstairs",
@@ -541,15 +548,16 @@
     resultOtherCityText: "Forwarding is not included in the estimated total automatically. We usually use Royal Mail or DPD, delivery is often around 2 working days, and lighter 1 / 2 / 3 boxes are recommended. Rates are £10 up to 10kg and £15 for 10–30kg. Special items need a manual quote.",
     resultOtherCityTextScotland: "Forwarding is not included in the estimated total automatically. We usually use Royal Mail or DPD, delivery is often around 2 working days, and lighter 1 / 2 / 3 boxes are recommended. Rates are £10 up to 10kg and £15 for 10–30kg, plus £5 for Scotland. Special items need a manual quote.",
     calcBlockedTotal: "Not available",
-    calcNoteDefault: "Choose valid dates, collection method and return method to see storage days, discounts, fee items and overweight notes automatically.",
+    calcNoteDefault: "Choose valid dates, collection method, return method and delivery method to see storage days, discounts, fee items and overweight notes automatically.",
     calcNoteDateMissing: "Please choose a valid start date and end date first.",
     calcNoteNoBoxes: "All storage quantities are currently 0. Please enter at least one quantity greater than 0 before calculating.",
     calcNotePurchaseExceeded: "The purchase quantity cannot be greater than the storage quantity for the same box type. Please review the order and calculate again.",
     calcNoteWeightRequired: "Each box type with storage quantity must include a maximum weight before pricing can be calculated.",
     calcNoteShort: "Storage within 30 days follows short-term rules: 1 box starts from £20, multiple boxes start from £30, plus £2 collection and £2 return delivery per box.",
-    calcNoteLong: "Storage above 30 days follows long-term rules. Local collection and local return delivery are treated as free under the current guidance.",
+    calcNoteLong: "Storage above 30 days follows long-term rules. Local home collection and home delivery are treated as free under the current guidance.",
     calcNotePickupLiftFree: "When storage exceeds 100 days, lift upstairs service becomes free for the pickup side only.",
     calcNoteSelfDropoff: "If you deliver the boxes to our warehouse yourself, home collection and pickup upstairs service are not charged.",
+    calcNoteSelfPickup: "If you pick up the boxes from our warehouse yourself, delivery and return upstairs service are not charged.",
     calcNoteOverweightWarn: "We recommend keeping each box within 23kg to reduce lifting injuries.",
     calcNoteOverweightCharged: "Any box type at 25–30kg will incur an extra £0.5 per box per week. Weeks are rounded up.",
     calcNoteOverweightBlockedPrefix: "The following box types exceed 30kg maximum weight: ",
@@ -1170,6 +1178,7 @@ function calculateStorageEstimate({
   pickupAccessType,
   boxWeights,
   returnType,
+  deliveryMethod,
   returnAccessType
 }) {
   const days = getStorageDays(startDate, endDate);
@@ -1182,7 +1191,7 @@ function calculateStorageEstimate({
   let pickup = 0;
   let delivery = 0;
   let pickupAccessFee = pickupMethod === "home" ? getPickupAccessFee(pickupAccessType, totalBoxes, days) : 0;
-  let returnAccessFee = returnType === "local" ? getReturnAccessFee(returnAccessType, totalBoxes) : 0;
+  let returnAccessFee = returnType === "local" && deliveryMethod === "home" ? getReturnAccessFee(returnAccessType, totalBoxes) : 0;
   let overweightFee = items.reduce((sum, item) => sum + item.overweightFee, 0);
   let minimumAdjustment = 0;
   let total = 0;
@@ -1316,7 +1325,7 @@ function calculateStorageEstimate({
 
   if (days <= 30) {
     pickup = pickupMethod === "home" ? totalBoxes * 2 : 0;
-    delivery = returnType === "local" ? totalBoxes * 2 : 0;
+    delivery = returnType === "local" && deliveryMethod === "home" ? totalBoxes * 2 : 0;
     const minimum = totalBoxes === 1 ? 20 : 30;
     const adjustedBase = Math.max(discountedBase, minimum);
     minimumAdjustment = adjustedBase - discountedBase;
@@ -1333,6 +1342,10 @@ function calculateStorageEstimate({
 
   if (pickupMethod === "self") {
     notes.push("calcNoteSelfDropoff");
+  }
+
+  if (returnType === "local" && deliveryMethod === "self") {
+    notes.push("calcNoteSelfPickup");
   }
 
   if (items.some(item => item.storageQty > 0 && item.weight > 23 && item.weight < 25)) {
@@ -1360,6 +1373,7 @@ function calculateStorageEstimate({
     totalBoxes,
     items,
     pickupMethod,
+    deliveryMethod,
     rawStorageTotal,
     discount,
     discountedBase,
@@ -1403,6 +1417,8 @@ function initStorageCalculator(activeLang) {
   const pickupAccessInput = document.querySelector("#pickupAccess");
   const boxWeightInputs = Array.from(document.querySelectorAll("[data-box-weight]"));
   const returnTypeInput = document.querySelector("#returnType");
+  const deliveryMethodField = document.querySelector("#deliveryMethodField");
+  const deliveryMethodInput = document.querySelector("#deliveryMethod");
   const returnAccessField = document.querySelector("#returnAccessField");
   const returnAccessInput = document.querySelector("#returnAccess");
   const resultBoxTotal = document.querySelector("#resultBoxTotal");
@@ -1411,6 +1427,7 @@ function initStorageCalculator(activeLang) {
   const resultDiscount = document.querySelector("#resultDiscount");
   const resultPickupRow = document.querySelector("#resultPickupRow");
   const resultPickup = document.querySelector("#resultPickup");
+  const resultDeliveryRow = document.querySelector("#resultDeliveryRow");
   const resultDelivery = document.querySelector("#resultDelivery");
   const resultPickupAccessRow = document.querySelector("#resultPickupAccessRow");
   const resultPickupAccess = document.querySelector("#resultPickupAccess");
@@ -1471,15 +1488,29 @@ function initStorageCalculator(activeLang) {
 
   function syncReturnFields() {
     const isLocalReturn = returnTypeInput.value === "local";
-    if (returnAccessField) {
-      returnAccessField.hidden = !isLocalReturn;
-      returnAccessField.style.display = isLocalReturn ? "" : "none";
-      returnAccessField.setAttribute("aria-hidden", String(!isLocalReturn));
+    const isHomeDelivery = deliveryMethodInput.value === "home";
+
+    if (deliveryMethodField) {
+      deliveryMethodField.hidden = !isLocalReturn;
+      deliveryMethodField.style.display = isLocalReturn ? "" : "none";
+      deliveryMethodField.setAttribute("aria-hidden", String(!isLocalReturn));
     }
 
-    returnAccessInput.disabled = !isLocalReturn;
+    deliveryMethodInput.disabled = !isLocalReturn;
 
     if (!isLocalReturn) {
+      deliveryMethodInput.value = "home";
+    }
+
+    if (returnAccessField) {
+      returnAccessField.hidden = !isLocalReturn || !isHomeDelivery;
+      returnAccessField.style.display = isLocalReturn && isHomeDelivery ? "" : "none";
+      returnAccessField.setAttribute("aria-hidden", String(!(isLocalReturn && isHomeDelivery)));
+    }
+
+    returnAccessInput.disabled = !isLocalReturn || !isHomeDelivery;
+
+    if (!isLocalReturn || !isHomeDelivery) {
       returnAccessInput.value = "ground";
     }
   }
@@ -1640,6 +1671,7 @@ function initStorageCalculator(activeLang) {
     const pickupMethod = pickupMethodInput.value;
     const pickupAccessType = pickupAccessInput.value;
     const returnType = returnTypeInput.value;
+    const deliveryMethod = deliveryMethodInput.value;
     const returnAccessType = returnAccessInput.value;
     const estimate = calculateStorageEstimate({
       boxCounts,
@@ -1650,6 +1682,7 @@ function initStorageCalculator(activeLang) {
       pickupAccessType,
       boxWeights,
       returnType,
+      deliveryMethod,
       returnAccessType
     });
     const noBoxes = estimate.totalBoxes === 0;
@@ -1687,9 +1720,14 @@ function initStorageCalculator(activeLang) {
       resultPickupAccessRow.style.display = estimate.pickupMethod === "home" ? "" : "none";
     }
 
+    if (resultDeliveryRow) {
+      resultDeliveryRow.hidden = !(returnType === "local" && deliveryMethod === "home");
+      resultDeliveryRow.style.display = returnType === "local" && deliveryMethod === "home" ? "" : "none";
+    }
+
     if (resultReturnAccessRow) {
-      resultReturnAccessRow.hidden = returnType !== "local";
-      resultReturnAccessRow.style.display = returnType === "local" ? "" : "none";
+      resultReturnAccessRow.hidden = !(returnType === "local" && deliveryMethod === "home");
+      resultReturnAccessRow.style.display = returnType === "local" && deliveryMethod === "home" ? "" : "none";
     }
 
     if (returnType !== "local") {
@@ -1722,6 +1760,7 @@ function initStorageCalculator(activeLang) {
     pickupAccessInput,
     ...boxWeightInputs,
     returnTypeInput,
+    deliveryMethodInput,
     returnAccessInput
   ].forEach(input => {
     input.addEventListener("input", () => {
@@ -1732,6 +1771,9 @@ function initStorageCalculator(activeLang) {
         syncPickupFields();
       }
       if (input === returnTypeInput) {
+        syncReturnFields();
+      }
+      if (input === deliveryMethodInput) {
         syncReturnFields();
       }
       if (boxWeightInputs.includes(input) || boxCountInputs.includes(input)) {
@@ -1747,6 +1789,9 @@ function initStorageCalculator(activeLang) {
         syncPickupFields();
       }
       if (input === returnTypeInput) {
+        syncReturnFields();
+      }
+      if (input === deliveryMethodInput) {
         syncReturnFields();
       }
       if (boxWeightInputs.includes(input) || boxCountInputs.includes(input)) {

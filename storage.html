@@ -331,6 +331,13 @@
               <option value="scotland" data-i18n="calcReturnScotland">送往苏格兰地区</option>
             </select>
           </label>
+          <label class="field" id="deliveryMethodField">
+            <span data-i18n="calcDeliveryMethod">送件方式</span>
+            <select id="deliveryMethod">
+              <option value="home" data-i18n="calcDeliveryMethodHome">上门送件</option>
+              <option value="self" data-i18n="calcDeliveryMethodSelf">自行到仓库取件</option>
+            </select>
+          </label>
           <label class="field" id="returnAccessField">
             <span data-i18n="calcReturnAccess">送回去交接方式</span>
             <select id="returnAccess">
@@ -365,7 +372,7 @@
               <dt data-i18n="resultPickup">上门取件费</dt>
               <dd id="resultPickup">£0.00</dd>
             </div>
-            <div>
+            <div id="resultDeliveryRow">
               <dt data-i18n="resultDelivery">送货费</dt>
               <dd id="resultDelivery">£0.00</dd>
             </div>
