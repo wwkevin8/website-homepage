@@ -186,6 +186,7 @@
     calcEndDate: "结束日期",
     calcBoxDeliveryDate: "送箱日期",
     calcStorageBookingDate: "寄存预约日期",
+    calcStorageBookingDateHelp: "寄存预约日期默认与开始日期一致，可单独修改。",
     calcPickupMethod: "取件方式",
     calcPickupMethodHome: "上门取件",
     calcPickupMethodSelf: "自行送至仓库",
@@ -207,6 +208,7 @@
     calcReturnEngland: "送往英国其他城市（英格兰）",
     calcReturnScotland: "送往苏格兰地区",
     calcReturnBookingDate: "送回 / 取回日期",
+    calcReturnBookingDateHelp: "送回 / 取回日期默认与结束日期一致，可单独修改。",
     calcSubmit: "更新估算",
     calcResultTitle: "费用估算结果",
     resultBoxTotal: "总箱数",
@@ -508,6 +510,7 @@
     calcEndDate: "End Date",
     calcBoxDeliveryDate: "Box Delivery Date",
     calcStorageBookingDate: "Storage Booking Date",
+    calcStorageBookingDateHelp: "Storage booking date defaults to the start date and can be adjusted separately.",
     calcPickupMethod: "Collection Method",
     calcPickupMethodHome: "Home Collection",
     calcPickupMethodSelf: "Deliver to Warehouse Yourself",
@@ -529,6 +532,7 @@
     calcReturnEngland: "Forward to another UK city (England)",
     calcReturnScotland: "Forward to Scotland",
     calcReturnBookingDate: "Return / Collection Date",
+    calcReturnBookingDateHelp: "Return / collection date defaults to the end date and can be adjusted separately.",
     calcSubmit: "Update Estimate",
     calcResultTitle: "Estimated Cost",
     resultBoxTotal: "Total Boxes",
@@ -1697,6 +1701,8 @@ function initStorageCalculator(activeLang) {
   const resultOtherCityText = document.querySelector("#resultOtherCityText");
   const resultBreakdownEmpty = document.querySelector("#resultBreakdownEmpty");
   const resultBreakdown = document.querySelector("#resultBreakdown");
+  let storageBookingDateTouched = false;
+  let returnBookingDateTouched = false;
 
   form.dataset.lang = activeLang;
 
@@ -1778,6 +1784,10 @@ function initStorageCalculator(activeLang) {
     storageBookingDateInput.min = storageBookingMinText;
     if (!needsStorageBooking) {
       storageBookingDateInput.value = "";
+      storageBookingDateTouched = false;
+    } else if (!storageBookingDateTouched && startDateInput.value) {
+      const desiredValue = startDateInput.value < storageBookingMinText ? storageBookingMinText : startDateInput.value;
+      storageBookingDateInput.value = desiredValue;
     } else if (storageBookingDateInput.value && storageBookingDateInput.value < storageBookingMinText) {
       storageBookingDateInput.value = storageBookingMinText;
     }
@@ -1792,6 +1802,10 @@ function initStorageCalculator(activeLang) {
     returnBookingDateInput.min = leadDateText;
     if (!isLocalReturn) {
       returnBookingDateInput.value = "";
+      returnBookingDateTouched = false;
+    } else if (!returnBookingDateTouched && endDateInput.value) {
+      const desiredValue = endDateInput.value < leadDateText ? leadDateText : endDateInput.value;
+      returnBookingDateInput.value = desiredValue;
     } else if (returnBookingDateInput.value && returnBookingDateInput.value < leadDateText) {
       returnBookingDateInput.value = leadDateText;
     }
@@ -2101,6 +2115,12 @@ function initStorageCalculator(activeLang) {
     returnAccessInput
   ].forEach(input => {
     input.addEventListener("input", () => {
+      if (input === storageBookingDateInput) {
+        storageBookingDateTouched = true;
+      }
+      if (input === returnBookingDateInput) {
+        returnBookingDateTouched = true;
+      }
       if (input === startDateInput || input === storageBookingDateInput) {
         syncDateRange();
       }
@@ -2122,6 +2142,12 @@ function initStorageCalculator(activeLang) {
       renderEstimate();
     });
     input.addEventListener("change", () => {
+      if (input === storageBookingDateInput) {
+        storageBookingDateTouched = true;
+      }
+      if (input === returnBookingDateInput) {
+        returnBookingDateTouched = true;
+      }
       if (input === startDateInput || input === storageBookingDateInput) {
         syncDateRange();
       }
