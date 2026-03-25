@@ -12,6 +12,90 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./styles.css?v=20260325-contact">
+  <style>
+    .storage-contact-fab {
+      position: fixed;
+      right: 24px;
+      bottom: 24px;
+      z-index: 1200;
+      border: 0;
+      border-radius: 999px;
+      padding: 14px 18px;
+      background: linear-gradient(135deg, #2d63cc, #143b8b);
+      color: #fff;
+      box-shadow: 0 18px 40px rgba(20, 59, 139, 0.28);
+      font: 600 15px/1 "Outfit", "Noto Serif SC", sans-serif;
+      cursor: pointer;
+    }
+
+    .storage-contact-fab:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 22px 46px rgba(20, 59, 139, 0.32);
+    }
+
+    .storage-contact-modal[hidden] {
+      display: none;
+    }
+
+    .storage-contact-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 1300;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background: rgba(10, 19, 48, 0.62);
+    }
+
+    .storage-contact-modal-dialog {
+      position: relative;
+      width: min(92vw, 720px);
+      border-radius: 28px;
+      background: #ffffff;
+      box-shadow: 0 28px 70px rgba(10, 19, 48, 0.22);
+      padding: 24px;
+    }
+
+    .storage-contact-modal-close {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      width: 40px;
+      height: 40px;
+      border: 0;
+      border-radius: 999px;
+      background: rgba(17, 38, 84, 0.08);
+      color: #143b8b;
+      font-size: 24px;
+      line-height: 1;
+      cursor: pointer;
+    }
+
+    .storage-contact-modal img {
+      display: block;
+      width: 100%;
+      height: auto;
+      border-radius: 20px;
+    }
+
+    @media (max-width: 720px) {
+      .storage-contact-fab {
+        right: 16px;
+        bottom: 16px;
+        padding: 12px 16px;
+        font-size: 14px;
+      }
+
+      .storage-contact-modal {
+        padding: 16px;
+      }
+
+      .storage-contact-modal-dialog {
+        padding: 18px;
+        border-radius: 22px;
+      }
+    }
+  </style>
 </head>
 <body>
   <div class="topbar">
@@ -578,6 +662,18 @@
     </section>
   </main>
 
+  <button class="storage-contact-fab" id="storageContactFab" type="button" aria-haspopup="dialog" aria-controls="storageContactModal">
+    联系客服
+  </button>
+
+  <div class="storage-contact-modal" id="storageContactModal" hidden>
+    <div class="storage-contact-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="storageContactModalTitle">
+      <button class="storage-contact-modal-close" id="storageContactClose" type="button" aria-label="关闭联系客服弹窗">×</button>
+      <h2 id="storageContactModalTitle" style="margin:0 0 16px;font-size:22px;color:#143b8b;">联系客服</h2>
+      <img src="./img/contact-service-card.svg" alt="左邻右里总客服 NGN 联系方式展示图">
+    </div>
+  </div>
+
   <footer class="site-footer">
     <div class="footer-copy">
       <div class="footer-brand">
@@ -606,5 +702,40 @@
   </footer>
 
   <script src="./script.js?v=20260325-contact"></script>
+  <script>
+    (function () {
+      const fab = document.getElementById("storageContactFab");
+      const modal = document.getElementById("storageContactModal");
+      const close = document.getElementById("storageContactClose");
+      const dialog = modal ? modal.querySelector(".storage-contact-modal-dialog") : null;
+
+      if (!fab || !modal || !close || !dialog) {
+        return;
+      }
+
+      function openModal() {
+        modal.hidden = false;
+        document.body.style.overflow = "hidden";
+      }
+
+      function closeModal() {
+        modal.hidden = true;
+        document.body.style.overflow = "";
+      }
+
+      fab.addEventListener("click", openModal);
+      close.addEventListener("click", closeModal);
+      modal.addEventListener("click", event => {
+        if (!dialog.contains(event.target)) {
+          closeModal();
+        }
+      });
+      document.addEventListener("keydown", event => {
+        if (event.key === "Escape" && !modal.hidden) {
+          closeModal();
+        }
+      });
+    })();
+  </script>
 </body>
 </html>
