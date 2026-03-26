@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>最新接送机拼车信息</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="topbar">
+    <header class="site-header">
+      <a class="brand" href="./index.html" aria-label="左邻右里首页">
+        <div class="brand-lockup brand-lockup-header">
+          <div class="logo-bubbles">
+            <span>英国·诺丁汉</span>
+            <span>左邻右里</span>
+            <span>生活服务</span>
+          </div>
+          <div class="logo-wordmark">NGN</div>
+          <div class="logo-subtitle">NOTTINGHAM GOOD NEIGHBOR</div>
+        </div>
+      </a>
+      <nav class="site-nav" aria-label="主导航">
+        <a class="nav-link nav-link-secondary" href="./index.html">首页</a>
+        <a class="nav-link nav-link-accent" href="./pickup.html">接机服务</a>
+        <a class="nav-link nav-link-secondary" href="./transport-board.html">拼车信息</a>
+      </nav>
+    </header>
+  </div>
+
+  <main class="page-shell transport-board-shell">
+    <section class="storage-section">
+      <div class="section-heading">
+        <p class="eyebrow">Transport Board</p>
+        <h1>最新接送机拼车信息</h1>
+        <p>这里只展示当前开放中且允许前台公开的 group。</p>
+      </div>
+
+      <form class="calculator-card transport-filter-form" id="transportBoardFilters">
+        <label class="field">
+          <span>服务类型</span>
+          <select name="service_type">
+            <option value="">全部</option>
+            <option value="pickup">接机</option>
+            <option value="dropoff">送机</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>机场代码</span>
+          <select name="airport_code">
+            <option value="">全部机场</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>开始日期</span>
+          <input type="date" name="date_from">
+        </label>
+        <label class="field">
+          <span>结束日期</span>
+          <input type="date" name="date_to">
+        </label>
+        <button class="button button-primary" type="submit">筛选</button>
+      </form>
+
+      <div class="transport-list-grid" id="transportBoardList"></div>
+    </section>
+  </main>
+
+  <script src="./transport-shared.js"></script>
+  <script src="./transport-api.js"></script>
+  <script src="./transport-public.js"></script>
+</body>
+</html>

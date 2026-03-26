@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>接送机需求列表</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <main class="page-shell transport-admin-shell" id="transportRequestsPage">
+    <section class="storage-section">
+      <div class="transport-admin-header">
+        <div class="section-heading">
+          <p class="eyebrow">Transport Requests</p>
+          <h1>接送机需求列表</h1>
+          <p>按服务类型、机场代码、日期和状态筛选，查看需求和当前分组情况。</p>
+        </div>
+        <div class="transport-admin-nav">
+          <a class="button button-secondary" href="./transport-admin-request-new.html">新建需求</a>
+          <a class="button button-secondary" href="./transport-admin-groups.html">拼车组列表</a>
+          <button class="button button-secondary" type="button" data-transport-logout>退出登录</button>
+        </div>
+      </div>
+
+      <form class="calculator-card transport-filter-form" id="transportRequestFilters">
+        <label class="field">
+          <span>服务类型</span>
+          <select name="service_type">
+            <option value="">全部</option>
+            <option value="pickup">接机</option>
+            <option value="dropoff">送机</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>机场代码</span>
+          <select name="airport_code">
+            <option value="">全部机场</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>状态</span>
+          <select name="status">
+            <option value="">全部状态</option>
+            <option value="draft">草稿</option>
+            <option value="open">开放中</option>
+            <option value="closed">已关闭</option>
+            <option value="cancelled">已取消</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>开始日期</span>
+          <input type="date" name="date_from">
+        </label>
+        <label class="field">
+          <span>结束日期</span>
+          <input type="date" name="date_to">
+        </label>
+        <button class="button button-primary" type="submit">筛选</button>
+      </form>
+
+      <div class="transport-list-grid" id="transportRequestsList"></div>
+    </section>
+  </main>
+  <script src="./transport-shared.js"></script>
+  <script src="./transport-api.js"></script>
+  <script src="./transport-admin.js"></script>
+</body>
+</html>
