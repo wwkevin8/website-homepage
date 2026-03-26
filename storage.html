@@ -882,6 +882,46 @@
   <script src="./script.js?v=20260326-footer-cards"></script>
   <script>
     (function () {
+      const storageFieldLabels = [
+        { selector: "[data-box-count]", i18nKey: "calcStorageQty", fallback: "寄存数量" },
+        { selector: "[data-box-purchase]", i18nKey: "calcPurchaseQty", fallback: "购买数量" },
+        { selector: "[data-box-weight]", i18nKey: "calcMaximumWeight", fallback: "最大重量（kg/箱）" }
+      ];
+      const miniFields = document.querySelectorAll(".box-order-grid .mini-field");
+
+      miniFields.forEach(field => {
+        const title = field.firstElementChild && field.firstElementChild.tagName === "SPAN"
+          ? field.firstElementChild
+          : null;
+
+        if (title) {
+          title.classList.add("mini-field-title");
+        }
+
+        storageFieldLabels.forEach(({ selector, i18nKey, fallback }) => {
+          const input = field.querySelector(selector);
+
+          if (!input || input.parentElement?.classList.contains("mini-field-item")) {
+            return;
+          }
+
+          const item = document.createElement("label");
+          item.className = "mini-field-item";
+          item.htmlFor = input.id;
+
+          const itemLabel = document.createElement("span");
+          itemLabel.className = "mini-field-label";
+          itemLabel.dataset.i18n = i18nKey;
+          itemLabel.textContent = fallback;
+
+          input.parentNode.insertBefore(item, input);
+          item.appendChild(itemLabel);
+          item.appendChild(input);
+        });
+      });
+    })();
+
+    (function () {
       const fab = document.getElementById("storageContactFab");
       const modal = document.getElementById("storageContactModal");
       const close = document.getElementById("storageContactClose");

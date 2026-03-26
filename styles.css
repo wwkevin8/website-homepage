@@ -1794,9 +1794,24 @@ img {
   background: var(--surface-muted);
 }
 
-.box-order-grid .mini-field span {
+.box-order-grid .mini-field .mini-field-title {
   font-weight: 700;
   color: var(--ink);
+}
+
+.mini-field-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.box-order-grid .mini-field .mini-field-label {
+  display: none;
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--muted);
 }
 
 .box-order-input {
@@ -2714,11 +2729,21 @@ img {
   }
 
   .box-order-grid .mini-field {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: 1fr;
+    gap: 14px;
+    padding: 16px;
   }
 
-  .box-order-grid .mini-field span {
+  .box-order-grid .mini-field-title {
     grid-column: 1 / -1;
+  }
+
+  .mini-field-item {
+    gap: 6px;
+  }
+
+  .mini-field-label {
+    display: block;
   }
 
   .discount-cards {
