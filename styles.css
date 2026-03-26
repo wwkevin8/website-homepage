@@ -1437,7 +1437,7 @@ img {
 
 .footer-contact-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
   width: min(100%, 760px);
   margin-top: 8px;
@@ -1451,6 +1451,10 @@ img {
   background: rgba(255, 255, 255, 0.74);
   border: 1px solid rgba(16, 38, 68, 0.08);
   box-shadow: 0 14px 30px rgba(15, 34, 65, 0.06);
+}
+
+.footer-contact-item-wide {
+  grid-column: 1 / -1;
 }
 
 .footer-contact-label {
@@ -1473,6 +1477,29 @@ img {
 
 .footer-contact-value a:hover {
   color: var(--accent-deep);
+}
+
+.footer-hours-list {
+  display: grid;
+  gap: 10px;
+}
+
+.footer-hours-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+}
+
+.footer-hours-day,
+.footer-hours-time {
+  color: var(--ink);
+  font-size: 0.98rem;
+  line-height: 1.5;
+}
+
+.footer-address-text {
+  text-wrap: balance;
 }
 
 .site-footer p,
@@ -2473,6 +2500,11 @@ img {
 
   .footer-contact-grid {
     grid-template-columns: 1fr;
+  }
+
+  .footer-hours-row {
+    grid-template-columns: 1fr;
+    gap: 4px;
   }
 
   .brand {
