@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>编辑接送机需求</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <main class="page-shell transport-admin-shell" id="transportRequestFormPage">
+    <section class="storage-section">
+      <div class="transport-admin-header">
+        <div class="section-heading">
+          <p class="eyebrow">Edit Request</p>
+          <h1>编辑接送机需求</h1>
+          <p>你可以更新 request 内容，并把当前需求分配到拼车组。</p>
+        </div>
+        <div class="transport-admin-nav">
+          <a class="button button-secondary" href="./transport-admin-requests.html">返回需求列表</a>
+          <a class="button button-secondary" href="./transport-admin-groups.html">拼车组列表</a>
+          <button class="button button-secondary" type="button" data-transport-logout>退出登录</button>
+        </div>
+      </div>
+
+      <form class="calculator-card transport-form-grid" id="transportRequestForm">
+        <label class="field">
+          <span>服务类型</span>
+          <select name="service_type">
+            <option value="pickup">接机</option>
+            <option value="dropoff">送机</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>学生姓名</span>
+          <input type="text" name="student_name" required>
+        </label>
+        <label class="field">
+          <span>手机号</span>
+          <input type="text" name="phone">
+        </label>
+        <label class="field">
+          <span>微信</span>
+          <input type="text" name="wechat">
+        </label>
+        <label class="field">
+          <span>人数</span>
+          <input type="number" name="passenger_count" min="1" value="1" required>
+        </label>
+        <label class="field">
+          <span>行李数</span>
+          <input type="number" name="luggage_count" min="0" value="0" required>
+        </label>
+        <label class="field">
+          <span>机场代码</span>
+          <select name="airport_code"></select>
+        </label>
+        <label class="field">
+          <span>机场名称</span>
+          <input type="text" name="airport_name" readonly required>
+        </label>
+        <label class="field">
+          <span data-terminal-label>抵达航站楼</span>
+          <input type="text" name="terminal">
+        </label>
+        <label class="field">
+          <span>航班号</span>
+          <input type="text" name="flight_no">
+        </label>
+        <label class="field">
+          <span data-flight-datetime-label>抵达日期时间</span>
+          <input type="datetime-local" name="flight_datetime" required>
+        </label>
+        <label class="field">
+          <span>出发地</span>
+          <input type="text" name="location_from" required>
+        </label>
+        <label class="field">
+          <span>目的地</span>
+          <input type="text" name="location_to" required>
+        </label>
+        <label class="field">
+          <span>期待开始时间</span>
+          <input type="datetime-local" name="preferred_time_start">
+        </label>
+        <label class="field">
+          <span>期待结束时间</span>
+          <input type="datetime-local" name="preferred_time_end">
+        </label>
+        <label class="field transport-checkbox-field">
+          <span>可拼车</span>
+          <input type="checkbox" name="shareable" checked>
+        </label>
+        <label class="field">
+          <span>状态</span>
+          <select name="status">
+            <option value="draft">草稿</option>
+            <option value="open">开放中</option>
+            <option value="closed">已关闭</option>
+            <option value="cancelled">已取消</option>
+          </select>
+        </label>
+        <label class="field transport-field-span-2">
+          <span>备注</span>
+          <textarea name="notes" rows="4"></textarea>
+        </label>
+        <p class="transport-form-message transport-field-span-2" id="transportRequestMessage"></p>
+        <div class="transport-card-actions transport-field-span-2">
+          <button class="button button-primary" type="submit">保存需求</button>
+        </div>
+      </form>
+
+      <section class="calculator-card" id="transportRequestAssignSection" hidden>
+        <h2>分配到拼车组</h2>
+        <p>可将当前需求分配到同类型、同机场代码的拼车组。</p>
+        <div class="transport-inline-actions">
+          <select id="transportRequestGroupSelect">
+            <option value="">请选择拼车组</option>
+          </select>
+          <button class="button button-secondary" id="transportRequestAssignButton" type="button">加入拼车组</button>
+        </div>
+      </section>
+    </section>
+  </main>
+  <script src="./transport-shared.js"></script>
+  <script src="./transport-api.js"></script>
+  <script src="./transport-admin.js"></script>
+</body>
+</html>
