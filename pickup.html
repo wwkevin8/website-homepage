@@ -11,11 +11,11 @@
   <link
     href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;700&family=Outfit:wght@300;400;500;600;700&display=swap"
     rel="stylesheet">
-  <link rel="stylesheet" href="./styles.css?v=20260326-footer-cards">
+  <link rel="stylesheet" href="./styles.css?v=20260326-service-header-1">
 </head>
 
 <body>
-  <div class="topbar">
+  <div class="topbar topbar-storage">
     <header class="site-header">
       <a class="brand" href="./index.html" aria-label="左邻右里首页">
         <div class="brand-lockup brand-lockup-header">
@@ -35,12 +35,24 @@
       </nav>
 
       <div class="header-actions">
+        <button class="storage-mobile-menu-toggle" type="button" aria-label="菜单" data-storage-menu-toggle>
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
         <div class="lang-switch" aria-label="language switch">
           <button class="lang-btn is-active" type="button" data-lang="zh-CN">中</button>
           <button class="lang-btn" type="button" data-lang="en">EN</button>
         </div>
       </div>
     </header>
+    <div class="storage-mobile-menu" id="storage-mobile-menu" hidden>
+      <div class="storage-mobile-menu-inner">
+        <a href="./index.html" data-storage-menu-link data-i18n="navHome">首页</a>
+        <a href="./pickup.html" data-storage-menu-link data-i18n="menuPickup">接机服务</a>
+        <a href="./storage.html" data-storage-menu-link data-i18n="navStorage">寄存价格</a>
+      </div>
+    </div>
   </div>
 
   <main class="page-shell pickup-page">
@@ -519,7 +531,7 @@
     </p>
   </footer>
 
-  <script src="./script.js?v=20260326-footer-cards"></script>
+  <script src="./script.js?v=20260326-service-header-1"></script>
 </body>
 
 </html>
