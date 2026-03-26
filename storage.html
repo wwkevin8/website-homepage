@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./styles.css?v=20260326-footer-cards">
+  <link rel="stylesheet" href="./styles.css?v=20260326-storage-hotfix-1">
   <style>
     .storage-contact-fab {
       position: fixed;
@@ -297,7 +297,7 @@
         <p class="eyebrow" data-i18n="storageHeroEyebrow">Storage Service</p>
         <h1 data-i18n="storageHeroTitle">寄存服务非会员价格</h1>
         <p class="storage-hero-text" data-i18n="storageHeroText">
-          GBCN 诺丁汉左邻右里提供本地行李寄存服务。我们拥有自有仓库，环境安全干燥，每一件寄存行李均购买保险至 £50。以下页面整理了非会员价格、箱型规格、配送与短期加费规则，方便同学在咨询前快速估算费用。
+          英国诺丁汉左邻右里提供本地行李寄存服务。我们拥有自有仓库，环境安全干燥，每一件寄存行李均购买保险至 £50。以下页面整理了非会员价格、箱型规格、配送与短期加费规则，方便同学在咨询前快速估算费用。
         </p>
         <div class="storage-hero-meta">
           <span data-i18n="storageMeta1">2025 年 9 月更新版</span>
@@ -491,8 +491,8 @@
 
     <section class="storage-section calculator-section" id="storage-calculator">
       <div class="section-heading">
-        <h2 data-i18n="storageCalcTitle">???????</h2>
-        <p data-i18n="storageCalcIntro">??????????????????????????????????????????????</p>
+        <h2 data-i18n="storageCalcTitle">非会员价格计算器</h2>
+        <p data-i18n="storageCalcIntro">输入各箱型数量、日期、取件方式和送还方式后，系统会分别计算寄存费、购箱费、折扣和附加费用。</p>
       </div>
 
       <div class="calculator-layout">
@@ -879,8 +879,128 @@
     <small id="footer-year"></small>
   </footer>
 
-  <script src="./script.js?v=20260326-footer-cards"></script>
+  <script src="./script.js?v=20260326-storage-hotfix-1"></script>
   <script>
+    (function () {
+      const storageFieldLabels = [
+        { selector: "[data-box-count]", i18nKey: "calcStorageQty", fallback: "寄存数量" },
+        { selector: "[data-box-purchase]", i18nKey: "calcPurchaseQty", fallback: "购买数量" },
+        { selector: "[data-box-weight]", i18nKey: "calcMaximumWeight", fallback: "最大重量（kg/箱）" }
+      ];
+      const miniFields = document.querySelectorAll(".box-order-grid .mini-field");
+      const langButtons = document.querySelectorAll("[data-lang]");
+      storageFieldLabels[0].itemClass = "mini-field-item--count";
+      storageFieldLabels[1].itemClass = "mini-field-item--purchase";
+      storageFieldLabels[2].itemClass = "mini-field-item--weight";
+
+      function getFieldText(i18nKey, fallback) {
+        const reference = document.querySelector(`.box-order-head [data-i18n="${i18nKey}"]`);
+        return reference && reference.textContent ? reference.textContent.trim() : fallback;
+      }
+
+      function syncMobileInlineHint(item, input) {
+        if (!item || !input) {
+          return;
+        }
+
+        const rawValue = String(input.value || "").trim();
+        const isWeightField = item.classList.contains("mini-field-item--weight");
+        const showHint = isWeightField
+          ? input.disabled && rawValue === ""
+          : rawValue === "" || rawValue === "0";
+
+        item.classList.toggle("has-mobile-inline-hint", showHint);
+        input.setAttribute("placeholder", isWeightField && showHint ? "" : (item.dataset.mobileHint || ""));
+      }
+
+      function refreshMobileInlineHints() {
+        miniFields.forEach(field => {
+          storageFieldLabels.forEach(({ selector, i18nKey, fallback }) => {
+            const input = field.querySelector(selector);
+            const item = input ? input.parentElement : null;
+
+            if (!input || !item || !item.classList.contains("mini-field-item")) {
+              return;
+            }
+
+            const labelText = getFieldText(i18nKey, fallback);
+            const itemLabel = item.querySelector(".mini-field-label");
+
+            if (itemLabel) {
+              itemLabel.textContent = labelText;
+            }
+
+            item.dataset.mobileHint = labelText;
+            input.setAttribute("aria-label", labelText);
+            syncMobileInlineHint(item, input);
+          });
+        });
+      }
+
+      miniFields.forEach(field => {
+        const title = field.firstElementChild && field.firstElementChild.tagName === "SPAN"
+          ? field.firstElementChild
+          : null;
+
+        if (title) {
+          title.classList.add("mini-field-title");
+        }
+
+        storageFieldLabels.forEach(({ selector, i18nKey, fallback, itemClass }) => {
+          const input = field.querySelector(selector);
+
+          if (!input) {
+            return;
+          }
+
+          let item = input.parentElement;
+
+          if (!item || !item.classList.contains("mini-field-item")) {
+            item = document.createElement("label");
+            item.className = "mini-field-item";
+            item.htmlFor = input.id;
+
+            const itemLabel = document.createElement("span");
+            itemLabel.className = "mini-field-label";
+            itemLabel.dataset.i18n = i18nKey;
+
+            input.parentNode.insertBefore(item, input);
+            item.appendChild(itemLabel);
+            item.appendChild(input);
+          }
+
+          item.classList.add(itemClass);
+
+          const labelText = getFieldText(i18nKey, fallback);
+          const itemLabel = item.querySelector(".mini-field-label");
+
+          if (itemLabel) {
+            itemLabel.textContent = labelText;
+          }
+
+          item.dataset.mobileHint = labelText;
+          input.setAttribute("aria-label", labelText);
+
+          if (!item.dataset.mobileHintBound) {
+            const sync = () => {
+              window.requestAnimationFrame(refreshMobileInlineHints);
+            };
+            input.addEventListener("input", sync);
+            input.addEventListener("change", sync);
+            item.dataset.mobileHintBound = "true";
+          }
+        });
+      });
+
+      refreshMobileInlineHints();
+
+      langButtons.forEach(button => {
+        button.addEventListener("click", () => {
+          window.requestAnimationFrame(refreshMobileInlineHints);
+        });
+      });
+    })();
+
     (function () {
       const fab = document.getElementById("storageContactFab");
       const modal = document.getElementById("storageContactModal");
