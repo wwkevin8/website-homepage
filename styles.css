@@ -3025,19 +3025,11 @@ img {
   .topbar-home .home-menu-pages {
     grid-template-columns: 1fr;
     gap: 8px;
-    margin-bottom: 8px;
+    margin-bottom: 0;
   }
 
   .topbar-home .home-menu-inner {
-    gap: 8px;
-    padding: 12px;
-    border-radius: 18px;
-  }
-
-  .topbar-home .home-menu-inner a {
-    padding: 12px 14px;
-    border-radius: 12px;
-    background: rgba(244, 247, 252, 0.88);
+    display: none;
   }
 
   .topbar-home .floating-menu-button {
