@@ -1415,11 +1415,11 @@ img {
 
 .site-footer {
   display: grid;
-  justify-items: center;
-  gap: 12px;
-  padding: 28px 0 42px;
+  justify-items: stretch;
+  gap: 18px;
+  padding: 32px 0 48px;
   color: var(--muted);
-  text-align: center;
+  text-align: left;
 }
 
 .footer-brand {
@@ -1429,9 +1429,94 @@ img {
   color: var(--accent);
 }
 
+.footer-copy {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  text-align: center;
+}
+
+.footer-lead {
+  max-width: 700px;
+}
+
+.footer-contact-grid {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr 1fr;
+  gap: 16px;
+  width: min(100%, 980px);
+  margin: 0 auto;
+}
+
+.footer-contact-item {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+  padding: 22px 24px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(75, 118, 194, 0.12);
+  box-shadow: 0 18px 36px rgba(15, 34, 65, 0.08);
+}
+
+.footer-contact-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.footer-contact-value {
+  font-size: 1rem;
+  line-height: 1.7;
+  color: var(--ink);
+}
+
+.footer-contact-value a {
+  color: var(--accent-deep);
+  text-decoration: none;
+}
+
+.footer-contact-value a:hover {
+  text-decoration: underline;
+}
+
+.footer-hours-list {
+  display: grid;
+  gap: 10px;
+}
+
+.footer-hours-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+}
+
+.footer-hours-day,
+.footer-hours-time {
+  color: var(--ink);
+  font-size: 0.98rem;
+  line-height: 1.6;
+}
+
+.footer-address-text {
+  max-width: 34ch;
+}
+
+.footer-links {
+  display: grid;
+  gap: 8px;
+}
+
 .site-footer p,
 .site-footer small {
   margin: 0;
+}
+
+.footer-meta {
+  text-align: center;
 }
 
 .storage-page {
@@ -2650,6 +2735,15 @@ img {
   .page-shell,
   .site-footer {
     width: min(100% - 20px, 1180px);
+  }
+
+  .footer-contact-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .footer-hours-row {
+    grid-template-columns: 1fr;
+    gap: 2px;
   }
 
   .site-header {
