@@ -84,18 +84,100 @@
     teamIntro: "把本地经验、服务耐心和学生视角，放进每一次订房咨询与后续跟进里。",
     teamVivianRole: "创始人",
     teamVivianText: "作为左邻右里的创始人，Vivian 长期生活在诺丁汉，在本地已经积累了超过 10 年的生活经验，也持续多年与中国留学生打交道。她熟悉诺丁汉学生公寓资源、本地居住环境、学生在订房和落地阶段最常遇到的问题，也更清楚家长和学生在真正做选择时最在意的其实不只是价格，而是信息是否可靠、沟通是否及时、后续是否有人持续负责。左邻右里很多服务思路、节奏把控和长期陪伴式的做法，都来自 Vivian 对留学生真实生活场景的长期观察与积累。对她来说，订房不是简单完成一笔交易，而是帮助学生把来到英国后的第一段生活安稳接住。",
+    teamVivianShort: "长期扎根诺丁汉，能把订房判断、落地衔接和长期陪伴放进同一套思路里。",
     team2Name: "Kevin",
     team2Role: "学生公寓顾问",
     team2Text: "Kevin 是团队里的主要顾问人员，也是很多同学在咨询阶段最先建立信任的人。长期深度对接诺丁汉大大小小的学生公寓后，他对不同公寓的定位、区域氛围、价格区间、合同节奏、优缺点差异以及学生真正关心的问题都非常熟悉。毕业于诺丁汉大学电子与电气工程专业、常驻 Park 校区的他，不仅专业、靠谱，也很有亲和力，能够把复杂的信息讲得清楚、把选择逻辑梳理明白，帮助同学更高效地找到真正适合自己的房子。对于很多第一次来到英国、对诺丁汉还不够熟悉的学生来说，Kevin 更像是一个能把复杂选择变简单、把模糊信息变具体的人，让大家在订房这件事上更有把握。",
+    team2Short: "擅长把公寓定位、合同节奏、校区差异和选房逻辑讲得清楚又好懂。",
     team3Name: "Firo",
     team3Role: "学生公寓顾问",
     team3Text: "Firo 也是团队里的租房顾问之一，主要负责日常沟通、咨询承接和后续协助跟进。他的沟通方式自然、亲和，不会给人距离感，比较容易让学生在咨询过程中放松下来。对于公寓基础信息、入住节奏和常见问题，他也能够提供清晰直接的说明。很多同学在刚开始咨询时，往往最需要的就是一个愿意认真听、愿意耐心解释的人，Firo 在这方面会让沟通显得更顺、更自然，也让整个订房过程没有那么紧张。",
+    team3Short: "沟通自然亲和，适合先把问题讲出来，再一步步把入住和咨询节奏理顺。",
     team4Name: "小妮",
     team4Role: "学生公寓顾问",
     team4Text: "小妮同样是团队里的租房顾问人员。作为学校大使馆成员，她对学生需求比较熟悉，也更了解大家在入住沟通、信息理解和生活适应阶段常见的细节问题。她更擅长从学生视角去看待问题，帮助大家把一些看似琐碎、但实际很影响体验的事情提前理顺。无论是前期信息理解、入住前准备，还是入住后的细节适应，她都更容易站在学生当下的真实感受上去协助判断，让服务显得更细、更贴近实际。",
+    team4Short: "更懂学生视角，能把入住前后那些看似细小却很影响体验的事情提前理顺。",
     team5Name: "Kim",
     team5Role: "学生公寓顾问",
     team5Text: "Kim 也是团队里的租房顾问之一，是 24 届毕业生。此前一直住在诺丁汉市中心，在猪不理和 Park 校区都有课程安排，因此对市中心居住环境、日常通勤和不同校区之间的生活节奏都相对熟悉。对于刚来诺丁汉、还在适应学校与城市节奏的同学来说，他能够从更贴近学生日常的角度，给出更直接、更实用的订房和生活建议。",
+    team5Short: "熟悉市中心生活和跨校区节奏，给出的建议往往更贴近学生每天真实会遇到的场景。",
+    team6Name: "鸡腿老师",
+    team6Role: "本地生活顾问",
+    team6Text: "鸡腿老师几乎 24 小时都在线，除了睡觉基本都能找到人。长期生活在 Beeston 的他，对当地生活情况非常熟悉，不管是美容美发、美食、健身，还是周边的生活便利度和居住体感，都能给出很接地气的建议。平时他也很乐于帮助别人，沟通起来轻松直接，很多同学在遇到生活上的小问题、小选择时，都会更愿意先找他聊一聊。",
+    team6Short: "长期住在 Beeston，生活信息很熟，很多同学会先找他问本地吃住玩和日常选择。",
+    teamDetailHint: "从两侧选一位先认识，看看接下来最可能和你沟通的是谁。",
+    teamDetailViewMore: "查看完整档案",
+    teamDetailProfileBadge: "本地团队",
+    teamVivianFocus: "把订房判断、沟通节奏和落地衔接放进同一套思路里。",
+    teamVivianBestFor: "适合刚开始咨询、希望先把整体方向和判断逻辑理清楚的同学。",
+    teamVivianStage: "前期判断 / 订房决策 / 落地节奏",
+    teamVivianTags: ["本地经验", "整体判断", "长期跟进"],
+    team2Focus: "公寓定位、合同节奏、校区差异和房型选择解释得更清楚。",
+    team2BestFor: "适合在多栋公寓之间反复比较、想把优缺点和适配度说透的同学。",
+    team2Stage: "公寓比较 / 选房判断 / 合同理解",
+    team2Tags: ["公寓判断", "校区差异", "逻辑清晰"],
+    team3Focus: "日常沟通承接、问题梳理和入住前后的细节衔接。",
+    team3BestFor: "适合第一次开口咨询、希望先把问题轻松讲出来再慢慢缩小范围的同学。",
+    team3Stage: "初步咨询 / 日常沟通 / 入住跟进",
+    team3Tags: ["沟通自然", "解释耐心", "节奏顺"],
+    team4Focus: "从学生视角提前看见那些会影响体验的细节问题。",
+    team4BestFor: "适合在入住准备、信息理解和生活适应阶段更想要细致协助的同学。",
+    team4Stage: "入住准备 / 细节适应 / 学生视角支持",
+    team4Tags: ["细节导向", "学生视角", "体验感"],
+    team5Focus: "贴近学生真实日常，尤其熟悉市中心生活与跨校区节奏。",
+    team5BestFor: "适合刚来诺丁汉、想把生活便利度、通勤和日常节奏一起考虑的同学。",
+    team5Stage: "城市适应 / 区域选择 / 日常节奏判断",
+    team5Tags: ["市中心生活", "跨校区", "实用建议"],
+    team6Focus: "Beeston 本地生活信息、日常选择和周边体感判断。",
+    team6BestFor: "适合除了房子本身，也想提前了解吃住玩、美容、健身和社区氛围的同学。",
+    team6Stage: "生活适应 / 区域感受 / 本地答疑",
+    team6Tags: ["Beeston", "生活信息", "好沟通"],
+    teamArchiveHeroLabel: "团队画像",
+    teamArchiveHeroText: "不是员工列表，而是一组会直接和你沟通、协助判断并持续跟进的本地成员。",
+    teamArchiveSignal1: "本地经验",
+    teamArchiveSignal2: "订房判断",
+    teamArchiveSignal3: "生活协助",
+    teamArchiveSignal4: "持续跟进",
+    teamArchiveIntroLabel: "人物档案",
+    teamArchiveFocusLabel: "擅长处理",
+    teamArchiveBestForLabel: "适合找 TA",
+    teamArchiveStageLabel: "常见服务阶段",
+    teamArchiveTagsLabel: "关键词",
+    teamArchiveSummaryEyebrow: "Team Summary",
+    teamArchiveSummaryTitle: "不同成员分工互补，但目标始终一致",
+    teamArchiveSummaryText: "有人更擅长把订房判断讲清楚，有人更适合承接日常沟通和入住细节，也有人更了解本地生活支持。真正重要的不是记住所有名字，而是你在需要的时候，能更快找到那个最适合和你直接沟通的人。",
+    teamArchiveCtaTitle: "下一步怎么开始更顺",
+    teamArchiveCtaText: "把预算、校区、入住时间和房型需求先发给我们，我们会先帮你判断该从谁、从哪类房源和哪种沟通节奏开始。",
+    teamArchiveCtaButton: "先回首页看服务重点",
+    teamExplorerHeroLabel: "从你的问题出发",
+    teamExplorerHeroText: "这里不是按顺序阅读的员工列表，而是一组可以自由探索的本地成员。你可以先点开最关心的问题，再看看谁更适合先和你沟通。",
+    teamExplorerHeroMeta: "每位成员都有不同的处理节奏、解释方式和本地支持经验。先从你最在意的阶段或问题点开始，会更容易找到适合先沟通的人。",
+    teamExplorerSignal1: "选房定位",
+    teamExplorerSignal2: "合同节奏",
+    teamExplorerSignal3: "入住前准备",
+    teamExplorerSignal4: "入住后适应",
+    teamExplorerSignal5: "本地生活支持",
+    teamExplorerFilterEyebrow: "Explore",
+    teamExplorerFilterTitle: "按你现在更关心的问题，先看看谁更适合",
+    teamExplorerFilterAll: "全部问题",
+    teamExplorerFilterChoice: "选房定位",
+    teamExplorerFilterContract: "合同节奏",
+    teamExplorerFilterMoveIn: "入住前准备",
+    teamExplorerFilterSettling: "入住后适应",
+    teamExplorerFilterLocal: "本地生活支持",
+    teamExplorerCardLabel: "本地成员",
+    teamExplorerDetailLabel: "当前聚焦",
+    teamExplorerFocusLabel: "擅长处理",
+    teamExplorerBestForLabel: "适合找 TA",
+    teamExplorerStageLabel: "服务阶段",
+    teamExplorerTagsLabel: "关键词",
+    teamExplorerHint: "先从一张卡片开始，慢慢找到最适合先和你沟通的人。",
+    teamExplorerSummaryEyebrow: "Team Summary",
+    teamExplorerSummaryTitle: "你要认识的不是一串名字，而是一组能接力配合的人",
+    teamExplorerSummaryText: "有人更擅长把房源判断讲清楚，有人更适合跟进入住前后的细节，也有人更熟悉本地生活支持。探索这页的目的，不是记住所有成员，而是更快知道遇到不同问题时，谁更适合先出现。",
+    teamExplorerCtaTitle: "准备好以后，我们就能更快接上",
+    teamExplorerCtaText: "把预算、校区、入住时间和你最在意的问题先发给我们，我们会帮你判断该从哪位成员、哪类房源和哪种沟通节奏开始。",
+    teamExplorerCtaButton: "回首页看看服务重点",
     memberTitle: "订房会员价值与服务文化",
     value1Title: "订房后持续跟进",
     value1Text: "同学从订房开始进入会员服务，后续入住、换房到毕业阶段都尽量保持有人跟进。",
@@ -429,15 +511,96 @@
     team2Name: "Kevin",
     team2Role: "Student Accommodation Advisor",
     team2Text: "Kevin is one of the team's lead advisors and often the first person students build trust with during the consultation stage. Through long-term, close work with student residences of all sizes across Nottingham, he is highly familiar with residence positioning, area atmosphere, pricing, contract timing, strengths, weaknesses and the questions students genuinely care about. With his University of Nottingham EEE background, Park Campus experience, professionalism, reliability and strong approachability, he is especially effective at turning complex housing choices into clear and practical guidance. For students who are new to Nottingham and unsure how to compare different options, Kevin is often the person who makes the process feel more concrete, more manageable and far more trustworthy.",
+    team2Short: "Great at explaining residence positioning, contract rhythm, campus differences and room-choice logic clearly.",
     team3Name: "Firo",
     team3Role: "Student Accommodation Advisor",
     team3Text: "Firo is also one of the team's accommodation advisors, mainly supporting day-to-day communication, enquiry handling and follow-up coordination. His communication style is natural and approachable, which helps students feel more relaxed during the process. He can also give clear explanations around basic residence information, move-in timing and common questions. For many students, that approachable style makes the consultation process feel easier and less stressful from the very beginning.",
+    team3Short: "Approachable and calm, making it easier for students to ask questions and settle into the process.",
     team4Name: "Xiao Ni",
     team4Role: "Student Accommodation Advisor",
     team4Text: "Xiao Ni is also part of the accommodation advisory team. As a school ambassador member, she is familiar with student needs and the kinds of details that often come up during move-in, communication and everyday adjustment. She is especially good at looking at situations from a student perspective and helping make small but important issues easier to manage in advance. Whether it is understanding information before booking, preparing for move-in or adapting after arrival, she helps make the process feel more practical and student-focused.",
+    team4Short: "Strong at spotting the small but important details that shape a smoother student living experience.",
     team5Name: "Kim",
     team5Role: "Student Accommodation Advisor",
     team5Text: "Kim is also one of the team's accommodation advisors and is a member of the 2024 graduating cohort. He previously lived in Nottingham city centre and had classes across both Zhu Bu Li and Park Campus, so he is relatively familiar with city-centre living, day-to-day commuting and the rhythm of student life between different parts of the city. For students who are still getting used to Nottingham, he can offer direct and practical advice from a perspective that feels close to everyday student life.",
+    team5Short: "Understands city-centre living and cross-campus rhythm, with advice that feels close to real student routines.",
+    team6Name: "Jitui",
+    team6Role: "Local Life Advisor",
+    team6Text: "Jitui is known for being reachable almost all the time. Apart from sleeping, he is usually easy to find online. Having lived in Beeston for a long time, he knows the area well, from food, hair and beauty services, and gyms to the overall day-to-day living experience. He is also very willing to help, easy to talk to, and often the kind of person students turn to when they want quick and practical advice about local life.",
+    team6Short: "Knows Beeston life well and is the go-to person for practical local advice, from food to daily routines.",
+    teamDetailHint: "Pick someone from the wings and meet the local person you are most likely to speak with.",
+    teamDetailViewMore: "Open Full Profile",
+    teamDetailProfileBadge: "Local Team",
+    teamVivianFocus: "Connecting booking judgement, communication rhythm and settling-in support into one clearer direction.",
+    teamVivianBestFor: "Best for students who want to understand the overall logic before comparing specific options.",
+    teamVivianStage: "Early judgement / Booking decisions / Settling-in rhythm",
+    teamVivianTags: ["Local insight", "Big-picture view", "Long-term support"],
+    team2Focus: "Explaining residence positioning, contract rhythm, campus differences and room choices with clarity.",
+    team2BestFor: "Best for students comparing several residences and wanting the differences translated into practical guidance.",
+    team2Stage: "Residence comparison / Choice support / Contract understanding",
+    team2Tags: ["Residence judgement", "Campus fit", "Clear logic"],
+    team3Focus: "Handling day-to-day communication, question sorting and move-in follow-up in a more relaxed way.",
+    team3BestFor: "Best for students who want an approachable first conversation before narrowing things down.",
+    team3Stage: "Initial enquiry / Daily communication / Move-in follow-up",
+    team3Tags: ["Approachable", "Patient explanation", "Smooth process"],
+    team4Focus: "Spotting the small but important details that shape a better student living experience.",
+    team4BestFor: "Best for students who want more careful support around preparation, understanding information and adjusting after arrival.",
+    team4Stage: "Move-in prep / Adjustment details / Student-focused support",
+    team4Tags: ["Detail-focused", "Student lens", "Better experience"],
+    team5Focus: "Advice grounded in real student routines, especially city-centre life and cross-campus rhythm.",
+    team5BestFor: "Best for students who want to weigh commute, convenience and everyday city rhythm together.",
+    team5Stage: "City adjustment / Area choice / Daily routine judgement",
+    team5Tags: ["City-centre life", "Cross-campus", "Practical advice"],
+    team6Focus: "Local Beeston life, everyday decisions and the real feel of the surrounding area.",
+    team6BestFor: "Best for students who want to understand daily life beyond the room itself, from food to fitness and neighbourhood feel.",
+    team6Stage: "Local adjustment / Area feel / Everyday guidance",
+    team6Tags: ["Beeston", "Local tips", "Easy to talk to"],
+    teamArchiveHeroLabel: "Team Snapshot",
+    teamArchiveHeroText: "This is not a staff list. It is the local team most likely to speak with you directly, help you judge options and keep support connected afterwards.",
+    teamArchiveSignal1: "Local insight",
+    teamArchiveSignal2: "Booking judgement",
+    teamArchiveSignal3: "Daily support",
+    teamArchiveSignal4: "Ongoing follow-up",
+    teamArchiveIntroLabel: "Profile",
+    teamArchiveFocusLabel: "Best At",
+    teamArchiveBestForLabel: "Best For",
+    teamArchiveStageLabel: "Service Stage",
+    teamArchiveTagsLabel: "Keywords",
+    teamArchiveSummaryEyebrow: "Team Summary",
+    teamArchiveSummaryTitle: "Different strengths, but one consistent direction",
+    teamArchiveSummaryText: "Some members are stronger at explaining housing judgement, some are better at daily communication and move-in details, and some know local life support especially well. What matters is not memorising every name, but knowing that the right person is there when you need direct and practical help.",
+    teamArchiveCtaTitle: "How to start more smoothly",
+    teamArchiveCtaText: "Send us your budget, campus, move-in timing and room type first, and we can help judge where to begin, who should take the lead and which options are worth looking at first.",
+    teamArchiveCtaButton: "Back to Service Overview",
+    teamExplorerHeroLabel: "Start from your question",
+    teamExplorerHeroText: "This is not a staff list to read from top to bottom. It is a local team you can explore freely, beginning with the question that matters most to you right now.",
+    teamExplorerHeroMeta: "Each member brings a different style of judgement, explanation and local support. Starting from your current concern often makes it easier to see who is worth speaking with first.",
+    teamExplorerSignal1: "Choosing the right fit",
+    teamExplorerSignal2: "Contract rhythm",
+    teamExplorerSignal3: "Before move-in",
+    teamExplorerSignal4: "After arrival",
+    teamExplorerSignal5: "Local life support",
+    teamExplorerFilterEyebrow: "Explore",
+    teamExplorerFilterTitle: "Start with the issue you care about most",
+    teamExplorerFilterAll: "All topics",
+    teamExplorerFilterChoice: "Choosing the fit",
+    teamExplorerFilterContract: "Contract rhythm",
+    teamExplorerFilterMoveIn: "Before move-in",
+    teamExplorerFilterSettling: "After arrival",
+    teamExplorerFilterLocal: "Local life support",
+    teamExplorerCardLabel: "Local Member",
+    teamExplorerDetailLabel: "Current Focus",
+    teamExplorerFocusLabel: "Best At",
+    teamExplorerBestForLabel: "Best For",
+    teamExplorerStageLabel: "Service Stage",
+    teamExplorerTagsLabel: "Keywords",
+    teamExplorerHint: "Start with one card and follow the person who feels most relevant to you.",
+    teamExplorerSummaryEyebrow: "Team Summary",
+    teamExplorerSummaryTitle: "You are not meeting a list of names, but a team that can relay support",
+    teamExplorerSummaryText: "Some people are stronger at housing judgement, some are better at move-in details, and some know local life support especially well. The point of this page is not to memorise everyone, but to see more quickly who should step in first for the issue you are dealing with.",
+    teamExplorerCtaTitle: "Once you are ready, we can connect faster",
+    teamExplorerCtaText: "Send us your budget, campus, move-in timing and the question you care about most, and we can help decide which member, which options and which communication rhythm should come first.",
+    teamExplorerCtaButton: "Back to Service Overview",
     memberTitle: "Membership Value and Service Culture",
     value1Title: "Continued Support After Booking",
     value1Text: "Students enter our membership support flow from the time they book, with follow-up continuing through move-in, room changes and graduation stages.",
@@ -689,7 +852,7 @@ Object.assign(translations["zh-CN"], {
   navMenu: "菜单",
   menuPartners: "合作公寓",
   menuExtras: "额外福利",
-  menuPickup: "接机服务",
+  menuPickup: "接送机服务",
   menuAbout: "关于我们",
   menuBusiness: "公司业务",
   menuCampus: "校区入口",
@@ -733,7 +896,7 @@ Object.assign(translations.en, {
   navMenu: "Menu",
   menuPartners: "Partners",
   menuExtras: "Benefits",
-  menuPickup: "Airport Pickup",
+  menuPickup: "Airport Transfers",
   menuAbout: "About",
   menuBusiness: "Services",
   menuCampus: "Campuses",
@@ -774,17 +937,17 @@ Object.assign(translations.en, {
 });
 
 Object.assign(translations["zh-CN"], {
-  pickupTitle: "左邻右里 | 接机与拼车服务",
-  pickupDescription: "左邻右里接机与拼车服务页面，提供正常时间与九月旺季价格表、拼车流程、注意事项和需求整理。",
-  pickupHeroEyebrow: "接机与拼车服务",
-  pickupHeroTitle: "诺丁汉 NGN 接机与拼车服务",
-  pickupHeroText: "我们与英国本地正规租车及司机团队长期合作，为留学生提供接机、拼车与送机支持。合作司机均为英国本地华人老司机，驾龄 5 年以上，常用奔驰、奥迪、大众、福特等安全舒适车型。无论是开学季首次落地，还是平时跨城往返，我们都希望把接机安排做得更清楚、更稳妥。",
+  pickupTitle: "左邻右里 | 接送机与拼车服务",
+  pickupDescription: "左邻右里接送机与拼车服务页面，提供正常时间与九月旺季价格表、拼车流程、注意事项和需求整理。",
+  pickupHeroEyebrow: "接送机与拼车服务",
+  pickupHeroTitle: "诺丁汉 NGN 接送机与拼车服务",
+  pickupHeroText: "我们与英国本地正规租车及司机团队长期合作，为留学生提供接送机与拼车支持。合作司机均为英国本地华人老司机，驾龄 5 年以上，常用奔驰、奥迪、大众、福特等安全舒适车型。无论是开学季首次落地，还是平时跨城往返，我们都希望把接送安排做得更清楚、更稳妥。",
   pickupMeta1: "电话: 07941 008555",
   pickupMeta2: "拼车表单: 问卷星链接",
   pickupMeta3: "客服微信: Nottsngn",
   pickupHeroBtn1: "填写拼车表单",
-  pickupHeroBtn2: "查看接机价格",
-  pickupHeroBtn3: "咨询包车/接机",
+  pickupHeroBtn2: "查看接送机价格",
+  pickupHeroBtn3: "咨询包车/接送机",
   pickupHighlightTitle1: "服务包含",
   pickupHighlightText1: "送机费、机场停车费、司机费，以及免费 1 小时等待费。",
   pickupHighlightTitle2: "特殊说明",
@@ -794,18 +957,18 @@ Object.assign(translations["zh-CN"], {
   pickupProcessTitle: "拼车流程",
   pickupProcessIntro: "先确认规则与价格，再提交拼车需求。我们会根据你的时间、机场和人数安排发布信息，尽量帮助同学更顺利地匹配到合适同行人。",
   pickupStep1Title: "阅读说明与价格",
-  pickupStep1Text: "先确认接机规则、正常时间价格和九月旺季说明，再判断自己更适合拼车还是包车。",
+  pickupStep1Text: "先确认接送机规则、正常时间价格和九月旺季说明，再判断自己更适合拼车还是包车。",
   pickupStep2Title: "填写拼车表单",
   pickupStep2Text: "通过问卷星填写航班、时间、人数、行李数量和目的地等基础信息。",
   pickupStep3Title: "我们发布并匹配同行人",
   pickupStep3Text: "团队会在社媒或群内发布拼车信息，尽量帮助你匹配同机场、同时段或相近目的地的同学。",
   pickupStep4Title: "等待通知与确认",
   pickupStep4Text: "拼车人数、航站楼与时间逐步确认后，我们会同步最终安排与收费方式。",
-  pickupStep5Title: "支付车款并安排接机",
+  pickupStep5Title: "支付车款并安排接送",
   pickupStep5Text: "确认后支付车费，司机将按最终时间、人数与航站楼安排接机或送机服务。",
   pickupFormBtn: "填写拼车表单",
   pickupServiceTitle: "服务说明",
-  pickupServiceIntro: "我们更希望把接机服务的规则讲清楚，而不是只放一张价格表。下面这些内容会直接影响你的最终安排与实际费用。",
+  pickupServiceIntro: "我们更希望把接送机服务的规则讲清楚，而不是只放一张价格表。下面这些内容会直接影响你的最终安排与实际费用。",
   pickupServiceBlock1Title: "正规合作车辆",
   pickupServiceBlock1Text: "我们与英国本地正规租车及司机团队合作接送学生，合作司机均为英国本地驾龄 5 年以上的华人老司机，常用奔驰、奥迪、大众、福特等安全舒适车型。",
   pickupServiceBlock2Title: "价格包含内容",
@@ -813,8 +976,8 @@ Object.assign(translations["zh-CN"], {
   pickupServiceBlock3Title: "正常时段与加班时段",
   pickupServiceBlock3Text: "接人时间点在 06:00-22:00 为正常时段。早于或晚于这个时间段，都按加班特殊时段核算，需加 £20/车；如是拼车，则由同行人 AA 分摊。",
   pickupServiceBlock4Title: "旺季波动说明",
-  pickupServiceBlock4Text: "9 月属于旺季，正常时间价格表不适用于每年 9 月的高峰阶段。9 月送机/接机价格会在 8 月中旬另行报价，旺季司机资源紧张，价格可能会有一定波动。",
-  pickupPricingTitle: "接机价格表",
+  pickupServiceBlock4Text: "9 月属于旺季，正常时间价格表不适用于每年 9 月的高峰阶段。9 月接送机价格会在 8 月中旬另行报价，旺季司机资源紧张，价格可能会有一定波动。",
+  pickupPricingTitle: "接送机价格表",
   pickupPricingIntro: "以下价格已按你提供的截图整理为文本表格，便于同学直接查阅。最终尾款仍会根据实际上车人数、航站楼和等待情况进行人工核算。",
   pickupTableNormalTitle: "正常时间价格表",
   pickupTableSeptemberTitle: "九月时间价格表",
@@ -832,7 +995,7 @@ Object.assign(translations["zh-CN"], {
   pickupRow4: "四人每人",
   pickupRow5: "五人每人",
   pickupRulesTitle: "规则与注意事项",
-  pickupRulesIntro: "接机服务最终价格并不只是看基础表格，还会受到等待时间、航站楼、行李数量和具体安排方式影响。下面这些说明请务必提前看清楚。",
+  pickupRulesIntro: "接送机服务最终价格并不只是看基础表格，还会受到等待时间、航站楼、行李数量和具体安排方式影响。下面这些说明请务必提前看清楚。",
   pickupRule1Title: "尾款核算方式",
   pickupRule1Text: "尾款会按实际上车人数以及是否跨航站楼进行核算。拼车同学若分布在不同航站楼，需要按每增加一个航站楼加 £15 来重新平摊，最终每人价格通常会比基础表略高。",
   pickupRule2Title: "等待与超时",
@@ -849,12 +1012,12 @@ Object.assign(translations["zh-CN"], {
   pickupExampleTitle: "核算示例",
   pickupExampleText1: "例如 4 位同学拼车，基础价格为每人 £65；如果分别落在 4 个不同航站楼，就需要额外加 3 次航站楼费用，即 £45。平摊后每人再加 £11.25，单人最终约为 £76.25。",
   pickupExampleText2: "如果你的航班 13:00 落地，司机与大家约定 14:00 接人，则免费等待可延续到 15:00；超过时间后会继续按等待规则核算，因此越早确认集合时间和行李情况越好。",
-  pickupQuoteTitle: "接机需求整理",
+  pickupQuoteTitle: "接送机需求整理",
   pickupQuoteIntro: "这版不做自动价格计算器。你可以先把需求填完整，页面会生成一份简要信息，方便你直接发给客服，或继续填写正式拼车表单。",
   pickupFieldName: "姓名/称呼",
   pickupFieldContact: "联系方式",
   pickupFieldDate: "航班日期",
-  pickupFieldTime: "接机时间",
+  pickupFieldTime: "用车时间",
   pickupFieldAirport: "机场",
   pickupFieldPeople: "人数",
   pickupFieldLuggage: "行李数量",
@@ -875,13 +1038,13 @@ Object.assign(translations["zh-CN"], {
   pickupSummaryNoteLabel: "价格提醒",
   pickupSummaryDefault: "最终价格以人工核算为准，我们会结合人数、航站楼、等待时间和行李数量做最终确认。",
   pickupSummaryRemarkDefault: "如果你还有其他细节需求，可以在备注中继续补充后再发给客服。",
-  pickupBrandTitle: "接机是本地支持的一部分，不是全部",
-  pickupBrandText: "左邻右里是立足诺丁汉的本地华人正规注册服务公司。接机、拼车、寄存、订房以及其他本地支持，都是围绕留学生真实生活节奏逐步搭建起来的服务内容。我们希望把这些安排讲清楚、做扎实，让同学在真正需要的时候，能更快找到靠谱、稳定且值得信任的安排。",
+  pickupBrandTitle: "接送机是本地支持的一部分，不是全部",
+  pickupBrandText: "左邻右里是立足诺丁汉的本地华人正规注册服务公司。接送机、拼车、寄存、订房以及其他本地支持，都是围绕留学生真实生活节奏逐步搭建起来的服务内容。我们希望把这些安排讲清楚、做扎实，让同学在真正需要的时候，能更快找到靠谱、稳定且值得信任的安排。",
   pickupBoardTitle: "最新拼车信息",
-  pickupBoardIntro: "这里会展示最近人工发布的接机 / 拼车安排，方便同学先看有没有可以一起拼的时间段。",
+  pickupBoardIntro: "这里会展示最近人工发布的接送机 / 拼车安排，方便同学先看有没有可以一起拼的时间段。",
   pickupBoardHint: "当前版本支持人工后台录入，例如 2027-04-21 / 希思罗机场 / 4 人车已报 2 人。",
   pickupBoardAdminBtn: "后台录入",
-  pickupBoardEmpty: "暂时还没有已发布的拼车信息，想发起接机可以先联系工作人员。",
+  pickupBoardEmpty: "暂时还没有已发布的拼车信息，想发起接送机可以先联系工作人员。",
   pickupBoardStatusOpen: "可继续拼车",
   pickupBoardStatusFull: "已满员",
   pickupBoardStatusClosed: "已关闭",
@@ -930,11 +1093,11 @@ Object.assign(translations["zh-CN"], {
 });
 
 Object.assign(translations.en, {
-  pickupTitle: "NGN | Airport Pickup & Carpool",
-  pickupDescription: "NGN airport pickup and carpool page with standard-hour pricing, September peak pricing, rules and a request summary form.",
-  pickupHeroEyebrow: "Airport Pickup & Carpool",
-  pickupHeroTitle: "Nottingham NGN Airport Pickup & Carpool Service",
-  pickupHeroText: "We work with licensed local UK rental and driver teams to support airport pickup, shared rides and drop-offs for students. Our partner drivers are experienced Chinese drivers based in the UK with more than five years of driving experience, using safe and comfortable vehicles such as Mercedes, Audi, Volkswagen and Ford. Whether it is a first arrival at the start of term or a regular intercity transfer, we aim to make the arrangement clearer and more dependable.",
+  pickupTitle: "NGN | Airport Transfers & Carpool",
+  pickupDescription: "NGN airport transfer and carpool page with standard-hour pricing, September peak pricing, rules and a request summary form.",
+  pickupHeroEyebrow: "Airport Transfers & Carpool",
+  pickupHeroTitle: "Nottingham NGN Airport Transfer & Carpool Service",
+  pickupHeroText: "We work with licensed local UK rental and driver teams to support airport transfers and shared rides for students. Our partner drivers are experienced Chinese drivers based in the UK with more than five years of driving experience, using safe and comfortable vehicles such as Mercedes, Audi, Volkswagen and Ford. Whether it is a first arrival at the start of term or a regular intercity transfer, we aim to make the arrangement clearer and more dependable.",
   pickupMeta1: "Phone: 07941 008555",
   pickupMeta2: "Carpool form: WJX link",
   pickupMeta3: "WeChat: Nottsngn",
@@ -957,7 +1120,7 @@ Object.assign(translations.en, {
   pickupStep3Text: "Our team shares the request internally and tries to match students arriving at the same airport, around the same time and with compatible routes.",
   pickupStep4Title: "Wait for confirmation",
   pickupStep4Text: "Once rider count, terminal details and timing are clearer, we confirm the final arrangement and charging basis.",
-  pickupStep5Title: "Pay and finalise the pickup",
+  pickupStep5Title: "Pay and finalise the transfer",
   pickupStep5Text: "After confirmation, payment is arranged and the driver is scheduled based on the final headcount, terminal layout and timing.",
   pickupFormBtn: "Open the carpool form",
   pickupServiceTitle: "Service notes",
@@ -970,7 +1133,7 @@ Object.assign(translations.en, {
   pickupServiceBlock3Text: "Pickup times between 06:00 and 22:00 count as standard hours. Earlier or later pickups count as overtime and add £20 per car. For carpools, this is split equally between riders.",
   pickupServiceBlock4Title: "September adjustment",
   pickupServiceBlock4Text: "September is a peak-season month. The standard pricing table does not apply then. September pickup and drop-off prices are quoted separately in mid-August and may fluctuate based on driver availability.",
-  pickupPricingTitle: "Airport pickup pricing",
+  pickupPricingTitle: "Airport transfer pricing",
   pickupPricingIntro: "The tables below have been converted into readable HTML from your source screenshots so students can review prices more easily. Final balances are still checked manually against actual rider count, terminals and waiting time.",
   pickupTableNormalTitle: "Standard-hour pricing",
   pickupTableSeptemberTitle: "September peak pricing",
@@ -988,7 +1151,7 @@ Object.assign(translations.en, {
   pickupRow4: "4 people / each",
   pickupRow5: "5 people / each",
   pickupRulesTitle: "Rules and reminders",
-  pickupRulesIntro: "Final airport pickup pricing is not decided only by the base table. Waiting time, terminal layout, luggage quantity and the actual arrangement all matter, so please read these notes carefully.",
+  pickupRulesIntro: "Final airport transfer pricing is not decided only by the base table. Waiting time, terminal layout, luggage quantity and the actual arrangement all matter, so please read these notes carefully.",
   pickupRule1Title: "How the final balance is checked",
   pickupRule1Text: "Final charges are checked against the actual number of riders and whether terminals are split. If riders are spread across different terminals, each extra terminal adds £15 to be re-shared across the group, so the final per-person cost may be slightly higher than the base table.",
   pickupRule2Title: "Waiting and overtime",
@@ -1005,12 +1168,12 @@ Object.assign(translations.en, {
   pickupExampleTitle: "Examples",
   pickupExampleText1: "For example, if 4 students share a ride and the base fare is £65 each, but they land at 4 different terminals, 3 extra terminal runs add £45 in total. Shared equally, that adds £11.25 per student, making the final amount about £76.25 each.",
   pickupExampleText2: "If your flight lands at 13:00 and the agreed pickup time is 14:00, free waiting can continue until 15:00. After that, waiting rules start to apply, so clearer coordination on meeting time and luggage usually helps reduce cost.",
-  pickupQuoteTitle: "Pickup request summary",
+  pickupQuoteTitle: "Transfer request summary",
   pickupQuoteIntro: "This version does not calculate prices automatically. Instead, you can organise your request details and generate a short summary to send to customer service or copy into the official carpool form.",
   pickupFieldName: "Name",
   pickupFieldContact: "Contact",
   pickupFieldDate: "Flight date",
-  pickupFieldTime: "Pickup time",
+  pickupFieldTime: "Transfer time",
   pickupFieldAirport: "Airport",
   pickupFieldPeople: "Passengers",
   pickupFieldLuggage: "Luggage",
@@ -1031,13 +1194,13 @@ Object.assign(translations.en, {
   pickupSummaryNoteLabel: "Pricing reminder",
   pickupSummaryDefault: "Final pricing is confirmed manually based on rider count, terminals, waiting time and luggage.",
   pickupSummaryRemarkDefault: "Add any other details in the notes field before sending the request to customer service.",
-  pickupBrandTitle: "Pickup is part of local support, not the whole story",
-  pickupBrandText: "NGN is a locally registered Chinese service company based in Nottingham. Pickup, carpools, storage, accommodation booking and other local support all grew from real student needs. We want these arrangements to stay clear, steady and practical, so students can find a reliable and trustworthy solution quickly when it matters.",
+  pickupBrandTitle: "Transfers are part of local support, not the whole story",
+  pickupBrandText: "NGN is a locally registered Chinese service company based in Nottingham. Transfers, carpools, storage, accommodation booking and other local support all grew from real student needs. We want these arrangements to stay clear, steady and practical, so students can find a reliable and trustworthy solution quickly when it matters.",
   pickupBoardTitle: "Latest Carpool Posts",
-  pickupBoardIntro: "Recently published pickup and carpool arrangements appear here so students can quickly see whether a matching trip already exists.",
+  pickupBoardIntro: "Recently published transfer and carpool arrangements appear here so students can quickly see whether a matching trip already exists.",
   pickupBoardHint: "This version supports manual admin entry, for example: 2027-04-21 / Heathrow Airport / 4 seats with 2 already booked.",
   pickupBoardAdminBtn: "Admin",
-  pickupBoardEmpty: "No published carpool information yet. Please contact the team if you want to arrange pickup.",
+  pickupBoardEmpty: "No published carpool information yet. Please contact the team if you want to arrange a transfer.",
   pickupBoardStatusOpen: "Open",
   pickupBoardStatusFull: "Full",
   pickupBoardStatusClosed: "Closed",
@@ -2512,6 +2675,70 @@ function initHomeMenu() {
   document.body.dataset.homeMenuBound = "true";
 }
 
+function initStorageMobileMenu() {
+  const menuPanel = document.querySelector("#storage-mobile-menu");
+  const toggleButton = document.querySelector("[data-storage-menu-toggle]");
+  const menuLinks = Array.from(document.querySelectorAll("[data-storage-menu-link]"));
+
+  if (!menuPanel || !toggleButton) {
+    return;
+  }
+
+  if (document.body.dataset.storageMobileMenuBound === "true") {
+    return;
+  }
+
+  const closeMenu = () => {
+    menuPanel.hidden = true;
+    toggleButton.setAttribute("aria-expanded", "false");
+  };
+
+  const openMenu = () => {
+    menuPanel.hidden = false;
+    toggleButton.setAttribute("aria-expanded", "true");
+  };
+
+  toggleButton.setAttribute("aria-controls", "storage-mobile-menu");
+  toggleButton.setAttribute("aria-expanded", "false");
+
+  toggleButton.addEventListener("click", event => {
+    event.preventDefault();
+    if (menuPanel.hidden) {
+      openMenu();
+    } else {
+      closeMenu();
+    }
+  });
+
+  menuLinks.forEach(link => {
+    link.addEventListener("click", () => {
+      closeMenu();
+    });
+  });
+
+  document.addEventListener("click", event => {
+    const target = event.target;
+    if (!(target instanceof Element)) {
+      return;
+    }
+
+    const clickedToggle = target.closest("[data-storage-menu-toggle]");
+    const clickedInsidePanel = target.closest("#storage-mobile-menu");
+
+    if (!clickedToggle && !clickedInsidePanel && !menuPanel.hidden) {
+      closeMenu();
+    }
+  });
+
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape" && !menuPanel.hidden) {
+      closeMenu();
+    }
+  });
+
+  document.body.dataset.storageMobileMenuBound = "true";
+}
+
 function getTeamSummaryShortText(text, lang) {
   if (!text) {
     return "";
@@ -2532,6 +2759,115 @@ function getTeamSummaryShortText(text, lang) {
   return text.length > 88 ? `${text.slice(0, 88).trim()}...` : text;
 }
 
+function getTeamMembers(activeLang) {
+  const dict = translations[activeLang] || translations["zh-CN"];
+
+  return [
+    {
+      id: "vivian",
+      name: "Vivian",
+      role: dict.teamVivianRole,
+      shortText: dict.teamVivianShort || getTeamSummaryShortText(dict.teamVivianText, activeLang),
+      fullText: dict.teamVivianText,
+      focus: dict.teamVivianFocus,
+      bestFor: dict.teamVivianBestFor,
+      serviceStage: dict.teamVivianStage,
+      tags: dict.teamVivianTags || [],
+      image: "./img/vivian.jpg",
+      avatarClass: "avatar-vivian"
+    },
+    {
+      id: "kevin",
+      name: dict.team2Name || "Kevin",
+      role: dict.teamKevinRole || dict.team2Role,
+      shortText: dict.teamKevinShort || dict.team2Short || getTeamSummaryShortText(dict.team2Text, activeLang),
+      fullText: dict.team2Text,
+      focus: dict.team2Focus,
+      bestFor: dict.team2BestFor,
+      serviceStage: dict.team2Stage,
+      tags: dict.team2Tags || [],
+      image: "./img/Kevin.jpg",
+      avatarClass: "avatar-kevin"
+    },
+    {
+      id: "firo",
+      name: dict.team3Name || "Firo",
+      role: dict.team3Role,
+      shortText: dict.team3Short || getTeamSummaryShortText(dict.team3Text, activeLang),
+      fullText: dict.team3Text,
+      focus: dict.team3Focus,
+      bestFor: dict.team3BestFor,
+      serviceStage: dict.team3Stage,
+      tags: dict.team3Tags || [],
+      image: "./img/Firo.jpg",
+      avatarClass: "avatar-firo"
+    },
+    {
+      id: "xiaoni",
+      name: dict.team4Name || "Xiaoni",
+      role: dict.team4Role,
+      shortText: dict.team4Short || getTeamSummaryShortText(dict.team4Text, activeLang),
+      fullText: dict.team4Text,
+      focus: dict.team4Focus,
+      bestFor: dict.team4BestFor,
+      serviceStage: dict.team4Stage,
+      tags: dict.team4Tags || [],
+      image: "./img/小妮.jpg",
+      avatarClass: "avatar-xiaoni"
+    },
+    {
+      id: "kim",
+      name: dict.team5Name || "Kim",
+      role: dict.team5Role,
+      shortText: dict.team5Short || getTeamSummaryShortText(dict.team5Text, activeLang),
+      fullText: dict.team5Text,
+      focus: dict.team5Focus,
+      bestFor: dict.team5BestFor,
+      serviceStage: dict.team5Stage,
+      tags: dict.team5Tags || [],
+      image: "./img/kim.jpg",
+      avatarClass: "avatar-kim"
+    },
+    {
+      id: "jitui",
+      name: dict.team6Name || "Jitui",
+      role: dict.team6Role,
+      shortText: dict.team6Short || getTeamSummaryShortText(dict.team6Text, activeLang),
+      fullText: dict.team6Text,
+      focus: dict.team6Focus,
+      bestFor: dict.team6BestFor,
+      serviceStage: dict.team6Stage,
+      tags: dict.team6Tags || [],
+      image: "./img/鸡腿老师.jpg",
+      avatarClass: "avatar-jitui"
+    }
+  ];
+}
+
+function getTeamExplorerFilters(activeLang) {
+  const dict = translations[activeLang] || translations["zh-CN"];
+
+  return [
+    { id: "all", label: dict.teamExplorerFilterAll, matches: [] },
+    { id: "choice", label: dict.teamExplorerFilterChoice, matches: ["vivian", "kevin", "kim"] },
+    { id: "contract", label: dict.teamExplorerFilterContract, matches: ["vivian", "kevin", "firo"] },
+    { id: "movein", label: dict.teamExplorerFilterMoveIn, matches: ["firo", "xiaoni", "vivian"] },
+    { id: "settling", label: dict.teamExplorerFilterSettling, matches: ["xiaoni", "kim", "jitui"] },
+    { id: "local", label: dict.teamExplorerFilterLocal, matches: ["jitui", "kim", "firo"] }
+  ];
+}
+
+function getShuffledTeamOrder(memberIds) {
+  const order = [...memberIds];
+
+  for (let index = order.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [order[index], order[swapIndex]] = [order[swapIndex], order[index]];
+  }
+
+  return order;
+}
+
 function initTeamSummaryCarousel(activeLang) {
   const grid = document.querySelector("#teamSummaryGrid") || document.querySelector(".team-summary-grid");
   const dots = document.querySelector("#teamSummaryDots");
@@ -2544,44 +2880,13 @@ function initTeamSummaryCarousel(activeLang) {
     dots.remove();
   }
 
-  const dict = translations[activeLang] || translations["zh-CN"];
-  const members = [
-    {
-      name: "Vivian",
-      role: dict.teamVivianRole,
-      text: dict.teamVivianShort || getTeamSummaryShortText(dict.teamVivianText, activeLang),
-      image: "./img/vivian.jpg",
-      avatarClass: "avatar-vivian"
-    },
-    {
-      name: dict.team2Name || "Kevin",
-      role: dict.teamKevinRole || dict.team2Role,
-      text: dict.teamKevinShort || getTeamSummaryShortText(dict.team2Text, activeLang),
-      image: "./img/Kevin.jpg",
-      avatarClass: "avatar-kevin"
-    },
-    {
-      name: dict.team3Name || "Firo",
-      role: dict.team3Role,
-      text: getTeamSummaryShortText(dict.team3Text, activeLang),
-      image: "./img/Firo.jpg",
-      avatarClass: "avatar-firo"
-    },
-    {
-      name: dict.team4Name || "Xiaoni",
-      role: dict.team4Role,
-      text: getTeamSummaryShortText(dict.team4Text, activeLang),
-      image: "./img/小妮.jpg",
-      avatarClass: "avatar-xiaoni"
-    },
-    {
-      name: dict.team5Name || "Kim",
-      role: dict.team5Role,
-      text: getTeamSummaryShortText(dict.team5Text, activeLang),
-      image: "./img/kim.jpg",
-      avatarClass: "avatar-kim"
-    }
-  ];
+  const members = getTeamMembers(activeLang).map(member => ({
+    name: member.name,
+    role: member.role,
+    text: member.shortText,
+    image: member.image,
+    avatarClass: member.avatarClass
+  }));
 
   const clonedMembers = [...members, ...members, ...members];
 
@@ -2694,6 +2999,628 @@ function initTeamSummaryCarousel(activeLang) {
 
   measure();
   grid.__teamSummaryRaf = window.requestAnimationFrame(tick);
+}
+
+function initTeamDetailCarousel(activeLang) {
+  const carousel = document.querySelector("#teamDetailCarousel");
+  const modal = document.querySelector("#teamDetailModal");
+
+  if (!carousel || !modal) {
+    return;
+  }
+
+  if (carousel.__teamDetailCleanup) {
+    carousel.__teamDetailCleanup();
+  }
+
+  modal.hidden = true;
+  document.body.classList.remove("team-modal-open");
+
+  const dict = translations[activeLang] || translations["zh-CN"];
+  const members = getTeamMembers(activeLang);
+  const modalAvatar = modal.querySelector("#teamDetailModalAvatar");
+  const modalBadge = modal.querySelector("#teamDetailModalBadge");
+  const modalTitle = modal.querySelector("#teamDetailModalTitle");
+  const modalRole = modal.querySelector("#teamDetailModalRole");
+  const modalText = modal.querySelector("#teamDetailModalText");
+  const modalCloseButtons = Array.from(modal.querySelectorAll("[data-team-modal-close]"));
+  let activeIndex = Math.min(1, members.length - 1);
+  let isTransitioning = false;
+  let lastFocused = null;
+  let touchStartX = 0;
+  let touchDeltaX = 0;
+  let teardownFloating = null;
+
+  const getWrapIndex = index => {
+    const total = members.length;
+    return ((index % total) + total) % total;
+  };
+
+  const buildStandbyMarkup = (member, index, position) => `
+    <button
+      class="team-standby-card ${position}"
+      type="button"
+      data-team-standby
+      data-index="${index}"
+      aria-label="${member.name}"
+    >
+      <div class="team-standby-card__avatar team-avatar ${member.avatarClass}">
+        <img src="${member.image}" alt="${member.name}">
+      </div>
+      <div class="team-standby-card__meta">
+        <strong>${member.name}</strong>
+        <span>${member.role || ""}</span>
+      </div>
+    </button>
+  `;
+
+  const renderLayout = animationPhase => {
+    const activeMember = members[activeIndex];
+    const leftMembers = [getWrapIndex(activeIndex - 2), getWrapIndex(activeIndex - 1)].map(index => ({
+      member: members[index],
+      index
+    }));
+    const rightMembers = [getWrapIndex(activeIndex + 1), getWrapIndex(activeIndex + 2)].map(index => ({
+      member: members[index],
+      index
+    }));
+
+    carousel.innerHTML = `
+      <div class="team-stage-shell ${animationPhase ? `is-${animationPhase}` : ""}" data-team-stage-shell>
+        <div class="team-stage-spotlight"></div>
+        <div class="team-stage-backdrop"></div>
+        <div class="team-stage-wing team-stage-wing--left">
+          ${leftMembers.map(({ member, index }, offset) => buildStandbyMarkup(member, index, offset === 0 ? "is-front" : "is-back")).join("")}
+        </div>
+        <div class="team-stage-main">
+          <div class="team-stage-shadow"></div>
+          <article class="team-stage-card" data-team-main-card>
+            <div class="team-stage-card__badge">${dict.teamDetailProfileBadge || "Local Team"}</div>
+            <div class="team-stage-card__avatar-wrap">
+              <div class="team-stage-card__avatar team-avatar ${activeMember.avatarClass}" data-team-main-avatar>
+                <img src="${activeMember.image}" alt="${activeMember.name}">
+              </div>
+            </div>
+            <div class="team-stage-card__copy">
+              <h3>${activeMember.name}</h3>
+              <p class="team-role">${activeMember.role || ""}</p>
+              <p class="team-stage-card__summary">${activeMember.shortText || ""}</p>
+              <button class="team-stage-card__cta" type="button" data-team-open-profile>${dict.teamDetailViewMore || "View More"}</button>
+            </div>
+          </article>
+        </div>
+        <div class="team-stage-wing team-stage-wing--right">
+          ${rightMembers.map(({ member, index }, offset) => buildStandbyMarkup(member, index, offset === 0 ? "is-front" : "is-back")).join("")}
+        </div>
+        <div class="team-stage-mobile-list" data-team-mobile-list>
+          ${members.map((member, index) => `
+            <button
+              class="team-mobile-pill ${index === activeIndex ? "is-active" : ""}"
+              type="button"
+              data-team-standby
+              data-index="${index}"
+              aria-label="${member.name}"
+            >
+              <span class="team-mobile-pill__avatar team-avatar ${member.avatarClass}">
+                <img src="${member.image}" alt="${member.name}">
+              </span>
+              <span class="team-mobile-pill__text">
+                <strong>${member.name}</strong>
+                <span>${member.role || ""}</span>
+              </span>
+            </button>
+          `).join("")}
+        </div>
+      </div>
+    `;
+  };
+
+  const openModal = index => {
+    const member = members[index];
+    if (!member || !modalAvatar || !modalBadge || !modalTitle || !modalRole || !modalText) {
+      return;
+    }
+
+    lastFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    modalAvatar.className = `team-detail-modal__avatar team-avatar ${member.avatarClass}`;
+    modalAvatar.innerHTML = `<img src="${member.image}" alt="${member.name}">`;
+    modalBadge.textContent = dict.teamDetailProfileBadge || (dict.teamDetailEyebrow || "Team");
+    modalBadge.className = "team-detail-modal__badge";
+    modalTitle.textContent = member.name;
+    modalRole.textContent = member.role || "";
+    modalText.textContent = member.fullText || "";
+    modal.hidden = false;
+    document.body.classList.add("team-modal-open");
+    const closeButton = modal.querySelector(".team-detail-modal__close");
+    if (closeButton instanceof HTMLElement) {
+      closeButton.focus();
+    }
+  };
+
+  const closeModal = () => {
+    if (modal.hidden) {
+      return;
+    }
+
+    modal.hidden = true;
+    document.body.classList.remove("team-modal-open");
+    if (lastFocused instanceof HTMLElement) {
+      lastFocused.focus();
+    }
+  };
+
+  const animateStandbyToStage = sourceRect => {
+    if (!sourceRect) {
+      return null;
+    }
+    const destinationAvatar = carousel.querySelector("[data-team-main-avatar]");
+
+    if (!(destinationAvatar instanceof HTMLElement)) {
+      return null;
+    }
+
+    const destinationRect = destinationAvatar.getBoundingClientRect();
+    const floating = document.createElement("div");
+    floating.className = "team-stage-floating";
+    floating.innerHTML = `<img src="${members[activeIndex].image}" alt="${members[activeIndex].name}">`;
+    floating.style.left = `${sourceRect.left}px`;
+    floating.style.top = `${sourceRect.top}px`;
+    floating.style.width = `${sourceRect.width}px`;
+    floating.style.height = `${sourceRect.height}px`;
+    document.body.appendChild(floating);
+
+    const deltaX = destinationRect.left - sourceRect.left;
+    const deltaY = destinationRect.top - sourceRect.top;
+    const scale = destinationRect.width / Math.max(sourceRect.width, 1);
+
+    window.requestAnimationFrame(() => {
+      floating.classList.add("is-moving");
+      floating.style.transform = `translate(${deltaX}px, ${deltaY}px) scale(${scale})`;
+      floating.style.opacity = "0.9";
+    });
+
+    const cleanup = () => {
+      floating.remove();
+    };
+
+    window.setTimeout(cleanup, 640);
+    return cleanup;
+  };
+
+  const switchToMember = (index, trigger) => {
+    if (isTransitioning || index === activeIndex || !members[index]) {
+      return;
+    }
+
+    const triggerAvatar = trigger instanceof HTMLElement ? trigger.querySelector(".team-avatar") : null;
+    const sourceRect = triggerAvatar instanceof HTMLElement ? triggerAvatar.getBoundingClientRect() : null;
+    activeIndex = index;
+    isTransitioning = true;
+
+    if (typeof teardownFloating === "function") {
+      teardownFloating();
+      teardownFloating = null;
+    }
+
+    renderLayout("transitioning");
+    teardownFloating = animateStandbyToStage(sourceRect);
+
+    window.setTimeout(() => {
+      renderLayout("arriving");
+    }, 140);
+
+    window.setTimeout(() => {
+      renderLayout("");
+      isTransitioning = false;
+      teardownFloating = null;
+    }, 620);
+  };
+
+  renderLayout("");
+
+  const handleClick = event => {
+    const target = event.target;
+    if (!(target instanceof Element)) {
+      return;
+    }
+
+    const openProfile = target.closest("[data-team-open-profile]");
+    if (openProfile) {
+      openModal(activeIndex);
+      return;
+    }
+
+    const standby = target.closest("[data-team-standby]");
+    if (!standby) {
+      return;
+    }
+
+    const index = Number(standby.getAttribute("data-index"));
+    if (!Number.isNaN(index)) {
+      switchToMember(index, standby);
+    }
+  };
+
+  const handleKeydown = event => {
+    if (event.key === "Escape") {
+      closeModal();
+      return;
+    }
+
+    if (event.key === "ArrowLeft") {
+      switchToMember(getWrapIndex(activeIndex - 1), null);
+    }
+
+    if (event.key === "ArrowRight") {
+      switchToMember(getWrapIndex(activeIndex + 1), null);
+    }
+  };
+
+  const handleTouchStart = event => {
+    touchStartX = event.changedTouches[0]?.clientX || 0;
+    touchDeltaX = 0;
+    paused = true;
+  };
+
+  const handleTouchMove = event => {
+    touchDeltaX = (event.changedTouches[0]?.clientX || 0) - touchStartX;
+  };
+
+  const handleTouchEnd = () => {
+    if (Math.abs(touchDeltaX) > 42) {
+      switchToMember(getWrapIndex(activeIndex + (touchDeltaX > 0 ? -1 : 1)), null);
+    }
+
+    touchStartX = 0;
+    touchDeltaX = 0;
+  };
+
+  carousel.addEventListener("click", handleClick);
+  carousel.addEventListener("keydown", handleKeydown);
+  carousel.addEventListener("touchstart", handleTouchStart, { passive: true });
+  carousel.addEventListener("touchmove", handleTouchMove, { passive: true });
+  carousel.addEventListener("touchend", handleTouchEnd, { passive: true });
+  modalCloseButtons.forEach(button => button.addEventListener("click", closeModal));
+  document.addEventListener("keydown", handleKeydown);
+
+  carousel.__teamDetailCleanup = () => {
+    if (typeof teardownFloating === "function") {
+      teardownFloating();
+    }
+    carousel.removeEventListener("click", handleClick);
+    carousel.removeEventListener("keydown", handleKeydown);
+    carousel.removeEventListener("touchstart", handleTouchStart);
+    carousel.removeEventListener("touchmove", handleTouchMove);
+    carousel.removeEventListener("touchend", handleTouchEnd);
+    modalCloseButtons.forEach(button => button.removeEventListener("click", closeModal));
+    document.removeEventListener("keydown", handleKeydown);
+  };
+}
+
+function initTeamArchivePage(activeLang) {
+  const list = document.querySelector("#teamArchiveList");
+  const signals = document.querySelector("#teamArchiveSignals");
+
+  if (!list || !signals) {
+    return;
+  }
+
+  const dict = translations[activeLang] || translations["zh-CN"];
+  const members = getTeamMembers(activeLang);
+  const signalKeys = [
+    dict.teamArchiveSignal1,
+    dict.teamArchiveSignal2,
+    dict.teamArchiveSignal3,
+    dict.teamArchiveSignal4
+  ].filter(Boolean);
+
+  signals.innerHTML = signalKeys.map(label => `
+    <span class="team-archive-signal">${label}</span>
+  `).join("");
+
+  list.innerHTML = members.map((member, index) => `
+    <article class="team-archive-card reveal-on-scroll ${index % 2 === 1 ? "is-reversed" : ""}">
+      <div class="team-archive-card__visual">
+        <div class="team-archive-card__portrait team-avatar ${member.avatarClass}">
+          <img src="${member.image}" alt="${member.name}">
+        </div>
+        <div class="team-archive-card__headline">
+          <span class="team-archive-card__label">${dict.teamArchiveIntroLabel || "Profile"}</span>
+          <h2>${member.name}</h2>
+          <p class="team-role">${member.role || ""}</p>
+          <p class="team-archive-card__short">${member.shortText || ""}</p>
+        </div>
+      </div>
+      <div class="team-archive-card__content">
+        <div class="team-archive-card__body">
+          <p>${member.fullText || ""}</p>
+        </div>
+        <div class="team-archive-card__meta">
+          <div class="team-archive-meta-card">
+            <span>${dict.teamArchiveFocusLabel || "Best At"}</span>
+            <p>${member.focus || ""}</p>
+          </div>
+          <div class="team-archive-meta-card">
+            <span>${dict.teamArchiveBestForLabel || "Best For"}</span>
+            <p>${member.bestFor || ""}</p>
+          </div>
+          <div class="team-archive-meta-card">
+            <span>${dict.teamArchiveStageLabel || "Service Stage"}</span>
+            <p>${member.serviceStage || ""}</p>
+          </div>
+          <div class="team-archive-meta-card">
+            <span>${dict.teamArchiveTagsLabel || "Keywords"}</span>
+            <div class="team-archive-tags">
+              ${(member.tags || []).map(tag => `<em>${tag}</em>`).join("")}
+            </div>
+          </div>
+        </div>
+      </div>
+    </article>
+  `).join("");
+
+  const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const items = Array.from(list.querySelectorAll(".reveal-on-scroll"));
+
+  if (list.__teamArchiveObserver) {
+    list.__teamArchiveObserver.disconnect();
+    list.__teamArchiveObserver = null;
+  }
+
+  items.forEach(item => item.classList.remove("is-visible"));
+
+  if (prefersReducedMotion || !("IntersectionObserver" in window)) {
+    items.forEach(item => item.classList.add("is-visible"));
+    return;
+  }
+
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add("is-visible");
+        observer.unobserve(entry.target);
+      }
+    });
+  }, {
+    rootMargin: "0px 0px -8% 0px",
+    threshold: 0.18
+  });
+
+  items.forEach(item => observer.observe(item));
+  list.__teamArchiveObserver = observer;
+}
+
+function initTeamExplorerPage(activeLang) {
+  const wall = document.querySelector("#teamExplorerWall");
+  const detail = document.querySelector("#teamExplorerDetail");
+  const filters = document.querySelector("#teamExplorerFilters");
+  const signals = document.querySelector("#teamExplorerSignals");
+
+  if (!wall || !detail || !filters || !signals) {
+    return;
+  }
+
+  const dict = translations[activeLang] || translations["zh-CN"];
+  const members = getTeamMembers(activeLang);
+  const memberMap = new Map(members.map(member => [member.id, member]));
+  const filterList = getTeamExplorerFilters(activeLang);
+  const filterMap = new Map(filterList.map(filter => [filter.id, filter]));
+  const signalKeys = [
+    dict.teamExplorerSignal1,
+    dict.teamExplorerSignal2,
+    dict.teamExplorerSignal3,
+    dict.teamExplorerSignal4,
+    dict.teamExplorerSignal5
+  ].filter(Boolean);
+
+  let order = (wall.dataset.order || "")
+    .split(",")
+    .map(item => item.trim())
+    .filter(item => memberMap.has(item));
+
+  if (order.length !== members.length) {
+    order = getShuffledTeamOrder(members.map(member => member.id));
+    wall.dataset.order = order.join(",");
+  }
+
+  let activeId = detail.dataset.activeId && memberMap.has(detail.dataset.activeId)
+    ? detail.dataset.activeId
+    : order[Math.floor(Math.random() * order.length)];
+  let activeFilterId = filterMap.has(wall.dataset.filterId) ? wall.dataset.filterId : "all";
+  const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const cardVariants = ["is-wide", "is-compact", "is-tall", "is-wide", "is-standard", "is-compact"];
+
+  const renderSignals = () => {
+    signals.innerHTML = signalKeys.map(label => `
+      <span class="team-explorer-signal">${label}</span>
+    `).join("");
+  };
+
+  const memberMatchesFilter = (member, filterId) => {
+    if (filterId === "all") {
+      return true;
+    }
+
+    const filter = filterMap.get(filterId);
+    return Boolean(filter && filter.matches.includes(member.id));
+  };
+
+  const ensureActiveMember = () => {
+    if (memberMatchesFilter(memberMap.get(activeId), activeFilterId)) {
+      return;
+    }
+
+    const fallback = order.find(memberId => memberMatchesFilter(memberMap.get(memberId), activeFilterId));
+    activeId = fallback || order[0];
+  };
+
+  const renderFilters = () => {
+    filters.innerHTML = filterList.map(filter => `
+      <button
+        class="team-explorer-filter${filter.id === activeFilterId ? " is-active" : ""}"
+        type="button"
+        data-team-filter="${filter.id}"
+      >
+        ${filter.label}
+      </button>
+    `).join("");
+
+    filters.querySelectorAll("[data-team-filter]").forEach(button => {
+      button.addEventListener("click", () => {
+        const nextFilterId = button.dataset.teamFilter;
+        if (!filterMap.has(nextFilterId)) {
+          return;
+        }
+
+        activeFilterId = nextFilterId;
+        wall.dataset.filterId = activeFilterId;
+        ensureActiveMember();
+        renderFilters();
+        renderWall();
+        renderDetail();
+      });
+    });
+  };
+
+  const renderWall = () => {
+    wall.innerHTML = order.map((memberId, index) => {
+      const member = memberMap.get(memberId);
+      const isActive = member.id === activeId;
+      const isMatch = memberMatchesFilter(member, activeFilterId);
+      const classes = [
+        "team-explorer-card",
+        "is-visible",
+        cardVariants[index % cardVariants.length],
+        isActive ? "is-active" : "",
+        !isMatch ? "is-muted" : "",
+        activeFilterId !== "all" && isMatch ? "is-highlighted" : ""
+      ].filter(Boolean).join(" ");
+
+      return `
+        <button
+          class="${classes}"
+          type="button"
+          data-team-member="${member.id}"
+          aria-pressed="${isActive ? "true" : "false"}"
+        >
+          <span class="team-explorer-card__glow"></span>
+          <span class="team-explorer-card__topline">${dict.teamExplorerCardLabel || "Local Member"}</span>
+          <span class="team-explorer-card__avatar team-avatar ${member.avatarClass}">
+            <img src="${member.image}" alt="${member.name}">
+          </span>
+          <span class="team-explorer-card__body">
+            <strong>${member.name}</strong>
+            <em>${member.role || ""}</em>
+            <span>${member.shortText || ""}</span>
+          </span>
+        </button>
+      `;
+    }).join("");
+
+    wall.querySelectorAll("[data-team-member]").forEach(button => {
+      button.addEventListener("click", () => {
+        const nextId = button.dataset.teamMember;
+        if (!memberMap.has(nextId) || nextId === activeId) {
+          return;
+        }
+
+        activeId = nextId;
+        detail.dataset.activeId = activeId;
+        renderWall();
+        renderDetail();
+      });
+    });
+  };
+
+  const renderDetail = () => {
+    const member = memberMap.get(activeId) || memberMap.get(order[0]);
+    if (!member) {
+      return;
+    }
+
+    detail.dataset.activeId = member.id;
+    detail.innerHTML = `
+      <div class="team-explorer-detail__spotlight"></div>
+      <div class="team-explorer-detail__inner">
+        <div class="team-explorer-detail__hero">
+          <div class="team-explorer-detail__avatar team-avatar ${member.avatarClass}">
+            <img src="${member.image}" alt="${member.name}">
+          </div>
+          <div class="team-explorer-detail__headline">
+            <span class="team-explorer-detail__label">${dict.teamExplorerDetailLabel || "Current Focus"}</span>
+            <h3>${member.name}</h3>
+            <p class="team-role">${member.role || ""}</p>
+            <p class="team-explorer-detail__short">${member.shortText || ""}</p>
+          </div>
+        </div>
+        <div class="team-explorer-detail__body">
+          <p>${member.fullText || ""}</p>
+        </div>
+        <div class="team-explorer-detail__meta">
+          <section class="team-explorer-detail__meta-card">
+            <span>${dict.teamExplorerFocusLabel || "Best At"}</span>
+            <p>${member.focus || ""}</p>
+          </section>
+          <section class="team-explorer-detail__meta-card">
+            <span>${dict.teamExplorerBestForLabel || "Best For"}</span>
+            <p>${member.bestFor || ""}</p>
+          </section>
+          <section class="team-explorer-detail__meta-card">
+            <span>${dict.teamExplorerStageLabel || "Service Stage"}</span>
+            <p>${member.serviceStage || ""}</p>
+          </section>
+          <section class="team-explorer-detail__meta-card">
+            <span>${dict.teamExplorerTagsLabel || "Keywords"}</span>
+            <div class="team-explorer-tags">
+              ${(member.tags || []).map(tag => `<em>${tag}</em>`).join("")}
+            </div>
+          </section>
+        </div>
+        <p class="team-explorer-detail__hint">${dict.teamExplorerHint || ""}</p>
+      </div>
+    `;
+  };
+
+  const initReveals = () => {
+    const revealItems = Array.from(document.querySelectorAll(".team-explorer-page .reveal-on-scroll, .team-explorer-card"));
+
+    if (wall.__teamExplorerObserver) {
+      wall.__teamExplorerObserver.disconnect();
+      wall.__teamExplorerObserver = null;
+    }
+
+    revealItems.forEach((item, index) => {
+      item.classList.remove("is-visible");
+      item.style.transitionDelay = prefersReducedMotion ? "0ms" : `${Math.min(index * 40, 220)}ms`;
+    });
+
+    if (prefersReducedMotion || !("IntersectionObserver" in window)) {
+      revealItems.forEach(item => item.classList.add("is-visible"));
+      return;
+    }
+
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("is-visible");
+          observer.unobserve(entry.target);
+        }
+      });
+    }, {
+      rootMargin: "0px 0px -6% 0px",
+      threshold: 0.16
+    });
+
+    revealItems.forEach(item => observer.observe(item));
+    wall.__teamExplorerObserver = observer;
+  };
+
+  ensureActiveMember();
+  renderSignals();
+  renderFilters();
+  renderWall();
+  renderDetail();
+  initReveals();
 }
 
 function readPickupBoardEntries() {
@@ -3067,7 +3994,7 @@ Object.assign(translations["zh-CN"], {
   navHome: "首页",
   navStorage: "寄存价格",
   navMenu: "Menu",
-  menuPickup: "接机服务",
+  menuPickup: "接送机服务",
   menuMember: "会员权益",
   menuWhyUs: "为什么选择我们",
   menuPartners: "合作公寓",
@@ -3212,6 +4139,8 @@ Object.assign(translations["zh-CN"], {
   team4Role: "学生公寓顾问",
   team5Name: "Kim",
   team5Role: "学生公寓顾问",
+  team6Name: "鸡腿老师",
+  team6Role: "本地生活顾问",
   benefitsPageTitle: "左邻右里 | 权益与福利说明",
   benefitsPageDescription: "查看左邻右里订房会员四选一权益、活动福利和后续本地支持说明。",
   benefitsDetailEyebrow: "Membership Benefits",
@@ -3257,7 +4186,7 @@ Object.assign(translations.en, {
   navHome: "Home",
   navStorage: "Storage Pricing",
   navMenu: "Menu",
-  menuPickup: "Airport Pickup",
+  menuPickup: "Airport Transfers",
   menuMember: "Membership Benefits",
   menuWhyUs: "Why Choose Us",
   menuPartners: "Partner Residences",
@@ -3402,6 +4331,8 @@ Object.assign(translations.en, {
   team4Role: "Residence Advisor",
   team5Name: "Kim",
   team5Role: "Residence Advisor",
+  team6Name: "Jitui",
+  team6Role: "Local Life Advisor",
   benefitsPageTitle: "NGN | Benefits and Support",
   benefitsPageDescription: "See the four core membership benefits, extra activities and follow-up support offered after booking.",
   benefitsDetailEyebrow: "Membership Benefits",
@@ -3584,7 +4515,11 @@ function applyLanguage(lang) {
   initPickupBoardAdmin(lang);
   initHomeVideos(lang);
   initHomeMenu();
+  initStorageMobileMenu();
   initTeamSummaryCarousel(lang);
+  initTeamDetailCarousel(lang);
+  initTeamArchivePage(lang);
+  initTeamExplorerPage(lang);
 }
 
 langButtons.forEach(button => {

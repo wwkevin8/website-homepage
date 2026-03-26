@@ -6,12 +6,12 @@
   <title>左邻右里 | 团队介绍</title>
   <meta
     name="description"
-    content="认识左邻右里团队成员，了解各自擅长的订房咨询、校区判断和本地衔接支持。"
+    content="认识左邻右里会直接和你沟通的本地团队成员，了解各自擅长的订房判断、入住支持与本地生活协助。"
   >
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./styles.css?v=20260326-footer-cards">
+  <link rel="stylesheet" href="./styles.css?v=20260326-team-explorer">
 </head>
 <body>
   <div class="topbar">
@@ -41,45 +41,50 @@
     </header>
   </div>
 
-  <main class="page-shell detail-page">
-    <section class="detail-hero">
-      <p class="eyebrow" data-i18n="teamDetailEyebrow">Team</p>
-      <h1 data-i18n="teamDetailTitle">认识会直接和你沟通的本地团队</h1>
-      <p data-i18n="teamDetailIntro">首页只放了精简版，这里把团队成员的背景、擅长方向和服务角色拆得更清楚一些，方便你知道后续在和谁沟通。</p>
+  <main class="page-shell detail-page team-explorer-page">
+    <section class="team-explorer-hero reveal-on-scroll">
+      <div class="team-explorer-hero__copy">
+        <p class="eyebrow" data-i18n="teamDetailEyebrow">Team</p>
+        <h1 data-i18n="teamDetailTitle">认识会直接和你沟通的本地团队</h1>
+        <p data-i18n="teamExplorerHeroText">这里不是按顺序阅读的员工列表，而是一组可以自由探索的本地成员。你可以先点开最关心的问题，再看看谁更适合先和你沟通。</p>
+      </div>
+      <div class="team-explorer-hero__meta">
+        <div class="team-explorer-hero__panel">
+          <span class="team-explorer-hero__label" data-i18n="teamExplorerHeroLabel">从你的问题出发</span>
+          <p data-i18n="teamExplorerHeroMeta">每位成员都有不同的处理节奏、解释方式和本地支持经验。先从你最在意的阶段或问题点开始，会更容易找到适合先沟通的人。</p>
+        </div>
+        <div class="team-explorer-hero__signals" id="teamExplorerSignals"></div>
+      </div>
     </section>
 
-    <section class="detail-section">
-      <div class="team-grid detail-team-grid">
-        <article class="team-card">
-          <div class="team-avatar avatar-vivian"><img src="./img/vivian.jpg" alt="Vivian"></div>
-          <h3>Vivian</h3>
-          <p class="team-role" data-i18n="teamVivianRole">创始人</p>
-          <p data-i18n="teamVivianText">作为左邻右里的创始人，Vivian 长期生活在诺丁汉，在本地已经积累了超过 10 年的生活经验，也持续多年与中国留学生打交道。她熟悉学生公寓资源、本地居住环境、学生在订房和落地阶段最常遇到的问题，也更清楚家长和学生在真正做选择时最在意的不只是价格，而是信息是否可靠、沟通是否及时、后续是否有人持续负责。左邻右里很多服务节奏、判断方式和长期陪伴式的做法，都来自 Vivian 对留学生真实生活场景的长期观察与积累。</p>
-        </article>
-        <article class="team-card">
-          <div class="team-avatar avatar-kim"><img src="./img/kim.jpg" alt="Kim"></div>
-          <h3 data-i18n="team5Name">Kim</h3>
-          <p class="team-role" data-i18n="team5Role">学生公寓顾问</p>
-          <p data-i18n="team5Text">Kim 是 24 届毕业生，此前一直住在诺丁汉市中心，在 Jubilee 和 Park 校区都有课程安排，因此对市中心生活、不同校区之间的往返节奏以及学生日常关注的问题都比较熟悉。对于刚到诺丁汉、还在适应学校和城市节奏的同学来说，他能给出更贴近日常使用场景的建议。</p>
-        </article>
-        <article class="team-card">
-          <div class="team-avatar avatar-kevin"><img src="./img/Kevin.jpg" alt="Kevin"></div>
-          <h3>Kevin</h3>
-          <p class="team-role" data-i18n="team2Role">学生公寓顾问</p>
-          <p data-i18n="team2Text">Kevin 是团队里的主要顾问人员，也是很多同学在咨询阶段最先建立信任的人。长期深度对接诺丁汉大大小小的学生公寓后，他对不同公寓的定位、区域氛围、价格区间、合同节奏、优缺点差异以及学生真正关心的问题都非常熟悉。毕业于诺丁汉大学电子与电气工程专业、常驻 Park 校区的他，能够把复杂信息讲得更清楚，也更擅长帮助同学把选择逻辑梳理明白。</p>
-        </article>
-        <article class="team-card">
-          <div class="team-avatar avatar-firo"><img src="./img/Firo.jpg" alt="Firo"></div>
-          <h3 data-i18n="team3Name">Firo</h3>
-          <p class="team-role" data-i18n="team3Role">学生公寓顾问</p>
-          <p data-i18n="team3Text">Firo 主要负责日常沟通、咨询承接和后续协助跟进。他的沟通方式自然、亲和，不会给人距离感，比较容易让学生在咨询过程中放松下来。对于公寓基础信息、入住节奏和常见问题，他也能够提供清晰直接的说明，让很多初次咨询的同学更容易把问题讲出来。</p>
-        </article>
-        <article class="team-card">
-          <div class="team-avatar avatar-xiaoni"><img src="./img/小妮.jpg" alt="小妮"></div>
-          <h3 data-i18n="team4Name">小妮</h3>
-          <p class="team-role" data-i18n="team4Role">学生公寓顾问</p>
-          <p data-i18n="team4Text">小妮同样是团队里的租房顾问人员。作为学校大使馆成员，她对学生需求比较熟悉，也更了解大家在入住沟通、信息理解和生活适应阶段常见的细节问题。她更擅长从学生视角去看待问题，帮助大家把一些看似琐碎、但实际很影响体验的事情提前理顺。</p>
-        </article>
+    <section class="team-explorer-shell">
+      <div class="team-explorer-toolbar reveal-on-scroll">
+        <div class="team-explorer-toolbar__copy">
+          <p class="eyebrow" data-i18n="teamExplorerFilterEyebrow">Explore</p>
+          <h2 data-i18n="teamExplorerFilterTitle">按你现在更关心的问题，先看看谁更适合</h2>
+        </div>
+        <div class="team-explorer-filters" id="teamExplorerFilters"></div>
+      </div>
+
+      <div class="team-explorer-layout">
+        <section class="team-explorer-wall reveal-on-scroll" aria-label="Team wall">
+          <div class="team-explorer-wall__grid" id="teamExplorerWall"></div>
+        </section>
+
+        <aside class="team-explorer-detail reveal-on-scroll" id="teamExplorerDetail" aria-live="polite"></aside>
+      </div>
+    </section>
+
+    <section class="team-explorer-summary reveal-on-scroll">
+      <div class="team-explorer-summary__copy">
+        <p class="eyebrow" data-i18n="teamExplorerSummaryEyebrow">Team Summary</p>
+        <h2 data-i18n="teamExplorerSummaryTitle">你要认识的不是一串名字，而是一组能接力配合的人</h2>
+        <p data-i18n="teamExplorerSummaryText">有人更擅长把房源判断讲清楚，有人更适合跟进入住前后的细节，也有人更熟悉本地生活支持。探索这页的目的，不是记住所有成员，而是更快知道遇到不同问题时，谁更适合先出现。</p>
+      </div>
+      <div class="team-explorer-summary__card">
+        <strong data-i18n="teamExplorerCtaTitle">准备好以后，我们就能更快接上</strong>
+        <p data-i18n="teamExplorerCtaText">把预算、校区、入住时间和你最在意的问题先发给我们，我们会帮你判断该从哪位成员、哪类房源和哪种沟通节奏开始。</p>
+        <a class="button button-primary" href="./index.html" data-i18n="teamExplorerCtaButton">回首页看看服务重点</a>
       </div>
     </section>
   </main>
@@ -123,6 +128,6 @@
     <small id="footer-year"></small>
   </footer>
 
-  <script src="./script.js?v=20260326-footer-cards"></script>
+  <script src="./script.js?v=20260326-team-explorer"></script>
 </body>
 </html>
