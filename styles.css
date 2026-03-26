@@ -2752,7 +2752,7 @@ img {
     opacity: 1;
   }
 
-  .mini-field-item--weight.has-mobile-inline-hint::after {
+  .mini-field-item.has-mobile-inline-hint::after {
     content: attr(data-mobile-hint);
     position: absolute;
     left: 16px;
@@ -2766,6 +2766,13 @@ img {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+
+  .mini-field-item--count.has-mobile-inline-hint .box-order-input,
+  .mini-field-item--purchase.has-mobile-inline-hint .box-order-input {
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+    caret-color: var(--ink);
   }
 
   .discount-cards {

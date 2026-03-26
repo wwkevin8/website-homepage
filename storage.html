@@ -898,13 +898,43 @@
         return reference && reference.textContent ? reference.textContent.trim() : fallback;
       }
 
-      function syncWeightHint(item, input) {
+      function syncMobileInlineHint(item, input) {
         if (!item || !input) {
           return;
         }
 
-        const hasValue = String(input.value || "").trim() !== "";
-        item.classList.toggle("has-mobile-inline-hint", input.disabled && !hasValue);
+        const rawValue = String(input.value || "").trim();
+        const isWeightField = item.classList.contains("mini-field-item--weight");
+        const showHint = isWeightField
+          ? input.disabled && rawValue === ""
+          : rawValue === "" || rawValue === "0";
+
+        item.classList.toggle("has-mobile-inline-hint", showHint);
+        input.setAttribute("placeholder", isWeightField && showHint ? "" : (item.dataset.mobileHint || ""));
+      }
+
+      function refreshMobileInlineHints() {
+        miniFields.forEach(field => {
+          storageFieldLabels.forEach(({ selector, i18nKey, fallback }) => {
+            const input = field.querySelector(selector);
+            const item = input ? input.parentElement : null;
+
+            if (!input || !item || !item.classList.contains("mini-field-item")) {
+              return;
+            }
+
+            const labelText = getFieldText(i18nKey, fallback);
+            const itemLabel = item.querySelector(".mini-field-label");
+
+            if (itemLabel) {
+              itemLabel.textContent = labelText;
+            }
+
+            item.dataset.mobileHint = labelText;
+            input.setAttribute("aria-label", labelText);
+            syncMobileInlineHint(item, input);
+          });
+        });
       }
 
       miniFields.forEach(field => {
@@ -949,55 +979,24 @@
           }
 
           item.dataset.mobileHint = labelText;
-          input.setAttribute("placeholder", labelText);
           input.setAttribute("aria-label", labelText);
 
-          if (item.classList.contains("mini-field-item--weight") && !item.dataset.mobileHintBound) {
-            const sync = () => syncWeightHint(item, input);
-            sync();
+          if (!item.dataset.mobileHintBound) {
+            const sync = () => {
+              window.requestAnimationFrame(refreshMobileInlineHints);
+            };
             input.addEventListener("input", sync);
             input.addEventListener("change", sync);
-
-            const observer = new MutationObserver(sync);
-            observer.observe(input, { attributes: true, attributeFilter: ["disabled", "value"] });
             item.dataset.mobileHintBound = "true";
-          }
-
-          if (item.classList.contains("mini-field-item--weight")) {
-            syncWeightHint(item, input);
           }
         });
       });
 
+      refreshMobileInlineHints();
+
       langButtons.forEach(button => {
         button.addEventListener("click", () => {
-          window.requestAnimationFrame(() => {
-            miniFields.forEach(field => {
-              storageFieldLabels.forEach(({ selector, i18nKey, fallback }) => {
-                const input = field.querySelector(selector);
-                const item = input ? input.parentElement : null;
-
-                if (!input || !item || !item.classList.contains("mini-field-item")) {
-                  return;
-                }
-
-                const labelText = getFieldText(i18nKey, fallback);
-                const itemLabel = item.querySelector(".mini-field-label");
-
-                if (itemLabel) {
-                  itemLabel.textContent = labelText;
-                }
-
-                item.dataset.mobileHint = labelText;
-                input.setAttribute("placeholder", labelText);
-                input.setAttribute("aria-label", labelText);
-
-                if (item.classList.contains("mini-field-item--weight")) {
-                  syncWeightHint(item, input);
-                }
-              });
-            });
-          });
+          window.requestAnimationFrame(refreshMobileInlineHints);
         });
       });
     })();
