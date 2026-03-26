@@ -1800,6 +1800,7 @@ img {
 }
 
 .mini-field-item {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -2743,7 +2744,28 @@ img {
   }
 
   .mini-field-label {
-    display: block;
+    display: none;
+  }
+
+  .box-order-grid .box-order-input::placeholder {
+    color: rgba(16, 38, 68, 0.62);
+    opacity: 1;
+  }
+
+  .mini-field-item--weight.has-mobile-inline-hint::after {
+    content: attr(data-mobile-hint);
+    position: absolute;
+    left: 16px;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: rgba(16, 38, 68, 0.54);
+    font-size: 0.95rem;
+    line-height: 1.35;
+    pointer-events: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .discount-cards {

@@ -888,6 +888,24 @@
         { selector: "[data-box-weight]", i18nKey: "calcMaximumWeight", fallback: "最大重量（kg/箱）" }
       ];
       const miniFields = document.querySelectorAll(".box-order-grid .mini-field");
+      const langButtons = document.querySelectorAll("[data-lang]");
+      storageFieldLabels[0].itemClass = "mini-field-item--count";
+      storageFieldLabels[1].itemClass = "mini-field-item--purchase";
+      storageFieldLabels[2].itemClass = "mini-field-item--weight";
+
+      function getFieldText(i18nKey, fallback) {
+        const reference = document.querySelector(`.box-order-head [data-i18n="${i18nKey}"]`);
+        return reference && reference.textContent ? reference.textContent.trim() : fallback;
+      }
+
+      function syncWeightHint(item, input) {
+        if (!item || !input) {
+          return;
+        }
+
+        const hasValue = String(input.value || "").trim() !== "";
+        item.classList.toggle("has-mobile-inline-hint", input.disabled && !hasValue);
+      }
 
       miniFields.forEach(field => {
         const title = field.firstElementChild && field.firstElementChild.tagName === "SPAN"
@@ -898,25 +916,88 @@
           title.classList.add("mini-field-title");
         }
 
-        storageFieldLabels.forEach(({ selector, i18nKey, fallback }) => {
+        storageFieldLabels.forEach(({ selector, i18nKey, fallback, itemClass }) => {
           const input = field.querySelector(selector);
 
-          if (!input || input.parentElement?.classList.contains("mini-field-item")) {
+          if (!input) {
             return;
           }
 
-          const item = document.createElement("label");
-          item.className = "mini-field-item";
-          item.htmlFor = input.id;
+          let item = input.parentElement;
 
-          const itemLabel = document.createElement("span");
-          itemLabel.className = "mini-field-label";
-          itemLabel.dataset.i18n = i18nKey;
-          itemLabel.textContent = fallback;
+          if (!item || !item.classList.contains("mini-field-item")) {
+            item = document.createElement("label");
+            item.className = "mini-field-item";
+            item.htmlFor = input.id;
 
-          input.parentNode.insertBefore(item, input);
-          item.appendChild(itemLabel);
-          item.appendChild(input);
+            const itemLabel = document.createElement("span");
+            itemLabel.className = "mini-field-label";
+            itemLabel.dataset.i18n = i18nKey;
+
+            input.parentNode.insertBefore(item, input);
+            item.appendChild(itemLabel);
+            item.appendChild(input);
+          }
+
+          item.classList.add(itemClass);
+
+          const labelText = getFieldText(i18nKey, fallback);
+          const itemLabel = item.querySelector(".mini-field-label");
+
+          if (itemLabel) {
+            itemLabel.textContent = labelText;
+          }
+
+          item.dataset.mobileHint = labelText;
+          input.setAttribute("placeholder", labelText);
+          input.setAttribute("aria-label", labelText);
+
+          if (item.classList.contains("mini-field-item--weight") && !item.dataset.mobileHintBound) {
+            const sync = () => syncWeightHint(item, input);
+            sync();
+            input.addEventListener("input", sync);
+            input.addEventListener("change", sync);
+
+            const observer = new MutationObserver(sync);
+            observer.observe(input, { attributes: true, attributeFilter: ["disabled", "value"] });
+            item.dataset.mobileHintBound = "true";
+          }
+
+          if (item.classList.contains("mini-field-item--weight")) {
+            syncWeightHint(item, input);
+          }
+        });
+      });
+
+      langButtons.forEach(button => {
+        button.addEventListener("click", () => {
+          window.requestAnimationFrame(() => {
+            miniFields.forEach(field => {
+              storageFieldLabels.forEach(({ selector, i18nKey, fallback }) => {
+                const input = field.querySelector(selector);
+                const item = input ? input.parentElement : null;
+
+                if (!input || !item || !item.classList.contains("mini-field-item")) {
+                  return;
+                }
+
+                const labelText = getFieldText(i18nKey, fallback);
+                const itemLabel = item.querySelector(".mini-field-label");
+
+                if (itemLabel) {
+                  itemLabel.textContent = labelText;
+                }
+
+                item.dataset.mobileHint = labelText;
+                input.setAttribute("placeholder", labelText);
+                input.setAttribute("aria-label", labelText);
+
+                if (item.classList.contains("mini-field-item--weight")) {
+                  syncWeightHint(item, input);
+                }
+              });
+            });
+          });
         });
       });
     })();
