@@ -356,6 +356,12 @@ img {
   background: rgba(245, 248, 252, 0.86);
 }
 
+.home-menu-top-link {
+  color: var(--accent-deep);
+  background: linear-gradient(180deg, rgba(223, 234, 252, 0.98), rgba(239, 245, 255, 0.94));
+  border: 1px solid rgba(19, 74, 169, 0.14);
+}
+
 .home-menu-inner a:hover {
   background: rgba(222, 234, 252, 0.92);
 }
