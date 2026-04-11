@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Service Center | Nottingham Good Neighbor</title>
+  <meta
+    name="description"
+    content="Unified post-login landing page for pickup, storage, member benefits, and profile details."
+  >
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body data-require-auth-page="true">
+  <main class="page-shell service-center-shell">
+    <section class="storage-section service-center-hero">
+      <div class="service-center-profile">
+        <img class="service-center-avatar" data-site-user-avatar src="https://dummyimage.com/160x160/dae6fb/35507a&text=NGN" alt="User avatar">
+        <div class="service-center-profile-copy">
+          <p class="eyebrow">Service Center</p>
+          <h1 data-site-user-name>Signed-in user</h1>
+          <p>
+            This is the shared landing page after login. From here, users can continue to pickup, storage,
+            member benefits, and future profile completion flows.
+          </p>
+          <div class="service-center-meta">
+            <span>Email: <strong data-site-user-email>-</strong></span>
+            <span>Phone: <strong data-site-user-phone>Not provided yet</strong></span>
+          </div>
+        </div>
+      </div>
+      <div class="service-center-toolbar" data-site-auth-nav></div>
+    </section>
+
+    <section class="storage-section">
+      <div class="section-heading">
+        <p class="eyebrow">Start Here</p>
+        <h2>One place to continue the most important service flows.</h2>
+        <p>
+          Google is the current sign-in entry, while email remains the primary account identifier inside the site.
+          Phone stays optional until the user is ready to submit a real service request.
+        </p>
+      </div>
+
+      <div class="service-center-grid">
+        <article class="service-card">
+          <span class="service-card-tag">Pickup</span>
+          <h3>Pickup and ride-share</h3>
+          <p>Continue to the pickup intake flow or jump into the formal questionnaire after login.</p>
+          <a class="button button-primary" href="./pickup.html#pickup-quote">Go to pickup service</a>
+        </article>
+        <article class="service-card">
+          <span class="service-card-tag">Storage</span>
+          <h3>Storage service</h3>
+          <p>Estimate storage costs first, then continue to booking and handoff planning.</p>
+          <a class="button button-primary" href="./storage.html#storage-calculator">Go to storage service</a>
+        </article>
+        <article class="service-card">
+          <span class="service-card-tag">Benefits</span>
+          <h3>Member benefits</h3>
+          <p>Review booking-member benefits, follow-up support, and local perks.</p>
+          <a class="button button-secondary" href="./benefits.html">View member benefits</a>
+        </article>
+        <article class="service-card">
+          <span class="service-card-tag">Profile</span>
+          <h3>My profile</h3>
+          <p>Phone collection is deferred until the user actually submits a service, so login stays lightweight.</p>
+          <button class="button button-secondary" type="button" disabled>Phone completion comes later</button>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <script src="./site-auth.js"></script>
+</body>
+</html>

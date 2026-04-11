@@ -3,76 +3,97 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>拼车组列表</title>
+  <title>确认接送机订单 | NGN 管理后台</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./styles.css">
 </head>
-<body>
-  <main class="page-shell transport-admin-shell" id="transportGroupsPage">
-    <section class="storage-section">
-      <div class="transport-admin-header">
-        <div class="section-heading">
-          <p class="eyebrow">Transport Groups</p>
-          <h1>拼车组列表</h1>
-          <p>管理公开与非公开拼车组，并按机场代码、日期和状态筛选。</p>
-        </div>
-        <div class="transport-admin-nav">
-          <a class="button button-secondary" href="./transport-admin-group-new.html">新建拼车组</a>
-          <a class="button button-secondary" href="./transport-admin-requests.html">需求列表</a>
-          <button class="button button-secondary" type="button" data-transport-logout>退出登录</button>
-        </div>
-      </div>
-
-      <form class="calculator-card transport-filter-form" id="transportGroupFilters">
-        <label class="field">
-          <span>服务类型</span>
-          <select name="service_type">
-            <option value="">全部</option>
-            <option value="pickup">接机</option>
-            <option value="dropoff">送机</option>
-          </select>
-        </label>
-        <label class="field">
-          <span>机场代码</span>
-          <select name="airport_code">
-            <option value="">全部机场</option>
-          </select>
-        </label>
-        <label class="field">
-          <span>状态</span>
-          <select name="status">
-            <option value="">全部状态</option>
-            <option value="draft">草稿</option>
-            <option value="open">开放中</option>
-            <option value="full">已满员</option>
-            <option value="closed">已关闭</option>
-            <option value="cancelled">已取消</option>
-          </select>
-        </label>
-        <label class="field">
-          <span>前台显示</span>
-          <select name="visible_on_frontend">
-            <option value="">全部</option>
-            <option value="true">显示</option>
-            <option value="false">隐藏</option>
-          </select>
-        </label>
-        <label class="field">
-          <span>开始日期</span>
-          <input type="date" name="date_from">
-        </label>
-        <label class="field">
-          <span>结束日期</span>
-          <input type="date" name="date_to">
-        </label>
-        <button class="button button-primary" type="submit">筛选</button>
-      </form>
-
-      <div class="transport-list-grid" id="transportGroupsList"></div>
-    </section>
-  </main>
+<body
+  data-admin-shell
+  data-admin-page="transport-orders"
+  data-admin-section="运营后台"
+  data-admin-title="确认接送机订单"
+  data-admin-description="管理客服确认的接送机订单，包括时间、路线、显示状态和已匹配的登记表单。"
+>
+  <div class="admin-layout">
+    <aside class="admin-sidebar" data-admin-sidebar></aside>
+    <div class="admin-main">
+      <header class="admin-header" data-admin-header></header>
+      <main class="admin-content" data-admin-content>
+        <section class="admin-page" id="transportGroupsPage">
+          <section class="admin-panel">
+            <div class="admin-toolbar admin-toolbar-split">
+              <form class="admin-toolbar admin-toolbar-inline" id="transportGroupFilters">
+                <label class="field">
+                  <span>服务类型</span>
+                  <select name="service_type">
+                    <option value="">全部</option>
+                    <option value="pickup">接机</option>
+                    <option value="dropoff">送机</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span>目标机场</span>
+                  <select name="airport_code">
+                    <option value="">全部机场</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span>状态</span>
+                  <select name="status">
+                    <option value="">全部</option>
+                    <option value="draft">待发布</option>
+                    <option value="open">可拼车</option>
+                    <option value="full">已满</option>
+                    <option value="closed">已结束</option>
+                    <option value="cancelled">已取消</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span>前台显示</span>
+                  <select name="visible_on_frontend">
+                    <option value="">全部</option>
+                    <option value="true">已显示</option>
+                    <option value="false">未显示</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span>开始日期</span>
+                  <input type="date" name="date_from">
+                </label>
+                <label class="field">
+                  <span>结束日期</span>
+                  <input type="date" name="date_to">
+                </label>
+                <div class="admin-inline-actions">
+                  <button class="button button-primary" type="submit">查询</button>
+                </div>
+              </form>
+              <div class="admin-inline-actions">
+                <a class="button button-secondary" href="./transport-admin-requests.html">查看登记表单</a>
+                <a class="button button-primary" href="./transport-admin-group-new.html">新建确认接送机订单</a>
+              </div>
+            </div>
+            <form class="transport-inline-actions transport-quick-jump" id="transportRequestQuickJump">
+              <label class="field transport-quick-jump-field">
+                <span>按登记订单编号转入确认接送机订单</span>
+                <input type="text" name="order_no" placeholder="例如 PU260411-0001" autocomplete="off">
+              </label>
+              <div class="admin-inline-actions">
+                <button class="button button-secondary" type="submit">带入确认单编辑页</button>
+              </div>
+            </form>
+            <p class="transport-form-message" id="transportGroupQuickJumpMessage"></p>
+          </section>
+          <section id="transportGroupsList"></section>
+          <div class="transport-pagination" id="transportGroupsPagination"></div>
+        </section>
+      </main>
+    </div>
+  </div>
+  <script src="./admin-api.js"></script>
+  <script src="./admin-shell.js"></script>
   <script src="./transport-shared.js"></script>
   <script src="./transport-api.js"></script>
   <script src="./transport-admin.js"></script>

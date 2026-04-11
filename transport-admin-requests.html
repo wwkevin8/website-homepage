@@ -3,67 +3,83 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>接送机需求列表</title>
+  <title>&#x767B;&#x8BB0;&#x8868;&#x5355; | NGN &#x7BA1;&#x7406;&#x540E;&#x53F0;</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./styles.css">
 </head>
-<body>
-  <main class="page-shell transport-admin-shell" id="transportRequestsPage">
-    <section class="storage-section">
-      <div class="transport-admin-header">
-        <div class="section-heading">
-          <p class="eyebrow">Transport Requests</p>
-          <h1>接送机需求列表</h1>
-          <p>按服务类型、机场代码、日期和状态筛选，查看需求和当前分组情况。</p>
-        </div>
-        <div class="transport-admin-nav">
-          <a class="button button-secondary" href="./transport-admin-request-new.html">新建需求</a>
-          <a class="button button-secondary" href="./transport-admin-groups.html">拼车组列表</a>
-          <button class="button button-secondary" type="button" data-transport-logout>退出登录</button>
-        </div>
-      </div>
-
-      <form class="calculator-card transport-filter-form" id="transportRequestFilters">
-        <label class="field">
-          <span>服务类型</span>
-          <select name="service_type">
-            <option value="">全部</option>
-            <option value="pickup">接机</option>
-            <option value="dropoff">送机</option>
-          </select>
-        </label>
-        <label class="field">
-          <span>机场代码</span>
-          <select name="airport_code">
-            <option value="">全部机场</option>
-          </select>
-        </label>
-        <label class="field">
-          <span>状态</span>
-          <select name="status">
-            <option value="">全部状态</option>
-            <option value="draft">草稿</option>
-            <option value="open">开放中</option>
-            <option value="closed">已关闭</option>
-            <option value="cancelled">已取消</option>
-          </select>
-        </label>
-        <label class="field">
-          <span>开始日期</span>
-          <input type="date" name="date_from">
-        </label>
-        <label class="field">
-          <span>结束日期</span>
-          <input type="date" name="date_to">
-        </label>
-        <button class="button button-primary" type="submit">筛选</button>
-      </form>
-
-      <div class="transport-list-grid" id="transportRequestsList"></div>
-    </section>
-  </main>
+<body
+  data-admin-shell
+  data-admin-page="transport-forms"
+  data-admin-section="&#x8FD0;&#x8425;&#x540E;&#x53F0;"
+  data-admin-title="&#x767B;&#x8BB0;&#x8868;&#x5355;"
+  data-admin-description="&#x67E5;&#x770B;&#x540C;&#x5B66;&#x5728;&#x524D;&#x53F0;&#x63D0;&#x4EA4;&#x7684;&#x63A5;&#x9001;&#x673A;&#x767B;&#x8BB0;&#x4FE1;&#x606F;&#xFF0C;&#x5E76;&#x624B;&#x52A8;&#x5339;&#x914D;&#x5230;&#x65B0;&#x5EFA;&#x8BA2;&#x5355;&#x3002;"
+>
+  <div class="admin-layout">
+    <aside class="admin-sidebar" data-admin-sidebar></aside>
+    <div class="admin-main">
+      <header class="admin-header" data-admin-header></header>
+      <main class="admin-content" data-admin-content>
+        <section class="admin-page" id="transportRequestsPage">
+          <section class="admin-panel">
+            <div class="admin-toolbar admin-toolbar-split">
+              <form class="admin-toolbar admin-toolbar-inline" id="transportRequestFilters">
+                <label class="field">
+                  <span>&#x8BA2;&#x5355;&#x7F16;&#x53F7;</span>
+                  <input type="text" name="order_no" placeholder="&#x4F8B;&#x5982; PU260411-0001">
+                </label>
+                <label class="field">
+                  <span>&#x670D;&#x52A1;&#x7C7B;&#x578B;</span>
+                  <select name="service_type">
+                    <option value="">&#x5168;&#x90E8;</option>
+                    <option value="pickup">&#x63A5;&#x673A;</option>
+                    <option value="dropoff">&#x9001;&#x673A;</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span>&#x76EE;&#x6807;&#x673A;&#x573A;</span>
+                  <select name="airport_code">
+                    <option value="">&#x5168;&#x90E8;&#x673A;&#x573A;</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span>&#x670D;&#x52A1;&#x72B6;&#x6001;</span>
+                  <select name="status">
+                    <option value="">&#x5168;&#x90E8;</option>
+                    <option value="draft">&#x5F85;&#x670D;&#x52A1;</option>
+                    <option value="open">&#x5F85;&#x670D;&#x52A1;</option>
+                    <option value="closed">&#x670D;&#x52A1;&#x5DF2;&#x7ED3;&#x675F;</option>
+                    <option value="cancelled">&#x5DF2;&#x53D6;&#x6D88;</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span>&#x5F00;&#x59CB;&#x65E5;&#x671F;</span>
+                  <input type="date" name="date_from">
+                </label>
+                <label class="field">
+                  <span>&#x7ED3;&#x675F;&#x65E5;&#x671F;</span>
+                  <input type="date" name="date_to">
+                </label>
+                <div class="admin-inline-actions">
+                  <button class="button button-primary" type="submit">&#x67E5;&#x8BE2;</button>
+                </div>
+              </form>
+              <div class="admin-inline-actions">
+                <a class="button button-secondary" href="./transport-admin-groups.html">&#x67E5;&#x770B;&#x786E;&#x8BA4;&#x63A5;&#x9001;&#x673A;&#x8BA2;&#x5355;</a>
+                <a class="button button-primary" href="./transport-admin-group-new.html">&#x65B0;&#x5EFA;&#x786E;&#x8BA4;&#x63A5;&#x9001;&#x673A;&#x8BA2;&#x5355;</a>
+              </div>
+            </div>
+            <p class="transport-form-message" id="transportRequestsMessage"></p>
+          </section>
+          <section id="transportRequestsList"></section>
+          <div class="transport-pagination" id="transportRequestsPagination"></div>
+        </section>
+      </main>
+    </div>
+  </div>
+  <script src="./admin-api.js"></script>
+  <script src="./admin-shell.js"></script>
   <script src="./transport-shared.js"></script>
   <script src="./transport-api.js"></script>
   <script src="./transport-admin.js"></script>

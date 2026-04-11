@@ -1,2 +1,8 @@
 .vercel
 node_modules/
+.env
+.playwright-cli/
+admin-cookies.txt
+ops-cookies.txt
+output/
+output-*.png

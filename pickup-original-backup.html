@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>左邻右里 | 接送机与拼车服务</title>
+  <meta name="description" content="诺丁汉 NGN 接送机与拼车服务，包含价格说明、最新拼车信息、拼车流程与注意事项。">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css?v=20260330-pickup-refresh">
+</head>
+<body>
+  <div class="topbar topbar-storage">
+    <header class="site-header">
+      <a class="brand" href="./index.html" aria-label="左邻右里首页">
+        <div class="brand-lockup brand-lockup-header">
+          <div class="logo-bubbles">
+            <span>英国诺丁汉</span>
+            <span>左邻右里</span>
+            <span>生活服务</span>
+          </div>
+          <div class="logo-wordmark">NGN</div>
+          <div class="logo-subtitle">NOTTINGHAM GOOD NEIGHBOR</div>
+        </div>
+      </a>
+
+      <nav class="site-nav" aria-label="主导航">
+        <a class="nav-link nav-link-secondary" href="./index.html#hero">首页</a>
+        <a class="nav-link nav-link-secondary" href="./storage.html">寄存价格</a>
+      </nav>
+
+      <div class="header-actions">
+        <button class="storage-mobile-menu-toggle" type="button" aria-label="菜单" data-storage-menu-toggle>
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+        <div class="lang-switch" aria-label="language switch">
+          <button class="lang-btn is-active" type="button" data-lang="zh-CN">中</button>
+          <button class="lang-btn" type="button" data-lang="en">EN</button>
+        </div>
+      </div>
+    </header>
+    <div class="storage-mobile-menu" id="storage-mobile-menu" hidden>
+      <div class="storage-mobile-menu-inner">
+        <a href="./index.html" data-storage-menu-link>首页</a>
+        <a href="./pickup.html" data-storage-menu-link>接送机说明</a>
+        <a href="./storage.html" data-storage-menu-link>寄存价格</a>
+      </div>
+    </div>
+  </div>
+
+  <main class="page-shell pickup-page">
+    <section class="pickup-hero">
+      <div class="storage-hero-copy">
+        <p class="eyebrow">接送机与拼车服务</p>
+        <h1>诺丁汉 NGN 接送机与拼车服务</h1>
+        <p class="storage-hero-text">
+          我们与英国本地正规租车及司机团队长期合作，为留学生提供接送机与拼车支持。合作司机均为英国本地华人老司机，驾龄 5 年以上，常用奔驰、奥迪、大众、福特等安全舒适车型。无论是开学季首次落地，还是平时跨城往返，我们都希望把接送安排做得更清楚、更稳妥。
+        </p>
+        <div class="storage-hero-meta">
+          <span>电话: 07941 008555</span>
+          <span>拼车表单: 站内填写</span>
+          <span>客服微信: Nottsngn</span>
+        </div>
+        <div class="hero-actions">
+          <a class="button button-primary pickup-form-button-spotlight" href="./pickup-form.html">填写拼车表单</a>
+          <a class="button button-secondary" href="#pickup-pricing">查看接送机价格</a>
+          <a class="button button-secondary" href="./pickup-form.html">咨询包车/接送机</a>
+        </div>
+      </div>
+
+      <div class="storage-hero-visual pickup-hero-visual">
+        <div class="pickup-highlight-card">
+          <div class="pickup-highlight-block">
+            <strong>服务包含</strong>
+            <p>送机费、机场停车费、司机费，以及免费 1 小时等待费。</p>
+          </div>
+          <div class="pickup-highlight-block">
+            <strong>特殊说明</strong>
+            <p>06:00-22:00 为正常时段，超出时段加班费 £20/车，拼车同学 AA 分摊。</p>
+          </div>
+          <div class="pickup-highlight-block">
+            <strong>旺季提醒</strong>
+            <p>9 月属于旺季，价格会有调整，8 月中旬另行报价，司机资源紧张时请尽量提前预约。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="storage-section" id="pickup-board">
+      <div class="section-heading">
+        <h2>最新拼车信息</h2>
+        <p>这里会展示最近可拼的接送机安排，方便同学先看有没有接近自己时间的车次，再决定是否马上提交表单。</p>
+      </div>
+      <div class="pickup-board-toolbar">
+        <p class="pickup-board-hint">优先展示最近可拼的 6 条信息。想看完整列表，可以进入独立页面继续查看。</p>
+        <div class="pickup-board-toolbar-actions">
+          <a class="button button-primary pickup-form-button-spotlight pickup-form-button-compact" href="./pickup-form.html">填写拼车表单</a>
+          <a class="button button-secondary" href="./transport-board.html">查看完整最新拼车信息</a>
+        </div>
+      </div>
+      <div class="pickup-board-list" id="pickupBoardPreview">
+        <div class="pickup-board-empty">正在加载最新拼车信息...</div>
+      </div>
+    </section>
+
+    <section class="storage-section">
+      <div class="section-heading">
+        <h2>拼车流程</h2>
+        <p>先确认规则与价格，再提交拼车需求。我们会根据你的时间、机场和人数安排发布信息，尽量帮助同学更顺利地匹配到合适同行人。</p>
+      </div>
+      <div class="storage-steps">
+        <article class="step-card">
+          <span>01</span>
+          <h3>阅读说明与价格</h3>
+          <p>先确认接送机规则、正常时间价格和九月旺季说明，再判断自己更适合拼车还是包车。</p>
+        </article>
+        <article class="step-card">
+          <span>02</span>
+          <h3>填写拼车表单</h3>
+          <p>通过站内表单填写航班、时间、人数、行李数量和目的地等基础信息。</p>
+        </article>
+        <article class="step-card">
+          <span>03</span>
+          <h3>我们发布并匹配同行人</h3>
+          <p>团队会在社媒群内发布拼车信息，尽量帮助你匹配同机场、同时段或目的地接近的同学。</p>
+        </article>
+        <article class="step-card">
+          <span>04</span>
+          <h3>等待通知与确认</h3>
+          <p>拼车人数、航站楼与时间逐步确认后，我们会同步最终安排与收费方式。</p>
+        </article>
+        <article class="step-card">
+          <span>05</span>
+          <h3>支付车款并安排接送</h3>
+          <p>确认后支付车费，司机将按最终时间、人数与航站楼安排接机或送机服务。</p>
+        </article>
+      </div>
+      <div class="pickup-process-cta">
+        <a class="button button-primary pickup-form-button-spotlight" href="./pickup-form.html">填写拼车表单</a>
+      </div>
+    </section>
+
+    <section class="storage-section">
+      <div class="section-heading">
+        <h2>服务说明</h2>
+        <p>我们希望把接送机服务讲清楚，而不是只给一张价格表。下面这些说明会直接影响你最后的安排和实际费用。</p>
+      </div>
+      <div class="rules-grid">
+        <article class="rule-card">
+          <h3>正规合作车辆</h3>
+          <p>与英国本地正规出租车/司机团队合作接送学生，合作司机均为英国本地驾龄 5 年以上的华人老司机，常用奔驰、奥迪、大众、福特等安全舒适车型。</p>
+        </article>
+        <article class="rule-card">
+          <h3>价格包含内容</h3>
+          <p>价格包含送机费、机场停车费、司机费，以及免费 1 小时等待费。价格不包含不同航站楼拼车费和超时等待费。</p>
+        </article>
+        <article class="rule-card">
+          <h3>正常时段与加班时段</h3>
+          <p>接人时间点在 06:00-22:00 为正常时段，超出时段需加 £20/车；如是拼车，则由同行人 AA 分摊。</p>
+        </article>
+        <article class="rule-card">
+          <h3>旺季波动说明</h3>
+          <p>9 月属于旺季，以下正常时段价格表不适用于每年 9 月旺季价格。9 月接送机价格通常会在 8 月中旬另行报价。</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="storage-section" id="pickup-pricing">
+      <div class="section-heading">
+        <h2>接送机价格表</h2>
+        <p>以下价格按你提供的截图整理成文本表格，方便同学直接查阅。最终尾款仍会按实际上车人数、航站楼和等待情况核算。</p>
+      </div>
+
+      <div class="pickup-pricing-stack">
+        <div class="storage-table-wrap">
+          <div class="pickup-table-title pickup-table-title-normal">正常时间价格表</div>
+          <table class="storage-table pickup-table">
+            <thead>
+              <tr>
+                <th>人数</th>
+                <th>希思罗机场</th>
+                <th>盖特维克机场</th>
+                <th>曼彻斯特机场</th>
+                <th>伦敦卢顿机场</th>
+                <th>伦敦城市机场</th>
+                <th>伯明翰机场</th>
+                <th>斯坦斯特德机场</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>一人</td><td>185</td><td>235</td><td>165</td><td>180</td><td>190</td><td>100</td><td>185</td></tr>
+              <tr><td>两人每人</td><td>100</td><td>125</td><td>90</td><td>95</td><td>105</td><td>60</td><td>100</td></tr>
+              <tr><td>三人每人</td><td>75</td><td>95</td><td>65</td><td>70</td><td>80</td><td>50</td><td>75</td></tr>
+              <tr><td>四人每人</td><td>60</td><td>80</td><td>55</td><td>55</td><td>75</td><td>45</td><td>60</td></tr>
+              <tr><td>五人每人</td><td>55</td><td>70</td><td>50</td><td>50</td><td>60</td><td>40</td><td>55</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="storage-table-wrap">
+          <div class="pickup-table-title pickup-table-title-september">九月旺季价格表</div>
+          <table class="storage-table pickup-table">
+            <thead>
+              <tr>
+                <th>人数</th>
+                <th>希思罗机场</th>
+                <th>盖特维克机场</th>
+                <th>曼彻斯特机场</th>
+                <th>伦敦卢顿机场</th>
+                <th>伦敦城市机场</th>
+                <th>伯明翰机场</th>
+                <th>斯坦斯特德机场</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>一人</td><td>190</td><td>240</td><td>170</td><td>185</td><td>195</td><td>105</td><td>190</td></tr>
+              <tr><td>两人每人</td><td>105</td><td>130</td><td>95</td><td>100</td><td>110</td><td>65</td><td>105</td></tr>
+              <tr><td>三人每人</td><td>80</td><td>100</td><td>70</td><td>75</td><td>85</td><td>55</td><td>80</td></tr>
+              <tr><td>四人每人</td><td>65</td><td>85</td><td>60</td><td>60</td><td>80</td><td>50</td><td>65</td></tr>
+              <tr><td>五人每人</td><td>60</td><td>75</td><td>55</td><td>55</td><td>65</td><td>45</td><td>60</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="storage-section" id="pickup-rules">
+      <div class="section-heading">
+        <h2>规则与注意事项</h2>
+        <p>接送机服务最终价格并不只是看基础表格，还会受到等待时间、航站楼、行李数量和具体安排方式影响。下面这些说明请务必提前看清楚。</p>
+      </div>
+
+      <div class="rules-grid">
+        <article class="rule-card">
+          <h3>尾款核算方式</h3>
+          <p>尾款会按照实际上车人数以及是否跨航站楼进行核算。拼车同学若分布在不同航站楼，需要按每增加一个航站楼加 £15 来重新平摊。</p>
+        </article>
+        <article class="rule-card">
+          <h3>等待与超时</h3>
+          <p>接机默认包含免费 1 小时等待费。送机默认等待 10 分钟，超出后每 10 分钟加收 £5。</p>
+        </article>
+        <article class="rule-card">
+          <h3>行李标准</h3>
+          <p>每位学生默认 2 个大行李箱 + 1 个登机箱 + 1 个背包。如有更多箱子，请提前报备，避免现场车辆安排不够。</p>
+        </article>
+        <article class="rule-card">
+          <h3>预约与延误边界</h3>
+          <p>建议尽量预留更多时间。若因司机异常导致问题，我们会尽量协调应急车辆；若因学生预留时间过短或路上非司机因素导致延误，则不承担误机赔付。</p>
+        </article>
+      </div>
+
+      <div class="storage-faq">
+        <div class="faq-card">
+          <h3>补充提醒</h3>
+          <ul>
+            <li>如果觉得自己出关或集合速度较慢，可以提前与我们沟通晚一点接，避免不必要的等待费。</li>
+            <li>若多人拼车且分别落在不同航站楼，最终价格会按增加航站楼数量重新计算。</li>
+            <li>送机时请尽量提前准备好行李，减少装车和临时等待带来的额外费用。</li>
+            <li>客服微信：Nottsngn；电话工作时间通常为周一到周六 08:00-20:00。</li>
+          </ul>
+        </div>
+
+        <div class="faq-card">
+          <h3>核算示例</h3>
+          <p>例如 4 位同学拼车，基础价格为每人 £65；如果分别落在 4 个不同航站楼，就需要额外加 3 次航站楼费用，即 £45。平摊后每人再加 £11.25。</p>
+          <p>如果你的航班 13:00 落地，司机与大家约定 14:00 接人，则免费等待可延续到 15:00；超过后会继续按等待规则核算。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="storage-section">
+      <div class="section-heading">
+        <h2>接送机只是整体本地服务的一部分</h2>
+        <p>左邻右里是一家诺丁汉本地华人正规注册服务公司，长期服务留学生与华人朋友。接机、寄存、订房、搬家、物流与本地协助都在同一套服务体系里。</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-copy">
+      <div class="brand-lockup brand-lockup-footer">
+        <div class="logo-bubbles">
+          <span>英国诺丁汉</span>
+          <span>左邻右里</span>
+          <span>生活服务</span>
+        </div>
+        <div class="logo-wordmark">NGN</div>
+        <div class="logo-subtitle">NOTTINGHAM GOOD NEIGHBOR</div>
+      </div>
+      <p>为诺丁汉留学生提供更稳妥的订房与本地支持</p>
+    </div>
+    <div class="footer-contact-grid">
+      <div class="footer-contact-item">
+        <span class="footer-contact-label">营业时间</span>
+        <div class="footer-hours-list">
+          <div class="footer-hours-row">
+            <span class="footer-hours-day">周一至周五</span>
+            <span class="footer-hours-time">08:00 - 18:00</span>
+          </div>
+          <div class="footer-hours-row">
+            <span class="footer-hours-day">周六至周日</span>
+            <span class="footer-hours-time">休息</span>
+          </div>
+        </div>
+      </div>
+      <div class="footer-contact-item">
+        <span class="footer-contact-label">公司地址</span>
+        <p class="footer-contact-value footer-address-text">Unit 3 Central Ct, Finch Cl, Nottingham NG7 2NN, United Kingdom</p>
+      </div>
+      <div class="footer-contact-item">
+        <span class="footer-contact-label">联系方式</span>
+        <div class="footer-links">
+          <p class="footer-contact-value"><a href="tel:07941008555">07941 008555</a></p>
+          <p class="footer-contact-value"><a href="mailto:info@ngn.best">info@ngn.best</a></p>
+        </div>
+      </div>
+    </div>
+    <p class="footer-meta">
+      <span id="footer-year">2026 Nottingham Good Neighbor. All rights reserved.</span>
+    </p>
+  </footer>
+
+  <script src="./transport-shared.js"></script>
+  <script src="./transport-api.js"></script>
+  <script src="./transport-public.js"></script>
+  <script src="./script.js?v=20260330-pickup-refresh"></script>
+</body>
+</html>

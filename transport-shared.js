@@ -1,13 +1,13 @@
 (function () {
   const AIRPORT_OPTIONS = [
-    { code: "LHR", name: "Heathrow Airport" },
-    { code: "LGW", name: "Gatwick Airport" },
-    { code: "MAN", name: "Manchester Airport" },
-    { code: "LTN", name: "Luton Airport" },
-    { code: "LCY", name: "London City Airport" },
-    { code: "BHX", name: "Birmingham Airport" },
-    { code: "STN", name: "Stansted Airport" },
-    { code: "OTHER", name: "Other Airport" }
+    { code: "LHR", name: "\u5e0c\u601d\u7f57\u673a\u573a" },
+    { code: "LGW", name: "\u76d6\u7279\u5a01\u514b\u673a\u573a" },
+    { code: "MAN", name: "\u66fc\u5f7b\u65af\u7279\u673a\u573a" },
+    { code: "LTN", name: "\u5362\u987f\u673a\u573a" },
+    { code: "LCY", name: "\u4f26\u6566\u57ce\u5e02\u673a\u573a" },
+    { code: "BHX", name: "\u4f2f\u660e\u7ff0\u673a\u573a" },
+    { code: "STN", name: "\u65af\u5766\u65af\u7279\u5fb7\u673a\u573a" },
+    { code: "OTHER", name: "\u5176\u4ed6\u673a\u573a" }
   ];
 
   function escapeHtml(value) {
@@ -54,28 +54,52 @@
     }).format(date);
   }
 
+  function getLondonTodayIsoDate() {
+    const formatter = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Europe/London",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit"
+    });
+    const parts = formatter.formatToParts(new Date());
+    const year = parts.find(part => part.type === "year")?.value;
+    const month = parts.find(part => part.type === "month")?.value;
+    const day = parts.find(part => part.type === "day")?.value;
+    return `${year}-${month}-${day}`;
+  }
+
   function serviceLabel(type) {
-    return type === "dropoff" ? "送机" : "接机";
+    return type === "dropoff" ? "\u9001\u673a" : "\u63a5\u673a";
   }
 
   function requestStatusLabel(status) {
     const map = {
-      draft: "草稿",
-      open: "开放中",
-      grouped: "已分组",
-      closed: "已关闭",
-      cancelled: "已取消"
+      draft: "\u5f85\u670d\u52a1",
+      open: "\u5f85\u670d\u52a1",
+      grouped: "\u6b63\u5728\u670d\u52a1",
+      in_service: "\u6b63\u5728\u670d\u52a1",
+      closed: "\u670d\u52a1\u5df2\u7ed3\u675f",
+      cancelled: "\u5df2\u53d6\u6d88"
+    };
+    return map[status] || status || "--";
+  }
+
+  function requestMatchStatusLabel(status) {
+    const map = {
+      unmatched: "\u672a\u5339\u914d",
+      created: "\u5df2\u521b\u5efa",
+      matched: "\u5df2\u5339\u914d"
     };
     return map[status] || status || "--";
   }
 
   function groupStatusLabel(status) {
     const map = {
-      draft: "草稿",
-      open: "可拼车",
-      full: "已满员",
-      closed: "已关闭",
-      cancelled: "已取消"
+      draft: "\u5f85\u53d1\u5e03",
+      open: "\u53ef\u62fc\u8f66",
+      full: "\u5df2\u6ee1",
+      closed: "\u5df2\u7ed3\u675f",
+      cancelled: "\u5df2\u53d6\u6d88"
     };
     return map[status] || status || "--";
   }
@@ -88,7 +112,7 @@
     if (!start && !end) {
       return "--";
     }
-    return `${formatDateTime(start)} ~ ${formatDateTime(end)}`;
+    return `${formatDateTime(start)} - ${formatDateTime(end)}`;
   }
 
   function fieldValue(form, selector) {
@@ -116,7 +140,7 @@
   }
 
   function airportOptionLabel(item) {
-    return `${item.code} - ${item.name}`;
+    return `${item.code} · ${item.name}`;
   }
 
   function populateAirportCodeSelect(select, includeEmpty = true) {
@@ -143,14 +167,7 @@
     }
     const sync = () => {
       nameInput.value = airportNameFromCode(codeInput.value);
-      if (codeInput.value === "OTHER") {
-        nameInput.readOnly = false;
-        if (!nameInput.value) {
-          nameInput.value = "";
-        }
-      } else {
-        nameInput.readOnly = true;
-      }
+      nameInput.readOnly = codeInput.value !== "OTHER";
     };
     codeInput.addEventListener("change", sync);
     sync();
@@ -174,8 +191,10 @@
     escapeHtml,
     formatDateTime,
     formatDate,
+    getLondonTodayIsoDate,
     serviceLabel,
     requestStatusLabel,
+    requestMatchStatusLabel,
     groupStatusLabel,
     queryParam,
     formatTimeRange,

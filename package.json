@@ -3,7 +3,12 @@
   "version": "1.0.0",
   "private": true,
   "description": "Static multi-page site with Vercel serverless APIs for transport dispatch management.",
+  "scripts": {
+    "dev": "node dev-server.js",
+    "start": "node dev-server.js"
+  },
   "dependencies": {
-    "@supabase/supabase-js": "^2.49.8"
+    "@supabase/supabase-js": "^2.49.8",
+    "nodemailer": "^6.10.1"
   }
 }

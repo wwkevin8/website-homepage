@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>&#x5BC4;&#x5B58;&#x7BA1;&#x7406; | NGN &#x7BA1;&#x7406;&#x540E;&#x53F0;</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body
+  data-admin-shell
+  data-admin-page="storage"
+  data-admin-section="&#x8FD0;&#x8425;&#x540E;&#x53F0;"
+  data-admin-title="&#x5BC4;&#x5B58;&#x7BA1;&#x7406;"
+  data-admin-description="&#x67E5;&#x770B;&#x524D;&#x53F0;&#x63D0;&#x4EA4;&#x7684;&#x975E;&#x4F1A;&#x5458;&#x5BC4;&#x5B58;&#x9884;&#x7EA6;&#x8BA2;&#x5355;&#xFF0C;&#x5E76;&#x6309;&#x901A;&#x77E5;&#x72B6;&#x6001;&#x8FDB;&#x884C;&#x57FA;&#x7840;&#x8DDF;&#x8FDB;&#x3002;"
+>
+  <div class="admin-layout">
+    <aside class="admin-sidebar" data-admin-sidebar></aside>
+    <div class="admin-main">
+      <header class="admin-header" data-admin-header></header>
+      <main class="admin-content" data-admin-content>
+        <section class="admin-page" id="adminStoragePage">
+          <section class="admin-panel">
+            <form class="admin-toolbar admin-toolbar-inline" id="adminStorageFilters">
+              <label class="field">
+                <span>&#x641C;&#x7D22;</span>
+                <input type="text" name="search" placeholder="&#x8BA2;&#x5355;&#x7F16;&#x53F7; / &#x59D3;&#x540D; / &#x5FAE;&#x4FE1; / &#x7535;&#x8BDD;">
+              </label>
+              <label class="field">
+                <span>&#x8BA2;&#x5355;&#x72B6;&#x6001;</span>
+                <select name="status">
+                  <option value="">&#x5168;&#x90E8;</option>
+                  <option value="pending_confirmation">&#x5F85;&#x4EBA;&#x5DE5;&#x786E;&#x8BA4;</option>
+                  <option value="confirmed">&#x5DF2;&#x786E;&#x8BA4;</option>
+                  <option value="cancelled">&#x5DF2;&#x53D6;&#x6D88;</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>&#x901A;&#x77E5;&#x72B6;&#x6001;</span>
+                <select name="notification_status">
+                  <option value="">&#x5168;&#x90E8;</option>
+                  <option value="pending">&#x5F85;&#x901A;&#x77E5;</option>
+                  <option value="sent">&#x5DF2;&#x901A;&#x77E5;</option>
+                  <option value="failed">&#x901A;&#x77E5;&#x5931;&#x8D25;</option>
+                </select>
+              </label>
+              <div class="admin-inline-actions">
+                <button class="button button-primary" type="submit">&#x67E5;&#x8BE2;</button>
+              </div>
+            </form>
+          </section>
+          <section id="adminStorageList"></section>
+          <div class="admin-table-note" id="adminStoragePagination"></div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <div class="admin-overlay" id="adminStorageDrawer" hidden>
+    <div class="admin-drawer admin-panel">
+      <div class="admin-drawer-header">
+        <div>
+          <h2 id="adminStorageDrawerTitle">订单详情</h2>
+          <p id="adminStorageDrawerNote">查看该寄存预约的详细信息与客服摘要。</p>
+        </div>
+        <button class="button button-secondary" type="button" data-admin-storage-drawer-close>关闭</button>
+      </div>
+      <div class="admin-drawer-body">
+        <div class="admin-detail-grid" id="adminStorageDetailGrid"></div>
+        <section class="admin-detail-section">
+          <h3>客服摘要</h3>
+          <pre class="admin-detail-pre" id="adminStorageReadableMessage">--</pre>
+        </section>
+      </div>
+    </div>
+  </div>
+  <script src="./admin-api.js"></script>
+  <script src="./admin-shell.js"></script>
+  <script src="./admin-pages.js"></script>
+</body>
+</html>

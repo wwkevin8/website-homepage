@@ -1,12 +1,30 @@
 (function () {
+  function resolveUrl(url) {
+    if (/^https?:\/\//.test(url)) {
+      return url;
+    }
+    if (window.location.protocol === "file:") {
+      return `http://localhost:3000${url}`;
+    }
+    return url;
+  }
+
   async function request(url, options) {
-    const response = await fetch(url, {
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      ...options
-    });
+    let response;
+    try {
+      response = await fetch(resolveUrl(url), {
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        ...options
+      });
+    } catch (error) {
+      if (window.location.protocol === "file:") {
+        throw new Error("本地预览请先运行 `npm run dev`，再刷新当前页面。");
+      }
+      throw error;
+    }
 
     const payload = await response.json().catch(() => ({ data: null, error: { message: "Invalid server response" } }));
     if (!response.ok) {
@@ -28,10 +46,7 @@
 
   window.TransportApi = {
     login(password) {
-      return request("/api/admin/login", {
-        method: "POST",
-        body: JSON.stringify({ password })
-      });
+      return Promise.reject(new Error("Use the site login flow instead of a shared admin password."));
     },
     logout() {
       return request("/api/admin/logout", {
@@ -60,6 +75,11 @@
         body: JSON.stringify(payload)
       });
     },
+    deleteRequest(id) {
+      return request(`/api/transport-requests/${id}`, {
+        method: "DELETE"
+      });
+    },
     listGroups(filters) {
       return request(`/api/transport-groups${buildQuery(filters)}`);
     },
@@ -76,6 +96,11 @@
       return request(`/api/transport-groups/${id}`, {
         method: "PATCH",
         body: JSON.stringify(payload)
+      });
+    },
+    deleteGroup(id) {
+      return request(`/api/transport-groups/${id}`, {
+        method: "DELETE"
       });
     },
     saveGroupMembers(groupId, requestIds) {

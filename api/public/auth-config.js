@@ -1,5 +1,5 @@
-const { isAuthenticated, MAX_AGE_SECONDS } = require("../_lib/auth");
 const { ok, methodNotAllowed, serverError } = require("../_lib/http");
+const { getEnv } = require("../_lib/supabase");
 
 module.exports = async function handler(req, res) {
   if (req.method !== "GET") {
@@ -8,7 +8,10 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    ok(res, { authenticated: isAuthenticated(req), session_max_age_seconds: MAX_AGE_SECONDS });
+    ok(res, {
+      supabaseUrl: getEnv("SUPABASE_URL"),
+      supabaseAnonKey: getEnv("SUPABASE_ANON_KEY")
+    });
   } catch (error) {
     serverError(res, error);
   }

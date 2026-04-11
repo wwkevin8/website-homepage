@@ -20,6 +20,10 @@ function unauthorized(res, message = "Unauthorized") {
   sendJson(res, 401, { data: null, error: { message } });
 }
 
+function forbidden(res, message = "Forbidden") {
+  sendJson(res, 403, { data: null, error: { message } });
+}
+
 function methodNotAllowed(res, methods) {
   res.setHeader("Allow", methods.join(", "));
   sendJson(res, 405, { data: null, error: { message: "Method not allowed" } });
@@ -65,6 +69,7 @@ module.exports = {
   created,
   badRequest,
   unauthorized,
+  forbidden,
   methodNotAllowed,
   serverError,
   parseJsonBody

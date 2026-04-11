@@ -1,6 +1,7 @@
 const REQUEST_STATUSES = ["draft", "open", "grouped", "closed", "cancelled"];
 const GROUP_STATUSES = ["draft", "open", "full", "closed", "cancelled"];
 const SERVICE_TYPES = ["pickup", "dropoff"];
+const MANUAL_CURRENT_PREFIX = "manual_current:";
 
 function getIsoDatePart(value) {
   return new Date(value).toISOString().slice(0, 10);
@@ -28,6 +29,20 @@ function normalizeRequiredText(value, field) {
     throw new Error(`${field} is required`);
   }
   return next;
+}
+
+function parseManualCurrentPassengerCount(value) {
+  const raw = normalizeNullableText(value);
+  if (!raw || !raw.startsWith(MANUAL_CURRENT_PREFIX)) {
+    return null;
+  }
+  const parsed = Number.parseInt(raw.slice(MANUAL_CURRENT_PREFIX.length), 10);
+  return Number.isInteger(parsed) && parsed >= 0 ? parsed : null;
+}
+
+function encodeManualCurrentPassengerCount(value) {
+  const parsed = ensurePositiveInteger(value, "current_passenger_count", true);
+  return `${MANUAL_CURRENT_PREFIX}${parsed}`;
 }
 
 function ensureEnum(value, allowed, field) {
@@ -129,6 +144,12 @@ function mapGroupPayload(payload, existing = {}) {
   const normalizedGroupDateInput = payload.group_date ?? existing.group_date ?? null;
   const normalizedGroupDate = normalizedGroupDateInput ? ensureDate(normalizedGroupDateInput, "group_date") : null;
 
+  const manualCurrentPassengerCount = ensurePositiveInteger(
+    payload.current_passenger_count ?? parseManualCurrentPassengerCount(existing.vehicle_type) ?? 0,
+    "current_passenger_count",
+    true
+  );
+
   const next = {
     service_type: ensureEnum(payload.service_type ?? existing.service_type, SERVICE_TYPES, "service_type"),
     group_date: deriveGroupDate(normalizedGroupDate, preferredTimeStart, flightTimeReference),
@@ -140,7 +161,7 @@ function mapGroupPayload(payload, existing = {}) {
     flight_time_reference: flightTimeReference,
     preferred_time_start: preferredTimeStart,
     preferred_time_end: preferredTimeEnd,
-    vehicle_type: normalizeNullableText(payload.vehicle_type ?? existing.vehicle_type),
+    vehicle_type: encodeManualCurrentPassengerCount(manualCurrentPassengerCount),
     max_passengers: ensurePositiveInteger(payload.max_passengers ?? existing.max_passengers, "max_passengers"),
     visible_on_frontend: payload.visible_on_frontend ?? existing.visible_on_frontend ?? false,
     status: ensureEnum(payload.status ?? existing.status ?? "draft", GROUP_STATUSES, "status"),
@@ -151,7 +172,27 @@ function mapGroupPayload(payload, existing = {}) {
   return next;
 }
 
+function applyEffectiveGroupCounts(record) {
+  if (!record) {
+    return record;
+  }
+
+  const manualCurrentPassengerCount = parseManualCurrentPassengerCount(record.vehicle_type);
+  const currentPassengerCount = manualCurrentPassengerCount ?? Number(record.current_passenger_count || 0);
+  const maxPassengers = Number(record.max_passengers || 0);
+
+  return {
+    ...record,
+    current_passenger_count: currentPassengerCount,
+    remaining_passenger_count: Math.max(maxPassengers - currentPassengerCount, 0),
+    manual_current_passenger_count: manualCurrentPassengerCount
+  };
+}
+
 function applyRequestFilters(query, reqQuery) {
+  if (reqQuery.order_no) {
+    query.eq("order_no", String(reqQuery.order_no).trim().toUpperCase());
+  }
   if (reqQuery.service_type) {
     query.eq("service_type", reqQuery.service_type);
   }
@@ -216,10 +257,53 @@ function deriveRequestFlags(request) {
   };
 }
 
+function resolveRequestServiceStatus(request, group) {
+  if (request?.status === "cancelled" || group?.status === "cancelled") {
+    return "cancelled";
+  }
+
+  if (!group) {
+    return request?.status === "closed" ? "closed" : "open";
+  }
+
+  const referenceTime = group.preferred_time_start || group.flight_time_reference || null;
+  if (group.status === "closed") {
+    return "closed";
+  }
+  if (referenceTime) {
+    const reference = new Date(referenceTime);
+    if (!Number.isNaN(reference.getTime()) && Date.now() >= reference.getTime()) {
+      return "closed";
+    }
+  }
+  return "in_service";
+}
+
+function resolveRequestMatchingStatus(isGrouped, isSourceOrder) {
+  if (!isGrouped) {
+    return "unmatched";
+  }
+  return isSourceOrder ? "created" : "matched";
+}
+
+function deriveRequestDisplayFlags(request, options = {}) {
+  const isGrouped = Array.isArray(request.transport_group_members) && request.transport_group_members.length > 0;
+  const group = options.group || null;
+  const isSourceOrder = Boolean(options.isSourceOrder);
+  return {
+    ...request,
+    is_grouped: isGrouped,
+    effective_status: isGrouped ? "grouped" : request.status,
+    service_status_code: resolveRequestServiceStatus(request, group),
+    matching_status_code: resolveRequestMatchingStatus(isGrouped, isSourceOrder),
+    matched_group_id: group?.id || request.transport_group_members?.[0]?.group_id || null
+  };
+}
+
 async function syncGroupStatus(supabase, groupId) {
   const { data: group, error: groupError } = await supabase
     .from("transport_groups")
-    .select("id, status, max_passengers")
+    .select("id, status, max_passengers, vehicle_type")
     .eq("id", groupId)
     .single();
 
@@ -231,7 +315,8 @@ async function syncGroupStatus(supabase, groupId) {
     return group;
   }
 
-  const currentPassengerCount = await getGroupPassengerCount(supabase, groupId);
+  const currentPassengerCount = parseManualCurrentPassengerCount(group.vehicle_type)
+    ?? await getGroupPassengerCount(supabase, groupId);
   const nextStatus = currentPassengerCount >= group.max_passengers ? "full" : "open";
 
   const { data, error } = await supabase
@@ -254,10 +339,12 @@ module.exports = {
   SERVICE_TYPES,
   mapRequestPayload,
   mapGroupPayload,
+  applyEffectiveGroupCounts,
   applyRequestFilters,
   applyGroupFilters,
   syncGroupStatus,
   getGroupPassengerCount,
   deriveRequestFlags,
+  deriveRequestDisplayFlags,
   MAX_REQUEST_STATUS: REQUEST_STATUSES
 };

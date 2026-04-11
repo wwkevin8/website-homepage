@@ -1,10 +1,12 @@
 const { getSupabaseAdmin } = require("../_lib/supabase");
-const { requireAuth } = require("../_lib/auth");
+const { requireAdminUser } = require("../_lib/admin-auth");
 const { ok, methodNotAllowed, serverError } = require("../_lib/http");
 const { syncGroupStatus } = require("../_lib/transport");
 
 module.exports = async function handler(req, res) {
-  if (!requireAuth(req, res)) {
+  const supabase = getSupabaseAdmin();
+  const adminUser = await requireAdminUser(req, res, supabase);
+  if (!adminUser) {
     return;
   }
 
@@ -12,8 +14,6 @@ module.exports = async function handler(req, res) {
     methodNotAllowed(res, ["DELETE"]);
     return;
   }
-
-  const supabase = getSupabaseAdmin();
   const { id } = req.query;
 
   try {

@@ -676,6 +676,35 @@
             <strong data-i18n="resultOtherCityTitle">英国其他城市转运说明</strong>
             <p id="resultOtherCityText" data-i18n="resultOtherCityText">外地转运费用未自动计入预计总价。通常使用皇家邮局或 DPD，一般 2 个工作日送达；建议优先使用 1 / 2 / 3 号箱，10kg 内 £10，10–30kg £15，特殊物品需联系客服确认。</p>
           </div>
+          <div class="storage-summary-card">
+            <div class="storage-summary-head">
+              <div>
+                <strong>预约摘要</strong>
+                <p class="storage-summary-tip">估价完成后，这里会自动整理本次预约的关键信息。</p>
+              </div>
+              <button class="button button-secondary" id="copyBookingSummaryButton" type="button">复制摘要</button>
+            </div>
+            <div class="storage-summary-grid" id="storageBookingSummary">
+              <div class="storage-summary-item">
+                <strong>提示</strong>
+                <span>请先填写有效箱数、日期和取送方式，随后可进入预约页继续提交。</span>
+              </div>
+            </div>
+            <p class="storage-summary-tip">请核对以上估价与服务信息，提交后客服将根据该摘要与您确认最终预约内容。</p>
+          </div>
+          <div class="storage-inline-form-card">
+            <div class="storage-inline-form-head">
+              <div>
+                <strong>继续填写预约信息</strong>
+                <p>正式预约表单已单独放到下一页，避免当前估价页过长。</p>
+              </div>
+            </div>
+            <div class="storage-inline-cta">
+              <p>先在本页完成估价，再进入下一页填写联系方式、地址和服务时间。系统会自动带上本次估价摘要。</p>
+              <a class="button button-primary full-width" id="goToStorageBookingButton" href="./storage-booking.html">继续填写预约信息</a>
+              <p class="storage-form-message" id="storageBookingFormMessage"></p>
+            </div>
+          </div>
         </div>
       </div>
 

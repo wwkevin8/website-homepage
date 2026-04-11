@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>&#x7528;&#x6237;&#x7BA1;&#x7406; | NGN &#x7BA1;&#x7406;&#x540E;&#x53F0;</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body
+  data-admin-shell
+  data-admin-page="users"
+  data-admin-section="&#x8FD0;&#x8425;&#x540E;&#x53F0;"
+  data-admin-title="&#x7528;&#x6237;&#x7BA1;&#x7406;"
+  data-admin-description="&#x67E5;&#x770B;&#x7AD9;&#x70B9;&#x767B;&#x5F55;&#x7528;&#x6237;&#x3001;&#x767B;&#x5F55;&#x65B9;&#x5F0F;&#x548C;&#x6D3B;&#x8DC3;&#x60C5;&#x51B5;&#x3002;"
+>
+  <div class="admin-layout">
+    <aside class="admin-sidebar" data-admin-sidebar></aside>
+    <div class="admin-main">
+      <header class="admin-header" data-admin-header></header>
+      <main class="admin-content" data-admin-content>
+        <section class="admin-page" id="adminUsersPage">
+          <section class="admin-panel">
+            <form class="admin-toolbar" id="adminUsersFilters">
+              <label class="field">
+                <span>&#x5173;&#x952E;&#x8BCD;</span>
+                <input type="text" name="search" placeholder="&#x8BF7;&#x8F93;&#x5165;&#x90AE;&#x7BB1;&#x6216;&#x6635;&#x79F0;">
+              </label>
+              <label class="field">
+                <span>&#x767B;&#x5F55;&#x65B9;&#x5F0F;</span>
+                <select name="provider">
+                  <option value="">&#x5168;&#x90E8;</option>
+                  <option value="google">Google</option>
+                </select>
+              </label>
+              <div class="admin-inline-actions">
+                <button class="button button-primary" type="submit">&#x67E5;&#x8BE2;</button>
+                <button class="button button-secondary" type="reset">&#x91CD;&#x7F6E;</button>
+              </div>
+            </form>
+          </section>
+          <section id="adminUsersTable"></section>
+          <p class="admin-pagination" id="adminUsersPagination"></p>
+        </section>
+      </main>
+    </div>
+  </div>
+  <script src="./admin-api.js"></script>
+  <script src="./admin-shell.js"></script>
+  <script src="./admin-pages.js"></script>
+</body>
+</html>

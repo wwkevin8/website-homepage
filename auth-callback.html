@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Google Callback | Nottingham Good Neighbor</title>
+  <meta
+    name="description"
+    content="Handle the Google OAuth callback from Supabase and convert it into the website's own session cookie."
+    data-i18n-content="metaDescription"
+  >
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <main class="page-shell auth-page-shell" data-auth-callback-page>
+    <section class="storage-section auth-page-section">
+      <div class="auth-page-tools">
+        <div class="lang-switch" aria-label="language switch">
+          <button class="lang-btn" type="button" data-auth-lang="zh-CN">中</button>
+          <button class="lang-btn" type="button" data-auth-lang="en">EN</button>
+        </div>
+      </div>
+
+      <div class="auth-hero-panel">
+        <p class="eyebrow" data-i18n="heroEyebrow">Google Callback</p>
+        <h1 data-i18n="heroTitle">Completing Google sign-in and establishing the website session.</h1>
+        <p class="auth-hero-text" data-i18n="heroText">
+          This page receives the Supabase callback, reads the authenticated Google session, and then asks the backend
+          to create the website's own session cookie.
+        </p>
+      </div>
+
+      <div class="calculator-card auth-card">
+        <div class="auth-card-header">
+          <div class="section-heading">
+            <p class="eyebrow" data-i18n="cardEyebrow">Callback</p>
+            <h2 data-i18n="cardTitle">Signing you in</h2>
+            <p id="authCallbackMessage" class="transport-form-message" data-i18n="checkingMessage">Checking the Google callback. Please wait...</p>
+          </div>
+        </div>
+        <section class="auth-state-card">
+          <div class="auth-loading-dot-group" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <p data-i18n="helperText">If this page does not move on, return to the login page and try Google sign-in again.</p>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    window.AUTH_PAGE_TRANSLATIONS = {
+      "zh-CN": {
+        pageTitle: "Google 回调 | Nottingham Good Neighbor",
+        metaDescription: "处理 Supabase 的 Google 回调，并换成网站自己的 session cookie。",
+        heroEyebrow: "Google 回调",
+        heroTitle: "正在完成 Google 登录，并建立网站自己的登录 session。",
+        heroText: "这个页面会接收 Supabase 的 Google 回调，读取当前已认证的 Google 会话，然后请求后端写入网站自己的 session cookie。",
+        cardEyebrow: "回调处理",
+        cardTitle: "正在登录",
+        checkingMessage: "正在检查 Google 回调，请稍候...",
+        helperText: "如果这个页面长时间没有继续跳转，请回到登录页重新发起 Google 登录。",
+        configError: "无法读取认证配置。",
+        configMissing: "缺少 Supabase 认证配置。",
+        syncError: "创建站内登录态失败。",
+        missingSession: "没有拿到有效的 Google 登录会话，请返回登录页重试。",
+        callbackError: "Google 回调处理失败，请返回登录页重试。",
+        loginDone: "登录成功，正在跳转..."
+      },
+      "en": {
+        pageTitle: "Google Callback | Nottingham Good Neighbor",
+        metaDescription: "Handle the Google OAuth callback from Supabase and convert it into the website's own session cookie.",
+        heroEyebrow: "Google Callback",
+        heroTitle: "Completing Google sign-in and establishing the website session.",
+        heroText: "This page receives the Supabase callback, reads the authenticated Google session, and then asks the backend to create the website's own session cookie.",
+        cardEyebrow: "Callback",
+        cardTitle: "Signing you in",
+        checkingMessage: "Checking the Google callback. Please wait...",
+        helperText: "If this page does not move on, return to the login page and try Google sign-in again.",
+        configError: "Unable to load auth config.",
+        configMissing: "Missing Supabase auth config.",
+        syncError: "Failed to create the website session.",
+        missingSession: "No valid Google sign-in session was found. Please return to the login page and try again.",
+        callbackError: "Google callback handling failed. Please return to the login page and try again.",
+        loginDone: "Login complete. Redirecting..."
+      }
+    };
+  </script>
+  <script src="./auth-i18n.js"></script>
+  <script src="./site-auth.js"></script>
+  <script type="module">
+    const i18n = window.AuthPageI18n;
+    const message = document.querySelector("#authCallbackMessage");
+    const returnTo = window.SiteAuth
+      ? window.SiteAuth.toAbsolutePath(new URLSearchParams(window.location.search).get("return_to") || "/service-center.html")
+      : "/service-center.html";
+
+    function t(key, fallback) {
+      return i18n ? i18n.t(key, fallback) : fallback;
+    }
+
+    function setMessage(text, isError = false) {
+      if (!message) {
+        return;
+      }
+      message.textContent = text;
+      message.classList.toggle("is-error", Boolean(isError));
+      message.classList.toggle("is-success", Boolean(text && !isError));
+    }
+
+    async function loadSupabase() {
+      const [{ createClient }, response] = await Promise.all([
+        import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm"),
+        fetch("/api/public/auth-config")
+      ]);
+
+      const payload = await response.json().catch(() => ({
+        data: null,
+        error: { message: t("configError", "Unable to load auth config.") }
+      }));
+
+      if (!response.ok || !payload.data?.supabaseUrl || !payload.data?.supabaseAnonKey) {
+        throw new Error(payload.error?.message || t("configMissing", "Missing Supabase auth config."));
+      }
+
+      return createClient(payload.data.supabaseUrl, payload.data.supabaseAnonKey, {
+        auth: {
+          flowType: "pkce",
+          persistSession: true,
+          autoRefreshToken: false,
+          detectSessionInUrl: true
+        }
+      });
+    }
+
+    async function syncServerSession(accessToken) {
+      const response = await fetch("/api/auth/sync", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ access_token: accessToken })
+      });
+
+      const payload = await response.json().catch(() => ({
+        data: null,
+        error: { message: t("syncError", "Failed to create the website session.") }
+      }));
+
+      if (!response.ok) {
+        throw new Error(payload.error?.message || t("syncError", "Failed to create the website session."));
+      }
+
+      return payload.data;
+    }
+
+    async function main() {
+      try {
+        const supabase = await loadSupabase();
+        const {
+          data: { session },
+          error
+        } = await supabase.auth.getSession();
+
+        if (error) {
+          throw error;
+        }
+
+        if (!session || !session.access_token) {
+          throw new Error(t("missingSession", "No valid Google sign-in session was found. Please return to the login page and try again."));
+        }
+
+        await syncServerSession(session.access_token);
+        await supabase.auth.signOut({ scope: "local" }).catch(() => {});
+        setMessage(t("loginDone", "Login complete. Redirecting..."));
+        window.location.replace(returnTo);
+      } catch (error) {
+        setMessage(error.message || t("callbackError", "Google callback handling failed. Please return to the login page and try again."), true);
+      }
+    }
+
+    main();
+  </script>
+</body>
+</html>

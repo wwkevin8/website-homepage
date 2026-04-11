@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>左邻右里 | 非会员寄存预约</title>
+  <meta name="description" content="非会员寄存预约信息填写页，可确认估价摘要并直接提交预约给客服。">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css?v=20260331-storage-booking-fix-1">
+</head>
+<body class="storage-page">
+  <header class="site-header service-header">
+    <div class="site-header-inner service-header-inner">
+      <a class="brand-wrap" href="./index.html" aria-label="NGN 首页">
+        <img class="brand-logo" src="./img/logo.png" alt="NGN" />
+      </a>
+      <nav class="service-nav">
+        <a href="./index.html">首页</a>
+        <a href="./storage.html">返回估价页</a>
+        <a href="./service-center.html">联系客服</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="storage-main">
+    <section class="storage-hero">
+      <div class="storage-container">
+        <div class="storage-hero-copy">
+          <span class="storage-eyebrow">非会员寄存预约</span>
+          <h1>继续填写预约信息</h1>
+          <p id="storageBookingPageHint">请核对左侧估价摘要，并在本页补充联系方式、地址和服务时间。提交后我们会把完整预约信息发送给客服确认。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="storage-section">
+      <div class="storage-container storage-booking-layout">
+        <aside class="storage-booking-side">
+          <div class="storage-summary-card">
+            <div class="storage-summary-head">
+              <div>
+                <strong>预约摘要</strong>
+                <p class="storage-summary-tip">以下内容来自上一页的估价结果，提交时会一并发送给客服。</p>
+              </div>
+              <button class="button button-secondary" id="copyBookingSummaryButton" type="button">复制摘要</button>
+            </div>
+            <div class="storage-summary-grid" id="storageBookingSummary">
+              <div class="storage-summary-item">
+                <strong>提示</strong>
+                <span>未找到估价摘要，请返回估价页重新生成。</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="storage-inline-form-card">
+            <div class="storage-inline-form-head">
+              <div>
+                <strong>返回估价页</strong>
+                <p>如果要修改箱型数量、日期或取送方式，请回到上一页重新估价。</p>
+              </div>
+            </div>
+            <div class="storage-inline-cta">
+              <a class="button button-secondary full-width" href="./storage.html">返回估价页修改</a>
+            </div>
+          </div>
+        </aside>
+
+        <div class="storage-booking-main">
+          <form class="storage-inline-form-card storage-booking-form" id="storageBookingForm" novalidate>
+            <div class="storage-inline-form-head">
+              <div>
+                <strong>预约信息填写</strong>
+                <p>请按顺序完成须知确认、联系信息与地址填写。</p>
+              </div>
+            </div>
+
+            <section class="storage-form-section">
+              <div class="storage-notice-header">
+                <div>
+                  <h4>下单须知</h4>
+                  <p>移动端可展开查看完整内容；未勾选同意将无法提交。</p>
+                </div>
+                <button class="button button-secondary storage-notice-toggle" id="storageNoticeToggle" type="button" aria-expanded="false">展开</button>
+              </div>
+              <div class="storage-notice-content" id="storageNoticeContent">
+                <ol class="storage-notice-list">
+                  <li>默认所有取送货地点为公寓最近停车点，上楼取送货需额外收费。</li>
+                  <li>诺丁汉市内送寄存或搬家请提前至少 3 天预约，送往其他城市建议提前一周联系。</li>
+                  <li>买 3 个箱子可以送 1 个胶布。</li>
+                  <li>寄存价格不足 £30 时按 £30 计算；若仅 1 箱短期寄存，最低可降至 £20。</li>
+                  <li>寄存或搬家的纸皮箱 / 行李箱建议控制在 23kg 以内，超过 30kg 无法安排。</li>
+                  <li>超尺寸、超重、无包装或需特殊看护的物品，请先联系人工客服确认。</li>
+                  <li>易碎和高价值物品请自行妥善包装，如需额外保险请联系客服。</li>
+                  <li>预约取寄存请至少提前 48 小时下单。</li>
+                  <li>周日通常无法安排司机和工人，如有特殊情况请提前说明。</li>
+                  <li>送箱子、取寄存和送寄存请分别下单，便于客服确认执行。</li>
+                </ol>
+              </div>
+              <div class="storage-radio-group compact">
+                <label><input type="radio" name="noticeConfirmed" value="yes"> 是，我已阅读并同意</label>
+                <label><input type="radio" name="noticeConfirmed" value="no" checked> 否</label>
+              </div>
+            </section>
+
+            <section class="storage-form-section">
+              <h4>服务基础信息</h4>
+              <div class="storage-form-grid">
+                <label>
+                  <span class="storage-field-label">服务日期</span>
+                  <input id="bookingServiceDate" name="serviceDate" type="date" required>
+                </label>
+                <div>
+                  <span class="storage-field-label">服务时间</span>
+                  <div class="storage-radio-group">
+                    <label><input type="radio" name="serviceTime" value="daytime" checked> 白天（一般 10-13 点）</label>
+                    <label><input type="radio" name="serviceTime" value="evening"> 晚上（一般 20-23 点）</label>
+                  </div>
+                </div>
+                <div class="storage-field-span-2">
+                  <span class="storage-field-label">是否需要上门帮忙搬</span>
+                  <div class="storage-radio-group">
+                    <label><input type="radio" name="needMovingHelp" value="yes"> 需要</label>
+                    <label><input type="radio" name="needMovingHelp" value="no" checked> 不需要</label>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section class="storage-form-section">
+              <h4>联系信息</h4>
+              <div class="storage-form-grid">
+                <label>
+                  <span class="storage-field-label">微信号</span>
+                  <input id="bookingWechatId" name="wechatId" type="text" placeholder="请输入微信号" required>
+                </label>
+                <label>
+                  <span class="storage-field-label">姓名（中文全名）</span>
+                  <input id="bookingCustomerName" name="customerName" type="text" placeholder="请输入中文姓名" required>
+                </label>
+                <label class="storage-field-span-2">
+                  <span class="storage-field-label">联系电话（英国手机号）</span>
+                  <input id="bookingPhone" name="phone" type="tel" placeholder="请输入英国手机号" required>
+                </label>
+              </div>
+            </section>
+
+            <section class="storage-form-section">
+              <h4>服务项目信息</h4>
+              <div class="storage-form-grid">
+                <label class="storage-field-span-2">
+                  <span class="storage-field-label">服务项目</span>
+                  <input id="bookingServiceLabel" name="serviceLabel" type="text" readonly>
+                </label>
+                <label>
+                  <span class="storage-field-label">箱子数量预估</span>
+                  <input id="bookingEstimatedBoxCount" name="estimatedBoxCount" type="number" min="0" step="1">
+                </label>
+                <label>
+                  <span class="storage-field-label">是否安排朋友代取</span>
+                  <div class="storage-radio-group compact">
+                    <label><input type="radio" name="friendPickup" value="no" checked> 否</label>
+                    <label><input type="radio" name="friendPickup" value="yes"> 是</label>
+                  </div>
+                </label>
+                <label class="storage-field-span-2" id="friendPhoneField" hidden>
+                  <span class="storage-field-label">朋友联系电话</span>
+                  <input id="bookingFriendPhone" name="friendPhone" type="text" placeholder="请填写朋友联系电话">
+                </label>
+                <label class="storage-field-span-2">
+                  <span class="storage-field-label">完整的取送货地址 + 邮编</span>
+                  <textarea id="bookingAddressFull" name="addressFull" rows="4" placeholder="请填写完整地址和邮编" required></textarea>
+                </label>
+                <label class="storage-field-span-2">
+                  <span class="storage-field-label">特殊需求 / 备注</span>
+                  <textarea id="bookingNotes" name="notes" rows="4" placeholder="如有楼层、门禁、特殊物品或时间要求，请在这里说明"></textarea>
+                </label>
+              </div>
+            </section>
+
+            <p class="storage-form-message" id="storageBookingFormMessage"></p>
+
+            <button class="button button-primary full-width" id="storageBookingSubmitButton" type="submit">提交预约并发送给客服确认</button>
+          </form>
+
+          <div class="storage-submit-success" id="storageSubmitSuccess" hidden>
+            <strong id="storageSubmitSuccessTitle">已提交并已通知客服</strong>
+            <p id="storageSubmitSuccessDescription">客服将通过微信或电话联系确认</p>
+            <p class="storage-submit-success-order">订单编号：<span id="storageSubmitSuccessOrderNo">--</span></p>
+            <div class="storage-inline-cta">
+              <a class="button button-secondary full-width" href="./storage.html">返回估价页</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="./script.js?v=20260331-storage-booking-fix-1" defer></script>
+</body>
+</html>

@@ -3,127 +3,56 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>新建接送机需求</title>
+  <title>&#x8865;&#x5F55;&#x767B;&#x8BB0;&#x8868;&#x5355; | NGN &#x7BA1;&#x7406;&#x540E;&#x53F0;</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./styles.css">
 </head>
-<body>
-  <main class="page-shell transport-admin-shell" id="transportRequestFormPage">
-    <section class="storage-section">
-      <div class="transport-admin-header">
-        <div class="section-heading">
-          <p class="eyebrow">New Request</p>
-          <h1>新建接送机需求</h1>
-          <p>先录入 request，后续可在编辑页分配到拼车组。</p>
-        </div>
-        <div class="transport-admin-nav">
-          <a class="button button-secondary" href="./transport-admin-requests.html">返回需求列表</a>
-          <a class="button button-secondary" href="./transport-admin-groups.html">拼车组列表</a>
-          <button class="button button-secondary" type="button" data-transport-logout>退出登录</button>
-        </div>
-      </div>
-
-      <form class="calculator-card transport-form-grid" id="transportRequestForm">
-        <label class="field">
-          <span>服务类型</span>
-          <select name="service_type">
-            <option value="pickup">接机</option>
-            <option value="dropoff">送机</option>
-          </select>
-        </label>
-        <label class="field">
-          <span>学生姓名</span>
-          <input type="text" name="student_name" required>
-        </label>
-        <label class="field">
-          <span>手机号</span>
-          <input type="text" name="phone">
-        </label>
-        <label class="field">
-          <span>微信</span>
-          <input type="text" name="wechat">
-        </label>
-        <label class="field">
-          <span>人数</span>
-          <input type="number" name="passenger_count" min="1" value="1" required>
-        </label>
-        <label class="field">
-          <span>行李数</span>
-          <input type="number" name="luggage_count" min="0" value="0" required>
-        </label>
-        <label class="field">
-          <span>机场代码</span>
-          <select name="airport_code"></select>
-        </label>
-        <label class="field">
-          <span>机场名称</span>
-          <input type="text" name="airport_name" readonly required>
-        </label>
-        <label class="field">
-          <span data-terminal-label>抵达航站楼</span>
-          <input type="text" name="terminal">
-        </label>
-        <label class="field">
-          <span>航班号</span>
-          <input type="text" name="flight_no">
-        </label>
-        <label class="field">
-          <span data-flight-datetime-label>抵达日期时间</span>
-          <input type="datetime-local" name="flight_datetime" required>
-        </label>
-        <label class="field">
-          <span>出发地</span>
-          <input type="text" name="location_from" required>
-        </label>
-        <label class="field">
-          <span>目的地</span>
-          <input type="text" name="location_to" required>
-        </label>
-        <label class="field">
-          <span>期待开始时间</span>
-          <input type="datetime-local" name="preferred_time_start">
-        </label>
-        <label class="field">
-          <span>期待结束时间</span>
-          <input type="datetime-local" name="preferred_time_end">
-        </label>
-        <label class="field transport-checkbox-field">
-          <span>可拼车</span>
-          <input type="checkbox" name="shareable" checked>
-        </label>
-        <label class="field">
-          <span>状态</span>
-          <select name="status">
-            <option value="draft">草稿</option>
-            <option value="open">开放中</option>
-            <option value="closed">已关闭</option>
-            <option value="cancelled">已取消</option>
-          </select>
-        </label>
-        <label class="field transport-field-span-2">
-          <span>备注</span>
-          <textarea name="notes" rows="4"></textarea>
-        </label>
-        <p class="transport-form-message transport-field-span-2" id="transportRequestMessage"></p>
-        <div class="transport-card-actions transport-field-span-2">
-          <button class="button button-primary" type="submit">保存需求</button>
-        </div>
-      </form>
-
-      <section class="calculator-card" id="transportRequestAssignSection" hidden>
-        <h2>分配到拼车组</h2>
-        <p>保存完成后，可把当前需求加入同类型、同机场代码的拼车组。</p>
-        <div class="transport-inline-actions">
-          <select id="transportRequestGroupSelect">
-            <option value="">请选择拼车组</option>
-          </select>
-          <button class="button button-secondary" id="transportRequestAssignButton" type="button">加入拼车组</button>
-        </div>
-      </section>
-    </section>
-  </main>
+<body data-admin-shell data-admin-page="transport-forms" data-admin-section="&#x8FD0;&#x8425;&#x540E;&#x53F0;" data-admin-title="&#x8865;&#x5F55;&#x767B;&#x8BB0;&#x8868;&#x5355;" data-admin-description="&#x5982;&#x9700;&#x4EBA;&#x5DE5;&#x8865;&#x5F55;&#x540C;&#x5B66;&#x7684;&#x63A5;&#x9001;&#x673A;&#x767B;&#x8BB0;&#xFF0C;&#x53EF;&#x5728;&#x8FD9;&#x91CC;&#x4FDD;&#x5B58;&#x5E76;&#x540E;&#x7EED;&#x5339;&#x914D;&#x5230;&#x65B0;&#x5EFA;&#x8BA2;&#x5355;&#x3002;">
+  <div class="admin-layout">
+    <aside class="admin-sidebar" data-admin-sidebar></aside>
+    <div class="admin-main">
+      <header class="admin-header" data-admin-header></header>
+      <main class="admin-content" data-admin-content>
+        <section class="admin-page" id="transportRequestFormPage">
+          <div class="admin-page-actions">
+            <a class="button button-secondary" href="./transport-admin-requests.html">&#x8FD4;&#x56DE;&#x767B;&#x8BB0;&#x8868;&#x5355;</a>
+            <a class="button button-secondary" href="./transport-admin-groups.html">&#x67E5;&#x770B;&#x786E;&#x8BA4;&#x63A5;&#x9001;&#x673A;&#x8BA2;&#x5355;</a>
+          </div>
+          <form class="admin-panel transport-form-grid" id="transportRequestForm">
+            <label class="field"><span>&#x670D;&#x52A1;&#x7C7B;&#x578B;</span><select name="service_type"><option value="pickup">&#x63A5;&#x673A;</option><option value="dropoff">&#x9001;&#x673A;</option></select></label>
+            <label class="field"><span>&#x63D0;&#x4EA4;&#x4EBA;&#x59D3;&#x540D;</span><input type="text" name="student_name" required></label>
+            <label class="field"><span>&#x624B;&#x673A;&#x53F7;</span><input type="text" name="phone"></label>
+            <label class="field"><span>&#x5FAE;&#x4FE1;&#x53F7;</span><input type="text" name="wechat"></label>
+            <label class="field"><span>&#x6210;&#x4EBA;&#x4EBA;&#x6570;</span><input type="number" name="passenger_count" min="1" value="1" required></label>
+            <label class="field"><span>&#x884C;&#x674E;&#x4EF6;&#x6570;</span><input type="number" name="luggage_count" min="0" value="0" required></label>
+            <label class="field"><span>&#x76EE;&#x6807;&#x673A;&#x573A;</span><select name="airport_code"></select></label>
+            <label class="field"><span>&#x673A;&#x573A;&#x540D;&#x79F0;</span><input type="text" name="airport_name" readonly required></label>
+            <label class="field"><span data-terminal-label>&#x822A;&#x7AD9;&#x697C;</span><input type="text" name="terminal"></label>
+            <label class="field"><span>&#x822A;&#x73ED;&#x53F7;</span><input type="text" name="flight_no"></label>
+            <label class="field"><span data-flight-datetime-label>&#x822A;&#x73ED;&#x65F6;&#x95F4;</span><input type="datetime-local" name="flight_datetime" required></label>
+            <label class="field"><span>&#x51FA;&#x53D1;&#x5730;&#x70B9;</span><input type="text" name="location_from" required></label>
+            <label class="field"><span>&#x76EE;&#x6807;&#x5730;&#x5740;</span><input type="text" name="location_to" required></label>
+            <label class="field"><span>&#x53EF;&#x670D;&#x52A1;&#x5F00;&#x59CB;&#x65F6;&#x95F4;</span><input type="datetime-local" name="preferred_time_start"></label>
+            <label class="field"><span>&#x53EF;&#x670D;&#x52A1;&#x7ED3;&#x675F;&#x65F6;&#x95F4;</span><input type="datetime-local" name="preferred_time_end"></label>
+            <label class="field transport-checkbox-field"><span>&#x5141;&#x8BB8;&#x62FC;&#x8F66;</span><input type="checkbox" name="shareable" checked></label>
+            <label class="field"><span>&#x670D;&#x52A1;&#x72B6;&#x6001;</span><select name="status"><option value="draft">&#x5F85;&#x670D;&#x52A1;</option><option value="open">&#x5F85;&#x670D;&#x52A1;</option><option value="closed">&#x670D;&#x52A1;&#x5DF2;&#x7ED3;&#x675F;</option><option value="cancelled">&#x5DF2;&#x53D6;&#x6D88;</option></select></label>
+            <label class="field transport-field-span-2"><span>&#x5907;&#x6CE8;</span><textarea name="notes" rows="4"></textarea></label>
+            <p class="transport-form-message transport-field-span-2" id="transportRequestMessage"></p>
+            <div class="transport-card-actions transport-field-span-2"><button class="button button-primary" type="submit">&#x4FDD;&#x5B58;&#x8BA2;&#x5355;</button></div>
+          </form>
+          <section class="admin-panel" id="transportRequestAssignSection" hidden>
+            <h2>&#x5339;&#x914D;&#x5230;&#x65B0;&#x5EFA;&#x8BA2;&#x5355;</h2>
+            <p>&#x767B;&#x8BB0;&#x8868;&#x5355;&#x4FDD;&#x5B58;&#x540E;&#xFF0C;&#x53EF;&#x5728;&#x8FD9;&#x91CC;&#x5FEB;&#x901F;&#x5339;&#x914D;&#x5230;&#x7B26;&#x5408;&#x6761;&#x4EF6;&#x7684;&#x65B0;&#x5EFA;&#x8BA2;&#x5355;&#x3002;</p>
+            <div class="transport-inline-actions"><select id="transportRequestGroupSelect"><option value="">&#x8BF7;&#x9009;&#x62E9;&#x65B0;&#x5EFA;&#x8BA2;&#x5355;</option></select><button class="button button-secondary" id="transportRequestAssignButton" type="button">&#x5339;&#x914D;&#x5230;&#x8BE5;&#x8BA2;&#x5355;</button></div>
+          </section>
+        </section>
+      </main>
+    </div>
+  </div>
+  <script src="./admin-api.js"></script>
+  <script src="./admin-shell.js"></script>
   <script src="./transport-shared.js"></script>
   <script src="./transport-api.js"></script>
   <script src="./transport-admin.js"></script>

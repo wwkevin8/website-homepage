@@ -1,10 +1,12 @@
 const { getSupabaseAdmin } = require("../../_lib/supabase");
-const { requireAuth } = require("../../_lib/auth");
+const { requireAdminUser } = require("../../_lib/admin-auth");
 const { ok, badRequest, parseJsonBody, methodNotAllowed, serverError } = require("../../_lib/http");
 const { syncGroupStatus } = require("../../_lib/transport");
 
 module.exports = async function handler(req, res) {
-  if (!requireAuth(req, res)) {
+  const supabase = getSupabaseAdmin();
+  const adminUser = await requireAdminUser(req, res, supabase);
+  if (!adminUser) {
     return;
   }
 
@@ -12,8 +14,6 @@ module.exports = async function handler(req, res) {
     methodNotAllowed(res, ["POST"]);
     return;
   }
-
-  const supabase = getSupabaseAdmin();
   const { id: groupId } = req.query;
 
   try {
@@ -69,6 +69,29 @@ module.exports = async function handler(req, res) {
     const nextIds = new Set(requestIds);
     const toRemove = (existingMembers || []).filter(item => !nextIds.has(item.request_id));
     const toInsert = requestIds.filter(requestId => !existingIds.has(requestId));
+
+    if (toInsert.length) {
+      const { data: conflictingMembers, error: conflictingError } = await supabase
+        .from("transport_group_members")
+        .select("group_id, request_id")
+        .in("request_id", toInsert)
+        .neq("group_id", groupId);
+
+      if (conflictingError) {
+        throw conflictingError;
+      }
+
+      if (conflictingMembers && conflictingMembers.length) {
+        const conflictMap = new Map(conflictingMembers.map(item => [item.request_id, item.group_id]));
+        const conflictedRequest = (requests || []).find(item => conflictMap.has(item.id));
+        badRequest(res, "selected request is already matched to another confirmed transport order", {
+          request_id: conflictedRequest?.id || conflictingMembers[0].request_id,
+          order_no: conflictedRequest?.order_no || null,
+          group_id: conflictMap.get(conflictedRequest?.id) || conflictingMembers[0].group_id
+        });
+        return;
+      }
+    }
 
     if (toRemove.length) {
       const { error } = await supabase

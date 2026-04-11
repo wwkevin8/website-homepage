@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>左邻右里 | 拼车表单</title>
+  <meta name="description" content="诺丁汉 NGN 接送机与拼车需求登记表。">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css?v=20260330-pickup-form-page">
+</head>
+<body>
+  <div class="topbar topbar-storage">
+    <header class="site-header">
+      <a class="brand" href="./index.html" aria-label="左邻右里首页">
+        <div class="brand-lockup brand-lockup-header">
+          <div class="logo-bubbles">
+            <span>英国诺丁汉</span>
+            <span>左邻右里</span>
+            <span>生活服务</span>
+          </div>
+          <div class="logo-wordmark">NGN</div>
+          <div class="logo-subtitle">NOTTINGHAM GOOD NEIGHBOR</div>
+        </div>
+      </a>
+
+      <nav class="site-nav" aria-label="主导航">
+        <a class="nav-link nav-link-secondary" href="./index.html#hero">首页</a>
+        <a class="nav-link nav-link-secondary" href="./pickup.html">接送机说明</a>
+        <a class="nav-link nav-link-secondary" href="./storage.html">寄存价格</a>
+      </nav>
+
+      <div class="header-actions">
+        <button class="storage-mobile-menu-toggle" type="button" aria-label="菜单" data-storage-menu-toggle>
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+        <div class="site-auth-nav" data-site-auth-nav></div>
+      </div>
+    </header>
+  </div>
+
+  <main class="page-shell pickup-page pickup-form-page">
+    <section class="carpool-hero">
+      <article class="carpool-hero-card carpool-hero-main">
+        <p class="carpool-eyebrow">独立拼车表单</p>
+        <h1>填写拼车表单</h1>
+        <p class="carpool-lead">请按实际航班、人数、行李和诺丁汉地址完整填写。提交后页面会先生成摘要，再同步保存到当前站点的接送机请求系统。</p>
+        <div class="carpool-meta">
+          <span>电话: 07941 008555</span>
+          <span>客服微信: Nottsngn</span>
+        </div>
+        <div class="carpool-actions">
+          <button class="button button-primary carpool-primary-button" type="button" data-scroll-form>开始填写</button>
+        </div>
+        <p class="carpool-action-note">提交后请添加客服微信 Nottsngn，并将页面摘要发给客服确认安排。</p>
+      </article>
+    </section>
+
+    <section class="storage-section carpool-form-section" id="carpool-form">
+      <div class="section-heading carpool-heading">
+        <h2>拼车表单</h2>
+        <p>如果有必填项未填写，页面会自动滚动到第一个有问题的字段。</p>
+      </div>
+
+      <div class="carpool-form-layout">
+        <form class="carpool-form-card" id="carpoolBookingForm" novalidate>
+          <div class="carpool-form-row">
+            <label class="field carpool-field">
+              <span><em>*</em> 您的姓名</span>
+              <input type="text" name="student_name" autocomplete="name" required>
+            </label>
+          </div>
+
+          <div class="carpool-form-row two-columns">
+            <label class="field carpool-field">
+              <span>微信号</span>
+              <input type="text" name="wechat" autocomplete="off">
+            </label>
+            <label class="field carpool-field">
+              <span><em>*</em> 联系电话</span>
+              <input type="tel" name="phone" autocomplete="tel" required>
+            </label>
+          </div>
+
+          <fieldset class="carpool-choice-group">
+            <legend><em>*</em> 本次拼车类型</legend>
+            <label><input type="radio" name="service_mode" value="pickup" required> 接机，机场到诺丁汉</label>
+            <label><input type="radio" name="service_mode" value="dropoff"> 送机，诺丁汉到机场</label>
+            <label><input type="radio" name="service_mode" value="other"> 其他城市用车服务</label>
+          </fieldset>
+
+          <div class="carpool-form-row two-columns">
+            <label class="field carpool-field">
+              <span><em>*</em> 英国机场英文名称</span>
+              <input type="text" name="airport_name" placeholder="例如 Heathrow / LHR" required>
+            </label>
+            <label class="field carpool-field">
+              <span><em>*</em> 航站楼</span>
+              <input type="text" name="terminal" required>
+            </label>
+          </div>
+
+          <div class="carpool-form-row two-columns">
+            <label class="field carpool-field">
+              <span><em>*</em> 航班号</span>
+              <input type="text" name="flight_no" required>
+            </label>
+            <label class="field carpool-field">
+              <span><em>*</em> 抵达/起飞日期和时间</span>
+              <input type="datetime-local" name="flight_datetime" required>
+            </label>
+          </div>
+
+          <div class="carpool-form-row two-columns">
+            <label class="field carpool-field">
+              <span><em>*</em> 接送期望时间段</span>
+              <input type="datetime-local" name="preferred_time" required>
+            </label>
+            <label class="field carpool-field">
+              <span><em>*</em> 拼车截止日期</span>
+              <input type="date" name="deadline_date" required>
+            </label>
+          </div>
+
+          <fieldset class="carpool-choice-group">
+            <legend><em>*</em> 最少能接受几人拼车价位</legend>
+            <label><input type="radio" name="share_goal" value="1" required> 只想包车，可接受 1 人价</label>
+            <label><input type="radio" name="share_goal" value="2"> 可接受 2 人价</label>
+            <label><input type="radio" name="share_goal" value="3"> 可接受 3 人价</label>
+            <label><input type="radio" name="share_goal" value="4"> 可接受 4 人价</label>
+            <label><input type="radio" name="share_goal" value="5"> 可接受 5 人价</label>
+          </fieldset>
+
+          <fieldset class="carpool-choice-group">
+            <legend><em>*</em> 同行人数</legend>
+            <label><input type="radio" name="passenger_count" value="1" required> 1 人</label>
+            <label><input type="radio" name="passenger_count" value="2"> 2 人</label>
+            <label><input type="radio" name="passenger_count" value="3"> 3 人</label>
+            <label><input type="radio" name="passenger_count" value="4"> 4 人</label>
+            <label><input type="radio" name="passenger_count" value="5"> 5 人</label>
+          </fieldset>
+
+          <fieldset class="carpool-choice-group">
+            <legend><em>*</em> 行李数量</legend>
+            <p class="carpool-inline-hint" id="luggageHint">已选择 0 项，最多 2 项。</p>
+            <label><input type="checkbox" name="luggage_option" value="1big1small-box-cabin"> 1 大 1 小：托运箱 + 登机箱</label>
+            <label><input type="checkbox" name="luggage_option" value="1big1small-box-backpack"> 1 大 1 小：托运箱 + 大背包</label>
+            <label><input type="checkbox" name="luggage_option" value="2big1small-box-cabin"> 2 大 1 小：双托运箱 + 登机箱</label>
+            <label><input type="checkbox" name="luggage_option" value="2big1small-box-backpack"> 2 大 1 小：双托运箱 + 大背包</label>
+            <label><input type="checkbox" name="luggage_option" value="3big1small-box-backpack"> 3 大 1 小：三托运箱 + 大背包</label>
+            <label><input type="checkbox" name="luggage_option" value="other"> 其他</label>
+            <label class="field carpool-field carpool-inline-field" id="luggageOtherField" hidden>
+              <span>其他行李说明</span>
+              <input type="text" name="luggage_other" placeholder="请补充说明">
+            </label>
+          </fieldset>
+
+          <div class="carpool-form-row">
+            <label class="field carpool-field">
+              <span><em>*</em> 诺丁汉详细地址含邮编</span>
+              <input type="text" name="nottingham_address" placeholder="一定要详细地址，不要只填邮编" required>
+            </label>
+          </div>
+
+          <fieldset class="carpool-choice-group">
+            <legend><em>*</em> 如果拼车不成功，是否接受包车或现有人数拼车</legend>
+            <label><input type="radio" name="fallback_accept" value="accept" required> 接受</label>
+            <label><input type="radio" name="fallback_accept" value="reject"> 不接受</label>
+          </fieldset>
+
+          <label class="carpool-agreement">
+            <input type="checkbox" name="agreement" required>
+            <span>我确认表单信息真实有效，并同意客服根据表单信息联系我安排拼车。</span>
+          </label>
+
+          <div class="carpool-submit-row">
+            <p class="carpool-submit-message" id="carpoolSubmitMessage" aria-live="polite"></p>
+            <button class="button button-primary carpool-submit-button" type="submit">提交</button>
+          </div>
+        </form>
+
+        <aside class="carpool-summary-card">
+          <p class="carpool-eyebrow">提交摘要</p>
+          <h3>提交后会在这里生成摘要</h3>
+          <p class="carpool-summary-text">无论提交成功还是失败，摘要都会保留在页面上，方便复制给客服。</p>
+          <div class="carpool-summary-box" id="carpoolSummaryBox">
+            <p class="carpool-summary-placeholder">暂未生成摘要。</p>
+          </div>
+          <div class="carpool-summary-actions">
+            <button class="button button-secondary" type="button" id="copyCarpoolSummary" disabled>复制摘要</button>
+            <a class="button button-secondary" href="./pickup.html">返回说明页</a>
+          </div>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <button class="pickup-contact-fab" id="pickupContactFab" type="button" aria-haspopup="dialog" aria-controls="pickupContactModal">
+    <span class="pickup-contact-fab-icon" aria-hidden="true">咨</span>
+    <span class="pickup-contact-fab-copy">
+      <span class="pickup-contact-fab-eyebrow">Contact Support</span>
+      <span class="pickup-contact-fab-title">联系客服</span>
+      <span class="pickup-contact-fab-subtitle">扫码 / 咨询 / 添加微信</span>
+    </span>
+  </button>
+
+  <div class="pickup-contact-modal" id="pickupContactModal" hidden>
+    <div class="pickup-contact-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="pickupContactModalTitle">
+      <button class="pickup-contact-modal-close" id="pickupContactClose" type="button" aria-label="关闭联系客服弹窗">×</button>
+      <h2 id="pickupContactModalTitle" style="margin:0 0 16px;font-size:22px;color:#143b8b;">联系客服</h2>
+      <img src="./img/接机客服二维码.jpg" alt="接机客服二维码">
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <div class="footer-copy">
+      <div class="brand-lockup brand-lockup-footer">
+        <div class="logo-bubbles">
+          <span>英国诺丁汉</span>
+          <span>左邻右里</span>
+          <span>生活服务</span>
+        </div>
+        <div class="logo-wordmark">NGN</div>
+        <div class="logo-subtitle">NOTTINGHAM GOOD NEIGHBOR</div>
+      </div>
+      <p>面向诺丁汉留学生的本地生活支持服务。</p>
+    </div>
+  </footer>
+
+  <script src="./site-auth.js"></script>
+  <script src="./script.js?v=20260330-pickup-form-page"></script>
+  <script src="./pickup-form.js?v=20260330-pickup-form-page"></script>
+</body>
+</html>

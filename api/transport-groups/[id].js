@@ -1,14 +1,14 @@
 const { getSupabaseAdmin } = require("../_lib/supabase");
-const { requireAuth } = require("../_lib/auth");
+const { requireAdminUser } = require("../_lib/admin-auth");
 const { ok, badRequest, parseJsonBody, methodNotAllowed, serverError } = require("../_lib/http");
-const { mapGroupPayload, getGroupPassengerCount } = require("../_lib/transport");
+const { applyEffectiveGroupCounts, mapGroupPayload, getGroupPassengerCount } = require("../_lib/transport");
 
 module.exports = async function handler(req, res) {
-  if (!requireAuth(req, res)) {
+  const supabase = getSupabaseAdmin();
+  const adminUser = await requireAdminUser(req, res, supabase);
+  if (!adminUser) {
     return;
   }
-
-  const supabase = getSupabaseAdmin();
   const { id } = req.query;
 
   try {
@@ -33,7 +33,7 @@ module.exports = async function handler(req, res) {
         throw membersError;
       }
 
-      ok(res, { ...group, members: members || [] });
+      ok(res, { ...applyEffectiveGroupCounts(group), members: members || [] });
       return;
     }
 
@@ -74,11 +74,57 @@ module.exports = async function handler(req, res) {
         throw error;
       }
 
-      ok(res, data);
+      ok(res, applyEffectiveGroupCounts(data));
       return;
     }
 
-    methodNotAllowed(res, ["GET", "PATCH"]);
+    if (req.method === "DELETE") {
+      const { data: existingMembers, error: existingMembersError } = await supabase
+        .from("transport_group_members")
+        .select("request_id")
+        .eq("group_id", id);
+
+      if (existingMembersError) {
+        throw existingMembersError;
+      }
+
+      const requestIds = (existingMembers || []).map(item => item.request_id).filter(Boolean);
+      if (requestIds.length) {
+        const { error: requestError } = await supabase
+          .from("transport_requests")
+          .update({ status: "open" })
+          .in("id", requestIds)
+          .eq("status", "grouped");
+
+        if (requestError) {
+          throw requestError;
+        }
+      }
+
+      const { data: existingGroup, error: existingGroupError } = await supabase
+        .from("transport_groups")
+        .select("id")
+        .eq("id", id)
+        .single();
+
+      if (existingGroupError) {
+        throw existingGroupError;
+      }
+
+      const { error } = await supabase
+        .from("transport_groups")
+        .delete()
+        .eq("id", id);
+
+      if (error) {
+        throw error;
+      }
+
+      ok(res, { id: existingGroup.id });
+      return;
+    }
+
+    methodNotAllowed(res, ["GET", "PATCH", "DELETE"]);
   } catch (error) {
     serverError(res, error);
   }
