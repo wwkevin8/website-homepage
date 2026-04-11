@@ -95,10 +95,8 @@
   function renderPreviewCard(group) {
     return `
       <article class="pickup-board-card">
-        <div class="pickup-board-scroll">
-          <div class="pickup-board-stats pickup-board-stats-simple pickup-board-stats-inline">
-            ${renderInfoGrid(group, "pickup-board-stat")}
-          </div>
+        <div class="pickup-board-stats pickup-board-stats-simple pickup-board-stats-inline">
+          ${renderInfoGrid(group, "pickup-board-stat")}
         </div>
       </article>
     `;
@@ -114,6 +112,43 @@
       <span class="transport-pagination-current">第 ${page} 页</span>
       <button class="button button-secondary" type="button" data-page-action="next" ${hasNext ? "" : "disabled"}>下一页</button>
     `;
+  }
+
+  function enhancePickupPreviewScroller(container) {
+    const scroll = container?.querySelector("[data-pickup-board-scroll]");
+    const prevButton = container?.querySelector('[data-pickup-board-nav="prev"]');
+    const nextButton = container?.querySelector('[data-pickup-board-nav="next"]');
+    if (!scroll || !prevButton || !nextButton) {
+      return;
+    }
+
+    const getStep = () => Math.max(Math.round(scroll.clientWidth * 0.88), 320);
+
+    const updateButtons = () => {
+      const maxScrollLeft = Math.max(scroll.scrollWidth - scroll.clientWidth, 0);
+      prevButton.disabled = scroll.scrollLeft <= 8;
+      nextButton.disabled = scroll.scrollLeft >= (maxScrollLeft - 8);
+    };
+
+    prevButton.addEventListener("click", () => {
+      scroll.scrollBy({ left: -getStep(), behavior: "smooth" });
+    });
+
+    nextButton.addEventListener("click", () => {
+      scroll.scrollBy({ left: getStep(), behavior: "smooth" });
+    });
+
+    scroll.addEventListener("scroll", updateButtons, { passive: true });
+    scroll.addEventListener("wheel", event => {
+      if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) {
+        return;
+      }
+      event.preventDefault();
+      scroll.scrollBy({ left: event.deltaY, behavior: "auto" });
+    }, { passive: false });
+
+    window.addEventListener("resize", updateButtons, { passive: true });
+    updateButtons();
   }
 
   async function initBoardPage() {
@@ -248,7 +283,18 @@
       }
     }
 
-    list.innerHTML = payload.items.map(renderPreviewCard).join("");
+    list.innerHTML = `
+      <div class="pickup-board-carousel">
+        <button class="pickup-board-nav" type="button" data-pickup-board-nav="prev" aria-label="查看上一组拼车信息">‹</button>
+        <div class="pickup-board-track-scroll" data-pickup-board-scroll>
+          <div class="pickup-board-track">
+            ${payload.items.map(renderPreviewCard).join("")}
+          </div>
+        </div>
+        <button class="pickup-board-nav" type="button" data-pickup-board-nav="next" aria-label="查看下一组拼车信息">›</button>
+      </div>
+    `;
+    enhancePickupPreviewScroller(list);
   }
 
   document.addEventListener("DOMContentLoaded", () => {

@@ -4721,11 +4721,73 @@ body[data-admin-shell] .field textarea,
   display: block;
 }
 
+.pickup-board-carousel {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+}
+
+.pickup-board-nav {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(19, 74, 169, 0.12);
+  color: var(--accent-deep);
+  font-size: 1.25rem;
+  font-weight: 700;
+  box-shadow: 0 10px 24px rgba(15, 34, 65, 0.08);
+  cursor: pointer;
+  transition: transform 180ms ease, background 180ms ease, color 180ms ease, opacity 180ms ease;
+}
+
+.pickup-board-nav:hover,
+.pickup-board-nav:focus-visible {
+  background: rgba(19, 74, 169, 0.18);
+  color: #123f92;
+  transform: translateY(-1px);
+}
+
+.pickup-board-nav:disabled {
+  opacity: 0.36;
+  cursor: default;
+  transform: none;
+}
+
+.pickup-board-track-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(19, 74, 169, 0.28) transparent;
+}
+
+.pickup-board-track-scroll::-webkit-scrollbar {
+  height: 8px;
+}
+
+.pickup-board-track-scroll::-webkit-scrollbar-thumb {
+  background: rgba(19, 74, 169, 0.22);
+  border-radius: 999px;
+}
+
+.pickup-board-track {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: max-content;
+}
+
 .pickup-board-card {
   padding: 0;
   border: 0;
   background: transparent;
   box-shadow: none;
+  min-width: max-content;
 }
 
 .pickup-board-card.is-full {
@@ -4805,11 +4867,6 @@ body[data-admin-shell] .field textarea,
 .pickup-board-stats-inline .pickup-board-stat {
   flex: 0 0 220px;
   min-width: 220px;
-}
-
-.pickup-board-scroll {
-  display: inline-block;
-  max-width: 100%;
 }
 
 .pickup-board-stat {
@@ -5552,6 +5609,18 @@ body[data-admin-shell] .field textarea,
 
   .pickup-board-toolbar-actions .button {
     width: 100%;
+  }
+
+  .pickup-board-track {
+    min-width: 100%;
+  }
+
+  .pickup-board-carousel {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .pickup-board-nav {
+    display: none;
   }
 
   .timeline-section {
