@@ -81,8 +81,20 @@
   }
 
   function renderBoardCard(group) {
+    const airportLabel = getAirportLabel(group);
+    const terminalLabel = group.terminal || "--";
+    const routeLabel = `${group.location_from || "--"} 到 ${group.location_to || "--"}`;
+    const waitingCount = getWaitingCount(group);
     return `
-      <article class="transport-board-card">
+      <article class="transport-board-card transport-board-card-surface">
+        <div class="transport-board-card-top">
+          <div class="transport-board-card-copy">
+            <p class="transport-board-card-kicker">${Shared.escapeHtml(Shared.serviceLabel(group.service_type))}拼车</p>
+            <h3>${Shared.escapeHtml(airportLabel)} · ${Shared.escapeHtml(terminalLabel)}</h3>
+            <p class="transport-board-card-meta">${Shared.escapeHtml(getBoardingDate(group))} · ${Shared.escapeHtml(routeLabel)}</p>
+          </div>
+          <span class="transport-status-pill transport-board-card-pill">待拼 ${Shared.escapeHtml(waitingCount)} 人</span>
+        </div>
         <div class="transport-board-scroll">
           <div class="transport-board-grid transport-board-grid-simple transport-board-grid-inline">
             ${renderInfoGrid(group, "transport-board-field")}
