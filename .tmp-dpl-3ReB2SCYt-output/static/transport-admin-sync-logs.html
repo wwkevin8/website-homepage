@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>同步巡检日志 | NGN 管理后台</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css?v=20260416-sync-audit-logs">
+</head>
+<body
+  data-admin-shell
+  data-admin-page="transport-sync-logs"
+  data-admin-section="运营后台"
+  data-admin-title="同步巡检日志"
+  data-admin-description="查看后台 / 前台 / 个人中心的数据同步巡检结果。"
+>
+  <div class="admin-layout">
+    <aside class="admin-sidebar" data-admin-sidebar></aside>
+    <div class="admin-main">
+      <header class="admin-header" data-admin-header></header>
+      <main class="admin-content" data-admin-content>
+        <section class="admin-page" id="transportSyncLogsPage">
+          <section class="admin-panel">
+            <div class="admin-toolbar admin-toolbar-split">
+              <form class="admin-toolbar transport-sync-log-filters" id="transportSyncLogFilters">
+                <label class="field">
+                  <span>日志范围</span>
+                  <select name="mismatch_only">
+                    <option value="">全部日志</option>
+                    <option value="true">仅看异常</option>
+                  </select>
+                </label>
+                <div class="admin-inline-actions">
+                  <button class="button button-primary" type="submit">筛选</button>
+                  <button class="button button-secondary" type="reset">重置</button>
+                </div>
+              </form>
+            </div>
+            <p class="transport-form-message" id="transportSyncLogMessage"></p>
+          </section>
+          <section id="transportSyncLogsList"></section>
+          <div class="transport-pagination" id="transportSyncLogsPagination"></div>
+        </section>
+      </main>
+    </div>
+  </div>
+  <script src="./admin-api.js?v=20260416-sync-audit-logs"></script>
+  <script src="./admin-shell.js?v=20260416-sync-audit-logs"></script>
+  <script src="./transport-shared.js?v=20260416-sync-audit-logs"></script>
+  <script src="./transport-api.js?v=20260416-sync-audit-logs"></script>
+  <script src="./transport-admin.js?v=20260416-sync-audit-logs"></script>
+</body>
+</html>

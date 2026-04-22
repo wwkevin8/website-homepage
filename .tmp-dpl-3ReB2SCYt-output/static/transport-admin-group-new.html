@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>新建确认接送机订单 | NGN 管理后台</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body
+  data-admin-shell
+  data-admin-page="transport-orders"
+  data-admin-section="运营后台"
+  data-admin-title="新建确认接送机订单"
+  data-admin-description="创建新的确认接送机订单，保存后可继续匹配登记表单。"
+>
+  <div class="admin-layout">
+    <aside class="admin-sidebar" data-admin-sidebar></aside>
+    <div class="admin-main">
+      <header class="admin-header" data-admin-header></header>
+      <main class="admin-content" data-admin-content>
+        <section class="admin-page" id="transportGroupFormPage">
+          <div class="admin-page-actions">
+            <a class="button button-secondary" href="./transport-admin-groups.html">返回确认接送机订单列表</a>
+            <a class="button button-secondary" href="./transport-admin-requests.html">查看登记表单</a>
+          </div>
+
+          <form class="admin-panel transport-form-grid" id="transportGroupForm">
+            <p class="transport-form-note transport-field-span-2" id="transportGroupSourceHint" hidden></p>
+            <label class="field">
+              <span>服务类型</span>
+              <select name="service_type">
+                <option value="pickup">接机</option>
+                <option value="dropoff">送机</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span>出行日期</span>
+              <input type="date" name="group_date">
+            </label>
+
+            <label class="field">
+              <span>目标机场</span>
+              <select name="airport_code"></select>
+            </label>
+
+            <label class="field">
+              <span>机场名称</span>
+              <input type="text" name="airport_name" readonly required>
+            </label>
+
+            <label class="field">
+              <span>航站楼</span>
+              <input type="text" name="terminal">
+            </label>
+
+            <label class="field">
+              <span>出发地点</span>
+              <input type="text" name="location_from" required>
+            </label>
+
+            <label class="field">
+              <span>目标地址</span>
+              <input type="text" name="location_to" required>
+            </label>
+
+            <label class="field">
+              <span>航班参考时间</span>
+              <input type="datetime-local" name="flight_time_reference">
+            </label>
+
+            <label class="field">
+              <span>接送时间</span>
+              <input type="datetime-local" name="preferred_time_start">
+            </label>
+
+            <label class="field">
+              <span>拼车截至时间</span>
+              <input type="datetime-local" name="preferred_time_end">
+            </label>
+
+            <label class="field">
+              <span>当前人数</span>
+              <input type="number" name="current_passenger_count" min="0" value="0" required>
+            </label>
+
+            <label class="field">
+              <span>还可拼人数</span>
+              <input type="number" name="remaining_passenger_count" min="0" value="4" required>
+            </label>
+
+            <label class="field">
+              <span>前台显示</span>
+              <select name="visible_on_frontend">
+                <option value="false">未显示</option>
+                <option value="true">已显示</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span>状态</span>
+              <select name="status">
+                <option value="draft">待发布</option>
+                <option value="open">可拼车</option>
+                <option value="full">已满</option>
+                <option value="closed">已结束</option>
+                <option value="cancelled">已取消</option>
+              </select>
+            </label>
+
+            <label class="field transport-field-span-2">
+              <span>备注（请写上同学姓名、联系方式、接送地点，方便发送给司机师傅）</span>
+              <textarea name="notes" rows="4" placeholder="例如：张三 微信号：yyyyy 联系方式：07706988181 到达地点：waterways"></textarea>
+            </label>
+
+            <p class="transport-form-message transport-field-span-2" id="transportGroupMessage"></p>
+
+            <div class="transport-card-actions transport-field-span-2">
+              <button class="button button-primary" type="submit">保存确认接送机订单</button>
+            </div>
+          </form>
+
+          <section class="admin-panel" id="transportGroupMembersPanel" hidden>
+            <h2>匹配登记表单</h2>
+            <p>确认接送机订单保存后，可在编辑页继续匹配登记表单。</p>
+            <div id="transportGroupMembersList"></div>
+            <div class="transport-card-actions">
+              <button class="button button-secondary" id="transportGroupSaveMembersButton" type="button">保存匹配结果</button>
+            </div>
+          </section>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script src="./admin-api.js"></script>
+  <script src="./admin-shell.js"></script>
+  <script src="./transport-shared.js"></script>
+  <script src="./transport-api.js"></script>
+  <script src="./transport-admin.js"></script>
+</body>
+</html>

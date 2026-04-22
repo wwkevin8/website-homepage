@@ -1,0 +1,36 @@
+<svg width="1000" height="1000" viewBox="0 0 1000 1000" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1000" height="1000" rx="44" fill="#FAFCFF"/>
+  <g>
+    <text x="505" y="170" text-anchor="middle" font-family="'Noto Serif SC', 'Microsoft YaHei', serif" font-size="122" font-weight="700" fill="#FFF8E3" stroke="#FFB114" stroke-width="22" paint-order="stroke">
+      总客服
+    </text>
+    <text x="505" y="170" text-anchor="middle" font-family="'Noto Serif SC', 'Microsoft YaHei', serif" font-size="122" font-weight="700" fill="#FFFFFF">
+      总客服
+    </text>
+  </g>
+  <g>
+    <path d="M47 219C47 184.206 75.2061 156 110 156H364C398.794 156 427 184.206 427 219V231.923C427 266.717 398.794 294.923 364 294.923H267L237 321.923L208 294.923H110C75.2061 294.923 47 266.717 47 231.923V219Z" fill="#69B5F4"/>
+    <text x="237" y="245" text-anchor="middle" font-family="'Noto Serif SC', 'Microsoft YaHei', sans-serif" font-size="54" font-weight="700" fill="white">英国·诺丁汉</text>
+  </g>
+  <g>
+    <path d="M332 285C332 253.52 357.52 228 389 228H636C667.48 228 693 253.52 693 285V296.688C693 328.168 667.48 353.688 636 353.688H542L513 379.688L484 353.688H389C357.52 353.688 332 328.168 332 296.688V285Z" fill="#69B5F4"/>
+    <text x="513" y="309" text-anchor="middle" font-family="'Noto Serif SC', 'Microsoft YaHei', sans-serif" font-size="54" font-weight="700" fill="white">左邻右里</text>
+  </g>
+  <g>
+    <path d="M681 212C681 180.52 706.52 155 738 155H926C957.48 155 983 180.52 983 212V223.688C983 255.168 957.48 280.688 926 280.688H844L816 306.688L788 280.688H738C706.52 280.688 681 255.168 681 223.688V212Z" fill="#69B5F4"/>
+    <text x="832" y="236" text-anchor="middle" font-family="'Noto Serif SC', 'Microsoft YaHei', sans-serif" font-size="54" font-weight="700" fill="white">生活服务</text>
+  </g>
+  <g fill="#1EA2F1">
+    <path d="M74 518C74 460.562 120.562 414 178 414H326C383.438 414 430 460.562 430 518V748H246V622H214V748H74V518Z"/>
+    <path d="M505 414C623.742 414 720 510.258 720 629V748H608V664H470V580H622C597.71 517.34 555.923 474 505 474C432.88 474 374.5 532.38 374.5 604.5C374.5 656.307 404.616 701.083 448.53 722.183L424.742 782.183C357.732 750.985 311 683.282 311 604.5C311 497.309 397.809 410.5 505 410.5V414Z"/>
+    <path d="M610 664H720V748H610V664Z"/>
+    <path d="M765 518C765 460.562 811.562 414 869 414H917C974.438 414 1021 460.562 1021 518V748H881V618H849V748H765V518Z"/>
+  </g>
+  <g fill="white">
+    <path d="M195 682C195 654.386 217.386 632 245 632C272.614 632 295 654.386 295 682V748H195V682Z"/>
+    <path d="M852 582C852 556.595 872.595 536 898 536C923.405 536 944 556.595 944 582C944 607.405 923.405 628 898 628C872.595 628 852 607.405 852 582Z"/>
+    <path d="M870 640H926L914 748H882L870 640Z"/>
+    <path d="M898 640L926 640L898 703L870 640H898Z"/>
+  </g>
+  <text x="500" y="868" text-anchor="middle" font-family="'Outfit', Arial, sans-serif" font-size="66" font-weight="700" letter-spacing="4" fill="#1EA2F1">NOTTINGHAM GOOD NEIGHBOR</text>
+</svg>

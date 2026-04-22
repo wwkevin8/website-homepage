@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>个人资料 | Nottingham Good Neighbor</title>
+  <meta
+    name="description"
+    content="查看并编辑姓名、手机号、邮箱和客服联系方式。"
+  >
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body data-require-auth-page="true">
+  <main class="page-shell profile-shell">
+    <section class="storage-section profile-page">
+      <div class="profile-page-top">
+        <div class="profile-page-copy">
+          <p class="eyebrow">个人资料</p>
+          <h1>姓名、手机号和联系方式</h1>
+          <p>客服会通过姓名、手机号和微信号确认预约，请完整填写。WhatsApp 仅作为补充联系方式保留。</p>
+        </div>
+        <div class="profile-page-tools">
+          <a class="button button-secondary" href="./service-center.html">返回个人中心</a>
+          <div data-site-auth-nav></div>
+        </div>
+      </div>
+
+      <section class="profile-card">
+        <form class="profile-form" id="profileForm" novalidate>
+          <div class="profile-field-grid">
+            <label class="field">
+              <span>姓名 <em>*</em></span>
+              <input id="profileNickname" name="nickname" type="text" placeholder="请输入你的姓名" required autocomplete="name">
+              <p class="field-help">姓名为必填，客服会用姓名和手机号快速确认身份。</p>
+            </label>
+
+            <label class="field">
+              <span>手机号 <em>*</em></span>
+              <input id="profilePhone" name="phone" type="tel" autocomplete="tel" placeholder="请输入可联系的手机号" required>
+              <p class="field-help">手机号为必填，客服确认接机或寄存预约时会优先联系你。</p>
+            </label>
+
+            <label class="field">
+              <span>邮箱</span>
+              <input id="profileEmail" name="email" type="email" readonly>
+              <p class="field-help">邮箱为当前登录账户邮箱，仅用于展示，不可修改。</p>
+            </label>
+
+            <fieldset class="profile-choice-group">
+              <legend>联系方式偏好 <em>*</em></legend>
+              <div class="profile-choice-options">
+                <label><input id="profileContactWechat" type="radio" name="contact_preference" value="wechat" required> 微信</label>
+                <label><input id="profileContactWhatsapp" type="radio" name="contact_preference" value="whatsapp"> WhatsApp</label>
+              </div>
+              <p class="field-help">微信号为必填，WhatsApp 仅作为补充联系方式保留。</p>
+            </fieldset>
+
+            <label class="field" id="profileWechatField" hidden>
+              <span>微信号 <em>*</em></span>
+              <input id="profileWechatId" name="wechat_id" type="text" placeholder="请输入微信号">
+              <p class="field-help">微信号为必填，用于客服后续联系与订单处理。</p>
+            </label>
+
+            <label class="field" id="profileWhatsappField" hidden>
+              <span>WhatsApp 联系方式 <em>*</em></span>
+              <input id="profileWhatsappContact" name="whatsapp_contact" type="text" placeholder="请输入 WhatsApp 号码或账号">
+              <p class="field-help">选择 WhatsApp 后，此项为必填。</p>
+            </label>
+          </div>
+
+          <p class="transport-form-message" id="profileFormMessage"></p>
+
+          <div class="profile-form-actions">
+            <button class="button button-primary" id="profileSaveButton" type="submit">保存资料</button>
+            <a class="button button-secondary" href="./service-center.html">返回个人中心</a>
+          </div>
+        </form>
+      </section>
+    </section>
+  </main>
+
+  <script src="./site-auth.js" defer></script>
+  <script src="./profile.js" defer></script>
+</body>
+</html>

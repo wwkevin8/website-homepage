@@ -1,0 +1,5 @@
+
+> webside-transport-dispatch@1.0.0 dev
+> node dev-server.js
+
+[dev-server] local helper only, running at http://localhost:3100

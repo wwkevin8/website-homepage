@@ -1,0 +1,5 @@
+Retrieving project…
+> NOTE: Requested port 3000 is already in use
+> Ready! Available at http://localhost:3001
+Assertion failed: !(handle->flags & UV_HANDLE_CLOSING), file src\win\async.c, line 76
+Assertion failed: !(handle->flags & UV_HANDLE_CLOSING), file src\win\async.c, line 76

@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>注册账号 | Nottingham Good Neighbor</title>
+  <meta
+    name="description"
+    content="Verify your email, complete your profile, and set a password to create your NGN account."
+    data-i18n-content="metaDescription"
+  >
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <main class="page-shell auth-page-shell" data-register-page data-auth-step="email">
+    <section class="storage-section auth-page-section">
+      <div class="auth-page-tools">
+        <div class="lang-switch" aria-label="language switch">
+          <button class="lang-btn" type="button" data-auth-lang="zh-CN">中</button>
+          <button class="lang-btn" type="button" data-auth-lang="en">EN</button>
+        </div>
+      </div>
+
+      <div class="auth-hero-panel">
+        <p class="eyebrow" data-i18n="heroEyebrow">关于 NGN</p>
+        <h1 data-i18n="heroTitle">先验证邮箱，再设置密码，完成你的 NGN 账号注册。</h1>
+        <p class="auth-hero-text" data-i18n="heroText">
+          我们希望每个账号都对应一位真实、可联系的同学，所以注册时会先确认邮箱，再让你填写基础信息并设置自己的密码。这样后续预约服务、查看记录和找回账号都会更稳定。
+        </p>
+        <figure class="auth-team-photo">
+          <img src="./img/team-photo.jpg" alt="NGN team photo">
+        </figure>
+      </div>
+
+      <div class="calculator-card auth-card">
+        <div class="auth-card-header">
+          <div class="section-heading">
+            <p class="eyebrow" data-i18n="cardEyebrow">创建账号</p>
+            <h2 data-i18n="cardTitle">新用户注册</h2>
+            <p data-i18n="cardText">先验证邮箱，再完善资料和设置密码，最后创建账号。</p>
+          </div>
+        </div>
+
+        <div class="auth-form auth-form-stack">
+          <div class="auth-step-indicator" data-auth-step-label data-i18n="stepEmailLabel">第一步：发送验证码</div>
+
+          <label class="auth-field-group">
+            <span data-i18n="emailLabel">邮箱地址</span>
+            <input
+              class="transport-form-input"
+              type="email"
+              autocomplete="email"
+              placeholder="you@example.com"
+              data-register-email
+              data-i18n-placeholder="emailPlaceholder"
+            >
+          </label>
+
+          <div class="auth-turnstile-block" data-turnstile-block>
+            <span class="auth-turnstile-label" data-i18n="turnstileLabel">发送前请先手动完成人机校验</span>
+            <div class="auth-turnstile-slot" data-turnstile-slot></div>
+            <div class="auth-turnstile-actions">
+              <button class="button button-secondary auth-verify-button" type="button" data-turnstile-verify data-i18n="verifyHumanIdle">
+                点击进行人机验证
+              </button>
+              <span class="auth-turnstile-status" data-turnstile-status data-i18n="humanNotVerified">尚未完成人机校验</span>
+            </div>
+          </div>
+
+          <div class="auth-step-two" data-step-code hidden>
+            <label class="auth-field-group">
+              <span data-i18n="codeLabel">验证码</span>
+              <input
+                class="transport-form-input"
+                type="text"
+                inputmode="numeric"
+                autocomplete="one-time-code"
+                maxlength="6"
+                placeholder="123456"
+                data-register-code
+                data-i18n-placeholder="codePlaceholder"
+              >
+            </label>
+
+            <div class="auth-resend-row">
+              <span class="auth-resend-note" data-resend-status></span>
+              <button class="button button-secondary auth-resend-button" type="button" data-resend-button hidden data-i18n="resendCodeIdle">
+                重新发送验证码
+              </button>
+            </div>
+          </div>
+
+          <div class="auth-step-three" data-step-password hidden>
+            <label class="auth-field-group">
+              <span data-i18n="fullNameLabel">姓名</span>
+              <input
+                class="transport-form-input"
+                type="text"
+                autocomplete="name"
+                placeholder="请输入你的姓名"
+                data-register-full-name
+                data-i18n-placeholder="fullNamePlaceholder"
+              >
+            </label>
+
+            <label class="auth-field-group">
+              <span data-i18n="nationalityLabel">国籍</span>
+              <select class="transport-form-input auth-select" data-register-nationality>
+                <option value="" data-i18n="nationalityPlaceholder">请选择国籍</option>
+                <option value="China">中国 / China</option>
+                <option value="United Kingdom">英国 / United Kingdom</option>
+                <option value="India">印度 / India</option>
+                <option value="Malaysia">马来西亚 / Malaysia</option>
+                <option value="Singapore">新加坡 / Singapore</option>
+                <option value="Thailand">泰国 / Thailand</option>
+                <option value="Indonesia">印度尼西亚 / Indonesia</option>
+                <option value="Vietnam">越南 / Vietnam</option>
+                <option value="South Korea">韩国 / South Korea</option>
+                <option value="Japan">日本 / Japan</option>
+                <option value="United States">美国 / United States</option>
+                <option value="Canada">加拿大 / Canada</option>
+                <option value="Australia">澳大利亚 / Australia</option>
+                <option value="Other">其他 / Other</option>
+              </select>
+            </label>
+
+            <label class="auth-field-group">
+              <span data-i18n="phoneLabel">手机号</span>
+              <input
+                class="transport-form-input"
+                type="tel"
+                autocomplete="tel"
+                placeholder="请输入常用手机号"
+                data-register-phone
+                data-i18n-placeholder="phonePlaceholder"
+              >
+            </label>
+
+            <label class="auth-field-group">
+              <span data-i18n="contactMethodLabel">联系方式</span>
+              <select class="transport-form-input auth-select" data-register-contact-method>
+                <option value="" data-i18n="contactMethodPlaceholder">请选择联系方式</option>
+                <option value="wechat">微信号 / WeChat</option>
+                <option value="whatsapp">WhatsApp</option>
+              </select>
+            </label>
+
+            <label class="auth-field-group">
+              <span data-contact-handle-label data-i18n="contactHandleLabel">微信号 / WhatsApp</span>
+              <input
+                class="transport-form-input"
+                type="text"
+                autocomplete="off"
+                placeholder="请输入你的微信号或 WhatsApp"
+                data-register-contact-handle
+                data-i18n-placeholder="contactHandlePlaceholder"
+              >
+            </label>
+
+            <label class="auth-field-group">
+              <span data-i18n="passwordLabel">设置密码</span>
+              <input
+                class="transport-form-input"
+                type="password"
+                autocomplete="new-password"
+                placeholder="至少 8 位密码"
+                data-register-password
+                data-i18n-placeholder="passwordPlaceholder"
+              >
+            </label>
+
+            <label class="auth-field-group">
+              <span data-i18n="confirmPasswordLabel">确认密码</span>
+              <input
+                class="transport-form-input"
+                type="password"
+                autocomplete="new-password"
+                placeholder="再次输入密码"
+                data-register-confirm-password
+                data-i18n-placeholder="confirmPasswordPlaceholder"
+              >
+            </label>
+          </div>
+
+          <p class="transport-form-message" id="registerMessage"></p>
+
+          <p class="auth-legal-note">
+            <span data-i18n="legalNotePrefix">注册即表示你已阅读</span>
+            <a href="./privacy-policy.html" class="auth-inline-link" data-i18n="privacyPolicy">《隐私政策》</a>
+            <span data-i18n="legalNoteJoin">和</span>
+            <a href="./terms-of-service.html" class="auth-inline-link" data-i18n="termsOfService">《服务条款》</a>
+          </p>
+
+          <button class="button button-primary auth-submit" type="button" data-primary-submit data-i18n="sendCodeIdle">
+            发送验证码
+          </button>
+          <div class="auth-link-row auth-link-row-stack">
+            <a href="./login.html" class="auth-inline-link" data-i18n="goLogin">已有账号？去登录</a>
+            <a class="button button-secondary auth-back-link" href="./index.html" data-i18n="backHome">返回首页</a>
+          </div>
+        </div>
+
+        <section class="auth-state-card">
+          <h3 data-i18n="statusTitle">注册说明</h3>
+          <p data-i18n="statusText">只有邮箱验证通过、资料填写完整且密码设置完成后，系统才会创建正式账号并登录。</p>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    window.AUTH_PAGE_TRANSLATIONS = {
+      "zh-CN": {
+        pageTitle: "注册账号 | Nottingham Good Neighbor",
+        metaDescription: "先验证邮箱、完善资料并设置密码，完成你的 NGN 账号注册。",
+        heroEyebrow: "关于 NGN",
+        heroTitle: "先验证邮箱，再设置密码，完成你的 NGN 账号注册。",
+        heroText: "我们希望每个账号都对应一位真实、可联系的同学，所以注册时会先确认邮箱，再让你填写基础信息并设置自己的密码。这样后续预约服务、查看记录和找回账号都会更稳定。",
+        cardEyebrow: "创建账号",
+        cardTitle: "新用户注册",
+        cardText: "先验证邮箱，再完善资料和设置密码，最后创建账号。",
+        stepEmailLabel: "第一步：发送验证码",
+        stepCodeLabel: "第二步：验证邮箱",
+        stepPasswordLabel: "第三步：完善资料并设置密码",
+        emailLabel: "邮箱地址",
+        emailPlaceholder: "请输入常用邮箱",
+        codeLabel: "验证码",
+        codePlaceholder: "请输入 6 位验证码",
+        turnstileLabel: "发送前请先手动完成人机校验",
+        verifyHumanIdle: "点击进行人机验证",
+        verifyHumanBusy: "验证中...",
+        verifyHumanDone: "已完成人机校验",
+        humanNotVerified: "尚未完成人机校验",
+        humanVerified: "人机校验已完成，请继续下一步。",
+        fullNameLabel: "姓名",
+        fullNamePlaceholder: "请输入你的姓名",
+        nationalityLabel: "国籍",
+        nationalityPlaceholder: "请选择国籍",
+        phoneLabel: "手机号",
+        phonePlaceholder: "请输入常用手机号",
+        contactMethodLabel: "联系方式",
+        contactMethodPlaceholder: "请选择联系方式",
+        contactHandleLabel: "微信号 / WhatsApp",
+        contactHandlePlaceholder: "请输入你的微信号或 WhatsApp",
+        passwordLabel: "设置密码",
+        passwordPlaceholder: "至少 8 位密码",
+        confirmPasswordLabel: "确认密码",
+        confirmPasswordPlaceholder: "再次输入密码",
+        legalNotePrefix: "注册即表示你已阅读",
+        legalNoteJoin: "和",
+        privacyPolicy: "《隐私政策》",
+        termsOfService: "《服务条款》",
+        sendCodeIdle: "发送验证码",
+        sendCodeBusy: "验证码发送中...",
+        verifyCodeIdle: "验证邮箱",
+        verifyCodeBusy: "验证中...",
+        registerIdle: "创建账号",
+        registerBusy: "创建中...",
+        resendCodeIdle: "重新发送验证码",
+        resendCodeBusy: "重新发送中...",
+        resendCountdown: "{seconds} 秒后可重新发送",
+        codeSentTo: "验证码已发送到 {email}，请输入 6 位验证码。",
+        codeVerified: "邮箱验证通过，请填写资料并设置密码完成注册。",
+        registerSuccess: "账号已创建，正在登录...",
+        invalidEmail: "请输入有效的邮箱地址。",
+        invalidCode: "请输入有效的 6 位验证码。",
+        fullNameRequired: "请输入姓名。",
+        nationalityRequired: "请选择国籍。",
+        phoneRequired: "请输入手机号。",
+        contactMethodRequired: "请选择联系方式。",
+        contactHandleRequired: "请输入微信号或 WhatsApp。",
+        invalidPassword: "密码至少需要 8 位。",
+        passwordMismatch: "两次输入的密码不一致。",
+        humanRequired: "请先点击并完成人机校验。",
+        turnstileLoadFailed: "人机校验组件加载失败，请刷新后重试。",
+        authConfigFailed: "认证配置加载失败，请稍后再试。",
+        requestCodeFailed: "验证码发送失败，请稍后重试。",
+        verifyCodeFailed: "验证码错误或已过期。",
+        registerFailed: "注册失败，请稍后重试。",
+        goLogin: "已有账号？去登录",
+        backHome: "返回首页",
+        statusTitle: "注册说明",
+        statusText: "只有邮箱验证通过、资料填写完整且密码设置完成后，系统才会创建正式账号并登录。"
+      },
+      "en": {
+        pageTitle: "Register | Nottingham Good Neighbor",
+        metaDescription: "Verify your email, complete your profile, and set a password to create your NGN account.",
+        heroEyebrow: "About NGN",
+        heroTitle: "Verify your email first, then set a password to create your NGN account.",
+        heroText: "We want each account to belong to a real, reachable student. During registration we verify your email first, then ask you to complete a few basic details and set a password so your bookings, records, and future recovery stay reliable.",
+        cardEyebrow: "Create Account",
+        cardTitle: "New user registration",
+        cardText: "Verify your email first, then complete your profile and set a password to finish registration.",
+        stepEmailLabel: "Step 1: Send verification code",
+        stepCodeLabel: "Step 2: Verify email",
+        stepPasswordLabel: "Step 3: Complete your profile and set a password",
+        emailLabel: "Email address",
+        emailPlaceholder: "Enter your email address",
+        codeLabel: "Verification code",
+        codePlaceholder: "Enter the 6-digit code",
+        turnstileLabel: "Complete a manual human check before sending",
+        verifyHumanIdle: "Click to verify you are human",
+        verifyHumanBusy: "Verifying...",
+        verifyHumanDone: "Human check completed",
+        humanNotVerified: "Human verification has not been completed",
+        humanVerified: "Human verification completed. Continue to the next step.",
+        fullNameLabel: "Full name",
+        fullNamePlaceholder: "Enter your full name",
+        nationalityLabel: "Nationality",
+        nationalityPlaceholder: "Select your nationality",
+        phoneLabel: "Phone number",
+        phonePlaceholder: "Enter your phone number",
+        contactMethodLabel: "Contact method",
+        contactMethodPlaceholder: "Select a contact method",
+        contactHandleLabel: "WeChat ID / WhatsApp",
+        contactHandlePlaceholder: "Enter your WeChat ID or WhatsApp",
+        passwordLabel: "Set password",
+        passwordPlaceholder: "At least 8 characters",
+        confirmPasswordLabel: "Confirm password",
+        confirmPasswordPlaceholder: "Enter the password again",
+        legalNotePrefix: "By registering, you confirm that you have read the",
+        legalNoteJoin: "and",
+        privacyPolicy: "Privacy Policy",
+        termsOfService: "Terms of Service",
+        sendCodeIdle: "Send verification code",
+        sendCodeBusy: "Sending code...",
+        verifyCodeIdle: "Verify email",
+        verifyCodeBusy: "Verifying...",
+        registerIdle: "Create account",
+        registerBusy: "Creating account...",
+        resendCodeIdle: "Resend verification code",
+        resendCodeBusy: "Resending...",
+        resendCountdown: "You can resend in {seconds}s",
+        codeSentTo: "Verification code sent to {email}. Enter the 6-digit code to continue.",
+        codeVerified: "Email verified. Complete your profile and set your password to finish registration.",
+        registerSuccess: "Account created. Signing you in...",
+        invalidEmail: "Please enter a valid email address.",
+        invalidCode: "Please enter a valid 6-digit verification code.",
+        fullNameRequired: "Please enter your full name.",
+        nationalityRequired: "Please select your nationality.",
+        phoneRequired: "Please enter your phone number.",
+        contactMethodRequired: "Please choose a contact method.",
+        contactHandleRequired: "Please enter your WeChat ID or WhatsApp.",
+        invalidPassword: "Password must be at least 8 characters.",
+        passwordMismatch: "Passwords do not match.",
+        humanRequired: "Please click and complete the human verification first.",
+        turnstileLoadFailed: "Human verification failed to load. Please refresh and try again.",
+        authConfigFailed: "Failed to load auth configuration. Please try again later.",
+        requestCodeFailed: "Failed to send the verification code. Please try again.",
+        verifyCodeFailed: "The verification code is invalid or expired.",
+        registerFailed: "Failed to create your account. Please try again.",
+        goLogin: "Already have an account? Sign in",
+        backHome: "Back to home",
+        statusTitle: "Registration flow",
+        statusText: "Your account is created only after email verification succeeds, your profile details are completed, and a password is set."
+      }
+    };
+  </script>
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
+  <script src="./auth-i18n.js"></script>
+  <script src="./site-auth.js"></script>
+  <script src="./register.js"></script>
+</body>
+</html>

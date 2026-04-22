@@ -1,0 +1,34 @@
+{
+  "name": "webside-transport-dispatch",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Static multi-page site with Vercel serverless APIs for transport dispatch management.",
+  "engines": {
+    "node": "24.x"
+  },
+  "scripts": {
+    "dev": "node dev-server.js",
+    "dev:vercel": "npx vercel dev --yes",
+    "qa:playwright:smoke": "node scripts/playwright-smoke.js",
+    "qa:playwright:transport-flow": "node scripts/playwright-transport-flow.js",
+    "qa:300": "node scripts/qa300-runner.js",
+    "qa:300:list": "node scripts/qa300-runner.js --list",
+    "qa:300:wave0": "node scripts/qa300-runner.js --waves=0 --skip-email --skip-cleanup",
+    "pull:preview": "npx vercel pull --yes --environment=preview",
+    "pull:prod": "npx vercel pull --yes --environment=production",
+    "build:preview": "npm run pull:preview && npx vercel build",
+    "build:prod": "npm run pull:prod && npx vercel build --prod",
+    "deploy:preview": "npm run build:preview && npx vercel deploy --prebuilt",
+    "deploy:prod": "npm run build:prod && npx vercel deploy --prebuilt --prod",
+    "start": "node -e \"console.error('No standalone production server is defined for this project. Use npm run dev for the local helper server or npm run dev:vercel to emulate Vercel.'); process.exit(1)\""
+  },
+  "devDependencies": {
+    "playwright": "^1.59.1",
+    "vercel": "^51.2.1"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.8",
+    "nodemailer": "^6.10.1",
+    "xlsx": "^0.18.5"
+  }
+}
