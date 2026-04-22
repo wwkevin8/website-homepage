@@ -76,7 +76,7 @@ async function handleLogin(req, res, supabase) {
   const password = String(body.password || "");
 
   if (!username || !password) {
-    badRequest(res, "璇疯緭鍏ヨ处鍙峰拰瀵嗙爜");
+    badRequest(res, "请输入账号和密码");
     return;
   }
 

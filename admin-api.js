@@ -18,11 +18,11 @@
 
     const payload = await response.json().catch(() => ({
       data: null,
-      error: { message: "\u670d\u52a1\u5668\u8fd4\u56de\u5185\u5bb9\u65e0\u6548" }
+      error: { message: "服务器返回内容无效" }
     }));
 
     if (!response.ok) {
-      const error = new Error(payload.error?.message || "\u8bf7\u6c42\u5931\u8d25");
+      const error = new Error(payload.error?.message || "请求失败");
       error.status = response.status;
       error.details = payload.error?.details || null;
       throw error;

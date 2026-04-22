@@ -53,20 +53,6 @@ function serializeAdmin(admin) {
 }
 
 async function ensureBootstrapSuperAdmin(supabase) {
-  const { count, error } = await supabase
-    .from("admin_users")
-    .select("id", { count: "exact", head: true })
-    .eq("role", "super_admin")
-    .eq("status", "active");
-
-  if (error) {
-    throw error;
-  }
-
-  if (Number(count || 0) > 0) {
-    return;
-  }
-
   const username = normalizeUsername(process.env.ADMIN_BOOTSTRAP_USERNAME);
   const password = String(process.env.ADMIN_BOOTSTRAP_PASSWORD || "").trim();
 
@@ -94,6 +80,7 @@ async function ensureBootstrapSuperAdmin(supabase) {
     throw existingError;
   }
 
+  // Keep the configured bootstrap account aligned with the local env values.
   if (existing) {
     const { error: updateError } = await supabase
       .from("admin_users")
@@ -103,6 +90,20 @@ async function ensureBootstrapSuperAdmin(supabase) {
     if (updateError) {
       throw updateError;
     }
+    return;
+  }
+
+  const { count, error } = await supabase
+    .from("admin_users")
+    .select("id", { count: "exact", head: true })
+    .eq("role", "super_admin")
+    .eq("status", "active");
+
+  if (error) {
+    throw error;
+  }
+
+  if (Number(count || 0) > 0) {
     return;
   }
 
