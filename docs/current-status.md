@@ -9,27 +9,22 @@
 ## Last Updated Task
 
 - Date: 2026-04-22
-- Scope: executed the approved single-file controlled restore for `api/_lib/transport-order-submission-email.js` and re-ran only the agreed public API verification set
+- Scope: performed browser-based business acceptance and bug diagnosis for `transport-board.html`, `pickup.html`, and `admin-login.html` without changing business files or deploying
 
 ## Completed In This Task
 
 - Re-read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before continuing.
-- Confirmed the restore source for `api/_lib/transport-order-submission-email.js`, with matching SHA256 across:
-  - `E:\webside-overwrite-backup-20260422-112638`
-  - `E:\webside-overwrite-backup-20260422-034927`
-  - `E:\webside-overwrite-backup-20260422-111600`
-  - `E:\webside-backup-runtime-check`
-- Confirmed evidence for `api/_lib/transport-order-submission-email.js`:
-  - it is byte-identical across all checked local backups
-  - the current branch does not show a normal direct top-level Git history for this path
-  - it does appear inside the temporary deployment output tree recorded by `8e6f9e2` (`chore: restore live static baseline and record api diagnosis`)
-- Restored only this file from `E:\webside-overwrite-backup-20260422-112638`:
-  - `api/_lib/transport-order-submission-email.js`
-- Did not restore any other files.
+- Did not modify any business files.
 - Did not deploy anything.
-- Ran only the agreed minimal verification endpoints:
-  - `/api/public/transport-groups`
-  - `/api/public/transport-board`
+- Ran browser-based checks against:
+  - `transport-board.html`
+  - `pickup.html`
+  - `admin-login.html`
+- Captured page load behavior, data rendering, button and submit behavior, API response statuses, console warnings and errors, and admin login API/session results.
+- Ran direct local API verification for admin login:
+  - empty credentials
+  - bootstrap credentials from local `.env`
+  - session check after attempted normal login
 
 ## Current Project Status
 
@@ -48,34 +43,46 @@
   - `api/_lib/user-profile.js`
   - `api/_lib/transport-join.js`
   - `api/_lib/transport-order-submission-email.js`
-- Minimal verification shows the public API restore is now healthy again:
-  - `/api/auth/session` remains healthy and returns normal JSON
-  - `/api/admin/session` remains healthy and returns normal JSON
-  - `/api/admin/login` remains a normal JSON error response with HTTP 400 instead of crashing
-  - `/api/public/transport-groups` now returns HTTP 200 with normal JSON
-  - `/api/public/transport-board` now returns HTTP 200 with normal JSON
+- Current business-level validation shows:
+  - `transport-board.html` loads successfully, calls `/api/auth/session` and `/api/public/transport-groups`, and renders board cards with data
+  - `pickup.html` loads successfully, calls `/api/auth/session` and `/api/public/transport-groups`, and renders preview cards with data
+  - `admin-login.html` loads successfully and calls `/api/admin/session`
+  - direct API checks confirm `/api/admin/login` returns structured JSON for both empty and normal credential submissions
+- Public API is currently healthy at the endpoint level, but some UI/business issues remain in the page layer and admin login flow.
 
 ## Open Issues Or Risks
 
-- Current public endpoint verification after the single-file restore:
-  - `/api/public/transport-groups`
-    - status: 200
-    - normal JSON: yes
-    - 404: no
-    - server crash: no
-    - import error: none
-  - `/api/public/transport-board`
-    - status: 200
-    - normal JSON: yes
-    - 404: no
-    - server crash: no
-    - import error: none
-- Source evidence:
-  - `api/_lib/transport-order-submission-email.js` is byte-identical across all checked local backups and appears in the temporary deployment output tree recorded by `8e6f9e2`
-- The requested single-file controlled restore was successful and the current minimal public API verification set is now passing.
+- Browser and API diagnosis findings:
+  - `transport-board.html`
+    - page status: 200
+    - API responses: `/api/auth/session` 200, `/api/public/transport-groups` 200
+    - render: 2 board cards rendered in local validation
+    - filter submit: works and re-requests `/api/public/transport-groups` with 200
+    - issue: the visible `加入拼车` button is not stably clickable in real browser automation; normal click times out because the element never becomes stable
+    - issue: `查看详情` interaction surfaces a detail overlay, but the behavior is modal-like while the page URL stays unchanged, so the action semantics should be confirmed during bug fixing
+  - `pickup.html`
+    - page status: 200
+    - API responses: `/api/auth/session` 200, `/api/public/transport-groups?sort=upcoming&limit=3&page=1` 200
+    - render: 2 preview cards rendered in local validation
+    - pricing toggle: after dismissing the intro modal, the price switch changed from `£80` to `£85`
+    - issue: an intro modal (`#pickupIntroModal`) is visible on load and blocks interaction with underlying controls until manually closed
+    - console warning: `<link rel=preload> uses an unsupported as value`
+  - `admin-login.html`
+    - page status: 200
+    - API responses: `/api/admin/session` 200, empty submit `/api/admin/login` 400, normal submit `/api/admin/login` 401
+    - empty credentials:
+      - direct API: 400 with normal JSON
+      - browser form: shows the same error, but the returned Chinese text is mojibake (`璇疯緭鍏ヨ处鍙峰拰瀵嗙爜`) instead of a readable prompt
+    - normal credentials from local `.env`:
+      - direct API: 401 with normal JSON `{ data: null, error: { message: "账号或密码错误" } }`
+      - browser flow: stays on `admin-login.html`, no auth cookie is set, subsequent `/api/admin/session` still reports `authenticated: false`
+    - console errors: expected 400 and 401 resource failures are emitted in browser console during login attempts
+- The restore work established a runnable local API baseline, but admin business authentication still fails and at least two page-level interaction bugs remain.
 
 ## Recommended Next Steps
 
-1. Review `git status` immediately to confirm only the intended files were restored.
-2. Create a commit for the controlled restore work completed so far before doing any further recovery work.
-3. After committing, decide whether to stop here with the recovered API baseline or move on to focused behavior checks for the public pages and admin login flow without broad code changes.
+1. Review `git status` and create a checkpoint commit before any bug fixing work.
+2. Prioritize admin authentication diagnosis first, because valid local bootstrap credentials currently return 401 and no session can be established.
+3. After admin auth is understood, fix the two page-level interaction issues:
+   - `pickup.html` intro modal blocking page controls on first load
+   - `transport-board.html` join button instability during normal click interaction
