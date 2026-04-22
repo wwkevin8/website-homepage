@@ -8,12 +8,14 @@
 ## Last Updated Task
 
 - Date: 2026-04-22
-- Scope: recorded a durable deployment rule that GitHub must be pushed before any future Vercel deployment
+- Scope: pushed the current local admin transport fixes and deployment-rule updates to GitHub
 
 ## Completed In This Task
 
 - Re-read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before continuing.
-- Added a durable deployment rule to [AGENTS.md](E:\webside\AGENTS.md): before any Vercel deployment, push the intended code to GitHub first unless the user explicitly overrides that rule.
+- Pushed branch `codex/full-sync` to GitHub remote `origin`.
+- Current pushed commit on that branch is `d786eb4` (`Fix admin transport workflows and sync deployment rule`).
+- The pushed branch includes the recent admin transport fixes, export alignment, join-text cleanup, group count fix, and the durable deployment rule in [AGENTS.md](E:\webside\AGENTS.md).
 
 ## Current Project Status
 
@@ -41,5 +43,6 @@
 ## Recommended Next Steps
 
 1. Before the next Vercel deployment, make sure the intended code is pushed to GitHub first.
-2. Run `git status` before the next task so the current working tree is explicit.
-3. If more public-page mojibake is reported, continue with tight-scope text-only fixes in the affected join handlers instead of broad rewrites.
+2. If the next step is deployment, deploy from the GitHub-backed state that now includes commit `d786eb4`.
+3. Run `git status` before the next task so the current working tree is explicit.
+4. If more public-page mojibake is reported, continue with tight-scope text-only fixes in the affected join handlers instead of broad rewrites.
