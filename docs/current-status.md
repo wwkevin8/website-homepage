@@ -2,51 +2,44 @@
 
 ## Document Rules
 
-- This file is the cross-session handoff for the latest useful project state.
 - Read this file together with `E:\webside\AGENTS.md` before analysis or implementation.
-- Rewrite sections in place when the truth changes; do not stack raw session history.
+- Keep this document as the latest handoff snapshot; rewrite outdated sections instead of appending session logs.
 
 ## Last Updated Task
 
 - Date: 2026-04-22
-- Scope: applied the approved minimal admin-only login fix, then verified login, session, and cookie behavior without deploying
+- Scope: recorded a durable deployment rule that GitHub must be pushed before any future Vercel deployment
 
 ## Completed In This Task
 
 - Re-read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before continuing.
-- Limited code changes strictly to:
-  - `api/_lib/admin-auth.js`
-  - `admin-api.js`
-  - `api/admin/[...action].js`
-- Did not modify unrelated business code.
-- Did not deploy anything.
-- Fixed the bootstrap account reconciliation logic in `ensureBootstrapSuperAdmin()` so the configured bootstrap account is aligned by username before login verification.
-- Fixed only the admin login chain's directly user-facing mojibake strings.
-- Verified only:
-  - `POST /api/admin/login` with correct credentials
-  - `GET /api/admin/session`
-  - browser login establishing the admin session cookie
+- Added a durable deployment rule to [AGENTS.md](E:\webside\AGENTS.md): before any Vercel deployment, push the intended code to GitHub first unless the user explicitly overrides that rule.
 
 ## Current Project Status
 
-- The local admin login chain is now working again.
-- Validation results after the minimal fix:
-  - `POST /api/admin/login` with correct credentials returns `200`
-  - the login response now sets the `ngn_admin_session` cookie
-  - `GET /api/admin/session` now returns `authenticated: true`
-  - browser-based login also establishes the `ngn_admin_session` cookie and subsequent session checks return `authenticated: true`
-  - no mojibake was observed in the validated login/session responses
-- Public API baseline from the earlier restore work remains healthy.
+- Local admin login is working and establishes an admin session correctly.
+- Public transport board and pickup public APIs are returning `200 JSON` again after the controlled dependency restoration.
+- The project now has an explicit deployment workflow rule: GitHub push first, then Vercel deployment.
+- The admin request list page currently shows these leading columns in order:
+  - `提交时间`
+  - `Order No`
+  - `学生`
+  - `微信号`
+- The `行李数` column has been removed from both the admin request table and the Excel export.
+- The local Excel export endpoint is reachable and returns a valid `.xlsx` file whose column order matches the current page table layout.
+- The admin transport groups page count mismatch is now resolved at the API layer.
+- The previously stale group `GRP-260413-022B` is no longer active and should no longer pollute active-group counts.
 
 ## Open Issues Or Risks
 
-- This task intentionally did not address the previously diagnosed page-level issues outside the admin login chain:
-  - `pickup.html` intro modal blocking interaction on first load
-  - `transport-board.html` join button instability during normal click interaction
-- The admin-side text cleanup was intentionally narrow and only covered the login/session path.
+- Some public join-related handlers still contain garbled text on non-evaluation branches, especially in:
+  - `E:\webside\public-api-handlers\transport-join-preview.js`
+  - `E:\webside\public-api-handlers\transport-join-submit.js`
+- Local checks have previously shown `EADDRINUSE` noise on port `3000`, which suggests another local server instance may sometimes already be running during verification.
+- Admin-side business pages have been fixed incrementally; broad end-to-end admin regression testing is still incomplete.
 
 ## Recommended Next Steps
 
-1. Review `git status` immediately.
-2. Create a checkpoint commit for the admin login fix before touching any other bug.
-3. After committing, move on to the next approved page-level bug, keeping the scope similarly tight.
+1. Before the next Vercel deployment, make sure the intended code is pushed to GitHub first.
+2. Run `git status` before the next task so the current working tree is explicit.
+3. If more public-page mojibake is reported, continue with tight-scope text-only fixes in the affected join handlers instead of broad rewrites.

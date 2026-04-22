@@ -10,6 +10,7 @@ const REQUEST_LIST_SELECT = [
   "student_name",
   "email",
   "phone",
+  "wechat",
   "site_user_id",
   "service_type",
   "airport_code",

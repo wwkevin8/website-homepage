@@ -512,25 +512,25 @@
       list.innerHTML = `
         <section class="admin-panel"><div class="admin-table-wrap"><table class="admin-table">
           <thead><tr>
-            <th>Order No</th><th>提交时间</th><th>学生</th><th>服务</th><th>机场</th><th>航班</th><th>您抵达/起飞日期和时间</th><th>目的地</th><th>行李数</th><th>Group ID</th><th>操作</th>
+            <th>提交时间</th><th>Order No</th><th>学生</th><th>微信号</th><th>服务</th><th>机场</th><th>航班</th><th>您抵达/起飞日期和时间</th><th>目的地</th><th>Group ID</th><th>操作</th>
           </tr></thead>
           <tbody>
             ${items.map(item => `
               <tr>
-                <td><strong>${Shared.escapeHtml(item.order_no || "--")}</strong></td>
                 <td>${Shared.escapeHtml(Shared.formatDateTime(item.created_at))}</td>
+                <td><strong>${Shared.escapeHtml(item.order_no || "--")}</strong></td>
                 <td>
                   <strong>${Shared.escapeHtml(item.student_name || "--")}</strong>
                   <div class="admin-table-subtle">${Shared.escapeHtml(item.phone || "--")}</div>
                   <div class="admin-table-subtle">${Shared.escapeHtml(item.student_email || "--")}</div>
                   ${renderFutureRequestHint(item)}
                 </td>
+                <td>${Shared.escapeHtml(item.wechat || "--")}</td>
                 <td>${Shared.escapeHtml(Shared.serviceLabel(item.service_type))}</td>
                 <td><strong>${Shared.escapeHtml(item.airport_code || "--")}</strong><div class="admin-table-subtle">${Shared.escapeHtml(item.terminal || "--")}</div></td>
                 <td><strong>${Shared.escapeHtml(item.flight_no || "--")}</strong></td>
                 <td>${Shared.escapeHtml(requestFlightDateLabel(item))}</td>
                 <td>${Shared.escapeHtml(item.location_to || "--")}</td>
-                <td>${Number(item.luggage_count || 0)}</td>
                 <td>${requestGroupLink(item)}</td>
                 <td><div class="admin-table-actions">
                   <a class="button button-secondary admin-table-action" href="./transport-admin-request-edit.html?id=${encodeURIComponent(item.id)}">查看</a>

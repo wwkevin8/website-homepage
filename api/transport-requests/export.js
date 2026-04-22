@@ -11,6 +11,7 @@ const REQUEST_EXPORT_SELECT = [
   "student_name",
   "email",
   "phone",
+  "wechat",
   "site_user_id",
   "service_type",
   "airport_code",
@@ -19,10 +20,6 @@ const REQUEST_EXPORT_SELECT = [
   "flight_no",
   "flight_datetime",
   "location_to",
-  "location_from",
-  "luggage_count",
-  "passenger_count",
-  "status",
   "created_at",
   "transport_group_members(group_id,is_initiator,request_id)",
   "site_users(email)"
@@ -74,39 +71,18 @@ function serviceLabel(value) {
   return value === "dropoff" ? "送机" : "接机";
 }
 
-function statusLabel(item) {
-  if (item?.closed_reason === "expired") {
-    return "已过期";
-  }
-  if (item?.status === "matched") {
-    return "已匹配";
-  }
-  if (item?.status === "closed") {
-    return "已关闭";
-  }
-  return "拼车中";
-}
-
 function buildRows(items) {
   return (items || []).map(item => ({
-    "Order No": item.order_no || "",
     "提交时间": formatDateTime(item.created_at),
-    "学生姓名": item.student_name || "",
-    "邮箱": item.student_email || item.email || "",
-    "电话": item.phone || "",
-    "服务类型": serviceLabel(item.service_type),
-    "机场代码": item.airport_code || "",
-    "机场名称": item.airport_name || "",
-    "航站楼": item.terminal || "",
-    "航班号": item.flight_no || "",
-    "抵达/起飞日期时间": formatDateTime(item.flight_datetime),
-    "出发地": item.location_from || "",
+    "Order No": item.order_no || "",
+    "学生": item.student_name || "",
+    "微信号": item.wechat || "",
+    "服务": serviceLabel(item.service_type),
+    "机场": item.airport_code || "",
+    "航班": item.flight_no || "",
+    "您抵达/起飞日期和时间": formatDateTime(item.flight_datetime),
     "目的地": item.location_to || "",
-    "乘车人数": Number(item.passenger_count || 0),
-    "行李数": Number(item.luggage_count || 0),
-    "状态": statusLabel(item),
-    "Group ID": item.group_id || "",
-    "是否发起人": item.is_initiator ? "是" : "否"
+    "Group ID": item.group_id || ""
   }));
 }
 

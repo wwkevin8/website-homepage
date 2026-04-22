@@ -104,6 +104,7 @@ These modules should not be changed casually. For work touching them:
 - Assume deployment remains on Vercel.
 - Be cautious with serverless function count, route sprawl, and cron weight.
 - Any deployment-affecting change should consider `vercel.json`, Vercel local emulation, and existing public API dispatch structure.
+- Before any Vercel deployment, push the latest intended code to GitHub first; do not deploy to Vercel from an unpushed local-only state unless the user explicitly overrides this rule.
 
 ### Documentation Constraints
 

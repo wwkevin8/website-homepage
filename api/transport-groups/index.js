@@ -284,32 +284,15 @@ async function enrichGroupsBatch(supabase, groups) {
 async function listPaginatedGroups(supabase, queryParams, page, pageSize) {
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
-  const query = buildGroupsBaseQuery(supabase, queryParams).range(from, to);
-  const { data, error, count } = await query;
-  if (error && String(error.message || "").includes("Requested range not satisfiable")) {
-    const countQuery = buildGroupsBaseQuery(supabase, queryParams)
-      .select("id", { count: "exact", head: true });
-    const { count: totalCount, error: countError } = await countQuery;
-    if (countError) {
-      throw countError;
-    }
-
-    return {
-      items: [],
-      pagination: {
-        page,
-        page_size: pageSize,
-        total: Number(totalCount || 0),
-        total_pages: totalCount ? Math.ceil(Number(totalCount) / pageSize) : 0
-      }
-    };
-  }
+  const query = buildGroupsBaseQuery(supabase, queryParams);
+  const { data, error } = await query;
   if (error) {
     throw error;
   }
 
-  const items = await enrichGroupsBatch(supabase, (data || []).map(applyEffectiveGroupCounts));
-  const total = Number(count || 0);
+  const allItems = await enrichGroupsBatch(supabase, (data || []).map(applyEffectiveGroupCounts));
+  const total = allItems.length;
+  const items = allItems.slice(from, to + 1);
 
   return {
     items,
