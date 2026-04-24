@@ -8,7 +8,7 @@
 ## Last Updated Task
 
 - Date: 2026-04-24
-- Scope: adjusted the restored sync audit cron cadence and prepared the repo-owned scheduler fix for GitHub push
+- Scope: disabled per-run sync audit emails so only the daily summary email remains active
 
 ## Completed In This Task
 
@@ -22,25 +22,33 @@
 - Added a new repo-owned `E:\webside\vercel.json` with cron definitions for:
   - sync audit run every 3 hours at minute 15
   - daily sync digest at 08:00 UTC
+- Pushed the scheduler fix to GitHub on branch `codex/full-sync` at commit `51afb89`.
+- Deployed production successfully to `https://webside-gdnjsglv6-wwkevin8s-projects.vercel.app` and re-aliased `https://ngn.best`.
+- Re-queried the Vercel project after deployment and confirmed cron definitions are now present again for:
+  - `/api/cron/run-transport-daily-flow-test` on `15 */3 * * *`
+  - `/api/cron/send-transport-sync-digest` on `0 8 * * *`
+- Updated `E:\webside\api\cron\run-transport-daily-flow-test.js` so each 3-hour sync audit run no longer sends its own email notification.
+- Kept the daily digest cron in place, so the only remaining sync-audit email is the morning summary from `/api/cron/send-transport-sync-digest`.
 
 ## Current Project Status
 
 - The workspace contains active storage booking copy and behavior changes in `storage-booking.html`, `storage.html`, `script.js`, `profile.js`, `api/_lib/user-profile.js`, and `public-api-handlers/storage-order-submit.js`.
 - The local main workspace is still dirty and still contains tracked temporary/recovery material that should not be used as a deployment source without cleanup.
-- The sync audit admin page reads normally and production data is writing again after manual invocation, but automatic recurrence will not resume until a deployment applies the new `vercel.json` cron definitions.
-- The repo now contains an explicit scheduler configuration for the sync audit paths in `E:\webside\vercel.json`, with the audit test reduced to once every 3 hours.
+- The sync audit admin page reads normally and production now has restored Vercel cron definitions from the repo-owned `E:\webside\vercel.json`.
+- Production is live on `https://ngn.best` with the sync audit test reduced to once every 3 hours.
+- Per-run sync audit emails are now disabled in code; operations should only receive the daily summary email going forward.
 - The daily log for this run is stored at `E:\webside\work-log\2026-04-24.md`.
 
 ## Open Issues Or Risks
 
 - The local workspace still has heavy Git noise, especially under:
   - `E:\webside\.tmp-dpl-3ReB2SCYt-output\`
-- Production `webside` currently shows an empty Vercel cron definition list, so the new repo config still needs to be deployed before automatic runs resume.
-- The manually restored rows were one-off manual executions, not proof that the recurring schedule is already back.
+- The manually restored rows and deployment verification prove the scheduler definition is back, but the next unattended run still needs to occur on a real 3-hour `:15` boundary to fully confirm end-to-end automation after deployment.
+- The new email behavior still needs one production run after deployment to confirm `notification.reason` now stays on the disabled path instead of attempting delivery.
 - The tracked temporary mirror/dump content still needs a later controlled Git cleanup pass.
 
 ## Recommended Next Steps
 
-1. Push and deploy the new `E:\webside\vercel.json` so Vercel rehydrates the missing cron definitions for the `webside` production project.
-2. After deployment, re-check the Vercel project cron definitions and confirm fresh audit rows appear again on the next 3-hour `:15` boundary without manual triggering.
+1. Deploy the daily-flow email suppression change, then check the next 3-hour `:15` run to confirm the audit row lands without sending a one-off email.
+2. If that run appears normally, treat the cron outage as resolved and leave the current 3-hour cadence plus daily-summary-only email behavior in place unless operations asks for a different frequency.
 3. Decide later whether `close-expired-transport-requests` should also be added back into repo-managed cron configuration or left out intentionally.
