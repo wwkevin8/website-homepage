@@ -1,5 +1,3 @@
-const XLSX = require("xlsx");
-
 const { getSupabaseAdmin } = require("../_lib/supabase");
 const { requireAdminUser } = require("../_lib/admin-auth");
 const { serverError, methodNotAllowed } = require("../_lib/http");
@@ -96,7 +94,35 @@ function buildFilename(queryParams) {
     String(now.getUTCMinutes()).padStart(2, "0")
   ].join("");
   const servicePart = queryParams.service_type ? `-${queryParams.service_type}` : "";
-  return `transport-requests${servicePart}-${stamp}.xlsx`;
+  return `transport-requests${servicePart}-${stamp}.csv`;
+}
+
+function csvEscape(value) {
+  const text = value === null || value === undefined ? "" : String(value);
+  if (!/[",\r\n]/.test(text)) {
+    return text;
+  }
+  return `"${text.replace(/"/g, '""')}"`;
+}
+
+function rowsToCsv(rows) {
+  const columns = rows.length ? Object.keys(rows[0]) : [
+    "提交时间",
+    "Order No",
+    "学生",
+    "微信号",
+    "服务",
+    "机场",
+    "航班",
+    "您抵达/起飞日期和时间",
+    "目的地",
+    "Group ID"
+  ];
+  const lines = [
+    columns.map(csvEscape).join(","),
+    ...rows.map(row => columns.map(column => csvEscape(row[column])).join(","))
+  ];
+  return `\ufeff${lines.join("\r\n")}\r\n`;
 }
 
 module.exports = async function handler(req, res) {
@@ -135,20 +161,13 @@ module.exports = async function handler(req, res) {
 
     const items = (data || []).map(item => deriveRequestDisplayFlags(item));
     const rows = buildRows(items);
-    const worksheet = XLSX.utils.json_to_sheet(rows);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Transport Requests");
-
-    const buffer = XLSX.write(workbook, {
-      type: "buffer",
-      bookType: "xlsx"
-    });
+    const csv = rowsToCsv(rows);
 
     const filename = buildFilename(queryParams);
     res.statusCode = 200;
-    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
     res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
-    res.end(buffer);
+    res.end(Buffer.from(csv, "utf8"));
   } catch (error) {
     serverError(res, error);
   }

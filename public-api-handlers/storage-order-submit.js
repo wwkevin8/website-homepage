@@ -1,9 +1,14 @@
 const { getSupabaseAdmin } = require("../api/_lib/supabase");
-const { badRequest, methodNotAllowed, parseJsonBody, serverError, sendJson, unauthorized } = require("../api/_lib/http");
-const { enforceRateLimit } = require("../api/_lib/rate-limit");
 const {
-  mapStorageOrderPayload
-} = require("../api/_lib/storage-orders");
+  badRequest,
+  methodNotAllowed,
+  parseJsonBody,
+  serverError,
+  sendJson,
+  unauthorized
+} = require("../api/_lib/http");
+const { enforceRateLimit } = require("../api/_lib/rate-limit");
+const { mapStorageOrderPayload } = require("../api/_lib/storage-orders");
 const { allocateOrderNumber } = require("../api/_lib/order-numbers");
 const { sendStorageOrderNotification } = require("../api/_lib/storage-order-notifier");
 const { getAuthenticatedUser } = require("../api/_lib/user-auth");
@@ -35,10 +40,12 @@ module.exports = async function handler(req, res) {
   try {
     const supabase = getSupabaseAdmin();
     const siteUser = await getAuthenticatedUser(req, supabase);
+
     if (!siteUser) {
       unauthorized(res, "请先登录后再提交预约");
       return;
     }
+
     const profileState = getProfileCompletionState(siteUser);
     if (!profileState.isComplete) {
       badRequest(res, `资料未完善，请先补全${profileState.missingFields.join("、")}`);
@@ -104,7 +111,7 @@ module.exports = async function handler(req, res) {
         notificationError: finalOrder.notification_error,
         successTitle: finalOrder.notification_status === "sent"
           ? "已提交并已通知客服"
-          : "已提交成功，但通知失败，进入人工确认队列",
+          : "已提交成功，但通知失败，已进入人工确认队列",
         successDescription: finalOrder.notification_status === "sent"
           ? "客服将按你填写的联系方式或电话联系确认"
           : "客服将稍后按你填写的联系方式或电话联系确认"

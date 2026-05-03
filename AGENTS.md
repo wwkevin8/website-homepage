@@ -150,4 +150,5 @@ Before considering a task complete, verify as applicable:
    - current project status
    - open issues or risks
    - recommended next steps
-5. Keep documentation concise, readable, and non-repetitive.
+5. For dependency changes, run `npm audit` after installation and either fix reported issues or record why they remain.
+6. Keep documentation concise, readable, and non-repetitive.

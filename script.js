@@ -221,6 +221,8 @@
     footerEmailValue: "info@ngn.best",
     storageTitle: "左邻右里 | 寄存服务非会员价格",
     storageDescription: "左邻右里寄存服务非会员价格页，提供箱型尺寸、价格表、短期规则、配送说明与在线费用估算。",
+    storageBookingTitle: "左邻右里 | 非会员寄存预约",
+    storageBookingDescription: "非会员寄存预约信息填写页，可确认估价摘要并直接提交预约给客服。",
     storageHeroEyebrow: "Storage Service",
     storageHeroTitle: "寄存服务非会员价格",
     storageHeroText: "英国诺丁汉左邻右里提供本地行李寄存服务。我们拥有自有仓库，环境安全干燥，每一件寄存行李均购买保险至 £50。以下页面整理了非会员价格、箱型规格、配送与短期加费规则，方便同学在咨询前快速估算费用。",
@@ -644,6 +646,8 @@
     footerEmailValue: "info@ngn.best",
     storageTitle: "NGN | Non-member Storage Pricing",
     storageDescription: "Non-member storage pricing by Nottingham Good Neighbor, including box sizes, daily rates, short-term rules, delivery charges and an online estimate tool.",
+    storageBookingTitle: "NGN | Non-member Storage Booking",
+    storageBookingDescription: "Non-member storage booking page for confirming an estimate summary and submitting the request to support.",
     storageHeroEyebrow: "Storage Service",
     storageHeroTitle: "Non-member Storage Pricing",
     storageHeroText: "Nottingham Good Neighbor in Nottingham, UK provides local luggage storage support with a private warehouse, a dry and secure environment, and up to £50 insurance per stored item. This page summarises non-member pricing, box specifications, delivery rules and short-term charges so students can estimate costs before contacting us.",
@@ -1286,6 +1290,9 @@ function getPageKey() {
   if (pathname.includes("pickup")) {
     return "pickup";
   }
+  if (pathname.includes("storage-booking")) {
+    return "storage-booking";
+  }
   if (pathname.includes("storage")) {
     return "storage";
   }
@@ -1332,6 +1339,13 @@ function getMetaContent(page, lang) {
     return {
       title: translations[lang].storageTitle,
       description: translations[lang].storageDescription
+    };
+  }
+
+  if (page === "storage-booking") {
+    return {
+      title: translations[lang].storageBookingTitle,
+      description: translations[lang].storageBookingDescription
     };
   }
 
@@ -2147,6 +2161,82 @@ function getStorageLocalModeMessage() {
   return "当前是直接打开本地文件（file://），预约接口无法提交。请先运行 `npm run dev`，再通过 http://localhost:3000/storage.html 打开页面后提交。";
 }
 
+function normalizeStoragePageStaticCopy() {
+  const summaryHead = document.querySelector(".storage-summary-card .storage-summary-head strong");
+  const summaryTip = document.querySelector(".storage-summary-card .storage-summary-head .storage-summary-tip");
+  const copyButton = document.querySelector("#copyBookingSummaryButton");
+  const summaryFallbackTitle = document.querySelector("#storageBookingSummary .storage-summary-item strong");
+  const summaryFallbackText = document.querySelector("#storageBookingSummary .storage-summary-item span");
+  const bookingIntro = document.querySelector(".storage-inline-form-card .storage-inline-form-head strong");
+  const bookingIntroText = document.querySelector(".storage-inline-form-card .storage-inline-form-head p");
+  const bookingInlineCta = document.querySelector(".storage-inline-cta > p");
+  const bookingButton = document.querySelector("#goToStorageBookingButton");
+  const banner = document.querySelector(".service-unavailable-banner");
+  const unavailableModal = document.querySelector("#storageUnavailableModal");
+  const contactFabIcon = document.querySelector(".storage-contact-fab-icon");
+  const contactFabTitle = document.querySelector(".storage-contact-fab-title");
+  const contactFabSubtitle = document.querySelector(".storage-contact-fab-subtitle");
+  const contactModalTitle = document.querySelector("#storageContactModalTitle");
+  const contactModalClose = document.querySelector("#storageContactClose");
+  const contactModalImage = document.querySelector("#storageContactModal img");
+
+  if (summaryHead) {
+    summaryHead.textContent = "预约摘要";
+  }
+  if (summaryTip) {
+    summaryTip.textContent = "估价完成后，这里会自动整理本次预约的关键信息。";
+  }
+  if (copyButton) {
+    copyButton.textContent = "复制摘要";
+  }
+  if (summaryFallbackTitle) {
+    summaryFallbackTitle.textContent = "提示";
+  }
+  if (summaryFallbackText) {
+    summaryFallbackText.textContent = "请先填写有效箱数、日期和取送方式，随后即可进入预约页继续提交。";
+  }
+  if (bookingIntro) {
+    bookingIntro.textContent = "继续填写预约信息";
+  }
+  if (bookingIntroText) {
+    bookingIntroText.textContent = "正式预约表单已单独放到下一页，避免当前估价页过长。";
+  }
+  if (bookingInlineCta) {
+    bookingInlineCta.textContent = "确认本页估价后，可进入下一页填写联系信息、服务地址和补充备注。";
+  }
+  if (bookingButton) {
+    bookingButton.textContent = "继续填写预约信息";
+    bookingButton.classList.remove("is-disabled");
+    bookingButton.removeAttribute("aria-disabled");
+  }
+  if (banner) {
+    banner.remove();
+  }
+  if (unavailableModal) {
+    unavailableModal.remove();
+  }
+  if (contactFabIcon) {
+    contactFabIcon.textContent = "咨";
+  }
+  if (contactFabTitle) {
+    contactFabTitle.textContent = "联系你的寄存客服";
+  }
+  if (contactFabSubtitle) {
+    contactFabSubtitle.textContent = "价格 / 时间 / 预约都可咨询";
+  }
+  if (contactModalTitle) {
+    contactModalTitle.textContent = "联系客服";
+  }
+  if (contactModalClose) {
+    contactModalClose.setAttribute("aria-label", "关闭联系客服弹窗");
+    contactModalClose.textContent = "×";
+  }
+  if (contactModalImage) {
+    contactModalImage.setAttribute("src", "./img/storage-service-qr.jpg");
+    contactModalImage.setAttribute("alt", "寄存客服二维码");
+  }
+}
+
 function initStorageCalculator(activeLang) {
   const form = document.querySelector("#storageCalculator");
   if (!form) {
@@ -2210,6 +2300,7 @@ function initStorageCalculator(activeLang) {
   const noticeContent = document.querySelector("#storageNoticeContent");
 
   form.dataset.lang = activeLang;
+  normalizeStoragePageStaticCopy();
 
   if (form.__renderEstimate) {
     form.__syncAppointmentFields?.();
@@ -2469,12 +2560,16 @@ function initStorageCalculator(activeLang) {
   }
 
   function syncBookingFields() {
-    if (!bookingForm || !form.__lastEstimate) {
+    if (!form.__lastEstimate) {
       return;
     }
 
     const summary = getCurrentSummaryFromEstimate(form.__lastEstimate);
     renderBookingSummary(summary);
+
+    if (!bookingForm) {
+      return;
+    }
 
     if (bookingServiceLabel) {
       bookingServiceLabel.value = summary.serviceLabel;

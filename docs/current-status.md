@@ -7,53 +7,64 @@
 
 ## Last Updated Task
 
-- Date: 2026-04-24
-- Scope: disabled per-run sync audit emails, deployed the change to production, and verified the API now skips one-off email delivery
+- Date: 2026-05-03
+- Scope: saved the current valid storage-page working state to GitHub after standardizing image paths and repairing local tooling blockers
 
 ## Completed In This Task
 
-- Re-read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before continuing.
-- Traced the sync audit log page to `api/transport-sync-audit-logs.js`, which only reads from `transport_sync_audit_logs`.
-- Confirmed new sync audit rows are written by `api/cron/run-transport-daily-flow-test.js`, not by the admin page itself.
-- Queried Supabase and confirmed the latest stored audit row is `2026-04-22 13:15 UTC`; records on 2026-04-22 followed an hourly `:15` pattern and then stopped.
-- Confirmed the production cron endpoint `https://ngn.best/api/cron/run-transport-daily-flow-test` exists and rejects unauthenticated requests with `403`, so the route is present.
-- Queried the live Vercel project and confirmed `webside` production currently has `crons.definitions: []`, while `CRON_SECRET` is still present in production env vars.
-- Manually triggered the production sync audit endpoint with the current cron secret and confirmed fresh rows were written at `2026-04-24 03:11 UTC` and `2026-04-24 03:12 UTC`, proving the write path, cleanup, and email notification still work.
-- Added a new repo-owned `E:\webside\vercel.json` with cron definitions for:
-  - sync audit run every 3 hours at minute 15
-  - daily sync digest at 08:00 UTC
-- Pushed the scheduler fix to GitHub on branch `codex/full-sync` at commit `51afb89`.
-- Deployed production successfully to `https://webside-gdnjsglv6-wwkevin8s-projects.vercel.app` and re-aliased `https://ngn.best`.
-- Re-queried the Vercel project after deployment and confirmed cron definitions are now present again for:
-  - `/api/cron/run-transport-daily-flow-test` on `15 */3 * * *`
-  - `/api/cron/send-transport-sync-digest` on `0 8 * * *`
-- Updated `E:\webside\api\cron\run-transport-daily-flow-test.js` so each 3-hour sync audit run no longer sends its own email notification.
-- Kept the daily digest cron in place, so the only remaining sync-audit email is the morning summary from `/api/cron/send-transport-sync-digest`.
-- Committed the email suppression change as `4aefae9 fix: keep only daily sync summary email`.
-- Deployed production successfully to `https://webside-qbxon0pcc-wwkevin8s-projects.vercel.app` and re-aliased `https://ngn.best`.
-- Manually invoked the production sync audit endpoint after deployment and confirmed the response now reports:
-  - `notification.sent: false`
-  - `notification.skipped: true`
-  - `notification.reason: "daily_flow_email_disabled"`
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before touching the workspace.
+- Added an `AGENTS.md` acceptance rule requiring `npm audit` after dependency changes, with unresolved issues fixed or recorded.
+- Removed the static "temporarily unavailable" state from `storage.html` so users can enter the non-member storage booking flow.
+- Updated `storage-booking.html` to use the existing text-based NGN brand lockup instead of the missing `img/logo.png`.
+- Added dedicated storage booking page title/meta handling in `script.js`.
+- Changed storage booking profile hydration to use `profileState.contactPreferenceLabel` instead of a hard-coded contact label.
+- Fixed the estimate page booking summary refresh so `storage.html` updates the stored booking draft even though the actual booking form lives on `storage-booking.html`.
+- Ran a local browser check at `http://localhost:3000/storage.html` and `http://localhost:3000/storage-booking.html`.
+- Verified a sample estimate flow: 1 box, 20kg, `2026-06-01` to `2026-07-01` calculated `£24.00`, refreshed the booking summary, navigated to `storage-booking.html`, preserved the summary, and left the submit button available.
+- Restored the project scripts listed in `AGENTS.md` in `package.json`, including local dev, Vercel emulation, Playwright QA, build, and deploy commands.
+- Added `engines.node: 24.x` to `package.json`.
+- Added `playwright` as a dev dependency so the existing QA runner can load.
+- Upgraded `nodemailer` from `^6.10.1` to `^8.0.7` and verified the two email helper modules still load.
+- Removed vulnerable spreadsheet/export dependencies from the project dependency tree.
+- Changed `api/transport-requests/export.js` from XLSX generation to UTF-8 CSV generation with a BOM, CSV escaping, and `.csv` filenames.
+- Verified the transport request export handler loads after the CSV change.
+- Kept Vercel CLI out of project dependencies to avoid audit noise; the Vercel scripts now use pinned `npx --yes vercel@53.1.0 ...` commands.
+- Reinstalled the local Playwright Chromium browser package after the cached headless shell failed to launch.
+- Verified Chromium launches successfully after reinstall.
+- Verified `node scripts/qa300-runner.js --list` now loads and lists all 300 QA cases.
+- Verified `npx --yes vercel@53.1.0 --version` resolves a current Vercel CLI.
+- Ran `npm audit --json`; it reports 0 vulnerabilities.
+- Confirmed `package.json` and `package-lock.json` no longer declare `xlsx`, `exceljs`, or `vercel`.
+- Renamed the storage service QR image from a Chinese filename to `img/storage-service-qr.jpg`.
+- Moved the storage price and box-size images from Chinese directories under `img/寄存价格/` to English paths under `img/storage-pricing/`.
+- Updated `storage.html` and `script.js` so the storage page and contact modal use the new English image paths.
+- Verified the old storage image path references are no longer present in active HTML/JS/CSS files outside generated temp output.
+- Verified all 7 `storage.html` image references resolve to existing files after the path update.
+- Saved the current valid working state to GitHub branch `codex/full-sync`, excluding `.tmp-dpl-3ReB2SCYt-output/` generated mirror noise and unrelated `work-log/*.md` files.
 
 ## Current Project Status
 
-- The workspace contains active storage booking copy and behavior changes in `storage-booking.html`, `storage.html`, `script.js`, `profile.js`, `api/_lib/user-profile.js`, and `public-api-handlers/storage-order-submit.js`.
-- The local main workspace is still dirty and still contains tracked temporary/recovery material that should not be used as a deployment source without cleanup.
-- The sync audit admin page reads normally and production now has restored Vercel cron definitions from the repo-owned `E:\webside\vercel.json`.
-- Production is live on `https://ngn.best` with the sync audit test reduced to once every 3 hours.
-- Per-run sync audit emails are now disabled in production code; operations should only receive the daily summary email going forward.
-- The daily log for this run is stored at `E:\webside\work-log\2026-04-24.md`.
+- Storage booking is visibly open from the public storage page and the estimate-to-booking draft handoff works locally.
+- The local dependency tree is intentionally small: `@supabase/supabase-js`, `nodemailer`, and dev-only `playwright`.
+- `package.json` scripts now match the workflow expected by `AGENTS.md`.
+- Playwright is installed and its Chromium browser can launch on this machine.
+- The transport request admin export now downloads CSV instead of XLSX to avoid keeping a vulnerable spreadsheet package.
+- Storage-page image assets now use English filenames and directories, reducing path-encoding risk in local tooling and deployment.
+- The current valid storage/dependency/export/status changes are intended to be preserved on GitHub branch `codex/full-sync`.
+- The active uncommitted storage/profile cleanup still includes earlier changes in `api/_lib/user-profile.js`, `profile.js`, `public-api-handlers/storage-order-submit.js`, `script.js`, `storage-booking.html`, and `storage.html`.
+- The workspace remains noisy because `.tmp-dpl-3ReB2SCYt-output/`, generated Playwright snapshots, and historical work-log files are still present.
+- The local helper server used for verification has been stopped.
 
 ## Open Issues Or Risks
 
-- The local workspace still has heavy Git noise, especially under:
-  - `E:\webside\.tmp-dpl-3ReB2SCYt-output\`
-- The manually restored rows and deployment verification prove the scheduler definition is back, but the next unattended run still needs to occur on a real 3-hour `:15` boundary to fully confirm end-to-end automation after deployment.
-- The tracked temporary mirror/dump content still needs a later controlled Git cleanup pass.
+- Browser verification covered page render and estimate-to-booking handoff only; authenticated final submission to the live storage API was not attempted.
+- The full Playwright smoke script was not run end-to-end in this task because it requires a reachable app base URL and admin login environment values.
+- The generated `.tmp-dpl-3ReB2SCYt-output/` tree remains in the working copy and continues to obscure meaningful repo changes.
+- The earlier transport schema/status-drift risks remain open separately: duplicate prevention is mostly application-side, group/request/member status can drift, and live `create_site_transport_request` differs from repository SQL.
 
 ## Recommended Next Steps
 
-1. Check the sync audit log again after the next unattended 3-hour `:15` boundary to confirm a normal automatic run lands in production without manual triggering.
-2. If that run appears normally, treat the cron outage and email-noise issue as resolved and leave the current 3-hour cadence plus daily-summary-only behavior in place unless operations asks for a different frequency.
-3. Decide later whether `close-expired-transport-requests` should also be added back into repo-managed cron configuration or left out intentionally.
+1. Continue the real storage page build now that the entry flow and dependency/tooling blockers are cleared.
+2. Test an authenticated storage booking submission through the local helper or Vercel preview environment before release.
+3. Commit the storage booking cleanup plus dependency/security fix as focused change sets after excluding generated mirror/log noise.
+4. Schedule a separate transport data repair/sync pass for the previously identified empty-group and one-member status drift.

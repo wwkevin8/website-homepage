@@ -8,13 +8,21 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./styles.css?v=20260331-storage-booking-fix-1">
+  <link rel="stylesheet" href="./styles.css?v=20260422-storage-booking-live-1">
 </head>
 <body class="storage-page">
   <header class="site-header service-header">
     <div class="site-header-inner service-header-inner">
-      <a class="brand-wrap" href="./index.html" aria-label="NGN 首页">
-        <img class="brand-logo" src="./img/logo.png" alt="NGN" />
+      <a class="brand" href="./index.html" aria-label="NGN 首页">
+        <div class="brand-lockup brand-lockup-header">
+          <div class="logo-bubbles">
+            <span>英国·诺丁汉</span>
+            <span>左邻右里</span>
+            <span>生活服务</span>
+          </div>
+          <div class="logo-wordmark">NGN</div>
+          <div class="logo-subtitle">NOTTINGHAM GOOD NEIGHBOR</div>
+        </div>
       </a>
       <nav class="service-nav">
         <a href="./index.html">首页</a>
@@ -30,11 +38,7 @@
         <div class="storage-hero-copy">
           <span class="storage-eyebrow">非会员寄存预约</span>
           <h1>继续填写预约信息</h1>
-          <p id="storageBookingPageHint">请核对左侧估价摘要，并在本页补充联系方式、地址和服务时间。提交后我们会把完整预约信息发送给客服确认。</p>
-          <div class="service-unavailable-banner">
-            <strong>暂未开放</strong>
-            <p>寄存预约预计将在一个月后开放。当前登记页仅保留表单结构供说明参考，暂不接受新的正式提交。</p>
-          </div>
+          <p id="storageBookingPageHint">请核对左侧估价摘要，并在本页补充联系方式、服务地址和服务时间。提交后我们会把完整预约信息发送给客服确认。</p>
           <div class="profile-gate-banner" id="storageProfileGate" hidden>
             <strong id="storageProfileGateTitle">提交前需补全资料</strong>
             <p id="storageProfileGateMessage">请先补全姓名、手机号和联系方式。</p>
@@ -84,7 +88,7 @@
             <div class="storage-inline-form-head">
               <div>
                 <strong>预约信息填写</strong>
-                <p>请按顺序查看须知、联系信息与地址结构。当前阶段暂未开放正式寄存登记提交。</p>
+                <p>请按顺序查看须知、联系方式与地址信息。确认无误后即可提交给客服。</p>
               </div>
             </div>
 
@@ -99,9 +103,9 @@
               <div class="storage-notice-content" id="storageNoticeContent">
                 <ol class="storage-notice-list">
                   <li>默认所有取送货地点为公寓最近停车点，上楼取送货需额外收费。</li>
-                  <li>诺丁汉市内送寄存或搬家请提前至少 3 天预约，送往其他城市建议提前一周联系。</li>
-                  <li>买 3 个箱子可以送 1 个胶布。</li>
-                  <li>寄存价格不足 £30 时按 £30 计算；若仅 1 箱短期寄存，最低可降至 £20。</li>
+                  <li>诺丁汉市内寄存或搬家请至少提前 3 天预约，送往其他城市建议提前一周联系。</li>
+                  <li>购买 3 个箱子可送 1 个胶布。</li>
+                  <li>寄存价格不足 £30 时按 £30 计算；如果仅 1 箱短期寄存，最低可降至 £20。</li>
                   <li>寄存或搬家的纸皮箱 / 行李箱建议控制在 23kg 以内，超过 30kg 无法安排。</li>
                   <li>超尺寸、超重、无包装或需特殊看护的物品，请先联系人工客服确认。</li>
                   <li>易碎和高价值物品请自行妥善包装，如需额外保险请联系客服。</li>
@@ -126,8 +130,8 @@
                 <div>
                   <span class="storage-field-label">服务时间</span>
                   <div class="storage-radio-group">
-                    <label><input type="radio" name="serviceTime" value="daytime" checked> 白天（一般 10-13 点）</label>
-                    <label><input type="radio" name="serviceTime" value="evening"> 晚上（一般 20-23 点）</label>
+                    <label><input type="radio" name="serviceTime" value="daytime" checked> 白天（一般 10:00 - 13:00）</label>
+                    <label><input type="radio" name="serviceTime" value="evening"> 晚上（一般 20:00 - 23:00）</label>
                   </div>
                 </div>
                 <div class="storage-field-span-2">
@@ -197,7 +201,7 @@
 
             <p class="storage-form-message" id="storageBookingFormMessage"></p>
 
-            <button class="button button-primary full-width is-disabled" id="storageBookingSubmitButton" type="submit" aria-disabled="true">提交预约并发送给客服确认</button>
+            <button class="button button-primary full-width" id="storageBookingSubmitButton" type="submit">提交预约并发送给客服确认</button>
           </form>
 
           <div class="storage-submit-success" id="storageSubmitSuccess" hidden>
@@ -213,63 +217,7 @@
     </section>
   </main>
 
-  <div class="service-unavailable-modal" id="storageBookingUnavailableModal" hidden>
-    <div class="service-unavailable-modal__backdrop" data-storage-booking-unavailable-close></div>
-    <div class="service-unavailable-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="storageBookingUnavailableModalTitle">
-      <button class="service-unavailable-modal__close" type="button" aria-label="关闭寄存登记开放提示" data-storage-booking-unavailable-close>×</button>
-      <p class="service-unavailable-modal__eyebrow">Storage Booking Notice</p>
-      <h2 id="storageBookingUnavailableModalTitle">暂未开放</h2>
-      <p>寄存登记功能预计将在一个月后开放。</p>
-      <p>当前页面仅保留预约字段和流程说明，方便你提前了解需要准备的信息，正式提交入口暂不启用。</p>
-      <div class="service-unavailable-modal__actions">
-        <button class="button button-primary" type="button" data-storage-booking-unavailable-close>我知道了</button>
-        <a class="button button-secondary" href="./storage.html">返回寄存说明页</a>
-      </div>
-    </div>
-  </div>
-
   <script src="./site-auth.js" defer></script>
-  <script src="./script.js?v=20260331-storage-booking-fix-1" defer></script>
-  <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      const modal = document.getElementById("storageBookingUnavailableModal");
-      const dialog = modal ? modal.querySelector(".service-unavailable-modal__dialog") : null;
-      const closeNodes = modal ? modal.querySelectorAll("[data-storage-booking-unavailable-close]") : [];
-      const form = document.getElementById("storageBookingForm");
-
-      if (!modal || !dialog || !form) {
-        return;
-      }
-
-      function openModal() {
-        modal.hidden = false;
-        document.body.style.overflow = "hidden";
-      }
-
-      function closeModal() {
-        modal.hidden = true;
-        document.body.style.overflow = "";
-      }
-
-      window.requestAnimationFrame(openModal);
-
-      closeNodes.forEach(node => node.addEventListener("click", closeModal));
-      modal.addEventListener("click", event => {
-        if (!dialog.contains(event.target)) {
-          closeModal();
-        }
-      });
-      document.addEventListener("keydown", event => {
-        if (event.key === "Escape" && !modal.hidden) {
-          closeModal();
-        }
-      });
-      form.addEventListener("submit", event => {
-        event.preventDefault();
-        event.stopImmediatePropagation();
-        openModal();
-      }, true);
-    });
-  </script>
+  <script src="./script.js?v=20260422-storage-booking-live-1" defer></script>
 </body>
 </html>
