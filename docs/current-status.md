@@ -43,14 +43,14 @@
 - Vercel cache headers are configured for conservative freshness on HTML and API responses.
 - Production is live on Vercel at `https://ngn.best`; latest deployment URL is `https://webside-qk0vnb497-wwkevin8s-projects.vercel.app`.
 - The order center detail route fix is now deployed to production.
-- After the production deploy, local `script.js` and `storage.html` contain additional uncommitted buy-box quantity/detail edits that were not part of commit `97d93d1` and were not included in deployment `dpl_CBcRq14sjeLZAmQM4uWDHT7qZbbX`.
+- After the production deploy, local `script.js`, `storage.html`, and `styles.css` contain additional uncommitted buy-box quantity/detail edits that were not part of commit `97d93d1` and were not included in deployment `dpl_CBcRq14sjeLZAmQM4uWDHT7qZbbX`.
 - The workspace is still noisy because `.tmp-dpl-3ReB2SCYt-output/` contains many generated edits and several work-log files are untracked.
 - Running Vercel builds pulled local `.vercel` project settings and preview/production output files; `.vercel` is already ignored by Git.
 
 ## Open Issues Or Risks
 
 - The new storage-history API and real order creation/matching still need authenticated database-backed verification with actual front-desk/test accounts.
-- Local `script.js` and `storage.html` have additional uncommitted edits that need review before any later commit or deployment.
+- Local `script.js`, `storage.html`, and `styles.css` have additional uncommitted edits that need review before any later commit or deployment.
 - Users who already have an old HTML document open may need to reload once after the new deployment lands.
 - Production log scan after deployment found Node `[DEP0169] url.parse()` deprecation warnings marked as error-level logs on unauthenticated verification requests, but no business endpoint crash was observed.
 - The generated `.tmp-dpl-3ReB2SCYt-output/` tree remains in the working copy and continues to obscure meaningful repo changes.
