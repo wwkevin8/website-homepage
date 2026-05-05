@@ -2197,6 +2197,10 @@ function getStorageSubmitEndpoint() {
   return "/api/public/storage-order-submit";
 }
 
+function getMyStorageOrdersEndpoint() {
+  return "/api/public/my-storage-orders";
+}
+
 function getStorageLocalModeMessage() {
   return "当前是直接打开本地文件（file://），预约接口无法提交。请先运行 `npm run dev`，再通过 http://localhost:3000/storage.html 打开页面后提交。";
 }
@@ -2256,24 +2260,24 @@ function normalizeStoragePageStaticCopy() {
     bookingIntro.textContent = "请选择预约类型";
   }
   if (bookingIntroText) {
-    bookingIntroText.textContent = "寄存、送还和买箱子分开提交，进入下一页后只填写对应表单。";
+    bookingIntroText.textContent = "买箱、预约寄存和取寄存分开提交；买箱在本页填写，寄存和取寄存进入对应表单。";
   }
   if (bookingInlineCta) {
     bookingInlineCta.hidden = true;
     bookingInlineCta.textContent = "";
   }
   if (bookingButton) {
-    setStorageBookingEntryCopy(bookingButton, "预约寄存 / 入仓", "取件或自送入仓，提交寄存预约");
+    setStorageBookingEntryCopy(bookingButton, "预约寄存 / 入仓", "先完成计算器估价，再提交寄存预约");
     bookingButton.classList.remove("is-disabled");
     bookingButton.removeAttribute("aria-disabled");
   }
   if (boxDeliveryButton) {
-    setStorageBookingEntryCopy(boxDeliveryButton, "只买箱子 / 送箱", "先买箱或预约送箱到楼下");
+    setStorageBookingEntryCopy(boxDeliveryButton, "买箱子 / 送箱", "填写送箱信息，直接生成买箱订单");
     boxDeliveryButton.classList.remove("is-disabled");
     boxDeliveryButton.removeAttribute("aria-disabled");
   }
   if (returnButton) {
-    setStorageBookingEntryCopy(returnButton, "送还寄存 / 取回", "安排送回、自取或返还交接");
+    setStorageBookingEntryCopy(returnButton, "取寄存 / 取回", "登录后自动查找历史寄存订单");
     returnButton.classList.remove("is-disabled");
     returnButton.removeAttribute("aria-disabled");
   }
@@ -2352,6 +2356,8 @@ function initStorageCalculator(activeLang) {
   const goToStorageBookingButton = document.querySelector("#goToStorageBookingButton");
   const goToStorageBoxDeliveryButton = document.querySelector("#goToStorageBoxDeliveryButton");
   const goToStorageReturnButton = document.querySelector("#goToStorageReturnButton");
+  const storageBoxQuickOrder = document.querySelector("#storageBoxQuickOrder");
+  const storageBoxQuickSubmitButton = document.querySelector("#storageBoxQuickSubmitButton");
   const bookingForm = document.querySelector("#storageBookingForm");
   const bookingFormMessage = document.querySelector("#storageBookingFormMessage");
   const bookingServiceDate = document.querySelector("#bookingServiceDate");
@@ -2759,6 +2765,214 @@ function initStorageCalculator(activeLang) {
     bookingFormMessage.classList.toggle("is-success", !!isSuccess);
   }
 
+  function getValidStorageEstimateDraft(preferredOrderType) {
+    renderEstimate();
+    const draft = buildCurrentDraftPayload(preferredOrderType);
+    const summary = draft?.estimateSummary || {};
+    if (!draft || summary.totalBoxes <= 0 || summary.days <= 0 || summary.estimatedTotalPrice === null) {
+      return null;
+    }
+    return draft;
+  }
+
+  function getBoxQuickField(name) {
+    return storageBoxQuickOrder?.querySelector(`[name="${name}"]`);
+  }
+
+  function getBoxQuickValue(name) {
+    return getBoxQuickField(name)?.value.trim() || "";
+  }
+
+  function getTotalBoxPurchaseQuantity() {
+    return Object.values(getPurchaseCounts()).reduce((sum, qty) => sum + Math.max(0, Number(qty) || 0), 0);
+  }
+
+  function prefillBoxQuickOrder() {
+    if (!storageBoxQuickOrder) {
+      return;
+    }
+    const quantityField = getBoxQuickField("boxPurchaseQuantity");
+    const dateField = getBoxQuickField("boxServiceDate");
+    const nameField = getBoxQuickField("boxContactName");
+    const phoneField = getBoxQuickField("boxContactPhone");
+    const totalPurchase = getTotalBoxPurchaseQuantity();
+    if (quantityField && totalPurchase > 0 && !quantityField.value) {
+      quantityField.value = String(totalPurchase);
+    }
+    if (dateField && boxDeliveryDateInput?.value && !dateField.value) {
+      dateField.value = boxDeliveryDateInput.value;
+    }
+    if (window.SiteAuth?.getSession) {
+      window.SiteAuth.getSession().then(session => {
+        const user = session?.user || {};
+        const profileState = window.SiteAuth.getProfileCompletionState?.(user);
+        if (nameField && !nameField.value && user.nickname) {
+          nameField.value = user.nickname;
+        }
+        if (phoneField && !phoneField.value && user.phone) {
+          phoneField.value = user.phone;
+        }
+        if (profileState && !profileState.isComplete) {
+          setBookingFormMessage(`资料未完善，提交前需补全${profileState.missingFields.join("、")}。`);
+        }
+      }).catch(() => {});
+    }
+  }
+
+  function showBoxQuickOrder() {
+    if (!storageBoxQuickOrder) {
+      return;
+    }
+    storageBoxQuickOrder.hidden = false;
+    prefillBoxQuickOrder();
+    storageBoxQuickOrder.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+
+  function validateBoxQuickOrder(customerForm, serviceDetails) {
+    if (!customerForm.noticeConfirmed) {
+      return "请先阅读并同意下单须知。";
+    }
+    const required = [
+      ["purchaseQuantity", "请填写购买数量。"],
+      ["serviceDate", "请填写送箱日期。"],
+      ["serviceTimeSlot", "请选择送箱时间段。"],
+      ["serviceAddress", "请填写送箱地址。"],
+      ["roomOrBuilding", "请填写房间 / 楼栋 / 公寓名。"],
+      ["postcode", "请填写邮编。"],
+      ["contactName", "请填写联系人姓名。"],
+      ["contactPhone", "请填写联系电话。"]
+    ].find(([key]) => {
+      const value = serviceDetails[key];
+      return value === "" || value === null || value === undefined || (key === "purchaseQuantity" && Number(value) <= 0);
+    });
+    if (required) {
+      return required[1];
+    }
+    if (!customerForm.contactHandle) {
+      return "请先到个人资料页补全微信号。";
+    }
+    return "";
+  }
+
+  function buildBoxQuickReadableMessage(details) {
+    return [
+      "服务类型：买箱子 / 送箱",
+      `购买数量：${details.purchaseQuantity}`,
+      `送箱日期：${details.serviceDate}`,
+      `时间段：${details.serviceTimeSlot}`,
+      `送箱地址：${details.serviceAddress}`,
+      `房间 / 楼栋 / 公寓名：${details.roomOrBuilding}`,
+      `邮编：${details.postcode}`,
+      `联系人姓名：${details.contactName}`,
+      `联系电话：${details.contactPhone}`,
+      "送箱服务默认楼下交接。如有特殊情况，请在备注中说明，客服会确认是否可安排。",
+      details.notes ? `备注：${details.notes}` : ""
+    ].filter(Boolean).join("\n");
+  }
+
+  async function submitBoxQuickOrder(event) {
+    event.preventDefault();
+    if (isStorageLocalFileMode()) {
+      setBookingFormMessage(getStorageLocalModeMessage());
+      return;
+    }
+    if (!window.SiteAuth) {
+      setBookingFormMessage("请先登录后再提交买箱订单。");
+      return;
+    }
+    const session = await window.SiteAuth.getSession();
+    if (!session.authenticated) {
+      await window.SiteAuth.requireLogin({ returnTo: "/storage.html#storageBoxQuickOrder" });
+      return;
+    }
+    const profileState = window.SiteAuth.getProfileCompletionState(session.user);
+    if (!profileState.isComplete) {
+      setBookingFormMessage(`资料未完善，提交前需补全${profileState.missingFields.join("、")}。`);
+      return;
+    }
+
+    const serviceDetails = {
+      purchaseQuantity: Number(getBoxQuickValue("boxPurchaseQuantity") || 0),
+      serviceDate: getBoxQuickValue("boxServiceDate"),
+      serviceTimeSlot: getBoxQuickValue("boxServiceTimeSlot"),
+      serviceAddress: getBoxQuickValue("boxServiceAddress"),
+      roomOrBuilding: getBoxQuickValue("boxRoomOrBuilding"),
+      postcode: getBoxQuickValue("boxPostcode"),
+      contactName: getBoxQuickValue("boxContactName"),
+      contactPhone: getBoxQuickValue("boxContactPhone"),
+      notes: getBoxQuickValue("boxNotes")
+    };
+    const customerForm = {
+      noticeConfirmed: storageBoxQuickOrder.querySelector('input[name="boxNoticeConfirmed"]:checked')?.value === "yes",
+      contactPreference: profileState.contactPreference || "wechat",
+      contactPreferenceLabel: profileState.contactPreferenceLabel || "微信",
+      contactHandle: profileState.contactHandle || "",
+      customerName: serviceDetails.contactName,
+      phone: serviceDetails.contactPhone
+    };
+    const validationMessage = validateBoxQuickOrder(customerForm, serviceDetails);
+    if (validationMessage) {
+      setBookingFormMessage(validationMessage);
+      return;
+    }
+
+    renderEstimate();
+    const draft = buildCurrentDraftPayload("box_delivery");
+    const payload = {
+      ...(draft || {}),
+      source: "storage_box_quick_order",
+      orderType: "box_delivery",
+      serviceLabel: "买箱子 / 送箱",
+      customerForm,
+      serviceDetails,
+      estimateSummary: draft?.estimateSummary || {
+        totalBoxes: 0,
+        totalPurchaseBoxes: serviceDetails.purchaseQuantity,
+        boxDeliveryDate: serviceDetails.serviceDate,
+        estimatedTotalPrice: 0
+      },
+      calculatorSnapshot: draft?.calculatorSnapshot || {
+        purchaseCounts: getPurchaseCounts(),
+        boxDeliveryDate: serviceDetails.serviceDate
+      },
+      serviceFlags: {
+        box_delivery: true
+      },
+      finalReadableMessage: buildBoxQuickReadableMessage(serviceDetails)
+    };
+
+    setBookingFormMessage("正在提交买箱订单...");
+    if (storageBoxQuickSubmitButton) {
+      storageBoxQuickSubmitButton.disabled = true;
+    }
+    try {
+      const response = await fetch(getStorageSubmitEndpoint(), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
+      const result = await response.json().catch(() => ({
+        data: null,
+        error: { message: "提交失败，请稍后重试。" }
+      }));
+      if (!response.ok) {
+        throw new Error(result.error?.message || "提交失败，请稍后重试。");
+      }
+      setBookingFormMessage(`买箱订单已提交：${result.data?.orderNo || "--"}`, true);
+      storageBoxQuickOrder.reset();
+      storageBoxQuickOrder.hidden = true;
+    } catch (error) {
+      setBookingFormMessage(error?.message === "Failed to fetch" ? getStorageLocalModeMessage() : (error.message || "提交失败，请稍后重试。"));
+    } finally {
+      if (storageBoxQuickSubmitButton) {
+        storageBoxQuickSubmitButton.disabled = false;
+      }
+    }
+  }
+
   function validateBookingForm(summary, customerForm) {
     if (!customerForm.noticeConfirmed) {
       return "请先阅读并同意下单须知。";
@@ -3060,17 +3274,23 @@ function initStorageCalculator(activeLang) {
     event.preventDefault();
     const target = event.currentTarget;
     const preferredOrderType = target?.dataset?.storageBookingTarget || "storage_collection";
-    const draft = buildCurrentDraftPayload(preferredOrderType);
-    const totalPurchaseBoxes = Number(draft?.estimateSummary?.totalPurchaseBoxes || 0);
     const isBoxDelivery = preferredOrderType === "box_delivery";
-    const invalidBoxDelivery = !draft || totalPurchaseBoxes <= 0;
     const targetUrl = target?.getAttribute("href") || "./storage-booking.html";
 
-    if (isBoxDelivery && invalidBoxDelivery) {
-      const message = "请先填写要购买的箱子数量后再进入买箱/送箱表单。";
-      setBookingFormMessage(message);
-      window.alert(message);
+    if (isBoxDelivery) {
+      showBoxQuickOrder();
       return;
+    }
+
+    let draft = null;
+    if (preferredOrderType === "storage_collection") {
+      draft = getValidStorageEstimateDraft(preferredOrderType);
+      if (!draft) {
+        const message = "请先填写有效箱数、开始日期和结束日期后再继续。";
+        setBookingFormMessage(message);
+        window.alert(message);
+        return;
+      }
     }
 
     if (window.SiteAuth) {
@@ -3092,6 +3312,11 @@ function initStorageCalculator(activeLang) {
   goToStorageBookingButton?.addEventListener("click", handleStorageBookingEntryClick);
   goToStorageBoxDeliveryButton?.addEventListener("click", handleStorageBookingEntryClick);
   goToStorageReturnButton?.addEventListener("click", handleStorageBookingEntryClick);
+  storageBoxQuickOrder?.addEventListener("submit", submitBoxQuickOrder);
+
+  if (window.location.hash === "#storageBoxQuickOrder") {
+    showBoxQuickOrder();
+  }
 
   bookingForm?.addEventListener("submit", async event => {
     event.preventDefault();
@@ -3251,14 +3476,29 @@ function initStorageBookingPage() {
   const noticeContent = document.querySelector("#storageNoticeContent");
   const copyBookingSummaryButton = document.querySelector("#copyBookingSummaryButton");
   const bookingPageHint = document.querySelector("#storageBookingPageHint");
+  const returnHistoryPanel = document.querySelector("#storageReturnHistoryPanel");
+  const returnHistoryStatus = document.querySelector("#storageReturnHistoryStatus");
+  const returnHistoryList = document.querySelector("#storageReturnHistoryList");
   const serviceSections = Array.from(bookingForm.querySelectorAll("[data-storage-service-section]"));
   const serviceLabels = {
     box_delivery: "买箱子 / 送箱",
-    storage_collection: "取寄存 / 入仓",
-    storage_return: "送回寄存 / 取回"
+    storage_collection: "预约寄存 / 入仓",
+    storage_return: "取寄存 / 取回"
   };
-  const allowedOrderTypes = Object.keys(serviceLabels);
+  const allowedOrderTypes = ["storage_collection", "storage_return"];
   const requestedOrderType = new URLSearchParams(window.location.search).get("service") || draft?.preferredOrderType || "";
+  if (requestedOrderType === "box_delivery") {
+    window.location.replace("./storage.html#storageBoxQuickOrder");
+    return;
+  }
+  const boxDeliveryTypeInput = bookingForm.querySelector('input[name="storageOrderType"][value="box_delivery"]');
+  if (boxDeliveryTypeInput) {
+    boxDeliveryTypeInput.disabled = true;
+    const boxDeliveryCard = boxDeliveryTypeInput.closest(".storage-service-type-card") || boxDeliveryTypeInput.closest("label");
+    if (boxDeliveryCard) {
+      boxDeliveryCard.hidden = true;
+    }
+  }
 
   function setMessage(message, isSuccess = false) {
     if (!bookingFormMessage) {
@@ -3277,7 +3517,7 @@ function initStorageBookingPage() {
   }
 
   function getSelectedOrderType() {
-    return getRadioValue("storageOrderType") || "box_delivery";
+    return getRadioValue("storageOrderType") || "storage_collection";
   }
 
   function selectOrderType(orderType) {
@@ -3382,6 +3622,88 @@ function initStorageBookingPage() {
     }
     if (returnContact && !returnContact.value && contactHandleInput?.value) {
       returnContact.value = contactHandleInput.value;
+    }
+  }
+
+  function setReturnField(name, value, overwrite = true) {
+    const field = bookingForm.querySelector(`[name="${name}"]`);
+    if (!field || (!overwrite && field.value)) {
+      return;
+    }
+    field.value = value || "";
+  }
+
+  function fillReturnFormFromHistory(order) {
+    if (!order) {
+      return;
+    }
+    setReturnField("returnRelatedOrderNo", order.orderNo);
+    setReturnField("returnStorageCustomerName", order.customerName);
+    setReturnField("returnStoragePhone", order.phone);
+    setReturnField("returnStorageContact", order.contactHandle);
+    setReturnField("returnApproximateStorageTime", [order.serviceDate, order.expectedStorageEndDate].filter(Boolean).join(" 至 "));
+    setReturnField("returnOriginalCollectionAddress", order.addressFull);
+    setReturnField("returnItemCount", order.estimatedBoxCount ? String(order.estimatedBoxCount) : "");
+  }
+
+  function renderReturnHistoryOrders(orders) {
+    if (!returnHistoryPanel || !returnHistoryStatus || !returnHistoryList) {
+      return;
+    }
+    returnHistoryPanel.hidden = false;
+    returnHistoryList.innerHTML = "";
+    if (!orders.length) {
+      returnHistoryStatus.textContent = "当前账号未找到历史预约寄存订单，提交后后台会人工核验。";
+      returnHistoryPanel.classList.add("is-warning");
+      return;
+    }
+    returnHistoryPanel.classList.remove("is-warning");
+    returnHistoryStatus.textContent = "已找到以下历史预约寄存订单，默认选择最新一条。";
+    returnHistoryList.innerHTML = orders.map((order, index) => `
+      <button class="storage-return-history-option${index === 0 ? " is-active" : ""}" type="button" data-history-index="${index}">
+        <strong>${escapeHtml(order.orderNo || "--")}</strong>
+        <span>${escapeHtml(order.serviceDate || "--")} · ${escapeHtml(order.addressFull || "--")}</span>
+        <small>${escapeHtml(String(order.estimatedBoxCount || 0))} 件 / 箱 · ${escapeHtml(order.status || "--")}</small>
+      </button>
+    `).join("");
+    fillReturnFormFromHistory(orders[0]);
+    returnHistoryList.querySelectorAll("[data-history-index]").forEach(button => {
+      button.addEventListener("click", () => {
+        const index = Number(button.dataset.historyIndex || 0);
+        const selected = orders[index];
+        returnHistoryList.querySelectorAll(".storage-return-history-option").forEach(node => node.classList.remove("is-active"));
+        button.classList.add("is-active");
+        fillReturnFormFromHistory(selected);
+      });
+    });
+  }
+
+  async function loadReturnHistoryOrders() {
+    if (getSelectedOrderType() !== "storage_return" || !returnHistoryPanel || !window.SiteAuth) {
+      return;
+    }
+    returnHistoryPanel.hidden = false;
+    returnHistoryStatus.textContent = "正在检查当前账号的预约寄存订单...";
+    returnHistoryList.innerHTML = "";
+    try {
+      const session = await window.SiteAuth.getSession();
+      if (!session.authenticated) {
+        returnHistoryStatus.textContent = "请先登录后查看可对应的历史寄存订单。";
+        return;
+      }
+      const response = await fetch(getMyStorageOrdersEndpoint(), {
+        headers: {
+          Accept: "application/json"
+        }
+      });
+      const result = await response.json().catch(() => ({ data: [] }));
+      if (!response.ok) {
+        throw new Error(result.error?.message || "历史寄存订单加载失败。");
+      }
+      renderReturnHistoryOrders(Array.isArray(result.data) ? result.data : []);
+    } catch (error) {
+      returnHistoryStatus.textContent = error.message || "历史寄存订单加载失败，可手动填写并提交。";
+      returnHistoryPanel.classList.add("is-warning");
     }
   }
 
@@ -3593,10 +3915,14 @@ function initStorageBookingPage() {
     bookingPageHint.textContent = "当前是直接打开本地文件（file://），页面可填写，但最终提交接口不可用。请先运行 npm run dev，再通过 http://localhost:3000/storage.html 进入本流程。";
   }
 
-  selectOrderType(requestedOrderType);
-  hydrateStorageProfileState().catch(() => {
-    bookingForm.dataset.profileComplete = "false";
-  });
+  selectOrderType(allowedOrderTypes.includes(requestedOrderType) ? requestedOrderType : "storage_collection");
+  hydrateStorageProfileState()
+    .catch(() => {
+      bookingForm.dataset.profileComplete = "false";
+    })
+    .finally(() => {
+      loadReturnHistoryOrders();
+    });
 
   const isMobile = window.matchMedia("(max-width: 720px)").matches;
   noticeContent.classList.toggle("is-open", !isMobile);
@@ -3622,6 +3948,7 @@ function initStorageBookingPage() {
     const target = event.target;
     if (target instanceof HTMLElement && target.getAttribute("name") === "storageOrderType") {
       syncServiceSections();
+      loadReturnHistoryOrders();
     }
   });
 

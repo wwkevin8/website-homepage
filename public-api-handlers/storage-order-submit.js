@@ -59,6 +59,38 @@ async function countActiveStorageOrders(supabase, siteUserId) {
   return count || 0;
 }
 
+async function buildStorageReturnHistoryCheck(supabase, payload, siteUserId) {
+  if (payload.order_type !== "storage_return" || !siteUserId) {
+    return null;
+  }
+
+  let query = supabase
+    .from("storage_orders")
+    .select("id, order_no, service_date, status, created_at")
+    .eq("site_user_id", siteUserId)
+    .eq("order_type", "storage_collection")
+    .in("status", ACTIVE_STORAGE_STATUSES)
+    .order("created_at", { ascending: false })
+    .limit(10);
+
+  if (payload.related_order_no) {
+    query = query.eq("order_no", payload.related_order_no);
+  }
+
+  const { data, error } = await query;
+  if (error) {
+    throw error;
+  }
+
+  const matchedOrders = data || [];
+  return {
+    matched: matchedOrders.length > 0,
+    matched_order_no: matchedOrders[0]?.order_no || null,
+    matched_order_nos: matchedOrders.map(item => item.order_no).filter(Boolean),
+    checked_at: new Date().toISOString()
+  };
+}
+
 module.exports = async function handler(req, res) {
   if (req.method !== "POST") {
     methodNotAllowed(res, ["POST"]);
@@ -113,6 +145,14 @@ module.exports = async function handler(req, res) {
         badRequest(res, "当前账号已有 2 个待确认或已确认的有效寄存服务单，请先联系客服确认后再提交新的寄存预约。");
         return;
       }
+    }
+
+    const storageReturnHistoryCheck = await buildStorageReturnHistoryCheck(supabase, payload, siteUser.id);
+    if (storageReturnHistoryCheck) {
+      payload.customer_form_json = {
+        ...(payload.customer_form_json || {}),
+        storage_return_history_check: storageReturnHistoryCheck
+      };
     }
 
     const duplicateOrder = await findDuplicateStorageOrder(supabase, payload, siteUser.id);

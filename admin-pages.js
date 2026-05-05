@@ -305,6 +305,9 @@
       return;
     }
 
+    const getStorageReturnHistoryCheck = item => item.customer_form_json?.storage_return_history_check || null;
+    const needsStorageReturnHistoryWarning = item => item.order_type === "storage_return" && getStorageReturnHistoryCheck(item)?.matched === false;
+
     table.innerHTML = `
       <div class="admin-table-wrap">
         <table class="admin-table">
@@ -763,7 +766,10 @@
             ${items.map(item => `
               <tr>
                 <td><strong>${AdminShell.escapeHtml(item.order_no || "--")}</strong></td>
-                <td>${AdminShell.escapeHtml(storageTypeLabels[item.order_type] || item.service_label || item.order_type || "--")}</td>
+                <td>
+                  ${AdminShell.escapeHtml(storageTypeLabels[item.order_type] || item.service_label || item.order_type || "--")}
+                  ${needsStorageReturnHistoryWarning(item) ? '<div class="admin-table-warning">此账号未找到可对应的预约寄存订单，请人工核验</div>' : ""}
+                </td>
                 <td>${AdminShell.escapeHtml(formatDateTime(item.created_at))}</td>
                 <td>${AdminShell.escapeHtml(item.customer_name || "--")}</td>
                 <td>${AdminShell.escapeHtml(item.wechat_id || "--")}</td>
@@ -824,7 +830,14 @@
         storage: "寄存预约"
       };
       const serviceTimeSlot = item.service_time_slot || (item.service_time === "evening" ? "晚上" : item.service_time === "daytime" ? "白天" : item.service_time || "--");
+      const storageReturnHistoryCheck = item.customer_form_json?.storage_return_history_check || null;
+      const storageReturnHistoryStatus = item.order_type === "storage_return"
+        ? storageReturnHistoryCheck?.matched
+          ? `已匹配：${storageReturnHistoryCheck.matched_order_no || "--"}`
+          : "此账号未找到可对应的预约寄存订单，请人工核验"
+        : "--";
       const detailRows = [
+        ["取寄存历史核验", storageReturnHistoryStatus],
         ["服务类型", storageTypeLabels[item.order_type] || item.service_label || item.order_type || "--"],
         ["服务日期", item.service_date || "--"],
         ["服务时间段", serviceTimeSlot],
@@ -853,12 +866,15 @@
         ["通知错误", item.notification_error || "--"]
       ];
 
-      detailGrid.innerHTML = detailRows.map(([label, value]) => `
-        <div class="admin-detail-item">
+      detailGrid.innerHTML = detailRows.map(([label, value]) => {
+        const isReturnHistoryWarning = label === "取寄存历史核验" && String(value).includes("未找到");
+        return `
+        <div class="admin-detail-item${isReturnHistoryWarning ? " is-danger" : ""}">
           <strong>${AdminShell.escapeHtml(String(label))}</strong>
           <span>${AdminShell.escapeHtml(String(value))}</span>
         </div>
-      `).join("");
+      `;
+      }).join("");
 
       readableMessage.textContent = item.final_readable_message || "暂无寄存信息摘要";
       drawer.hidden = false;

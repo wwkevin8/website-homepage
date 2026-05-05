@@ -752,31 +752,85 @@
             </div>
             <div class="storage-inline-cta">
               <p hidden></p>
+              <a class="button button-primary full-width storage-booking-entry" id="goToStorageBoxDeliveryButton" data-storage-booking-target="box_delivery" href="#storageBoxQuickOrder">
+                <span class="storage-booking-entry-icon" aria-hidden="true"></span>
+                <span class="storage-booking-entry-copy">
+                  <strong class="storage-booking-entry-title">买箱子 / 送箱</strong>
+                  <small>填写送箱信息，直接生成买箱订单</small>
+                </span>
+                <span class="storage-booking-entry-arrow" aria-hidden="true"></span>
+              </a>
               <a class="button button-primary full-width storage-booking-entry" id="goToStorageBookingButton" data-storage-booking-target="storage_collection" href="./storage-booking.html?service=storage_collection">
                 <span class="storage-booking-entry-icon" aria-hidden="true"></span>
                 <span class="storage-booking-entry-copy">
                   <strong class="storage-booking-entry-title">预约寄存 / 入仓</strong>
-                  <small>取件或自送入仓，提交寄存预约</small>
+                  <small>先完成计算器估价，再提交寄存预约</small>
                 </span>
                 <span class="storage-booking-entry-arrow" aria-hidden="true"></span>
               </a>
               <a class="button button-primary full-width storage-booking-entry" id="goToStorageReturnButton" data-storage-booking-target="storage_return" href="./storage-booking.html?service=storage_return">
                 <span class="storage-booking-entry-icon" aria-hidden="true"></span>
                 <span class="storage-booking-entry-copy">
-                  <strong class="storage-booking-entry-title">送还寄存 / 取回</strong>
-                  <small>安排送回、自取或返还交接</small>
-                </span>
-                <span class="storage-booking-entry-arrow" aria-hidden="true"></span>
-              </a>
-              <a class="button button-primary full-width storage-booking-entry" id="goToStorageBoxDeliveryButton" data-storage-booking-target="box_delivery" href="./storage-booking.html?service=box_delivery">
-                <span class="storage-booking-entry-icon" aria-hidden="true"></span>
-                <span class="storage-booking-entry-copy">
-                  <strong class="storage-booking-entry-title">只买箱子 / 送箱</strong>
-                  <small>先买箱或预约送箱到楼下</small>
+                  <strong class="storage-booking-entry-title">取寄存 / 取回</strong>
+                  <small>登录后自动查找历史寄存订单</small>
                 </span>
                 <span class="storage-booking-entry-arrow" aria-hidden="true"></span>
               </a>
               <p class="storage-form-message" id="storageBookingFormMessage"></p>
+              <form class="storage-box-quick-order" id="storageBoxQuickOrder" hidden novalidate>
+                <div class="storage-box-quick-head">
+                  <strong>买箱子 / 送箱信息</strong>
+                  <p>请写全送箱信息，提交后会生成买箱订单并等待客服确认。</p>
+                </div>
+                <div class="storage-form-grid">
+                  <label>
+                    <span class="storage-field-label">购买数量</span>
+                    <input name="boxPurchaseQuantity" type="number" min="1" step="1" required>
+                  </label>
+                  <label>
+                    <span class="storage-field-label">送箱日期</span>
+                    <input name="boxServiceDate" type="date" required>
+                  </label>
+                  <label>
+                    <span class="storage-field-label">时间段</span>
+                    <select name="boxServiceTimeSlot" required>
+                      <option value="">请选择</option>
+                      <option value="10:00 - 13:00">白天 10:00 - 13:00</option>
+                      <option value="20:00 - 23:00">晚上 20:00 - 23:00</option>
+                      <option value="待客服确认">待客服确认</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span class="storage-field-label">邮编</span>
+                    <input name="boxPostcode" type="text" required>
+                  </label>
+                  <label class="storage-field-span-2">
+                    <span class="storage-field-label">送箱地址</span>
+                    <textarea name="boxServiceAddress" rows="3" required></textarea>
+                  </label>
+                  <label>
+                    <span class="storage-field-label">房间 / 楼栋 / 公寓名</span>
+                    <input name="boxRoomOrBuilding" type="text" required>
+                  </label>
+                  <label>
+                    <span class="storage-field-label">联系人姓名</span>
+                    <input name="boxContactName" type="text" required>
+                  </label>
+                  <label>
+                    <span class="storage-field-label">联系电话</span>
+                    <input name="boxContactPhone" type="tel" required>
+                  </label>
+                  <label class="storage-field-span-2">
+                    <span class="storage-field-label">备注</span>
+                    <textarea name="boxNotes" rows="3"></textarea>
+                  </label>
+                </div>
+                <div class="storage-radio-group compact">
+                  <label><input type="radio" name="boxNoticeConfirmed" value="yes"> 是，我已阅读并同意下单须知</label>
+                  <label><input type="radio" name="boxNoticeConfirmed" value="no" checked> 否</label>
+                </div>
+                <button class="button button-primary full-width" id="storageBoxQuickSubmitButton" type="submit">提交买箱订单</button>
+              </form>
             </div>
           </div>
         </div>

@@ -1,4 +1,5 @@
 const authConfigHandler = require("../../public-api-handlers/auth-config");
+const myStorageOrdersHandler = require("../../public-api-handlers/my-storage-orders");
 const myTransportRequestsHandler = require("../../public-api-handlers/my-transport-requests");
 const storageOrderSubmitHandler = require("../../public-api-handlers/storage-order-submit");
 const transportBoardHandler = require("../../public-api-handlers/transport-board");
@@ -10,6 +11,7 @@ const { badRequest } = require("../_lib/http");
 
 const HANDLERS = {
   "auth-config": authConfigHandler,
+  "my-storage-orders": myStorageOrdersHandler,
   "my-transport-requests": myTransportRequestsHandler,
   "storage-order-submit": storageOrderSubmitHandler,
   "transport-board": transportBoardHandler,

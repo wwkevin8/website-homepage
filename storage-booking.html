@@ -125,13 +125,13 @@
                 </label>
                 <label class="storage-service-type-card">
                   <input type="radio" name="storageOrderType" value="storage_collection">
-                  <strong>取寄存 / 入仓</strong>
-                  <span>提交取件或自送入仓。</span>
+                  <strong>预约寄存 / 入仓</strong>
+                  <span>提交寄存取件或自送入仓。</span>
                 </label>
                 <label class="storage-service-type-card">
                   <input type="radio" name="storageOrderType" value="storage_return">
-                  <strong>送回寄存 / 取回</strong>
-                  <span>提交送回或自取预约。</span>
+                  <strong>取寄存 / 取回</strong>
+                  <span>登录后优先匹配历史预约寄存订单。</span>
                 </label>
               </div>
             </section>
@@ -265,8 +265,13 @@
             </section>
 
             <section class="storage-form-section storage-service-section" data-storage-service-section="storage_return" hidden>
-              <h4>送回寄存 / 取回</h4>
-              <p class="storage-section-hint">原寄存订单号（选填）：如有可填写，方便客服查看；没有也可以正常提交。</p>
+              <h4>取寄存 / 取回</h4>
+              <p class="storage-section-hint">系统会优先读取当前账号已有的预约寄存订单；如未找到，也可以手动填写并提交，后台会人工核验。</p>
+              <div class="storage-return-history" id="storageReturnHistoryPanel">
+                <strong>可对应的历史寄存订单</strong>
+                <p id="storageReturnHistoryStatus">正在检查当前账号的预约寄存订单...</p>
+                <div class="storage-return-history-list" id="storageReturnHistoryList"></div>
+              </div>
               <div class="storage-form-grid">
                 <label>
                   <span class="storage-field-label">原寄存订单号（选填）</span>
