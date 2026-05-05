@@ -13,16 +13,19 @@ $$;
 create table if not exists storage_orders (
   id uuid primary key default gen_random_uuid(),
   order_no text not null unique,
-  order_type text not null default 'storage' check (order_type = 'storage'),
+  order_type text not null default 'storage' check (order_type in ('storage', 'box_delivery', 'storage_collection', 'storage_return')),
   business_date date not null,
   status text not null default 'pending_confirmation' check (status in ('pending_confirmation', 'confirmed', 'cancelled')),
   source text not null default 'storage_non_member_calculator',
+  site_user_id uuid references site_users(id) on delete set null,
+  student_email text,
   customer_name text not null,
   wechat_id text not null,
   phone text not null,
   address_full text not null,
   service_date date not null,
   service_time text not null,
+  service_time_slot text,
   need_moving_help boolean not null default false,
   service_label text not null,
   service_flags_json jsonb not null default '{}'::jsonb,
@@ -35,9 +38,21 @@ create table if not exists storage_orders (
   customer_form_json jsonb not null default '{}'::jsonb,
   calculator_snapshot_json jsonb not null default '{}'::jsonb,
   final_readable_message text not null,
+  storage_start_date date,
+  expected_storage_end_date date,
+  related_order_no text,
+  postcode text,
+  room_or_building text,
+  address_key text,
+  has_lift boolean,
+  needs_upstairs boolean,
+  item_description text,
   notification_status text not null default 'pending' check (notification_status in ('pending', 'sent', 'failed')),
   notification_error text,
   notification_sent_at timestamptz,
+  student_email_status text not null default 'pending' check (student_email_status in ('pending', 'sent', 'failed', 'skipped')),
+  student_email_error text,
+  student_email_sent_at timestamptz,
   webhook_payload_json jsonb,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -60,6 +75,16 @@ create index if not exists idx_storage_orders_notification_status_created_at
 
 create index if not exists idx_storage_orders_order_no
   on storage_orders(order_no);
+
+create index if not exists idx_storage_orders_user_date_address_active
+  on storage_orders(order_type, site_user_id, service_date, address_key)
+  where status in ('pending_confirmation', 'confirmed');
+
+create index if not exists idx_storage_orders_return_related_active
+  on storage_orders(site_user_id, related_order_no)
+  where order_type = 'storage_return'
+    and related_order_no is not null
+    and status in ('pending_confirmation', 'confirmed');
 
 create index if not exists idx_storage_orders_customer_name
   on storage_orders(customer_name);

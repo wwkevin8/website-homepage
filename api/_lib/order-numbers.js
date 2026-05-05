@@ -4,6 +4,12 @@ const ORDER_TYPE_PREFIXES = {
   housing: "HS"
 };
 
+const STORAGE_SERVICE_PREFIXES = {
+  box_delivery: "ST-B",
+  storage_collection: "ST-C",
+  storage_return: "ST-R"
+};
+
 const GROUP_ID_PREFIX = "GRP";
 const GROUP_ID_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
@@ -41,10 +47,33 @@ async function allocateOrderNumber(supabase, orderType) {
   };
 }
 
+async function allocateStorageServiceOrderNumber(supabase, storageOrderType) {
+  const normalizedStorageOrderType = String(storageOrderType || "").trim().toLowerCase();
+  const prefix = STORAGE_SERVICE_PREFIXES[normalizedStorageOrderType];
+  if (!prefix) {
+    throw new Error(`Unsupported storage service order type: ${storageOrderType}`);
+  }
+
+  const baseIdentity = await allocateOrderNumber(supabase, "storage");
+  const businessDateCode = String(baseIdentity.businessDate || "").replace(/-/g, "").slice(2);
+  if (!businessDateCode || !baseIdentity.sequence) {
+    throw new Error("Failed to allocate storage service order number");
+  }
+
+  return {
+    ...baseIdentity,
+    orderNo: `${prefix}-${businessDateCode}-${String(baseIdentity.sequence).padStart(4, "0")}`,
+    orderType: normalizedStorageOrderType,
+    prefix
+  };
+}
+
 module.exports = {
   ORDER_TYPE_PREFIXES,
+  STORAGE_SERVICE_PREFIXES,
   normalizeOrderType,
   allocateOrderNumber,
+  allocateStorageServiceOrderNumber,
   async allocateGroupId(supabase) {
     const formatter = new Intl.DateTimeFormat("en-GB", {
       timeZone: "Europe/London",

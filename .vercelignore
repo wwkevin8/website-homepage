@@ -1,0 +1,7 @@
+.git
+.vercel
+node_modules
+.tmp-dpl-3ReB2SCYt-output
+output
+output-*.png
+work-log

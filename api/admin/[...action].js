@@ -275,7 +275,7 @@ async function handleStorageOrders(req, res, supabase) {
   const pageSize = parsePageSize(queryParams.page_size, 20);
   let query = supabase
     .from("storage_orders")
-    .select("id, order_no, customer_name, wechat_id, phone, address_full, service_date, service_time, service_label, estimated_box_count, estimated_total_price, friend_pickup, friend_phone, notes, final_readable_message, status, notification_status, notification_error, created_at", { count: "exact" })
+    .select("id, order_no, order_type, site_user_id, student_email, customer_name, wechat_id, phone, address_full, service_date, service_time, service_time_slot, service_label, estimated_box_count, estimated_total_price, friend_pickup, friend_phone, notes, final_readable_message, status, notification_status, notification_error, student_email_status, student_email_error, storage_start_date, expected_storage_end_date, related_order_no, postcode, room_or_building, address_key, has_lift, needs_upstairs, item_description, created_at", { count: "exact" })
     .order("created_at", { ascending: false });
 
   buildStorageOrderAdminFilters(query, queryParams);

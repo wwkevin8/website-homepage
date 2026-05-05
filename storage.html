@@ -11,9 +11,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./styles.css?v=20260326-service-header-1">
+  <link rel="stylesheet" href="./styles.css?v=20260505-cache-bust-1">
   <style>
     .storage-contact-fab {
+      display: none;
       position: fixed;
       right: 24px;
       bottom: 24px;
@@ -226,10 +227,7 @@
 
     @media (max-width: 720px) {
       .storage-contact-fab {
-        right: 16px;
-        bottom: 16px;
-        min-width: 168px;
-        padding: 10px 12px 10px 10px;
+        display: none;
       }
 
       .storage-contact-fab-icon {
@@ -259,26 +257,28 @@
   </style>
 </head>
 <body>
-  <div class="topbar topbar-storage">
-    <header class="site-header">
+  <div class="topbar topbar-storage storage-service-topbar">
+    <header class="site-header storage-service-header">
       <a class="brand" href="./index.html" aria-label="左邻右里首页">
         <div class="brand-lockup brand-lockup-header">
-          <div class="logo-bubbles">
-            <span data-i18n="logoBubble1">英国·诺丁汉</span>
-            <span data-i18n="logoBubble2">左邻右里</span>
-            <span data-i18n="logoBubble3">生活服务</span>
-          </div>
           <div class="logo-wordmark">NGN</div>
           <div class="logo-subtitle">NOTTINGHAM GOOD NEIGHBOR</div>
         </div>
       </a>
 
       <nav class="site-nav" aria-label="主导航">
-        <a href="./index.html#hero" data-i18n="navHome">首页</a>
-        <a href="./index.html#story" data-i18n="navAbout">关于我们</a>
-        <a href="./index.html#timeline" data-i18n="navTimeline">品牌里程碑</a>
-        <a href="./index.html#team" data-i18n="navTeam">团队成员</a>
-        <a href="./storage.html" data-i18n="navStorage">寄存价格</a>
+        <div class="pickup-nav-dropdown">
+          <button class="nav-link nav-link-secondary pickup-nav-dropdown-toggle" type="button" aria-expanded="false" aria-controls="storageOtherServicesMenu">
+            其他服务
+          </button>
+          <div class="pickup-nav-dropdown-menu" id="storageOtherServicesMenu" hidden>
+            <a class="pickup-nav-dropdown-item" href="./index.html">订房主页</a>
+            <a class="pickup-nav-dropdown-item" href="./pickup.html">接机服务</a>
+          </div>
+        </div>
+        <a href="#storage-calculator">价格</a>
+        <a href="#storage-rules">说明</a>
+        <a href="./service-center.html">联系我们</a>
       </nav>
 
       <div class="header-actions">
@@ -291,215 +291,256 @@
           <button class="lang-btn is-active" type="button" data-lang="zh-CN">中</button>
           <button class="lang-btn" type="button" data-lang="en">EN</button>
         </div>
-        <a class="header-cta" href="#storage-calculator" data-i18n="storageHeroBtn2">在线估价</a>
+        <div class="site-auth-nav" data-site-auth-nav></div>
       </div>
     </header>
     <div class="storage-mobile-menu" id="storage-mobile-menu" hidden>
       <div class="storage-mobile-menu-inner">
-        <a href="./index.html" data-storage-menu-link data-i18n="navHome">首页</a>
-        <a href="./pickup.html" data-storage-menu-link data-i18n="menuPickup">接机服务</a>
-        <a href="./storage.html" data-storage-menu-link data-i18n="navStorage">寄存价格</a>
-        <a href="#storage-calculator" data-storage-menu-link data-i18n="storageHeroBtn1">计算非会员价格</a>
+        <a href="./index.html" data-storage-menu-link>其他服务</a>
+        <a href="#storage-calculator" data-storage-menu-link>价格</a>
+        <a href="#storage-rules" data-storage-menu-link>说明</a>
+        <a href="./service-center.html" data-storage-menu-link>联系我们</a>
+        <div class="site-auth-mobile-slot" data-site-auth-mobile></div>
       </div>
     </div>
   </div>
 
   <main class="page-shell storage-page">
-    <section class="storage-hero">
-      <div class="storage-hero-copy">
-        <p class="eyebrow" data-i18n="storageHeroEyebrow">Storage Service</p>
-        <h1 data-i18n="storageHeroTitle">寄存服务非会员价格</h1>
-        <p class="storage-hero-text" data-i18n="storageHeroText">
-          英国诺丁汉左邻右里提供本地行李寄存服务。我们拥有自有仓库，环境安全干燥，每一件寄存行李均购买保险至 £50。以下页面整理了非会员价格、箱型规格、配送与短期加费规则，方便同学在咨询前快速估算费用。
-        </p>
-        <div class="storage-hero-meta">
-          <span data-i18n="storageMeta1">2025 年 9 月更新版</span>
-          <span data-i18n="storageMeta2">电话：07941 008555</span>
-          <span data-i18n="storageMeta3">微信：NOTTINGHAMNGN</span>
+    <section class="storage-hero storage-hero-poster">
+      <div class="storage-hero-inner">
+        <div class="storage-hero-copy">
+          <p class="eyebrow storage-location-chip" data-i18n="storageHeroEyebrow">Nottingham Storage</p>
+          <h1 data-i18n="storageHeroTitle">诺丁汉学生寄存服务</h1>
+          <p class="storage-hero-highlight" data-i18n="storageHeroHighlight">透明价格 · 安全省心</p>
+          <p class="storage-hero-text" data-i18n="storageHeroText">
+            英国诺丁汉本地寄存服务，自有仓库，环境安全干燥。适合暑期回国、换房和短期寄存需求，每件寄存行李均购买保险至 £50。
+          </p>
+          <div class="storage-hero-features" aria-label="寄存服务亮点">
+            <div class="storage-hero-feature">
+              <span class="storage-hero-feature-icon" aria-hidden="true">⌂</span>
+              <strong data-i18n="storageFeature1Title">本地仓库</strong>
+              <small data-i18n="storageFeature1Text">诺丁汉本地服务</small>
+            </div>
+            <div class="storage-hero-feature">
+              <span class="storage-hero-feature-icon" aria-hidden="true">◇</span>
+              <strong data-i18n="storageFeature2Title">安全保障</strong>
+              <small data-i18n="storageFeature2Text">每件行李保险至 £50</small>
+            </div>
+            <div class="storage-hero-feature">
+              <span class="storage-hero-feature-icon" aria-hidden="true">◷</span>
+              <strong data-i18n="storageFeature3Title">灵活周期</strong>
+              <small data-i18n="storageFeature3Text">短期长期均可</small>
+            </div>
+          </div>
+          <div class="storage-hero-meta">
+            <span data-i18n="storageMeta1">诺丁汉本地服务</span>
+            <span data-i18n="storageMeta2">电话：07941 008555</span>
+          </div>
+          <div class="hero-actions">
+            <a class="button button-primary" href="#storage-calculator" data-i18n="storageHeroBtn1">计算寄存价格</a>
+            <button class="button button-secondary" id="storageHeroContactButton" type="button" data-i18n="storageHeroBtn3">联系客服确认</button>
+          </div>
         </div>
-        <div class="hero-actions">
-          <a class="button button-primary" href="#storage-calculator" data-i18n="storageHeroBtn1">计算非会员价格</a>
-          <a class="button button-secondary" href="#storage-rules" data-i18n="storageHeroBtn3">查看收费规则</a>
-        </div>
-      </div>
 
-      <div class="storage-hero-visual storage-hero-pricing">
-        <div class="pricing-mini-card">
-          <div class="pricing-mini-header">
-            <h3 data-i18n="heroPricingTitle">箱子价格</h3>
-            <p data-i18n="heroPricingIntro">非会员常用箱型与购买价格</p>
-          </div>
-          <div class="pricing-mini-table">
-            <div class="pricing-mini-row pricing-mini-head">
-              <span data-i18n="heroPricingBox">箱号</span>
-              <span data-i18n="heroPricingDaily">寄存/天</span>
-              <span data-i18n="heroPricingBuy">箱价</span>
-            </div>
-            <div class="pricing-mini-row">
-              <span data-i18n="heroBox1">1 号箱</span>
-              <span>£0.7</span>
-              <span>£5</span>
-            </div>
-            <div class="pricing-mini-row">
-              <span data-i18n="heroBox2">2 号箱</span>
-              <span>£0.7</span>
-              <span>£5</span>
-            </div>
-            <div class="pricing-mini-row">
-              <span data-i18n="heroBox3">3 号箱</span>
-              <span>£0.6</span>
-              <span>£4</span>
-            </div>
-            <div class="pricing-mini-row">
-              <span data-i18n="heroBox4">4 号箱</span>
-              <span>£0.5</span>
-              <span>£3</span>
-            </div>
-            <div class="pricing-mini-row">
-              <span data-i18n="heroBox5">5 号箱</span>
-              <span>£0.4</span>
-              <span>£2</span>
-            </div>
-            <div class="pricing-mini-row">
-              <span data-i18n="heroBox6">6 号箱</span>
-              <span>£0.3</span>
-              <span>£1</span>
-            </div>
-          </div>
-          <div class="pricing-mini-notes">
-            <p data-i18n="heroPricingNote1">短期寄存 30 天内会加收每箱 £2 取件费和 £2 送货费。</p>
-            <p data-i18n="heroPricingNote2">1 个箱子短期寄存最低 £20，多个箱子最低 £30。</p>
+        <div class="storage-hero-visual storage-hero-media" aria-hidden="true">
+          <div class="storage-hero-media-frame">
+            <video class="storage-hero-video" autoplay muted loop playsinline webkit-playsinline preload="auto" disableRemotePlayback>
+              <source src="./img/storage-hero.mp4" type="video/mp4">
+            </video>
           </div>
         </div>
       </div>
     </section>
 
-    <section class="storage-section">
+    <section class="storage-section" id="storage-process">
       <div class="section-heading">
         <h2 data-i18n="storageProcessTitle">寄存流程</h2>
-        <p data-i18n="storageProcessIntro">从咨询、收货到返还，全流程提前确认，适合暑期回国、换房和短期寄放需求。</p>
+        <p data-i18n="storageProcessIntro">先看规则，再估价下单，提交后等待客服确认，适合暑期回国、换房和短期寄存需求。</p>
       </div>
       <div class="storage-steps">
         <article class="step-card">
           <span>01</span>
-          <h3 data-i18n="process1Title">咨询并确认需求</h3>
-          <p data-i18n="process1Text">先联系工作人员，确认寄存数量、时间、箱型规格和基础条款。</p>
+          <div class="step-card-icon" data-process-icon="rules" aria-hidden="true"></div>
+          <div class="step-card-copy">
+            <h3 data-i18n="process1Title">查看寄存规则</h3>
+            <p data-i18n="process1Text">先确认可寄存物品、预约时间、保险说明和费用规则。</p>
+          </div>
         </article>
         <article class="step-card">
           <span>02</span>
-          <h3 data-i18n="process2Title">确认箱型与规则</h3>
-          <p data-i18n="process2Text">我们会发送寄存条款、箱子规格和收费规则，方便你提前准备。</p>
+          <div class="step-card-icon" data-process-icon="calculator" aria-hidden="true"></div>
+          <div class="step-card-copy">
+            <h3 data-i18n="process2Title">使用计算器估价</h3>
+            <p data-i18n="process2Text">选择服务类型、箱型数量、寄存时间，系统自动计算参考价格。</p>
+          </div>
         </article>
         <article class="step-card">
           <span>03</span>
-          <h3 data-i18n="process3Title">准备箱子并预约时间</h3>
-          <p data-i18n="process3Text">如需购买箱子可提前配送至楼下，送箱不上楼；送箱服务需至少提前 7 天预约，且送箱日期需早于开始寄存日期至少 2 天。</p>
+          <div class="step-card-icon" data-process-icon="form" aria-hidden="true"></div>
+          <div class="step-card-copy">
+            <h3 data-i18n="process3Title">填写预约信息</h3>
+            <p data-i18n="process3Text">提交姓名、联系方式、地址、预约时间和备注信息。</p>
+          </div>
         </article>
         <article class="step-card">
           <span>04</span>
-          <h3 data-i18n="process4Title">按约定上门取件</h3>
-          <p data-i18n="process4Text">工作人员按约定时间上门取件；如需上楼搬运会按规则另计费用。</p>
-        </article>
-        <article class="step-card">
-          <span>05</span>
-          <h3 data-i18n="process5Title">入库与确认</h3>
-          <p data-i18n="process5Text">行李回仓后会与你确认寄存时间并发送收据和寄存信息。</p>
-        </article>
-        <article class="step-card">
-          <span>06</span>
-          <h3 data-i18n="process6Title">返还或继续配送</h3>
-          <p data-i18n="process6Text">你回到诺丁汉时可安排送回；无论本地送回、仓库自取还是外地转运，返还服务均需至少提前 7 天预约。</p>
+          <div class="step-card-icon" data-process-icon="support" aria-hidden="true"></div>
+          <div class="step-card-copy">
+            <h3 data-i18n="process4Title">联系客服确认</h3>
+            <p data-i18n="process4Text">客服核对订单、确认价格和时间后，再安排取件、送箱或送回。</p>
+          </div>
         </article>
       </div>
+      <a class="storage-process-link" href="#storage-calculator" data-i18n="storageProcessCta">立即开始估价</a>
     </section>
 
-    <section class="storage-section">
+    <section class="storage-section" id="storage-boxes">
       <div class="section-heading">
-        <h2 data-i18n="storageBoxesTitle">箱子尺寸与价格</h2>
+        <p class="storage-boxes-badge" data-i18n="storageBoxesBadge">6种规格可选</p>
+        <div class="storage-boxes-title-row">
+          <h2 data-i18n="storageBoxesTitle">箱子尺寸与价格</h2>
+          <button class="storage-box-photo-button" id="storageBoxPhotoButton" type="button" aria-haspopup="dialog" aria-controls="storageBoxPhotoModal">
+            查看箱子照片
+          </button>
+        </div>
         <p data-i18n="storageBoxesIntro">以下价格适用于非会员寄存，尺寸按箱体标注展示。2 号箱如暂时缺货，会另行通知。</p>
       </div>
 
-      <div class="storage-gallery">
-        <figure class="storage-gallery-main">
-          <img src="./img/storage-pricing/box-sizes/box-size-overview.png" alt="箱子尺寸总览">
-        </figure>
-        <figure class="storage-gallery-side">
-          <img src="./img/storage-pricing/box-sizes/box-top-view.png" alt="箱子俯视图">
-        </figure>
+      <div class="storage-box-card-grid">
+        <article class="storage-box-price-card storage-box-price-card-1">
+          <div class="storage-box-card-head">
+            <span class="storage-box-card-icon" aria-hidden="true"></span>
+            <div>
+              <h3>1 号箱</h3>
+              <p><span class="storage-box-size-icon" aria-hidden="true"></span>50 × 40 × 57 cm</p>
+            </div>
+          </div>
+          <div class="storage-box-price-pair">
+            <div>
+              <span data-i18n="boxCardDaily">寄存费/天</span>
+              <strong>£0.7</strong>
+            </div>
+            <div>
+              <span data-i18n="boxCardBuy">购买价格</span>
+              <strong>£5</strong>
+            </div>
+          </div>
+          <p class="storage-box-card-note" data-i18n="box1Note">适合长期寄存或较大行李</p>
+        </article>
+
+        <article class="storage-box-price-card storage-box-price-card-2">
+          <div class="storage-box-card-head">
+            <span class="storage-box-card-icon" aria-hidden="true"></span>
+            <div>
+              <h3>2 号箱</h3>
+              <p><span class="storage-box-size-icon" aria-hidden="true"></span>60 × 40 × 50 cm</p>
+            </div>
+          </div>
+          <div class="storage-box-price-pair">
+            <div>
+              <span data-i18n="boxCardDaily">寄存费/天</span>
+              <strong>£0.7</strong>
+            </div>
+            <div>
+              <span data-i18n="boxCardBuy">购买价格</span>
+              <strong>£5</strong>
+            </div>
+          </div>
+          <p class="storage-box-card-note" data-i18n="box2Note">暂时可能缺货，请下单前确认</p>
+        </article>
+
+        <article class="storage-box-price-card storage-box-price-card-3">
+          <div class="storage-box-card-head">
+            <span class="storage-box-card-icon" aria-hidden="true"></span>
+            <div>
+              <h3>3 号箱</h3>
+              <p><span class="storage-box-size-icon" aria-hidden="true"></span>50 × 40 × 40 cm</p>
+            </div>
+          </div>
+          <div class="storage-box-price-pair">
+            <div>
+              <span data-i18n="boxCardDaily">寄存费/天</span>
+              <strong>£0.6</strong>
+            </div>
+            <div>
+              <span data-i18n="boxCardBuy">购买价格</span>
+              <strong>£4</strong>
+            </div>
+          </div>
+          <p class="storage-box-card-note" data-i18n="box3Note">适合寄往英国其他城市</p>
+        </article>
+
+        <article class="storage-box-price-card storage-box-price-card-4">
+          <div class="storage-box-card-head">
+            <span class="storage-box-card-icon" aria-hidden="true"></span>
+            <div>
+              <h3>4 号箱</h3>
+              <p><span class="storage-box-size-icon" aria-hidden="true"></span>40 × 30 × 30 cm</p>
+            </div>
+          </div>
+          <div class="storage-box-price-pair">
+            <div>
+              <span data-i18n="boxCardDaily">寄存费/天</span>
+              <strong>£0.5</strong>
+            </div>
+            <div>
+              <span data-i18n="boxCardBuy">购买价格</span>
+              <strong>£3</strong>
+            </div>
+          </div>
+          <p class="storage-box-card-note" data-i18n="box4Note">适合中小件短期寄存</p>
+        </article>
+
+        <article class="storage-box-price-card storage-box-price-card-5">
+          <div class="storage-box-card-head">
+            <span class="storage-box-card-icon" aria-hidden="true"></span>
+            <div>
+              <h3>5 号箱</h3>
+              <p><span class="storage-box-size-icon" aria-hidden="true"></span>29 × 29 × 24 cm</p>
+            </div>
+          </div>
+          <div class="storage-box-price-pair">
+            <div>
+              <span data-i18n="boxCardDaily">寄存费/天</span>
+              <strong>£0.4</strong>
+            </div>
+            <div>
+              <span data-i18n="boxCardBuy">购买价格</span>
+              <strong>£2</strong>
+            </div>
+          </div>
+          <p class="storage-box-card-note" data-i18n="box5Note">适合日用品与小件物品</p>
+        </article>
+
+        <article class="storage-box-price-card storage-box-price-card-6">
+          <div class="storage-box-card-head">
+            <span class="storage-box-card-icon" aria-hidden="true"></span>
+            <div>
+              <h3>6 号箱</h3>
+              <p><span class="storage-box-size-icon" aria-hidden="true"></span>29 × 26 × 19 cm</p>
+            </div>
+          </div>
+          <div class="storage-box-price-pair">
+            <div>
+              <span data-i18n="boxCardDaily">寄存费/天</span>
+              <strong>£0.3</strong>
+            </div>
+            <div>
+              <span data-i18n="boxCardBuy">购买价格</span>
+              <strong>£1</strong>
+            </div>
+          </div>
+          <p class="storage-box-card-note" data-i18n="box6Note">适合非常小件寄存</p>
+        </article>
       </div>
 
-      <div class="storage-detail-gallery">
-        <figure class="storage-detail-card">
-          <img src="./img/storage-pricing/box-sizes/box-detail-1-3.png" alt="1到3号箱体细节">
-        </figure>
-        <figure class="storage-detail-card">
-          <img src="./img/storage-pricing/box-sizes/box-detail-4-6.png" alt="4到6号箱体细节">
-        </figure>
-        <figure class="storage-detail-card">
-          <img src="./img/storage-pricing/box-sizes/box-capacity-overview.png" alt="箱体容量展示">
-        </figure>
-        <figure class="storage-detail-card">
-          <img src="./img/storage-pricing/box-sizes/box-capacity-detail.png" alt="箱体容量细节">
-        </figure>
-      </div>
-
-      <div class="storage-table-wrap">
-        <table class="storage-table">
-          <thead>
-            <tr>
-              <th data-i18n="boxTableNo">箱号</th>
-              <th data-i18n="boxTableSize">尺寸</th>
-              <th data-i18n="boxTableDay">寄存费/天 (£)</th>
-              <th data-i18n="boxTablePrice">箱子价格 (£)</th>
-              <th data-i18n="boxTableNote">备注</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>1</td>
-              <td>50 × 40 × 57 cm</td>
-              <td>0.7</td>
-              <td>5</td>
-              <td data-i18n="box1Note">适合长期寄存或较大行李</td>
-            </tr>
-            <tr>
-              <td>2</td>
-              <td>60 × 40 × 50 cm</td>
-              <td>0.7</td>
-              <td>5</td>
-              <td data-i18n="box2Note">暂时可能缺货，请下单前确认</td>
-            </tr>
-            <tr>
-              <td>3</td>
-              <td>50 × 40 × 40 cm</td>
-              <td>0.6</td>
-              <td>4</td>
-              <td data-i18n="box3Note">适合寄往英国其他城市</td>
-            </tr>
-            <tr>
-              <td>4</td>
-              <td>40 × 30 × 30 cm</td>
-              <td>0.5</td>
-              <td>3</td>
-              <td data-i18n="box4Note">适合中小件短期寄存</td>
-            </tr>
-            <tr>
-              <td>5</td>
-              <td>29 × 29 × 24 cm</td>
-              <td>0.4</td>
-              <td>2</td>
-              <td data-i18n="box5Note">适合日用品与小件物品</td>
-            </tr>
-            <tr>
-              <td>6</td>
-              <td>29 × 26 × 19 cm</td>
-              <td>0.3</td>
-              <td>1</td>
-              <td data-i18n="box6Note">适合非常小件寄存</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      <aside class="storage-weight-advice">
+        <span class="storage-weight-icon" aria-hidden="true"></span>
+        <div>
+          <h3 data-i18n="storageWeightAdviceTitle">重量建议</h3>
+          <p data-i18n="storageWeightAdviceText">建议单箱重量控制在 23kg 以内。23–25kg 只做警示不自动加费；25–30kg 会加收 £0.5/箱/周；超过 30kg 不允许寄存，需拆箱后重新计算。</p>
+        </div>
+      </aside>
     </section>
 
     <section class="storage-section calculator-section" id="storage-calculator">
@@ -509,7 +550,19 @@
       </div>
 
       <div class="calculator-layout">
-        <form class="calculator-card" id="storageCalculator">
+        <form class="calculator-card storage-calculator-form" id="storageCalculator">
+          <div class="calculator-tool-head">
+            <div>
+              <span class="calculator-tool-kicker">Storage Calculator</span>
+              <h3 data-i18n="calcToolTitle">快速估算寄存费用</h3>
+              <p data-i18n="calcToolIntro">先填箱子数量，再选寄存周期和取送方式，右侧会实时整理参考费用。</p>
+            </div>
+            <span class="calculator-tool-badge" data-i18n="calcToolBadge">实时估价</span>
+          </div>
+          <div class="calculator-section-label">
+            <span>01</span>
+            <strong data-i18n="calcGroupBoxes">箱型与重量</strong>
+          </div>
           <div class="field">
             <span data-i18n="calcBoxCounts">各箱型数量</span>
             <div class="box-order-grid">
@@ -558,6 +611,10 @@
             </div>
             <p class="field-help" data-i18n="calcBoxCountHelp">至少填写一种寄存数量；购买数量不能大于寄存数量；有寄存数量的箱型必须填写最大重量，并建议每箱尽量控制在 23kg 内。</p>
           </div>
+          <div class="calculator-section-label">
+            <span>02</span>
+            <strong data-i18n="calcGroupDates">寄存周期</strong>
+          </div>
           <label class="field">
             <span data-i18n="calcStartDate">开始日期</span>
             <input id="startDate" type="date">
@@ -573,6 +630,10 @@
             <input id="boxDeliveryDate" type="date">
             <p class="field-help" data-i18n="calcBoxDeliveryDateHelp">送箱服务需至少提前 7 天预约；如需先送箱再寄存，送箱日期需早于开始日期至少 2 天。</p>
           </label>
+          <div class="calculator-section-label">
+            <span>03</span>
+            <strong data-i18n="calcGroupService">取送方式</strong>
+          </div>
           <label class="field">
             <span data-i18n="calcPickupMethod">取件方式</span>
             <select id="pickupMethod">
@@ -614,8 +675,14 @@
           <button class="button button-primary full-width" type="submit" data-i18n="calcSubmit">更新估算</button>
         </form>
 
-        <div class="calculator-card calculator-result">
-          <h3 data-i18n="calcResultTitle">费用估算结果</h3>
+        <div class="calculator-card calculator-result storage-calculator-result">
+          <div class="calculator-result-head">
+            <div>
+              <span class="calculator-tool-kicker">Estimate</span>
+              <h3 data-i18n="calcResultTitle">费用估算结果</h3>
+            </div>
+            <span class="calculator-result-status" data-i18n="calcResultStatus">待填写</span>
+          </div>
           <dl class="result-grid">
             <div>
               <dt data-i18n="resultBoxTotal">总箱数</dt>
@@ -676,32 +743,39 @@
             <strong data-i18n="resultOtherCityTitle">英国其他城市转运说明</strong>
             <p id="resultOtherCityText" data-i18n="resultOtherCityText">外地转运费用未自动计入预计总价。通常使用皇家邮局或 DPD，一般 2 个工作日送达；建议优先使用 1 / 2 / 3 号箱，10kg 内 £10，10–30kg £15，特殊物品需联系客服确认。</p>
           </div>
-          <div class="storage-summary-card">
-            <div class="storage-summary-head">
-              <div>
-                <strong>预约摘要</strong>
-                <p class="storage-summary-tip">估价完成后，这里会自动整理本次预约的关键信息。</p>
-              </div>
-              <button class="button button-secondary" id="copyBookingSummaryButton" type="button">复制摘要</button>
-            </div>
-            <div class="storage-summary-grid" id="storageBookingSummary">
-              <div class="storage-summary-item">
-                <strong>提示</strong>
-                <span>请先填写有效箱数、日期和取送方式，随后可进入预约页继续提交。</span>
-              </div>
-            </div>
-            <p class="storage-summary-tip">请核对以上估价与服务信息，提交后客服将根据该摘要与您确认最终预约内容。</p>
-          </div>
           <div class="storage-inline-form-card">
             <div class="storage-inline-form-head">
               <div>
-                <strong>继续填写预约信息</strong>
-                <p>正式预约表单已单独放到下一页，避免当前估价页过长。</p>
+                <strong>请选择预约类型</strong>
+                <p>寄存、送还和买箱子分开提交，进入下一页后只填写对应表单。</p>
               </div>
             </div>
             <div class="storage-inline-cta">
-              <p>确认本页估价后，可进入下一页填写联系信息、服务地址和补充备注。</p>
-              <a class="button button-primary full-width" id="goToStorageBookingButton" href="./storage-booking.html">继续填写预约信息</a>
+              <p hidden></p>
+              <a class="button button-primary full-width storage-booking-entry" id="goToStorageBookingButton" data-storage-booking-target="storage_collection" href="./storage-booking.html?service=storage_collection">
+                <span class="storage-booking-entry-icon" aria-hidden="true"></span>
+                <span class="storage-booking-entry-copy">
+                  <strong class="storage-booking-entry-title">预约寄存 / 入仓</strong>
+                  <small>取件或自送入仓，提交寄存预约</small>
+                </span>
+                <span class="storage-booking-entry-arrow" aria-hidden="true"></span>
+              </a>
+              <a class="button button-primary full-width storage-booking-entry" id="goToStorageReturnButton" data-storage-booking-target="storage_return" href="./storage-booking.html?service=storage_return">
+                <span class="storage-booking-entry-icon" aria-hidden="true"></span>
+                <span class="storage-booking-entry-copy">
+                  <strong class="storage-booking-entry-title">送还寄存 / 取回</strong>
+                  <small>安排送回、自取或返还交接</small>
+                </span>
+                <span class="storage-booking-entry-arrow" aria-hidden="true"></span>
+              </a>
+              <a class="button button-primary full-width storage-booking-entry" id="goToStorageBoxDeliveryButton" data-storage-booking-target="box_delivery" href="./storage-booking.html?service=box_delivery">
+                <span class="storage-booking-entry-icon" aria-hidden="true"></span>
+                <span class="storage-booking-entry-copy">
+                  <strong class="storage-booking-entry-title">只买箱子 / 送箱</strong>
+                  <small>先买箱或预约送箱到楼下</small>
+                </span>
+                <span class="storage-booking-entry-arrow" aria-hidden="true"></span>
+              </a>
               <p class="storage-form-message" id="storageBookingFormMessage"></p>
             </div>
           </div>
@@ -730,27 +804,73 @@
 
     <section class="storage-section" id="storage-rules">
       <div class="section-heading">
+        <p class="storage-rules-badge" data-i18n="storageRulesBadge">重要信息</p>
         <h2 data-i18n="storageRulesTitle">规则与注意事项</h2>
         <p data-i18n="storageRulesIntro">以下规则不全部进入自动计算器，但会影响最终收费，请寄存前与我们确认。</p>
       </div>
 
       <div class="rules-grid">
-        <article class="rule-card">
-          <h3 data-i18n="ruleShortTitle">短期寄存规则</h3>
-        <p data-i18n="ruleShortText">30 天内为短期寄存，标准最低消费 £30；若仅 1 个箱子短期寄存，可降至 £20。并加收每箱 £2 取件费和每箱 £2 送货费。</p>
+        <article class="rule-card rule-card-short">
+          <span class="rule-card-icon" data-rule-icon="short" aria-hidden="true"></span>
+          <div>
+            <h3 data-i18n="ruleShortTitle">短期寄存规则</h3>
+            <p data-i18n="ruleShortText">30 天内为短期寄存，标准最低消费 £30；若仅 1 个箱子短期寄存，可降至 £20。并加收每箱 £2 取件费和每箱 £2 送货费。</p>
+          </div>
         </article>
-        <article class="rule-card">
-          <h3 data-i18n="ruleLongTitle">长期寄存折扣</h3>
-          <p data-i18n="ruleLongText">寄存时间越长折扣越高，75 天及以上按 0.45 系数计算；200 天以上会赠送箱子并按 3.5 折说明处理。</p>
+        <article class="rule-card rule-card-long">
+          <span class="rule-card-icon" data-rule-icon="long" aria-hidden="true"></span>
+          <div>
+            <h3 data-i18n="ruleLongTitle">长期寄存折扣</h3>
+            <p data-i18n="ruleLongText">寄存时间越长折扣越高，75 天及以上按 0.45 系数计算；200 天以上会赠送箱子并按 3.5 折说明处理。</p>
+          </div>
         </article>
-        <article class="rule-card">
-          <h3 data-i18n="ruleWeightTitle">重量与特殊物品</h3>
-        <p data-i18n="ruleWeightText">建议单箱重量控制在 23kg 以内，23–25kg 只做警示不自动加费；25–30kg 会加收 £0.5 / 箱 / 周；超过 30kg 不允许寄存，需拆箱后重新计算。</p>
+        <article class="rule-card rule-card-weight">
+          <span class="rule-card-icon" data-rule-icon="weight" aria-hidden="true"></span>
+          <div>
+            <h3 data-i18n="ruleWeightTitle">重量与特殊物品</h3>
+            <p data-i18n="ruleWeightText">建议单箱重量控制在 23kg 以内，23–25kg 只做警示不自动加费；25–30kg 会加收 £0.5 / 箱 / 周；超过 30kg 不允许寄存，需拆箱后重新计算。</p>
+          </div>
         </article>
-        <article class="rule-card">
-          <h3 data-i18n="ruleDeliveryTitle">配送与上楼费</h3>
-          <p data-i18n="ruleDeliveryText">诺丁汉本地取送货基础规则已在价格内体现；上楼费需另计。寄往英国其他城市的常规快递为 10kg 内 £10，10–30kg £15，苏格兰地区另加 £5，专车配送需单独询价。</p>
+        <article class="rule-card rule-card-delivery">
+          <span class="rule-card-icon" data-rule-icon="delivery" aria-hidden="true"></span>
+          <div>
+            <h3 data-i18n="ruleDeliveryTitle">配送与上楼费</h3>
+            <p data-i18n="ruleDeliveryText">诺丁汉本地取送货基础规则已在价格内体现；上楼费需另计。寄往英国其他城市的常规快递为 10kg 内 £10，10–30kg £15，苏格兰地区另加 £5，专车配送需单独询价。</p>
+          </div>
         </article>
+      </div>
+
+      <div class="discount-panel storage-rules-discount-panel">
+        <div class="discount-heading">
+          <h4 data-i18n="discountTitle">长期折扣档位</h4>
+          <p data-i18n="discountIntro">35 天以上进入长期寄存档位，天数越长，折扣越低。</p>
+        </div>
+        <div class="discount-cards">
+          <article class="discount-card">
+            <span data-i18n="discountRange1">35–44 天</span>
+            <strong>0.7</strong>
+          </article>
+          <article class="discount-card">
+            <span data-i18n="discountRange2">45–59 天</span>
+            <strong>0.6</strong>
+          </article>
+          <article class="discount-card">
+            <span data-i18n="discountRange3">60–74 天</span>
+            <strong>0.5</strong>
+          </article>
+          <article class="discount-card">
+            <span data-i18n="discountRange4">75–99 天</span>
+            <strong>0.45</strong>
+          </article>
+          <article class="discount-card">
+            <span data-i18n="discountRange5">100–200 天</span>
+            <strong>0.4</strong>
+          </article>
+          <article class="discount-card discount-card-wide">
+            <span data-i18n="discount200Plus">200 天以上</span>
+            <strong data-i18n="discount200Rule">联系客服确认 3.5 折与送箱规则</strong>
+          </article>
+        </div>
       </div>
 
       <div class="storage-faq">
@@ -793,39 +913,6 @@
               </tbody>
             </table>
           </div>
-
-          <div class="discount-panel">
-            <div class="discount-heading">
-              <h4 data-i18n="discountTitle">长期折扣档位</h4>
-              <p data-i18n="discountIntro">35 天以上进入长期寄存档位，天数越长，折扣越低。</p>
-            </div>
-            <div class="discount-cards">
-              <article class="discount-card">
-                <span data-i18n="discountRange1">35–44 天</span>
-                <strong>0.7</strong>
-              </article>
-              <article class="discount-card">
-                <span data-i18n="discountRange2">45–55 天</span>
-                <strong>0.6</strong>
-              </article>
-              <article class="discount-card">
-                <span data-i18n="discountRange3">60–70 天</span>
-                <strong>0.5</strong>
-              </article>
-              <article class="discount-card">
-                <span data-i18n="discountRange4">75–95 天</span>
-                <strong>0.45</strong>
-              </article>
-              <article class="discount-card">
-                <span data-i18n="discountRange5">100–200 天</span>
-                <strong>0.4</strong>
-              </article>
-              <article class="discount-card discount-card-wide">
-                <span data-i18n="discount200Plus">200 天以上</span>
-                <strong data-i18n="discount200Rule">联系客服确认 3.5 折与送箱规则</strong>
-              </article>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -864,6 +951,66 @@
       </div>
     </section>
   </main>
+
+  <button class="storage-rules-fab" id="storageRulesFab" type="button" aria-haspopup="dialog" aria-controls="storageRulesModal" aria-label="查看 FAQ 和价格规则总览">
+    <span class="storage-rules-fab-icon" aria-hidden="true"></span>
+  </button>
+
+  <div class="storage-rules-modal" id="storageRulesModal" hidden>
+    <div class="storage-rules-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="storageRulesModalTitle">
+      <button class="storage-rules-modal-close" id="storageRulesClose" type="button" aria-label="关闭 FAQ 和价格规则总览">×</button>
+      <div class="storage-rules-modal-head">
+        <p>补充说明</p>
+        <h2 id="storageRulesModalTitle">FAQ 与价格规则总览</h2>
+      </div>
+      <div class="storage-rules-modal-content" id="storageRulesModalContent"></div>
+    </div>
+  </div>
+
+  <div class="storage-box-photo-modal" id="storageBoxPhotoModal" hidden>
+    <div class="storage-box-photo-dialog" role="dialog" aria-modal="true" aria-labelledby="storageBoxPhotoModalTitle">
+      <button class="storage-box-photo-close" id="storageBoxPhotoClose" type="button" aria-label="关闭箱子照片">×</button>
+      <div class="storage-box-photo-head">
+        <p>箱子照片</p>
+        <h2 id="storageBoxPhotoModalTitle">查看箱子照片</h2>
+        <span>包含箱子尺寸总览、俯视图、容量展示和打包示例。</span>
+      </div>
+      <div class="storage-box-photo-grid">
+        <figure class="storage-box-photo-card is-large">
+          <img src="./img/storage-pricing/box-sizes/box-size-overview.png" alt="箱子尺寸总览">
+          <figcaption>箱子尺寸总览</figcaption>
+        </figure>
+        <figure class="storage-box-photo-card is-large">
+          <img src="./img/storage-pricing/box-sizes/box-top-view.png" alt="箱子俯视图">
+          <figcaption>箱子俯视图</figcaption>
+        </figure>
+        <figure class="storage-box-photo-card">
+          <img src="./img/storage-pricing/box-sizes/box-detail-1-3.png" alt="1 到 3 号箱细节">
+          <figcaption>1 到 3 号箱细节</figcaption>
+        </figure>
+        <figure class="storage-box-photo-card">
+          <img src="./img/storage-pricing/box-sizes/box-detail-4-6.png" alt="4 到 6 号箱细节">
+          <figcaption>4 到 6 号箱细节</figcaption>
+        </figure>
+        <figure class="storage-box-photo-card">
+          <img src="./img/storage-pricing/box-sizes/box-capacity-overview.png" alt="箱体容量展示">
+          <figcaption>箱体容量展示</figcaption>
+        </figure>
+        <figure class="storage-box-photo-card">
+          <img src="./img/storage-pricing/box-sizes/box-capacity-detail.png" alt="箱体容量细节">
+          <figcaption>箱体容量细节</figcaption>
+        </figure>
+        <figure class="storage-box-photo-card">
+          <img src="./img/storage-pricing/box-sizes/box-capacity-extra-1.png" alt="额外容量示例 1">
+          <figcaption>额外容量示例 1</figcaption>
+        </figure>
+        <figure class="storage-box-photo-card">
+          <img src="./img/storage-pricing/box-sizes/box-capacity-extra-2.png" alt="额外容量示例 2">
+          <figcaption>额外容量示例 2</figcaption>
+        </figure>
+      </div>
+    </div>
+  </div>
 
   <button class="storage-contact-fab" id="storageContactFab" type="button" aria-haspopup="dialog" aria-controls="storageContactModal">
     <span class="storage-contact-fab-icon" aria-hidden="true">咨</span>
@@ -921,7 +1068,8 @@
     <small id="footer-year"></small>
   </footer>
 
-  <script src="./script.js?v=20260326-service-header-1"></script>
+  <script src="./site-auth.js?v=20260505-cache-bust-1"></script>
+  <script src="./script.js?v=20260505-cache-bust-1"></script>
   <script>
     (function () {
       const storageFieldLabels = [
@@ -1044,7 +1192,85 @@
     })();
 
     (function () {
+      const boxPhotoButton = document.getElementById("storageBoxPhotoButton");
+      const boxPhotoModal = document.getElementById("storageBoxPhotoModal");
+      const boxPhotoClose = document.getElementById("storageBoxPhotoClose");
+      const boxPhotoDialog = boxPhotoModal ? boxPhotoModal.querySelector(".storage-box-photo-dialog") : null;
+
+      if (!boxPhotoButton || !boxPhotoModal || !boxPhotoClose || !boxPhotoDialog) {
+        return;
+      }
+
+      function openBoxPhotoModal() {
+        boxPhotoModal.hidden = false;
+        document.body.style.overflow = "hidden";
+        boxPhotoClose.focus({ preventScroll: true });
+      }
+
+      function closeBoxPhotoModal() {
+        boxPhotoModal.hidden = true;
+        document.body.style.overflow = "";
+        boxPhotoButton.focus({ preventScroll: true });
+      }
+
+      boxPhotoButton.addEventListener("click", openBoxPhotoModal);
+      boxPhotoClose.addEventListener("click", closeBoxPhotoModal);
+      boxPhotoModal.addEventListener("click", event => {
+        if (!boxPhotoDialog.contains(event.target)) {
+          closeBoxPhotoModal();
+        }
+      });
+      document.addEventListener("keydown", event => {
+        if (event.key === "Escape" && !boxPhotoModal.hidden) {
+          closeBoxPhotoModal();
+        }
+      });
+    })();
+
+    (function () {
+      const rulesFab = document.getElementById("storageRulesFab");
+      const rulesModal = document.getElementById("storageRulesModal");
+      const rulesClose = document.getElementById("storageRulesClose");
+      const rulesDialog = rulesModal ? rulesModal.querySelector(".storage-rules-modal-dialog") : null;
+      const rulesContent = document.getElementById("storageRulesModalContent");
+      const rulesFaq = document.querySelector("#storage-rules > .storage-faq");
+
+      if (!rulesFab || !rulesModal || !rulesClose || !rulesDialog || !rulesContent || !rulesFaq) {
+        return;
+      }
+
+      rulesFaq.classList.add("storage-faq-modal");
+      rulesContent.appendChild(rulesFaq);
+
+      function openRulesModal() {
+        rulesModal.hidden = false;
+        document.body.style.overflow = "hidden";
+        rulesClose.focus({ preventScroll: true });
+      }
+
+      function closeRulesModal() {
+        rulesModal.hidden = true;
+        document.body.style.overflow = "";
+        rulesFab.focus({ preventScroll: true });
+      }
+
+      rulesFab.addEventListener("click", openRulesModal);
+      rulesClose.addEventListener("click", closeRulesModal);
+      rulesModal.addEventListener("click", event => {
+        if (!rulesDialog.contains(event.target)) {
+          closeRulesModal();
+        }
+      });
+      document.addEventListener("keydown", event => {
+        if (event.key === "Escape" && !rulesModal.hidden) {
+          closeRulesModal();
+        }
+      });
+    })();
+
+    (function () {
       const fab = document.getElementById("storageContactFab");
+      const heroContact = document.getElementById("storageHeroContactButton");
       const modal = document.getElementById("storageContactModal");
       const close = document.getElementById("storageContactClose");
       const dialog = modal ? modal.querySelector(".storage-contact-modal-dialog") : null;
@@ -1064,6 +1290,9 @@
       }
 
       fab.addEventListener("click", openModal);
+      if (heroContact) {
+        heroContact.addEventListener("click", openModal);
+      }
       close.addEventListener("click", closeModal);
       modal.addEventListener("click", event => {
         if (!dialog.contains(event.target)) {

@@ -172,6 +172,14 @@
       return;
     }
 
+    const storageTypeLabels = {
+      box_delivery: "买箱子 / 送箱",
+      storage_collection: "取寄存 / 入仓",
+      storage_return: "送回寄存 / 取回",
+      storage: "寄存预约"
+    };
+    const storageServiceTime = item => item.service_time_slot || (item.service_time === "evening" ? "晚上" : item.service_time === "daytime" ? "白天" : item.service_time || "--");
+
     table.innerHTML = `
       <div class="admin-table-wrap">
         <table class="admin-table">
@@ -739,12 +747,13 @@
           <thead>
             <tr>
               <th>\u8ba2\u5355\u7f16\u53f7</th>
+              <th>服务类型</th>
               <th>\u63d0\u4ea4\u65f6\u95f4</th>
               <th>\u59d3\u540d</th>
               <th>\u5fae\u4fe1</th>
               <th>\u7535\u8bdd</th>
               <th>\u670d\u52a1\u65e5\u671f</th>
-              <th>\u9884\u8ba1\u603b\u4ef7</th>
+              <th>时间段</th>
               <th>\u8ba2\u5355\u72b6\u6001</th>
               <th>\u901a\u77e5\u72b6\u6001</th>
               <th>\u64cd\u4f5c</th>
@@ -754,12 +763,13 @@
             ${items.map(item => `
               <tr>
                 <td><strong>${AdminShell.escapeHtml(item.order_no || "--")}</strong></td>
+                <td>${AdminShell.escapeHtml(storageTypeLabels[item.order_type] || item.service_label || item.order_type || "--")}</td>
                 <td>${AdminShell.escapeHtml(formatDateTime(item.created_at))}</td>
                 <td>${AdminShell.escapeHtml(item.customer_name || "--")}</td>
                 <td>${AdminShell.escapeHtml(item.wechat_id || "--")}</td>
                 <td>${AdminShell.escapeHtml(item.phone || "--")}</td>
                 <td>${AdminShell.escapeHtml(item.service_date || "--")}</td>
-                <td>${AdminShell.escapeHtml(typeof item.estimated_total_price === "number" ? `£${item.estimated_total_price.toFixed(2)}` : `£${Number(item.estimated_total_price || 0).toFixed(2)}`)}</td>
+                <td>${AdminShell.escapeHtml(storageServiceTime(item))}</td>
                 <td><span class="admin-status-badge is-neutral">${AdminShell.escapeHtml(item.status || "--")}</span></td>
                 <td>
                   <span class="admin-status-badge ${item.notification_status === "sent" ? "is-success" : item.notification_status === "failed" ? "is-danger" : "is-neutral"}">${AdminShell.escapeHtml(item.notification_status || "--")}</span>
@@ -807,7 +817,25 @@
         return;
       }
 
+      const storageTypeLabels = {
+        box_delivery: "买箱子 / 送箱",
+        storage_collection: "取寄存 / 入仓",
+        storage_return: "送回寄存 / 取回",
+        storage: "寄存预约"
+      };
+      const serviceTimeSlot = item.service_time_slot || (item.service_time === "evening" ? "晚上" : item.service_time === "daytime" ? "白天" : item.service_time || "--");
       const detailRows = [
+        ["服务类型", storageTypeLabels[item.order_type] || item.service_label || item.order_type || "--"],
+        ["服务日期", item.service_date || "--"],
+        ["服务时间段", serviceTimeSlot],
+        ["原寄存订单号", item.related_order_no || "--"],
+        ["历史寄存信息", item.item_description || "--"],
+        ["房间 / 楼栋 / 公寓名", item.room_or_building || "--"],
+        ["邮编", item.postcode || "--"],
+        ["是否有电梯", item.has_lift === true ? "是" : item.has_lift === false ? "否" : "--"],
+        ["是否需要上楼", item.needs_upstairs === true ? "是" : item.needs_upstairs === false ? "否" : "--"],
+        ["学生邮箱", item.student_email || "--"],
+        ["学生邮件状态", item.student_email_status || "--"],
         ["订单编号", item.order_no || "--"],
         ["客户姓名", item.customer_name || "--"],
         ["微信号", item.wechat_id || "--"],
@@ -832,7 +860,7 @@
         </div>
       `).join("");
 
-      readableMessage.textContent = item.final_readable_message || "暂无客服摘要";
+      readableMessage.textContent = item.final_readable_message || "暂无寄存信息摘要";
       drawer.hidden = false;
       document.body.classList.add("admin-overlay-open");
     }
@@ -848,6 +876,7 @@
           page: currentPage,
           page_size: form?.page_size?.value || 20,
           search: form?.search?.value || "",
+          order_type: form?.order_type?.value || "",
           status: form?.status?.value || "",
           notification_status: form?.notification_status?.value || ""
         });

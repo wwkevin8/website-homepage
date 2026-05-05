@@ -98,6 +98,7 @@ These modules should not be changed casually. For work touching them:
 - Changes related to transport orders, groups, and public board behavior should preserve the current business flow unless the task explicitly requires a process change.
 - Do not lightly change transport order grouping logic, public board field exposure, payment-email behavior, or admin request/group workflows.
 - Do not casually repurpose `transport-admin.js`, `transport-api.js`, `transport-shared.js`, or `api/_lib/transport.js`; they are core integration points.
+- Do not use paid, proprietary, subscription-only, or unclear-license fonts in the website. Use only free commercial-use fonts such as Google Fonts/open-source fonts, or safe system font stacks. Do not add bundled font files (`.woff`, `.woff2`, `.ttf`, `.otf`) unless their free commercial-use license is explicit and recorded.
 
 ### Deployment Constraints
 
