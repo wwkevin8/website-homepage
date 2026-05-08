@@ -627,19 +627,21 @@ async function handleDashboard(req, res, supabase) {
 
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
   const queryStartedAt = nowMs();
-  const [adminsResult, usersResult, loginEventsResult, transportRequestsResult, pendingResult, storagePendingResult, activeOrdersResult, archivedOrdersResult] = await Promise.all([
+  const [adminsResult, usersResult, loginEventsResult, transportRequestsResult, pendingResult, transportPublishedResult, transportMatchedResult, storagePendingResult, activeOrdersResult, archivedOrdersResult] = await Promise.all([
     supabase.from("admin_users").select("id", { count: "estimated", head: true }).eq("status", "active"),
     supabase.from("users").select("id", { count: "estimated", head: true }),
     supabase.from("user_login_events").select("id", { count: "estimated", head: true }).gte("login_at", sevenDaysAgo),
     supabase.from("transport_requests").select("id", { count: "estimated", head: true }),
-    supabase.from("transport_requests").select("id", { count: "exact", head: true }).in("status", ["draft", "open"]),
+    supabase.from("transport_requests").select("id", { count: "exact", head: true }).in("status", ["published", "matched"]),
+    supabase.from("transport_requests").select("id", { count: "exact", head: true }).eq("status", "published"),
+    supabase.from("transport_requests").select("id", { count: "exact", head: true }).eq("status", "matched"),
     supabase.from("storage_orders").select("id", { count: "exact", head: true }).eq("status", "pending_confirmation"),
     supabase.from("orders").select("id", { count: "estimated", head: true }).eq("archived", false),
     supabase.from("orders").select("id", { count: "estimated", head: true }).eq("archived", true)
   ]);
   const queryMs = nowMs() - queryStartedAt;
 
-  const failed = [adminsResult, usersResult, loginEventsResult, transportRequestsResult, pendingResult, storagePendingResult, activeOrdersResult, archivedOrdersResult].find(result => result.error);
+  const failed = [adminsResult, usersResult, loginEventsResult, transportRequestsResult, pendingResult, transportPublishedResult, transportMatchedResult, storagePendingResult, activeOrdersResult, archivedOrdersResult].find(result => result.error);
   if (failed) {
     throw failed.error;
   }
@@ -650,6 +652,8 @@ async function handleDashboard(req, res, supabase) {
     logins_last_7_days: loginEventsResult.count || 0,
     transport_requests_total: transportRequestsResult.count || 0,
     transport_requests_pending: pendingResult.count || 0,
+    transport_requests_published: transportPublishedResult.count || 0,
+    transport_requests_matched: transportMatchedResult.count || 0,
     storage_orders_pending: storagePendingResult.count || 0,
     active_orders_total: activeOrdersResult.count || 0,
     archived_orders_total: archivedOrdersResult.count || 0

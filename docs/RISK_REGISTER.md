@@ -11,7 +11,7 @@ Scope: documentation-only risk review. No business code, config, SQL, HTML, CSS,
 | P0 | Root JSON files contained admin/ops credential payloads and were tracked by Git | Mitigated locally; removed from tracking; credential rotation still required | 1 |
 | P1 | Missing `api/_lib/transport-payment-email.js` breaks transport payment confirmation email path | Mitigated locally; needs endpoint smoke test | 2 |
 | P1 | Static backup/temporary/inspection files may be publicly deployable | Mitigated locally; needs next deploy verification | 3 |
-| P2 | Transport status model mixes current and legacy values | Confirmed | 4 |
+| P2 | Transport status model mixes current and legacy values | Partially mitigated in orders/admin stats; group legacy open remains | 4 |
 | P2 | `transport-public.previous-good.js` is HTML captured as `.js` | Confirmed | 5 |
 | P3 | `admin-storage.html` `storageTypeLabels is not defined` risk appears stale or non-reproducible by static scan | Needs confirmation | 6 |
 
@@ -216,6 +216,15 @@ Recommended limited fix scope:
 
 ### P2-1 Transport Status Model Mixes Current And Legacy Values
 
+Status as of 2026-05-09:
+
+- First application-layer cleanup completed for general orders and dashboard stats.
+- `api/_lib/orders.js` now treats `transport_requests` source statuses as `published`, `matched`, and `closed`.
+- `api/admin/[...action].js` dashboard active/pending transport count now uses `published` and `matched` instead of legacy `draft` and `open`.
+- Dashboard stats now also expose separate `transport_requests_published` and `transport_requests_matched` counts for callers that need to distinguish unmatched active requests from matched active requests.
+- Storage order statuses remain unchanged: `pending_confirmation`, `confirmed`, `cancelled`.
+- Transport group legacy `open` compatibility remains intentionally unresolved for a later scoped task.
+
 Confirmed current transport request statuses:
 
 - `api/_lib/transport.js:1` defines `REQUEST_STATUSES = ["published", "matched", "closed"]`.
@@ -230,8 +239,8 @@ Confirmed current transport group statuses:
 
 Legacy or conflicting status usage:
 
-- `api/_lib/orders.js:3` maps `transport_requests` statuses as `["draft", "open", "closed", "cancelled"]`.
-- `api/admin/[...action].js:635` counts pending transport requests with `["draft", "open"]`.
+- Before first mitigation, `api/_lib/orders.js:3` mapped `transport_requests` statuses as `["draft", "open", "closed", "cancelled"]`.
+- Before first mitigation, `api/admin/[...action].js:635` counted pending transport requests with `["draft", "open"]`.
 - `api/_lib/transport.js:164` maps group values `open` or `draft` to `single_member`.
 - `api/_lib/transport.js:304` normalizes group records with `open` or `draft`.
 - `api/_lib/transport-group-lifecycle.js:99` writes group status `"open"` when a request is not closed.
@@ -249,9 +258,9 @@ Interpretation:
 
 Impact:
 
-- Dashboard pending transport count may be inaccurate if it looks for `draft/open` in `transport_requests`.
+- Dashboard pending/active transport count has been aligned to `published/matched`.
 - Group insert/update paths may try to write `open` to `transport_groups`, which conflicts with current SQL checks unless a migration/view/function still accepts or normalizes it.
-- General order status mapping may not match source transport request rows.
+- General order status validation for transport source rows has been aligned to current `transport_requests.status`.
 
 Needs confirmation:
 
@@ -261,15 +270,15 @@ Needs confirmation:
 
 Recommended limited fix scope:
 
-- First document the intended status contract.
-- Then update only status mapping points in:
+- Completed first pass:
   - `api/_lib/orders.js`
   - `api/admin/[...action].js`
+- Next pass should handle only transport group legacy `open` compatibility points:
   - `api/_lib/transport-group-lifecycle.js`
   - `api/transport-groups/index.js`
   - `api/transport-groups/[id].js`
   - any needed Supabase migration/view file
-- Verify admin dashboard counts, group create/update, group lifecycle, public board, and order sync.
+- Verify admin dashboard counts and general order transport status updates before continuing to group status cleanup.
 
 ### P2-2 `transport-public.previous-good.js` Is HTML Captured As JS
 

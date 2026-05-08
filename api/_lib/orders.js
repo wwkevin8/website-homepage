@@ -1,6 +1,6 @@
 const ORDER_SOURCE_STATUS_MAP = {
   storage_orders: ["pending_confirmation", "confirmed", "cancelled"],
-  transport_requests: ["draft", "open", "closed", "cancelled"]
+  transport_requests: ["published", "matched", "closed"]
 };
 
 const ORDER_TERMINAL_STATUSES = new Set(["confirmed", "closed", "cancelled"]);
