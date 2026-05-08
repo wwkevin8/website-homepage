@@ -4174,8 +4174,8 @@ function initStorageBookingPage() {
       serviceLabel: serviceLabels[orderType] || "寄存服务预约",
       customerForm,
       serviceDetails,
-      estimateSummary: draft?.estimateSummary || {},
-      calculatorSnapshot: draft?.calculatorSnapshot || {},
+      estimateSummary: orderType === "storage_collection" ? (draft?.estimateSummary || {}) : {},
+      calculatorSnapshot: orderType === "storage_collection" ? (draft?.calculatorSnapshot || {}) : {},
       serviceFlags: {
         [orderType]: true
       },
