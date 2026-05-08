@@ -11,7 +11,7 @@ Scope: documentation-only risk review. No business code, config, SQL, HTML, CSS,
 | P0 | Root JSON files contained admin/ops credential payloads and were tracked by Git | Mitigated locally; removed from tracking; credential rotation still required | 1 |
 | P1 | Missing `api/_lib/transport-payment-email.js` breaks transport payment confirmation email path | Mitigated locally; needs endpoint smoke test | 2 |
 | P1 | Static backup/temporary/inspection files may be publicly deployable | Mitigated locally; needs next deploy verification | 3 |
-| P2 | Transport status model mixes current and legacy values | Partially mitigated; group API/listing and lifecycle open write paths reduced | 4 |
+| P2 | Transport status model mixes current and legacy values | Application-layer mitigated; Supabase read-only check found no legacy status data migration needed | 4 |
 | P2 | `transport-public.previous-good.js` is HTML captured as `.js` | Confirmed | 5 |
 | P3 | `admin-storage.html` `storageTypeLabels is not defined` risk appears stale or non-reproducible by static scan | Needs confirmation | 6 |
 
@@ -233,6 +233,13 @@ Status as of 2026-05-09:
   - legacy missing-`group_id` group creation fallback now writes `single_member` for non-closed single-request groups instead of `open`.
   - legacy missing-`group_id` group sync fallback now writes the computed current status directly: `single_member`, `active`, `full`, or `closed`.
   - legacy `open` group records are still accepted on read, but normalized to `active` before the helper returns them.
+- Supabase read-only production verification completed:
+  - `transport_groups.status`: `active` 2, `closed` 3, `full` 1, `single_member` 12.
+  - `transport_groups.status = open`: 0 rows.
+  - `transport_requests.status`: `closed` 3, `matched` 2, `published` 2.
+  - `transport_requests` invalid statuses outside `published` / `matched` / `closed`: 0 rows.
+  - `orders` where `source_table = transport_requests`: `closed` 3, `matched` 2, `published` 2.
+  - `orders.status` mismatches against `transport_requests.status`: 0 rows.
 
 Confirmed current transport request statuses:
 
@@ -272,14 +279,15 @@ Impact:
 - The edited group insert/update fallback paths no longer write `open` to `transport_groups`.
 - Public group listing now queries only `single_member` and `active` by default, so `full`, `closed`, and `cancelled` are excluded from the joinable public list.
 - The edited lifecycle helper paths no longer write or compute `open`; historical `open` records read through this helper normalize to `active` before return.
+- Supabase read-only verification found no real `transport_groups.status = open` rows and no invalid `transport_requests.status` rows.
+- Transport-source `orders.status` currently matches `transport_requests.status`.
 - General order status validation for transport source rows has been aligned to current `transport_requests.status`.
 
 Needs confirmation:
 
-- Whether production database still contains legacy `open` group statuses.
 - Whether any DB trigger/view maps `open` to `single_member` after API writes.
 - Whether general `orders` table intentionally keeps legacy transport labels independent of `transport_requests.status`.
-- Whether production database rows still store `open` and need a data migration to convert them to `single_member` or `active` based on member counts.
+- Whether future historical imports or manual DB edits could still introduce `open` / `draft` values.
 
 Recommended limited fix scope:
 
@@ -293,9 +301,11 @@ Recommended limited fix scope:
   - `transport-shared.js` checked; no code change needed because `open` is label-only compatibility there.
 - Completed third pass for lifecycle write/compute paths:
   - `api/_lib/transport-group-lifecycle.js`
+- Completed Supabase read-only production data check:
+  - no transport status cleanup migration is currently needed for existing production rows.
 - Next pass should handle remaining deeper normalization or persistence compatibility points:
   - `api/_lib/transport.js` legacy normalization if the team wants to remove or narrow `open`/`draft` compatibility
-  - any needed Supabase migration/view file
+  - any future Supabase migration/view file only if new evidence shows legacy rows or SQL constraints still require it
 - Verify admin dashboard counts and general order transport status updates before continuing to group status cleanup.
 
 ### P2-2 `transport-public.previous-good.js` Is HTML Captured As JS
