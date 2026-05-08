@@ -17,6 +17,7 @@ const REQUEST_EXPORT_SELECT = [
   "terminal",
   "flight_no",
   "flight_datetime",
+  "location_from",
   "location_to",
   "created_at",
   "transport_group_members(group_id,is_initiator,request_id)",
@@ -65,20 +66,26 @@ function formatDateTime(value) {
   return year && month && day && hour && minute ? `${year}-${month}-${day} ${hour}:${minute}` : "";
 }
 
+function formatExcelTextDateTime(value) {
+  const text = formatDateTime(value);
+  return text ? `="${text}"` : "";
+}
+
 function serviceLabel(value) {
   return value === "dropoff" ? "送机" : "接机";
 }
 
 function buildRows(items) {
   return (items || []).map(item => ({
-    "提交时间": formatDateTime(item.created_at),
+    "提交时间": formatExcelTextDateTime(item.created_at),
     "Order No": item.order_no || "",
     "学生": item.student_name || "",
     "微信号": item.wechat || "",
     "服务": serviceLabel(item.service_type),
     "机场": item.airport_code || "",
     "航班": item.flight_no || "",
-    "您抵达/起飞日期和时间": formatDateTime(item.flight_datetime),
+    "您抵达/起飞日期和时间": formatExcelTextDateTime(item.flight_datetime),
+    "出发地": item.location_from || "",
     "目的地": item.location_to || "",
     "Group ID": item.group_id || ""
   }));
@@ -115,6 +122,7 @@ function rowsToCsv(rows) {
     "机场",
     "航班",
     "您抵达/起飞日期和时间",
+    "出发地",
     "目的地",
     "Group ID"
   ];
