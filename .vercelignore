@@ -5,3 +5,14 @@ node_modules
 output
 output-*.png
 work-log
+admin-create-ops.json
+admin-login-payload.json
+ops-login.json
+*.local.json
+*.secret.json
+*.payload.json
+.tmp*
+*.log
+_inspect_src_zip_2/
+backup/
+brand/

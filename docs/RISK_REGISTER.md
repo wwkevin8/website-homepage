@@ -1,0 +1,314 @@
+# Risk Register
+
+Last reviewed: 2026-05-08
+
+Scope: documentation-only risk review. No business code, config, SQL, HTML, CSS, or JS was changed.
+
+## Summary
+
+| Priority | Risk | Status | Recommended Fix Order |
+| --- | --- | --- | --- |
+| P0 | Root JSON files contained admin/ops credential payloads and were tracked by Git | Mitigated locally; removed from tracking; credential rotation still required | 1 |
+| P1 | Missing `api/_lib/transport-payment-email.js` breaks transport payment confirmation email path | Confirmed | 2 |
+| P1 | Static backup/temporary/inspection files may be publicly deployable | Confirmed / needs production confirmation | 3 |
+| P2 | Transport status model mixes current and legacy values | Confirmed | 4 |
+| P2 | `transport-public.previous-good.js` is HTML captured as `.js` | Confirmed | 5 |
+| P3 | `admin-storage.html` `storageTypeLabels is not defined` risk appears stale or non-reproducible by static scan | Needs confirmation | 6 |
+
+## P0 Risks
+
+### P0-1 Root JSON Credentials May Be Publicly Deployable
+
+Status as of 2026-05-08:
+
+- Local payload files were sanitized:
+  - `admin-create-ops.json`
+  - `admin-login-payload.json`
+  - `ops-login.json`
+- The files remain as test/request payload templates, but now use obvious placeholder values only.
+- `.vercelignore` now explicitly excludes:
+  - `admin-create-ops.json`
+  - `admin-login-payload.json`
+  - `ops-login.json`
+  - `*.local.json`
+  - `*.secret.json`
+  - `*.payload.json`
+  - `.tmp*`
+  - `*.log`
+  - `_inspect_src_zip_2/`
+  - `backup/`
+  - `brand/`
+- `.gitignore` now excludes:
+  - `admin-create-ops.json`
+  - `admin-login-payload.json`
+  - `ops-login.json`
+  - `*.local.json`
+  - `*.secret.json`
+  - `*.payload.json`
+  - `.tmp*`
+  - `*.log`
+- Remaining required action: manually rotate any account passwords or credentials that may have appeared in the previous versions of these files.
+
+Git tracking close-out as of 2026-05-08:
+
+- `git rm --cached admin-create-ops.json admin-login-payload.json ops-login.json` was run to remove these files from the repository index while keeping local copies.
+- `git ls-files -- admin-create-ops.json admin-login-payload.json ops-login.json` returns no tracked files.
+- `git status` now shows the files as removed from the index, not ordinary modified tracked files.
+- Local copies remain present and are ignored by the explicit `.gitignore` file-name rules.
+- Current content status:
+  - no real sensitive value was intentionally retained in the working tree version.
+  - placeholder values are present.
+- Important Git note:
+  - these files may still exist in prior Git history.
+  - repository history exposure is not fixed by removing the current index entries.
+- Naming/location recommendation:
+  - safer long-term shape is to replace them with non-sensitive example files, such as `docs/examples/*.example.json`, or remove them entirely after the workflow is documented.
+  - if root copies must remain locally, they should be untracked and ignored explicitly.
+
+Evidence:
+
+- Before mitigation, `admin-create-ops.json:1` contained an admin creation payload with sensitive fields.
+- Before mitigation, `admin-login-payload.json:1` contained an admin login payload with sensitive fields.
+- Before mitigation, `ops-login.json:1` contained an ops login payload with sensitive fields.
+- Before mitigation, `.vercelignore` did not exclude these root JSON files.
+
+Impact:
+
+- If these files are deployed as static assets, they may be accessible by URL.
+- If the credentials still work in any environment, this is credential exposure.
+
+Needs confirmation:
+
+- Whether these credentials are valid in production, preview, local, or any Supabase/admin environment.
+- Whether Vercel currently serves root JSON files from this project.
+
+Recommended limited fix scope:
+
+- Completed locally: sanitize the three root JSON files.
+- Completed locally: add root test payload patterns to `.vercelignore`.
+- Completed locally: remove the three root JSON files from Git tracking with `git rm --cached`.
+- Completed locally: add explicit root JSON file names to `.gitignore`.
+- Still required: rotate any possibly exposed credentials.
+- Still recommended: decide whether to replace local root payloads with `docs/examples/*.example.json` in a future cleanup task.
+
+## P1 Risks
+
+### P1-1 Missing Transport Payment Email Module
+
+Evidence:
+
+- `api/transport-requests/[id].js:148` dynamically requires `../_lib/transport-payment-email`.
+- `api/transport-requests/[id].js:149` calls `sendTransportPaymentConfirmationEmail(supabase, updatedRequest)`.
+- `api/_lib/transport-payment-email.js` is not present in the current file list.
+- `work-log/2026-04-14.md` and `work-log/2026-04-15.md` mention `api/_lib/transport-payment-email.js`, so the file likely existed or was intended at some earlier point.
+- Similar email files exist:
+  - `api/_lib/transport-order-submission-email.js`
+  - `api/_lib/transport-sync-audit-email.js`
+  - `api/_lib/auth-email.js`
+  - `api/_lib/storage-order-notifier.js`
+
+Execution path:
+
+- The route is `PATCH /api/transport-requests/:id`.
+- It first maps and updates the request.
+- It computes:
+  - `wasPaid = parsePaymentStatus(existing.admin_note) === "paid"`
+  - `isPaid = parsePaymentStatus(payload.admin_note) === "paid"`
+- The missing module path is reached only when an admin update changes payment marker from not paid to paid:
+  - old `admin_note` does not contain `[payment:paid]`
+  - new `admin_note` contains `[payment:paid]`
+- `transport-admin.js` triggers this path when an operator clicks payment buttons and sends updated `admin_note`.
+
+Likely behavior:
+
+- The request update itself has already happened before the dynamic require runs.
+- The dynamic `require` throws `Cannot find module '../_lib/transport-payment-email'`.
+- The catch block stores the error in `payment_email`.
+- API probably returns success with `payment_email.error`, so the admin UI may show "marked paid, but confirmation email failed."
+
+Impact:
+
+- Payment state may be saved, but payment confirmation email is not sent.
+- Operators may believe payment update is complete while email delivery failed.
+
+Recommended limited fix scope:
+
+- Add or restore only `api/_lib/transport-payment-email.js`, modeled on existing Resend email helpers.
+- Optionally adjust only `api/transport-requests/[id].js` if the intended behavior is to remove or rename this email path.
+- Verify only `PATCH /api/transport-requests/:id` payment marker flow.
+
+### P1-2 Deployable Backup / Temporary / Inspection Files
+
+Evidence:
+
+- `.vercelignore` does not exclude root backup/brand HTML/JS/CSS files:
+  - `index-homepage-backup.html`
+  - `index-homepage-brand.html`
+  - `index-homepage-brand-v2.html`
+  - `pickup-backup.html`
+  - `pickup-original-backup.html`
+  - `script-homepage-backup.js`
+  - `script-homepage-brand.js`
+  - `script-homepage-brand-v2.js`
+  - `styles-homepage-backup.css`
+  - `styles-homepage-brand.css`
+  - `styles-homepage-brand-v2.css`
+  - `transport-public.previous-good.js`
+- `.vercelignore` does not exclude `_inspect_src_zip_2/`.
+- `.vercelignore` does not exclude root `.tmp-*.log` files.
+- `.vercelignore` does exclude `work-log/`, `output/`, and `.tmp-dpl-3ReB2SCYt-output`.
+
+Impact:
+
+- Old pages/scripts may be publicly accessible and confuse users or search engines.
+- Captured/temporary files may disclose internal tooling or old URLs.
+- Root JSON credential payloads are a separate P0 issue.
+
+Needs confirmation:
+
+- Whether Vercel static deployment currently serves all non-ignored root files.
+- Which backup/brand files are intentionally public.
+
+Recommended limited fix scope:
+
+- Update only `.vercelignore` for generated/backup/inspection artifacts after user confirms retention.
+- Move intentional archives under a non-deploying archive path if needed.
+- Do not remove `styles-pickup-backup.css` blindly because active `pickup.html` uses it.
+
+## P2 Risks
+
+### P2-1 Transport Status Model Mixes Current And Legacy Values
+
+Confirmed current transport request statuses:
+
+- `api/_lib/transport.js:1` defines `REQUEST_STATUSES = ["published", "matched", "closed"]`.
+- `supabase/transport_dispatch.sql:42` checks request status in `published`, `matched`, `closed`.
+- `supabase/transport_request_status_unification.sql:31` also checks request status in `published`, `matched`, `closed`.
+
+Confirmed current transport group statuses:
+
+- `api/_lib/transport.js:2` defines `GROUP_STATUSES = ["single_member", "active", "full", "closed", "cancelled"]`.
+- `supabase/transport_dispatch.sql:214` checks group status in `single_member`, `active`, `full`, `closed`, `cancelled`.
+- `supabase/transport_dispatch.sql:350` repeats the same group status check.
+
+Legacy or conflicting status usage:
+
+- `api/_lib/orders.js:3` maps `transport_requests` statuses as `["draft", "open", "closed", "cancelled"]`.
+- `api/admin/[...action].js:635` counts pending transport requests with `["draft", "open"]`.
+- `api/_lib/transport.js:164` maps group values `open` or `draft` to `single_member`.
+- `api/_lib/transport.js:304` normalizes group records with `open` or `draft`.
+- `api/_lib/transport-group-lifecycle.js:99` writes group status `"open"` when a request is not closed.
+- `api/_lib/transport-group-lifecycle.js:316-319` can compute `"open"` in group lifecycle logic.
+- `api/transport-groups/index.js:463` maps `single_member`/`active` to `"open"` in an insert path.
+- `api/transport-groups/[id].js:314` maps `single_member`/`active` to `"open"` in an update path.
+- `supabase/20260416_public_transport_groups_indexes.sql:8` and `:18` include group status `open`.
+
+Interpretation:
+
+- `published`, `matched`, `closed` are current `transport_requests` statuses.
+- `single_member`, `active`, `full`, `closed`, `cancelled` are current `transport_groups` statuses.
+- `open` and `draft` appear to be legacy group/request concepts or general-order labels.
+- `cancelled` is current for groups and storage/general order, but not a current transport request status.
+
+Impact:
+
+- Dashboard pending transport count may be inaccurate if it looks for `draft/open` in `transport_requests`.
+- Group insert/update paths may try to write `open` to `transport_groups`, which conflicts with current SQL checks unless a migration/view/function still accepts or normalizes it.
+- General order status mapping may not match source transport request rows.
+
+Needs confirmation:
+
+- Whether production database still contains legacy `open` group statuses.
+- Whether any DB trigger/view maps `open` to `single_member` after API writes.
+- Whether general `orders` table intentionally keeps legacy transport labels independent of `transport_requests.status`.
+
+Recommended limited fix scope:
+
+- First document the intended status contract.
+- Then update only status mapping points in:
+  - `api/_lib/orders.js`
+  - `api/admin/[...action].js`
+  - `api/_lib/transport-group-lifecycle.js`
+  - `api/transport-groups/index.js`
+  - `api/transport-groups/[id].js`
+  - any needed Supabase migration/view file
+- Verify admin dashboard counts, group create/update, group lifecycle, public board, and order sync.
+
+### P2-2 `transport-public.previous-good.js` Is HTML Captured As JS
+
+Evidence:
+
+- `transport-public.previous-good.js:1` starts with `<!doctype html><html...><title>Authentication Required</title>`.
+- It includes Vercel auth instructions and links to `vercel.com/sso-api`.
+- `rg` found no active HTML page loading `transport-public.previous-good.js`.
+- Active pages load `transport-public.js`:
+  - `pickup.html:826`
+  - `transport-board.html:96`
+  - `pickup-original-backup.html:328`
+
+Impact:
+
+- If accessed directly, the `.js` file serves HTML content with a JavaScript extension.
+- If accidentally referenced later, it would break client-side behavior.
+- It may expose old Vercel deployment URLs/nonces captured at the time.
+
+Needs confirmation:
+
+- Whether the file is intentionally retained as historical evidence.
+- Whether production static deploy serves this file.
+
+Recommended limited fix scope:
+
+- Move to a non-deploying archive location or delete after confirmation.
+- Alternatively add it to `.vercelignore`.
+
+## P3 Risks
+
+### P3-1 `admin-storage.html` `storageTypeLabels is not defined` Appears Stale Or Not Reproducible By Static Scan
+
+Evidence:
+
+- `admin-pages.js:11` defines `const storageTypeLabels = {...}` inside the top-level IIFE.
+- `admin-pages.js:1189` references `storageTypeLabels` inside `buildStorageDetailReadableMessage`.
+- `admin-pages.js:1405` references `storageTypeLabels` inside storage detail rendering.
+- `admin-storage.html:71-73` loads scripts in this order:
+  - `admin-api.js`
+  - `admin-shell.js`
+  - `admin-pages.js`
+- `admin-storage-detail.html:91-93` loads the same required sequence.
+- Static search found no `storageTypeLabels` references outside `admin-pages.js`.
+
+Interpretation:
+
+- The specific `storageTypeLabels is not defined` risk in `docs/current-status.md` may be from an older version or a runtime path not visible from static scan.
+- Based on current file contents, there is a local definition before the references in the same closure.
+
+Impact:
+
+- Needs browser/runtime confirmation.
+- If the error still happens, it may be caused by cached old `admin-pages.js`, stale deployed asset, or a different undefined symbol nearby.
+
+Recommended limited fix scope:
+
+- Do not change code until reproduced.
+- Verify with admin-storage page in browser console against current local and production assets.
+- If reproducible, limit changes to `admin-pages.js` and possibly cache-bust query strings in `admin-storage.html` / `admin-storage-detail.html`.
+
+## Recommended Fix Order
+
+1. P0: secure/remove/ignore root credential JSON files and rotate any exposed credentials.
+2. P1: restore or replace `api/_lib/transport-payment-email.js` payment confirmation helper.
+3. P1: decide deploy retention policy for backup/tmp/inspection files and update deploy exclusions.
+4. P2: define the canonical transport request/group/general-order status contract, then align mappings.
+5. P2: archive or ignore `transport-public.previous-good.js`.
+6. P3: reproduce or close the `storageTypeLabels` issue with browser verification.
+
+## Human Confirmation Needed
+
+1. Are the credentials in `admin-create-ops.json`, `admin-login-payload.json`, and `ops-login.json` real or still valid anywhere?
+2. Should root JSON payload files ever be kept in the deployable project root?
+3. Which backup/brand pages are intentionally public, if any?
+4. Should `_inspect_src_zip_2/` and root `.tmp-*` logs be excluded from deployment?
+5. Is payment confirmation email a required production workflow?
+6. What is the intended canonical status model for general `orders` rows sourced from `transport_requests`?
+7. Has `admin-storage.html` recently shown `storageTypeLabels is not defined` in production or only in an older local run?

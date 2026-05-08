@@ -4,5 +4,13 @@ node_modules/
 .playwright-cli/
 admin-cookies.txt
 ops-cookies.txt
+admin-create-ops.json
+admin-login-payload.json
+ops-login.json
 output/
 output-*.png
+*.local.json
+*.secret.json
+*.payload.json
+.tmp*
+*.log
