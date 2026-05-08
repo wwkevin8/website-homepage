@@ -9,7 +9,7 @@ Scope: documentation-only risk review. No business code, config, SQL, HTML, CSS,
 | Priority | Risk | Status | Recommended Fix Order |
 | --- | --- | --- | --- |
 | P0 | Root JSON files contained admin/ops credential payloads and were tracked by Git | Mitigated locally; removed from tracking; credential rotation still required | 1 |
-| P1 | Missing `api/_lib/transport-payment-email.js` breaks transport payment confirmation email path | Confirmed | 2 |
+| P1 | Missing `api/_lib/transport-payment-email.js` breaks transport payment confirmation email path | Mitigated locally; needs endpoint smoke test | 2 |
 | P1 | Static backup/temporary/inspection files may be publicly deployable | Confirmed / needs production confirmation | 3 |
 | P2 | Transport status model mixes current and legacy values | Confirmed | 4 |
 | P2 | `transport-public.previous-good.js` is HTML captured as `.js` | Confirmed | 5 |
@@ -95,11 +95,22 @@ Recommended limited fix scope:
 
 ### P1-1 Missing Transport Payment Email Module
 
+Status as of 2026-05-08:
+
+- `api/_lib/transport-payment-email.js` has been added.
+- The existing `api/transport-requests/[id].js` dynamic require path was left unchanged.
+- The helper exports `sendTransportPaymentConfirmationEmail(supabase, request)` to match the existing call at `api/transport-requests/[id].js:149`.
+- The helper also exports `buildTransportPaymentConfirmationEmail(request)` for narrow validation.
+- Delivery uses Resend when `RESEND_API_KEY` is configured and falls back to SMTP when SMTP environment variables are configured.
+- Missing recipient email returns `skipped: true` with reason `missing email context`.
+- Missing email delivery configuration returns `skipped: true` with reason `missing email configuration` and logs a clear server-side warning.
+- Resend or SMTP delivery failure returns `skipped: false` with an `error` field; the payment update response remains successful because `api/transport-requests/[id].js` already isolates email failures.
+
 Evidence:
 
 - `api/transport-requests/[id].js:148` dynamically requires `../_lib/transport-payment-email`.
 - `api/transport-requests/[id].js:149` calls `sendTransportPaymentConfirmationEmail(supabase, updatedRequest)`.
-- `api/_lib/transport-payment-email.js` is not present in the current file list.
+- Before mitigation, `api/_lib/transport-payment-email.js` was not present in the current file list.
 - `work-log/2026-04-14.md` and `work-log/2026-04-15.md` mention `api/_lib/transport-payment-email.js`, so the file likely existed or was intended at some earlier point.
 - Similar email files exist:
   - `api/_lib/transport-order-submission-email.js`
@@ -119,23 +130,24 @@ Execution path:
   - new `admin_note` contains `[payment:paid]`
 - `transport-admin.js` triggers this path when an operator clicks payment buttons and sends updated `admin_note`.
 
-Likely behavior:
+Previous likely behavior:
 
 - The request update itself has already happened before the dynamic require runs.
 - The dynamic `require` throws `Cannot find module '../_lib/transport-payment-email'`.
 - The catch block stores the error in `payment_email`.
 - API probably returns success with `payment_email.error`, so the admin UI may show "marked paid, but confirmation email failed."
 
-Impact:
+Current impact after mitigation:
 
-- Payment state may be saved, but payment confirmation email is not sent.
-- Operators may believe payment update is complete while email delivery failed.
+- The missing module error should no longer occur.
+- Payment state should still be saved before email delivery is attempted.
+- If email delivery cannot run because of missing environment variables or provider failure, the API response includes `payment_email.skipped` or `payment_email.error` instead of throwing an unhandled module error.
 
 Recommended limited fix scope:
 
-- Add or restore only `api/_lib/transport-payment-email.js`, modeled on existing Resend email helpers.
-- Optionally adjust only `api/transport-requests/[id].js` if the intended behavior is to remove or rename this email path.
-- Verify only `PATCH /api/transport-requests/:id` payment marker flow.
+- Completed locally: added only `api/_lib/transport-payment-email.js`.
+- No change was made to `api/transport-requests/[id].js`.
+- Still recommended: run a focused `PATCH /api/transport-requests/:id` smoke test with a safe test request and configured email environment.
 
 ### P1-2 Deployable Backup / Temporary / Inspection Files
 
