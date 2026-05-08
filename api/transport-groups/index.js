@@ -30,6 +30,15 @@ function parsePaymentStatus(adminNote) {
   return match ? match[1].toLowerCase() : "unpaid";
 }
 
+function normalizeLegacyGroupStatusInput(input = {}) {
+  if (!input || typeof input !== "object" || Array.isArray(input)) return input;
+  if (String(input.status || "").trim().toLowerCase() !== "open") return input;
+  return {
+    ...input,
+    status: "active"
+  };
+}
+
 function buildListItem(group) {
   const orderNos = Array.isArray(group.source_order_nos) ? group.source_order_nos : [];
   const studentNames = Array.isArray(group.student_names) ? group.student_names : [];
@@ -125,6 +134,7 @@ async function findMatchedGroupIdsBySearchTerm(supabase, searchTerm) {
 }
 
 function buildGroupsBaseQuery(supabase, queryParams, options = {}) {
+  const normalizedQueryParams = normalizeLegacyGroupStatusInput(queryParams);
   const query = supabase
     .from("transport_groups_public_view")
     .select("*", options.count ? { count: options.count } : undefined)
@@ -133,9 +143,9 @@ function buildGroupsBaseQuery(supabase, queryParams, options = {}) {
     .order("preferred_time_start", { ascending: true, nullsFirst: false })
     .order("created_at", { ascending: false });
 
-  applyGroupFilters(query, queryParams);
-  if (Array.isArray(queryParams._matched_group_ids) && queryParams._matched_group_ids.length) {
-    query.in("group_id", queryParams._matched_group_ids);
+  applyGroupFilters(query, normalizedQueryParams);
+  if (Array.isArray(normalizedQueryParams._matched_group_ids) && normalizedQueryParams._matched_group_ids.length) {
+    query.in("group_id", normalizedQueryParams._matched_group_ids);
   }
   return query;
 }
@@ -440,7 +450,7 @@ module.exports = async function handler(req, res) {
       const body = await parseJsonBody(req);
       let payload;
       try {
-        payload = mapGroupPayload(body);
+        payload = mapGroupPayload(normalizeLegacyGroupStatusInput(body));
       } catch (error) {
         badRequest(res, error.message);
         return;
@@ -459,8 +469,7 @@ module.exports = async function handler(req, res) {
         result = await supabase
           .from("transport_groups")
           .insert({
-            ...payload,
-            status: payload.status === "single_member" || payload.status === "active" ? "open" : payload.status
+            ...payload
           })
           .select("*")
           .single();
