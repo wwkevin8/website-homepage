@@ -8,30 +8,48 @@
 ## Last Updated Task
 
 - Date: 2026-05-08
-- Scope: Added origin column and prevented Excel hash marks in admin transport request export
+- Scope: Pushed and deployed admin transport request export fixes to Vercel production
 
 ## Completed In This Task
 
-- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before implementation.
-- Updated `api/transport-requests/export.js` so the admin transport request CSV/Excel export:
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before deployment work.
+- Read the Vercel CLI deployment guidance before using Vercel production deploy commands.
+- Updated and deployed `api/transport-requests/export.js` so the admin transport request CSV/Excel export:
   - selects `location_from` from `transport_requests`;
   - includes a new `出发地` column;
   - places `出发地` immediately before `目的地`;
   - formats submitted time and arrival/departure time as Excel text values so they do not display as `########` when opened from CSV.
 - Left the admin table display unchanged; this task only changed the downloaded export.
+- Committed and pushed commit `3498fb9` to `origin/codex/full-sync`.
+- Deployed the pushed code to Vercel production.
+- New Vercel deployment:
+  - ID: `dpl_DVgMgLdhHkjyjCfMxJXt34JMZyHv`
+  - URL: `https://webside-9camg7h8j-wwkevin8s-projects.vercel.app`
+  - Status: `READY`
+  - Production alias: `https://ngn.best`
+- Verified Vercel aliases include `https://ngn.best` and `https://www.ngn.best`.
 
 ## Verification
 
 - `node --check E:\webside\api\transport-requests\export.js`
 - Reviewed `git diff -- api/transport-requests/export.js` to confirm the change is limited to export column selection/order and date-time export formatting.
+- `npm run build:prod`
+- `git push origin codex/full-sync`
+- `npm run deploy:prod`
+- `npx --yes vercel@53.1.0 inspect webside-9camg7h8j-wwkevin8s-projects.vercel.app`
+- Production HTTP checks:
+  - `https://ngn.best/` returned 200.
+  - `https://ngn.best/transport-admin-requests.html` returned 200.
+  - `https://ngn.best/api/public/transport-board` returned 200.
+  - `https://ngn.best/api/admin/session` returned 200.
+  - `https://ngn.best/api/transport-requests/export` returned 401 when unauthenticated.
 
 ## Current Project Status
 
 - The transport dispatch app remains a static multi-page website plus Vercel serverless APIs.
 - Production is live at `https://ngn.best`.
-- Latest deployed production URL is `https://webside-c5q5l26i9-wwkevin8s-projects.vercel.app`.
-- Latest deployed code commit is `e7d292c` on branch `codex/full-sync`.
-- Local working tree now contains an undeployed change in `api/transport-requests/export.js` for the admin transport request export.
+- Latest deployed production URL is `https://webside-9camg7h8j-wwkevin8s-projects.vercel.app`.
+- Latest deployed code commit is `3498fb9` on branch `codex/full-sync`.
 - Public-facing pages must continue to avoid exposing private user data.
 - Backend admin APIs still perform their own server-side auth checks and must not trust frontend `sessionStorage`.
 - Admin session frontend caching is working across same-tab page switches.
@@ -46,8 +64,7 @@
 
 ## Open Issues Or Risks
 
-- The export-column and Excel date-time display changes have been syntax-checked locally but have not been deployed to Vercel production yet.
-- No authenticated browser download was performed during this task, so the exported file contents were not manually opened in Excel.
+- No authenticated browser download was performed during this task, so the exported file contents were not manually opened in Excel after deployment.
 - The deployment was verified with production page/API smoke checks, but no real authenticated pickup/dropoff submission was made during deployment verification.
 - Vercel error logs have previously shown Node `[DEP0169] url.parse()` deprecation warnings on some unauthenticated requests. This should be cleaned up later so error-level logs stay useful.
 - Vercel cold starts and separate serverless instances can make online API timing differ from local warm-instance logs.
@@ -61,11 +78,10 @@
 
 ## Recommended Next Steps
 
-1. Deploy the export changes after pushing the intended code to GitHub.
-2. After deployment, log in to the admin transport request page and download an export to confirm `出发地` appears immediately before `目的地` and time values display instead of `########` in Excel.
-3. Run one controlled authenticated pickup/dropoff submission on production to confirm the displayed time remains exactly the submitted UK time.
-4. Retest key admin pages while logged in on `https://ngn.best`, then compare Chrome Network with online Vercel Function Logs.
-5. Run one controlled real storage submission in the intended environment before officially opening the storage flow.
-6. Confirm whether `img/pickupvideo/pickupvideo2.0.mp4` should exist, be removed from markup, or be treated as optional.
-7. Fix the P2 `admin-storage.html` `storageTypeLabels is not defined` issue before opening the storage admin page publicly.
-8. Later, clean up Node `[DEP0169] url.parse()` warnings so Vercel error-level logs remain clean.
+1. Log in to the production admin transport request page and download an export to confirm `出发地` appears immediately before `目的地` and time values display instead of `########` in Excel.
+2. Run one controlled authenticated pickup/dropoff submission on production to confirm the displayed time remains exactly the submitted UK time.
+3. Retest key admin pages while logged in on `https://ngn.best`, then compare Chrome Network with online Vercel Function Logs.
+4. Run one controlled real storage submission in the intended environment before officially opening the storage flow.
+5. Confirm whether `img/pickupvideo/pickupvideo2.0.mp4` should exist, be removed from markup, or be treated as optional.
+6. Fix the P2 `admin-storage.html` `storageTypeLabels is not defined` issue before opening the storage admin page publicly.
+7. Later, clean up Node `[DEP0169] url.parse()` warnings so Vercel error-level logs remain clean.
