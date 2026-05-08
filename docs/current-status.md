@@ -8,25 +8,33 @@
 ## Last Updated Task
 
 - Date: 2026-05-08
-- Scope: P1 transport payment confirmation email helper restoration
+- Scope: P1 Vercel exclusion for root historical HTML / JS / CSS files
 
 ## Completed In This Task
 
 - Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before making changes.
-- Reviewed `E:\webside\api\transport-requests\[id].js` around the payment email trigger.
-- Confirmed payment confirmation is attempted only after a `PATCH` update changes `admin_note` from not paid to `[payment:paid]`.
-- Added `E:\webside\api\_lib\transport-payment-email.js` to satisfy the existing dynamic require.
-- Left `E:\webside\api\transport-requests\[id].js` behavior unchanged.
-- Implemented Resend-first delivery with SMTP fallback, matching existing project email helper patterns.
-- Added graceful handling for missing recipient email, missing email environment configuration, and provider delivery failures.
-- Updated `E:\webside\docs\RISK_REGISTER.md` to mark the missing module risk as locally mitigated.
-- No HTML, CSS, frontend JS, admin page JS, SQL, `package.json`, transport status model, or unrelated API route was modified.
+- Updated `E:\webside\.vercelignore` to explicitly exclude root historical/backup files that should not be statically deployed:
+  - `transport-public.previous-good.js`
+  - `index-homepage-backup.html`
+  - `index-homepage-brand.html`
+  - `index-homepage-brand-v2.html`
+  - `pickup-backup.html`
+  - `pickup-original-backup.html`
+  - `script-homepage-backup.js`
+  - `script-homepage-brand.js`
+  - `script-homepage-brand-v2.js`
+  - `styles-homepage-backup.css`
+  - `styles-homepage-brand.css`
+  - `styles-homepage-brand-v2.css`
+- Preserved existing `.vercelignore` protections for `.tmp*`, `*.log`, `_inspect_src_zip_2/`, `backup/`, and `brand/`.
+- Intentionally did not exclude `styles-pickup-backup.css` because current `pickup.html` still references it.
+- Updated `E:\webside\docs\RISK_REGISTER.md` with the mitigation status and follow-up recommendation.
+- No HTML, CSS, JS, API route, SQL, `.gitignore`, `package.json`, file move/delete/rename, deployment, or commit was performed.
 
 ## Verification
 
-- `node --check api\_lib\transport-payment-email.js`
-- `node --check "api\transport-requests\[id].js"`
-- Required the new helper locally and called `sendTransportPaymentConfirmationEmail` with safe test data and no email configuration; it returned `skipped: true` with reason `missing email configuration`.
+- `git diff -- .vercelignore docs/RISK_REGISTER.md docs/current-status.md`
+- Confirmed `styles-pickup-backup.css` was not added to `.vercelignore`.
 
 ## Current Project Status
 
@@ -39,6 +47,8 @@
 - Manual credential rotation is still required because previous values must be treated as potentially exposed and may remain in Git history.
 - The P1 missing transport payment email module risk is locally mitigated by `api/_lib/transport-payment-email.js`.
 - Transport payment email delivery now depends on configured Resend or SMTP environment variables and a recipient email on the transport request.
+- The P1 deploy exposure risk for known root historical/backup HTML, JS, and CSS files is locally mitigated through explicit `.vercelignore` entries.
+- `styles-pickup-backup.css` remains deployable because it is still an active dependency of `pickup.html`.
 
 ## Open Issues Or Risks
 
@@ -46,7 +56,8 @@
 - P0 follow-up: previous versions of the root JSON payload files may still exist in Git history.
 - P0 follow-up: consider moving example payloads to `docs/examples/*.example.json` in a future task.
 - P1 follow-up: run a focused API smoke test against `PATCH /api/transport-requests/:id` with safe test data and configured email variables.
-- P1: root backup/static/temp/inspection artifacts may be publicly accessible unless Vercel/static behavior or ignore rules prevent it.
+- P1 follow-up: verify the next Vercel deployment does not include the newly excluded historical root files.
+- P1 follow-up: rename `styles-pickup-backup.css` to a formal production filename in a separate task and update `pickup.html` at the same time.
 - P2: transport status contract is inconsistent across current request/group code, SQL, dashboard counts, and general order sync/mapping helpers.
 - P2: `transport-public.previous-good.js` is captured HTML with old Vercel auth URLs/nonces.
 - P3: `admin-storage.html` storage label issue needs runtime/browser confirmation before code changes.
@@ -59,4 +70,4 @@
 2. Decide whether local root payload files should eventually be replaced by non-sensitive example files under `docs/examples`.
 3. Commit and deploy the sanitized/ignore/index-removal changes after review.
 4. Smoke test transport payment confirmation by marking a safe test request as paid through `PATCH /api/transport-requests/:id`.
-5. Decide the broader deploy retention policy for backup/brand/temp/inspection files.
+5. Verify Vercel deploy output for excluded historical files before promoting the next deployment.

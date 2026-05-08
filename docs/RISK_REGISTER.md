@@ -10,7 +10,7 @@ Scope: documentation-only risk review. No business code, config, SQL, HTML, CSS,
 | --- | --- | --- | --- |
 | P0 | Root JSON files contained admin/ops credential payloads and were tracked by Git | Mitigated locally; removed from tracking; credential rotation still required | 1 |
 | P1 | Missing `api/_lib/transport-payment-email.js` breaks transport payment confirmation email path | Mitigated locally; needs endpoint smoke test | 2 |
-| P1 | Static backup/temporary/inspection files may be publicly deployable | Confirmed / needs production confirmation | 3 |
+| P1 | Static backup/temporary/inspection files may be publicly deployable | Mitigated locally; needs next deploy verification | 3 |
 | P2 | Transport status model mixes current and legacy values | Confirmed | 4 |
 | P2 | `transport-public.previous-good.js` is HTML captured as `.js` | Confirmed | 5 |
 | P3 | `admin-storage.html` `storageTypeLabels is not defined` risk appears stale or non-reproducible by static scan | Needs confirmation | 6 |
@@ -151,9 +151,33 @@ Recommended limited fix scope:
 
 ### P1-2 Deployable Backup / Temporary / Inspection Files
 
+Status as of 2026-05-08:
+
+- `.vercelignore` now explicitly excludes these root historical files:
+  - `transport-public.previous-good.js`
+  - `index-homepage-backup.html`
+  - `index-homepage-brand.html`
+  - `index-homepage-brand-v2.html`
+  - `pickup-backup.html`
+  - `pickup-original-backup.html`
+  - `script-homepage-backup.js`
+  - `script-homepage-brand.js`
+  - `script-homepage-brand-v2.js`
+  - `styles-homepage-backup.css`
+  - `styles-homepage-brand.css`
+  - `styles-homepage-brand-v2.css`
+- Existing `.vercelignore` coverage remains in place for:
+  - `.tmp*`
+  - `*.log`
+  - `_inspect_src_zip_2/`
+  - `backup/`
+  - `brand/`
+- `styles-pickup-backup.css` is intentionally not excluded because current `pickup.html` still references it.
+- Follow-up recommendation: open a separate scoped task to rename `styles-pickup-backup.css` to a formal production filename and update the `pickup.html` reference at the same time.
+
 Evidence:
 
-- `.vercelignore` does not exclude root backup/brand HTML/JS/CSS files:
+- Before mitigation, `.vercelignore` did not exclude root backup/brand HTML/JS/CSS files:
   - `index-homepage-backup.html`
   - `index-homepage-brand.html`
   - `index-homepage-brand-v2.html`
@@ -166,9 +190,9 @@ Evidence:
   - `styles-homepage-brand.css`
   - `styles-homepage-brand-v2.css`
   - `transport-public.previous-good.js`
-- `.vercelignore` does not exclude `_inspect_src_zip_2/`.
-- `.vercelignore` does not exclude root `.tmp-*.log` files.
-- `.vercelignore` does exclude `work-log/`, `output/`, and `.tmp-dpl-3ReB2SCYt-output`.
+- Current `.vercelignore` excludes `_inspect_src_zip_2/`.
+- Current `.vercelignore` excludes root `.tmp*` files and `*.log`.
+- Current `.vercelignore` excludes `work-log/`, `output/`, and `.tmp-dpl-3ReB2SCYt-output`.
 
 Impact:
 
@@ -183,9 +207,10 @@ Needs confirmation:
 
 Recommended limited fix scope:
 
-- Update only `.vercelignore` for generated/backup/inspection artifacts after user confirms retention.
+- Completed locally: update only `.vercelignore` for generated/backup/inspection artifacts confirmed as historical.
 - Move intentional archives under a non-deploying archive path if needed.
 - Do not remove `styles-pickup-backup.css` blindly because active `pickup.html` uses it.
+- Still recommended: verify the next Vercel deployment does not include the explicitly excluded historical root files.
 
 ## P2 Risks
 
