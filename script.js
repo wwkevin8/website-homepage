@@ -222,7 +222,7 @@
     storageTitle: "左邻右里 | 寄存服务非会员价格",
     storageDescription: "左邻右里寄存服务非会员价格页，提供箱型尺寸、价格表、短期规则、配送说明与在线费用估算。",
     storageBookingTitle: "左邻右里 | 寄存服务预约",
-    storageBookingDescription: "寄存服务预约提交页，可选择买箱/送箱、取寄存/入仓或送回/取回，并提交给客服确认。",
+    storageBookingDescription: "寄存服务预约提交页，可提交预约寄存/入仓或取寄存/取回，并提交给客服确认。",
     storageHeroEyebrow: "Nottingham Storage",
     storageHeroTitle: "诺丁汉学生寄存服务",
     storageHeroHighlight: "透明价格 · 安全省心",
@@ -298,7 +298,14 @@
     calcBoxTypeLabel: "箱型",
     calcStorageQty: "寄存数量",
     calcPurchaseQty: "购买数量",
-    calcBoxCountHelp: "请至少填写一种寄存数量；购买数量不能大于寄存数量；有寄存数量的箱型必须填写最大重量。建议每箱尽量控制在 23kg 以内，且单箱最大重量不得超过 30kg。",
+    calcMaximumWeight: "最大重量（kg/箱）",
+    calcBoxTypeIntro: "如果所有箱子尺寸和重量差不多，只需要填写一种箱型；如果不同箱子重量差异较大，请分开添加箱型。",
+    calcAddBoxTypePrompt: "添加具体箱型",
+    calcAddBoxType: "添加",
+    calcNoMoreBoxTypes: "已添加全部箱型",
+    calcRemoveBoxType: "删除",
+    calcBoxTypeTitle: "箱型",
+    calcBoxCountHelp: "请至少填写一种寄存数量；购买数量不能大于寄存数量；有寄存数量或购买数量的箱型必须填写最大重量。建议每箱尽量控制在 23kg 以内，且单箱最大重量不得超过 30kg。",
     calcBox1: "1 号箱",
     calcBox2: "2 号箱",
     calcBox3: "3 号箱",
@@ -306,12 +313,13 @@
     calcBox5: "5 号箱",
     calcBox6: "6 号箱",
     calcStartDate: "开始日期",
-    calcStartDateHelp: "开始日期同时作为寄存预约日期。建议至少提前 7 天预约，最少需提前 3 天。",
+    calcStartDateHelp: "计算器可先用任意日期估算；进入预约表格时，开始日期必须大于当天日期。",
     calcEndDate: "结束日期",
-    calcEndDateHelp: "结束日期同时作为送回 / 取回日期。返还服务在任何情况下都需至少提前 7 天预约。",
+    calcEndDateHelp: "结束日期用于计算寄存天数；进入预约后客服会再确认实际返还安排。",
     calcBoxDeliveryDate: "送箱日期",
-    calcBoxDeliveryDateHelp: "送箱服务需至少提前 7 天预约；如需先送箱再寄存，送箱日期需早于开始日期至少 2 天。",
+    calcBoxDeliveryDateHelp: "有购买箱子时填写送箱日期；进入预约表格时，送箱日期必须大于当天日期，并早于寄存开始日期。",
     calcPickupMethod: "取件方式",
+    calcSelectPlaceholder: "请选择",
     calcPickupMethodHome: "上门取件",
     calcPickupMethodSelf: "自行送至仓库",
     calcPickupAccess: "取寄存交接方式",
@@ -324,7 +332,7 @@
     calcAccessStairs: "楼梯上楼",
     calcWeight: "最大重量（kg/箱）",
     calcWeightMaxHint: "最大重量只允许输入整数",
-    calcWeightRequired: "有寄存数量的箱型必须填写最大重量",
+    calcWeightRequired: "有寄存数量或购买数量的箱型必须填写最大重量",
     calcWeightHelp1: "建议每箱尽量控制在 23kg 以内，避免搬运受伤",
     calcWeightHelp2: "单箱最大重量不得超过 30kg",
     calcReturnType: "送还方式",
@@ -366,7 +374,10 @@
     calcNoteDefault: "选择开始日期、结束日期、取件方式、送还方式和送件方式后即可自动看到寄存天数、折扣、费用项和超重说明。",
     calcNoteDateMissing: "请先选择有效的开始日期和结束日期。",
     calcNoteBoxDeliveryDateRequired: "有购箱数量时，必须填写送箱日期。",
+    calcNotePickupMethodRequired: "请先选择取件方式。",
+    calcNotePickupAccessRequired: "上门取件时，请先选择取寄存交接方式。",
     calcNoteDeliveryMethodRequired: "诺丁汉当地寄存送还时，必须先选择送件方式。",
+    calcNoteReturnAccessRequired: "上门送件时，请先选择送回去交接方式。",
     calcNoteStartLeadTime: "开始日期最少需提前 3 天预约。",
     calcNoteBoxDeliveryLeadTime: "送箱服务需至少提前 7 天预约。",
     calcNoteReturnLeadTime: "返还服务在任何情况下都需至少提前 7 天预约。",
@@ -374,7 +385,7 @@
     calcNoteStartDateTooEarlyForBoxDelivery: "当前开始日期过早，无法满足送箱日期需早于开始日期至少 2 天的规则，请调整开始日期。",
     calcNoteNoBoxes: "当前所有箱型数量均为 0，请至少填写一个大于 0 的数量后再计算。",
     calcNotePurchaseExceeded: "购买数量不能大于对应箱型的寄存数量，请检查后重新计算。",
-    calcNoteWeightRequired: "有寄存数量的箱型必须填写最大重量后才能计算。",
+    calcNoteWeightRequired: "有寄存数量或购买数量的箱型必须填写最大重量后才能计算。",
     calcNoteShort: "30 天内按短期寄存处理：1 箱最低 £20，多箱最低 £30，并加收每箱 £2 取件费和 £2 送货费。",
     calcNoteLong: "30 天以上按长期寄存处理，本地上门取件和本地上门送件按当前规则视为免费。",
     calcNotePickupLiftFree: "当前天数超过 100 天时，仅取寄存侧电梯上楼免费。",
@@ -743,7 +754,14 @@
     calcBoxTypeLabel: "Box Type",
     calcStorageQty: "Storage Qty",
     calcPurchaseQty: "Purchase Qty",
-    calcBoxCountHelp: "Enter at least one storage quantity. Purchase quantity cannot exceed storage quantity, and every box type with storage quantity must include a maximum weight. We recommend keeping each box within 23kg, and no single box can exceed 30kg.",
+    calcMaximumWeight: "Maximum Weight (kg/box)",
+    calcBoxTypeIntro: "If all boxes are similar in size and weight, fill in one box type only. If weights vary a lot, add separate box types.",
+    calcAddBoxTypePrompt: "Add a specific box type",
+    calcAddBoxType: "Add",
+    calcNoMoreBoxTypes: "All box types added",
+    calcRemoveBoxType: "Delete",
+    calcBoxTypeTitle: "Box Type",
+    calcBoxCountHelp: "Enter at least one storage quantity. Purchase quantity cannot exceed storage quantity, and every box type with storage or purchase quantity must include a maximum weight. We recommend keeping each box within 23kg, and no single box can exceed 30kg.",
     calcBox1: "Box 1",
     calcBox2: "Box 2",
     calcBox3: "Box 3",
@@ -751,12 +769,13 @@
     calcBox5: "Box 5",
     calcBox6: "Box 6",
     calcStartDate: "Start Date",
-    calcStartDateHelp: "The start date also serves as the storage booking date. We recommend booking at least 7 days ahead, with a minimum of 3 days.",
+    calcStartDateHelp: "You can estimate with any date first. To continue to booking, the start date must be later than today.",
     calcEndDate: "End Date",
-    calcEndDateHelp: "The end date also serves as the return / collection date. In all cases, return service requires at least 7 days' notice.",
+    calcEndDateHelp: "The end date is used for storage-day calculation. The actual return arrangement will be confirmed after booking.",
     calcBoxDeliveryDate: "Box Delivery Date",
-    calcBoxDeliveryDateHelp: "Box delivery requires at least 7 days' notice. If boxes need to be delivered before storage starts, the box delivery date must be at least 2 days earlier than the start date.",
+    calcBoxDeliveryDateHelp: "Enter this when boxes need to be purchased. To continue to booking, the box delivery date must be later than today and earlier than the storage start date.",
     calcPickupMethod: "Collection Method",
+    calcSelectPlaceholder: "Please select",
     calcPickupMethodHome: "Home Collection",
     calcPickupMethodSelf: "Deliver to Warehouse Yourself",
     calcPickupAccess: "Pickup Handover",
@@ -769,7 +788,7 @@
     calcAccessStairs: "Stair Upstairs",
     calcWeight: "Maximum Weight (kg/box)",
     calcWeightMaxHint: "Maximum weight must be a whole number",
-    calcWeightRequired: "Enter a maximum weight for each box type with storage quantity",
+    calcWeightRequired: "Enter a maximum weight for each box type with storage or purchase quantity",
     calcWeightHelp1: "We recommend keeping each box within 23kg to reduce lifting injuries",
     calcWeightHelp2: "The maximum weight for any single box is 30kg",
     calcReturnType: "Return Method",
@@ -811,7 +830,10 @@
     calcNoteDefault: "Choose valid start and end dates, collection method, return method and delivery method to see storage days, discounts, fee items and overweight notes automatically.",
     calcNoteDateMissing: "Please choose a valid start date and end date first.",
     calcNoteBoxDeliveryDateRequired: "When any box purchase quantity is entered, a box delivery date is required.",
+    calcNotePickupMethodRequired: "Please choose a collection method first.",
+    calcNotePickupAccessRequired: "For home collection, choose a pickup handover method first.",
     calcNoteDeliveryMethodRequired: "For local Nottingham return, choose a delivery method first.",
+    calcNoteReturnAccessRequired: "For home delivery, choose a return handover method first.",
     calcNoteStartLeadTime: "The start date must be booked at least 3 days ahead.",
     calcNoteBoxDeliveryLeadTime: "Box delivery requires at least 7 days' notice.",
     calcNoteReturnLeadTime: "Return service requires at least 7 days' notice in all cases.",
@@ -819,7 +841,7 @@
     calcNoteStartDateTooEarlyForBoxDelivery: "The current start date is too early to allow a valid box delivery date at least 2 days beforehand. Please move the start date later.",
     calcNoteNoBoxes: "All storage quantities are currently 0. Please enter at least one quantity greater than 0 before calculating.",
     calcNotePurchaseExceeded: "The purchase quantity cannot be greater than the storage quantity for the same box type. Please review the order and calculate again.",
-    calcNoteWeightRequired: "Each box type with storage quantity must include a maximum weight before pricing can be calculated.",
+    calcNoteWeightRequired: "Each box type with storage or purchase quantity must include a maximum weight before pricing can be calculated.",
     calcNoteShort: "Storage within 30 days follows short-term rules: 1 box starts from £20, multiple boxes start from £30, plus £2 collection and £2 return delivery per box.",
     calcNoteLong: "Storage above 30 days follows long-term rules. Local home collection and home delivery are treated as free under the current guidance.",
     calcNotePickupLiftFree: "When storage exceeds 100 days, lift upstairs service becomes free for the pickup side only.",
@@ -1431,6 +1453,62 @@ function addDays(date, days) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
 }
 
+function getUkDateTimeParts(now = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/London",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    hourCycle: "h23"
+  }).formatToParts(now);
+  const values = Object.fromEntries(parts.map(part => [part.type, part.value]));
+  return {
+    year: Number(values.year),
+    month: Number(values.month),
+    day: Number(values.day),
+    hour: Number(values.hour)
+  };
+}
+
+function formatUtcDateInputValue(date) {
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(date.getUTCDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function addDaysToDateInputValue(dateText, days) {
+  const [year, month, day] = String(dateText || "").split("-").map(Number);
+  if (!year || !month || !day) {
+    return "";
+  }
+  return formatUtcDateInputValue(new Date(Date.UTC(year, month - 1, day + days)));
+}
+
+function getUkTodayInputValue(now = new Date()) {
+  const parts = getUkDateTimeParts(now);
+  return [
+    parts.year,
+    String(parts.month).padStart(2, "0"),
+    String(parts.day).padStart(2, "0")
+  ].join("-");
+}
+
+function getEarliestStorageReturnDateValue(now = new Date()) {
+  const ukParts = getUkDateTimeParts(now);
+  const today = getUkTodayInputValue(now);
+  return addDaysToDateInputValue(today, ukParts.hour < 12 ? 1 : 2);
+}
+
+function isWeekendDateInputValue(dateText) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(dateText || ""))) {
+    return false;
+  }
+  const day = new Date(`${dateText}T12:00:00Z`).getUTCDay();
+  return day === 0 || day === 6;
+}
+
 function getStorageAppointmentLeadDate() {
   const today = new Date();
   return new Date(today.getFullYear(), today.getMonth(), today.getDate() + 3);
@@ -1503,13 +1581,14 @@ function getStorageWeightStatusKey(weight) {
   return "weightStatusNormal";
 }
 
-function getStorageWeightValidation(boxCounts, boxWeights) {
+function getStorageWeightValidation(boxCounts, purchaseCounts, boxWeights) {
   const missingBoxTypes = [];
   const blockedBoxTypes = [];
 
   for (const boxType of Object.keys(storageBoxCatalog)) {
     const storageQty = Math.max(0, boxCounts[boxType] || 0);
-    if (storageQty <= 0) {
+    const purchaseQty = Math.max(0, purchaseCounts?.[boxType] || 0);
+    if (storageQty <= 0 && purchaseQty <= 0) {
       continue;
     }
 
@@ -1552,7 +1631,7 @@ function getStorageLineItems(boxCounts, purchaseCounts, boxWeights, days) {
 
     const rawStorage = storageQty * boxInfo.dailyRate * days;
     const purchase = purchaseQty * boxInfo.buyPrice;
-    const weight = storageQty > 0 && boxWeights[boxType] !== "" && boxWeights[boxType] !== null && boxWeights[boxType] !== undefined
+    const weight = (storageQty > 0 || purchaseQty > 0) && boxWeights[boxType] !== "" && boxWeights[boxType] !== null && boxWeights[boxType] !== undefined
       ? Math.max(0, Math.round(Number(boxWeights[boxType]) || 0))
       : null;
     const weightStatusKey = weight === null ? null : getStorageWeightStatusKey(weight);
@@ -1621,11 +1700,8 @@ function calculateStorageEstimate({
   const totalPurchaseBoxes = Object.values(purchaseCounts).reduce((sum, value) => sum + Math.max(0, value || 0), 0);
   const discount = getStorageDiscount(days);
   const purchaseErrorBoxType = getStoragePurchaseValidationError(boxCounts, purchaseCounts);
-  const { missingBoxTypes, blockedBoxTypes } = getStorageWeightValidation(boxCounts, boxWeights);
+  const { missingBoxTypes, blockedBoxTypes } = getStorageWeightValidation(boxCounts, purchaseCounts, boxWeights);
   const { items, rawStorageTotal, purchaseTotal } = getStorageLineItems(boxCounts, purchaseCounts, boxWeights, days);
-  const startLeadDate = getStorageAppointmentLeadDate();
-  const boxLeadDate = getStorageBoxDeliveryLeadDate();
-  const returnLeadDate = getStorageReturnLeadDate();
   const parsedStartDate = parseDateAtMidnight(startDate);
   const parsedEndDate = parseDateAtMidnight(endDate);
   const parsedBoxDeliveryDate = parseDateAtMidnight(boxDeliveryDate);
@@ -1713,6 +1789,58 @@ function calculateStorageEstimate({
     };
   }
 
+  if (!pickupMethod) {
+    return {
+      days,
+      blocked: true,
+      boxCounts,
+      purchaseCounts,
+      totalBoxes,
+      items,
+      pickupMethod,
+      deliveryMethod,
+      rawStorageTotal,
+      discount,
+      discountedBase,
+      purchaseTotal,
+      pickup: 0,
+      delivery: 0,
+      pickupAccessFee: 0,
+      returnAccessFee: 0,
+      overweightFee: 0,
+      minimumAdjustment: 0,
+      total: null,
+      otherCityMessageKey: returnType === "scotland" ? "resultOtherCityTextScotland" : "resultOtherCityText",
+      notes: ["calcNotePickupMethodRequired"]
+    };
+  }
+
+  if (pickupMethod === "home" && !pickupAccessType) {
+    return {
+      days,
+      blocked: true,
+      boxCounts,
+      purchaseCounts,
+      totalBoxes,
+      items,
+      pickupMethod,
+      deliveryMethod,
+      rawStorageTotal,
+      discount,
+      discountedBase,
+      purchaseTotal,
+      pickup: 0,
+      delivery: 0,
+      pickupAccessFee: 0,
+      returnAccessFee: 0,
+      overweightFee: 0,
+      minimumAdjustment: 0,
+      total: null,
+      otherCityMessageKey: returnType === "scotland" ? "resultOtherCityTextScotland" : "resultOtherCityText",
+      notes: ["calcNotePickupAccessRequired"]
+    };
+  }
+
   if (returnType === "local" && !deliveryMethod) {
     return {
       days,
@@ -1736,6 +1864,32 @@ function calculateStorageEstimate({
       total: null,
       otherCityMessageKey: returnType === "scotland" ? "resultOtherCityTextScotland" : "resultOtherCityText",
       notes: ["calcNoteDeliveryMethodRequired"]
+    };
+  }
+
+  if (returnType === "local" && deliveryMethod === "home" && !returnAccessType) {
+    return {
+      days,
+      blocked: true,
+      boxCounts,
+      purchaseCounts,
+      totalBoxes,
+      items,
+      pickupMethod,
+      deliveryMethod,
+      rawStorageTotal,
+      discount,
+      discountedBase,
+      purchaseTotal,
+      pickup: 0,
+      delivery: 0,
+      pickupAccessFee: 0,
+      returnAccessFee: 0,
+      overweightFee: 0,
+      minimumAdjustment: 0,
+      total: null,
+      otherCityMessageKey: returnType === "scotland" ? "resultOtherCityTextScotland" : "resultOtherCityText",
+      notes: ["calcNoteReturnAccessRequired"]
     };
   }
 
@@ -1814,140 +1968,6 @@ function calculateStorageEstimate({
       total: null,
       otherCityMessageKey: returnType === "scotland" ? "resultOtherCityTextScotland" : "resultOtherCityText",
       notes: ["calcNoteNoBoxes"]
-    };
-  }
-
-  if (parsedStartDate && parsedStartDate < startLeadDate) {
-    return {
-      days,
-      blocked: true,
-      boxCounts,
-      purchaseCounts,
-      totalBoxes,
-      items,
-      pickupMethod,
-      deliveryMethod,
-      rawStorageTotal,
-      discount,
-      discountedBase,
-      purchaseTotal,
-      pickup: 0,
-      delivery: 0,
-      pickupAccessFee: 0,
-      returnAccessFee: 0,
-      overweightFee: 0,
-      minimumAdjustment: 0,
-      total: null,
-      otherCityMessageKey: returnType === "scotland" ? "resultOtherCityTextScotland" : "resultOtherCityText",
-      notes: ["calcNoteStartLeadTime"]
-    };
-  }
-
-  if (totalPurchaseBoxes > 0 && parsedStartDate && parsedStartDate < addDays(boxLeadDate, 2)) {
-    return {
-      days,
-      blocked: true,
-      boxCounts,
-      purchaseCounts,
-      totalBoxes,
-      items,
-      pickupMethod,
-      deliveryMethod,
-      rawStorageTotal,
-      discount,
-      discountedBase,
-      purchaseTotal,
-      pickup: 0,
-      delivery: 0,
-      pickupAccessFee: 0,
-      returnAccessFee: 0,
-      overweightFee: 0,
-      minimumAdjustment: 0,
-      total: null,
-      otherCityMessageKey: returnType === "scotland" ? "resultOtherCityTextScotland" : "resultOtherCityText",
-      notes: ["calcNoteStartDateTooEarlyForBoxDelivery"]
-    };
-  }
-
-  if (parsedBoxDeliveryDate && parsedBoxDeliveryDate < boxLeadDate) {
-    return {
-      days,
-      blocked: true,
-      boxCounts,
-      purchaseCounts,
-      totalBoxes,
-      items,
-      pickupMethod,
-      deliveryMethod,
-      rawStorageTotal,
-      discount,
-      discountedBase,
-      purchaseTotal,
-      pickup: 0,
-      delivery: 0,
-      pickupAccessFee: 0,
-      returnAccessFee: 0,
-      overweightFee: 0,
-      minimumAdjustment: 0,
-      total: null,
-      otherCityMessageKey: returnType === "scotland" ? "resultOtherCityTextScotland" : "resultOtherCityText",
-      notes: ["calcNoteBoxDeliveryLeadTime"]
-    };
-  }
-
-  if (parsedEndDate && parsedEndDate < returnLeadDate) {
-    return {
-      days,
-      blocked: true,
-      boxCounts,
-      purchaseCounts,
-      totalBoxes,
-      items,
-      pickupMethod,
-      deliveryMethod,
-      rawStorageTotal,
-      discount,
-      discountedBase,
-      purchaseTotal,
-      pickup: 0,
-      delivery: 0,
-      pickupAccessFee: 0,
-      returnAccessFee: 0,
-      overweightFee: 0,
-      minimumAdjustment: 0,
-      total: null,
-      otherCityMessageKey: returnType === "scotland" ? "resultOtherCityTextScotland" : "resultOtherCityText",
-      notes: ["calcNoteReturnLeadTime"]
-    };
-  }
-
-  if (
-    parsedBoxDeliveryDate
-    && parsedStartDate
-    && parsedBoxDeliveryDate.getTime() > addDays(parsedStartDate, -2).getTime()
-  ) {
-    return {
-      days,
-      blocked: true,
-      boxCounts,
-      purchaseCounts,
-      totalBoxes,
-      items,
-      pickupMethod,
-      deliveryMethod,
-      rawStorageTotal,
-      discount,
-      discountedBase,
-      purchaseTotal,
-      pickup: 0,
-      delivery: 0,
-      pickupAccessFee: 0,
-      returnAccessFee: 0,
-      overweightFee: 0,
-      minimumAdjustment: 0,
-      total: null,
-      otherCityMessageKey: returnType === "scotland" ? "resultOtherCityTextScotland" : "resultOtherCityText",
-      notes: ["calcNoteBoxDeliveryGap"]
     };
   }
 
@@ -2189,6 +2209,12 @@ function loadStorageBookingDraft() {
   }
 }
 
+function clearStorageBookingDraft() {
+  try {
+    window.sessionStorage.removeItem(storageBookingDraftKey);
+  } catch (error) {}
+}
+
 function isStorageLocalFileMode() {
   return window.location.protocol === "file:";
 }
@@ -2197,12 +2223,115 @@ function getStorageSubmitEndpoint() {
   return "/api/public/storage-order-submit";
 }
 
-function getMyStorageOrdersEndpoint() {
-  return "/api/public/my-storage-orders";
-}
-
 function getStorageLocalModeMessage() {
   return "当前是直接打开本地文件（file://），预约接口无法提交。请先运行 `npm run dev`，再通过 http://localhost:3000/storage.html 打开页面后提交。";
+}
+
+function initStorageIntroModal() {
+  const modal = document.querySelector("#storageIntroModal");
+  const dialog = modal?.querySelector(".storage-intro-dialog");
+  const closeButton = document.querySelector("#storageIntroClose");
+  const calculatorButton = document.querySelector("#storageIntroCalculatorButton");
+  const returnButton = document.querySelector("#storageIntroReturnButton");
+  const calculatorSection = document.querySelector("#storage-calculator");
+  const detailNode = document.querySelector("#storageIntroDetail");
+
+  if (!modal || !dialog || !closeButton) {
+    return;
+  }
+
+  const stepButtons = Array.from(modal.querySelectorAll("[data-storage-intro-step]"));
+
+  if (modal.dataset.bound === "true") {
+    return;
+  }
+  modal.dataset.bound = "true";
+
+  let previousFocus = null;
+  const stepDetails = {
+    rules: "先确认可寄存物品、保险、重量和预约规则，避免提交后还要反复补信息。",
+    calculator: "预约寄存请先填写箱型、数量、重量、日期和取送方式，系统会先给出参考价格。",
+    form: "估价完成后再登记姓名、联系方式、地址、预约日期和备注；取寄存可直接从右侧按钮进入登记。",
+    support: "提交后会生成订单编号，客服会人工核对价格、时间和执行方式后再正式安排。"
+  };
+
+  function selectIntroStep(stepKey, animate = true) {
+    stepButtons.forEach(button => {
+      const isActive = button.dataset.storageIntroStep === stepKey;
+      button.classList.toggle("is-active", isActive);
+      button.setAttribute("aria-pressed", isActive ? "true" : "false");
+    });
+
+    if (!detailNode) {
+      return;
+    }
+
+    const nextText = stepDetails[stepKey] || "请选择一个步骤查看详情";
+    if (!animate) {
+      detailNode.textContent = nextText;
+      return;
+    }
+
+    detailNode.classList.add("is-changing");
+    window.setTimeout(() => {
+      detailNode.textContent = nextText;
+      detailNode.classList.remove("is-changing");
+    }, 140);
+  }
+
+  function openModal() {
+    previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    modal.hidden = false;
+    document.body.style.overflow = "hidden";
+    selectIntroStep("rules", false);
+    stepButtons[0]?.focus({ preventScroll: true });
+  }
+
+  function closeModal({ restoreFocus = true } = {}) {
+    modal.hidden = true;
+    document.body.style.overflow = "";
+    if (restoreFocus) {
+      previousFocus?.focus?.({ preventScroll: true });
+    }
+  }
+
+  closeButton.addEventListener("click", () => closeModal());
+
+  stepButtons.forEach(button => {
+    button.addEventListener("click", () => {
+      selectIntroStep(button.dataset.storageIntroStep || "rules");
+    });
+  });
+
+  modal.addEventListener("click", event => {
+    if (!dialog.contains(event.target)) {
+      closeModal();
+    }
+  });
+
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape" && !modal.hidden) {
+      closeModal();
+    }
+  });
+
+  calculatorButton?.addEventListener("click", event => {
+    event.preventDefault();
+    closeModal({ restoreFocus: false });
+    if (calculatorSection) {
+      window.history.replaceState(null, "", "#storage-calculator");
+      calculatorSection.scrollIntoView({ behavior: "smooth", block: "start" });
+      window.setTimeout(() => {
+        calculatorSection.querySelector("input, select, button, a")?.focus?.({ preventScroll: true });
+      }, 260);
+    }
+  });
+
+  returnButton?.addEventListener("click", () => {
+    closeModal({ restoreFocus: false });
+  });
+
+  window.setTimeout(openModal, 180);
 }
 
 function setStorageBookingEntryCopy(entry, title, description) {
@@ -2230,7 +2359,6 @@ function normalizeStoragePageStaticCopy() {
   const bookingIntroText = document.querySelector(".storage-inline-form-card .storage-inline-form-head p");
   const bookingInlineCta = document.querySelector(".storage-inline-cta > p");
   const bookingButton = document.querySelector("#goToStorageBookingButton");
-  const boxDeliveryButton = document.querySelector("#goToStorageBoxDeliveryButton");
   const returnButton = document.querySelector("#goToStorageReturnButton");
   const banner = document.querySelector(".service-unavailable-banner");
   const unavailableModal = document.querySelector("#storageUnavailableModal");
@@ -2260,24 +2388,19 @@ function normalizeStoragePageStaticCopy() {
     bookingIntro.textContent = "请选择预约类型";
   }
   if (bookingIntroText) {
-    bookingIntroText.textContent = "买箱、预约寄存和取寄存分开提交；买箱在本页填写，寄存和取寄存进入对应表单。";
+    bookingIntroText.innerHTML = "预约寄存 / 入仓：必须先完成左侧计算器，再登记预约。<br>取寄存 / 取回：不需要填写计算器，可直接登录后登记。";
   }
   if (bookingInlineCta) {
     bookingInlineCta.hidden = true;
     bookingInlineCta.textContent = "";
   }
   if (bookingButton) {
-    setStorageBookingEntryCopy(bookingButton, "预约寄存 / 入仓", "先完成计算器估价，再提交寄存预约");
+    setStorageBookingEntryCopy(bookingButton, "预约寄存 / 入仓", "先完成计算器，再登记预约");
     bookingButton.classList.remove("is-disabled");
     bookingButton.removeAttribute("aria-disabled");
   }
-  if (boxDeliveryButton) {
-    setStorageBookingEntryCopy(boxDeliveryButton, "买箱子 / 送箱", "填写送箱信息，直接生成买箱订单");
-    boxDeliveryButton.classList.remove("is-disabled");
-    boxDeliveryButton.removeAttribute("aria-disabled");
-  }
   if (returnButton) {
-    setStorageBookingEntryCopy(returnButton, "取寄存 / 取回", "登录后自动查找历史寄存订单");
+    setStorageBookingEntryCopy(returnButton, "取寄存 / 取回", "无需填写计算器，直接登记");
     returnButton.classList.remove("is-disabled");
     returnButton.removeAttribute("aria-disabled");
   }
@@ -2315,8 +2438,11 @@ function initStorageCalculator(activeLang) {
     return;
   }
 
-  const boxCountInputs = Array.from(document.querySelectorAll("[data-box-count]"));
-  const boxPurchaseInputs = Array.from(document.querySelectorAll("[data-box-purchase]"));
+  const maxBoxTypes = Object.keys(storageBoxCatalog).length;
+  const boxTypeCardList = document.querySelector("#boxTypeCardList");
+  const boxTypeChoices = document.querySelector("#boxTypeChoices");
+  let boxCountInputs = Array.from(document.querySelectorAll("[data-box-count]"));
+  let boxPurchaseInputs = Array.from(document.querySelectorAll("[data-box-purchase]"));
   const startDateInput = document.querySelector("#startDate");
   const endDateInput = document.querySelector("#endDate");
   const boxDeliveryDateField = document.querySelector("#boxDeliveryDateField");
@@ -2324,7 +2450,7 @@ function initStorageCalculator(activeLang) {
   const pickupMethodInput = document.querySelector("#pickupMethod");
   const pickupAccessField = document.querySelector("#pickupAccessField");
   const pickupAccessInput = document.querySelector("#pickupAccess");
-  const boxWeightInputs = Array.from(document.querySelectorAll("[data-box-weight]"));
+  let boxWeightInputs = Array.from(document.querySelectorAll("[data-box-weight]"));
   const returnTypeInput = document.querySelector("#returnType");
   const deliveryMethodField = document.querySelector("#deliveryMethodField");
   const deliveryMethodInput = document.querySelector("#deliveryMethod");
@@ -2354,10 +2480,7 @@ function initStorageCalculator(activeLang) {
   const bookingSummary = document.querySelector("#storageBookingSummary");
   const copyBookingSummaryButton = document.querySelector("#copyBookingSummaryButton");
   const goToStorageBookingButton = document.querySelector("#goToStorageBookingButton");
-  const goToStorageBoxDeliveryButton = document.querySelector("#goToStorageBoxDeliveryButton");
   const goToStorageReturnButton = document.querySelector("#goToStorageReturnButton");
-  const storageBoxQuickOrder = document.querySelector("#storageBoxQuickOrder");
-  const storageBoxQuickSubmitButton = document.querySelector("#storageBoxQuickSubmitButton");
   const bookingForm = document.querySelector("#storageBookingForm");
   const bookingFormMessage = document.querySelector("#storageBookingFormMessage");
   const bookingServiceDate = document.querySelector("#bookingServiceDate");
@@ -2379,6 +2502,7 @@ function initStorageCalculator(activeLang) {
   normalizeStoragePageStaticCopy();
 
   if (form.__renderEstimate) {
+    form.__syncBoxTypeCards?.();
     form.__syncAppointmentFields?.();
     form.__syncStorageDates?.();
     form.__syncPickupFields?.();
@@ -2389,29 +2513,120 @@ function initStorageCalculator(activeLang) {
     return;
   }
 
-  function syncDateRange() {
-    const startLeadDate = getStorageAppointmentLeadDate();
-    const boxLeadDate = getStorageBoxDeliveryLeadDate();
-    const returnLeadDate = getStorageReturnLeadDate();
-    const needsBoxDelivery = Object.values(getPurchaseCounts()).reduce((sum, value) => sum + value, 0) > 0;
-    const startDateMinDate = needsBoxDelivery
-      ? addDays(boxLeadDate, 2)
-      : startLeadDate;
-    const startDateMin = formatDateInputValue(startDateMinDate > startLeadDate ? startDateMinDate : startLeadDate);
-    startDateInput.min = startDateMin;
+  function getBoxTypeTitle(boxType, currentLang = form.dataset.lang || activeLang) {
+    return translations[currentLang][storageBoxCatalog[boxType]?.labelKey] || `${translations[currentLang].calcBoxTypeTitle} ${boxType}`;
+  }
 
-    if (startDateInput.value && startDateInput.value < startDateInput.min) {
-      startDateInput.value = startDateInput.min;
+  function refreshBoxInputs() {
+    boxCountInputs = Array.from(form.querySelectorAll("[data-box-count]"));
+    boxPurchaseInputs = Array.from(form.querySelectorAll("[data-box-purchase]"));
+    boxWeightInputs = Array.from(form.querySelectorAll("[data-box-weight]"));
+  }
+
+  function readBoxTypeCardValues() {
+    return Array.from(boxTypeCardList?.querySelectorAll("[data-box-type-card]") || []).map(card => ({
+      boxType: card.dataset.boxTypeCard || "1",
+      storageQty: card.querySelector("[data-box-count]")?.value || "0",
+      purchaseQty: card.querySelector("[data-box-purchase]")?.value || "0",
+      maxWeightKg: card.querySelector("[data-box-weight]")?.value || ""
+    }));
+  }
+
+  function createBoxTypeCardMarkup(boxType, values = {}) {
+    const currentLang = form.dataset.lang || activeLang;
+    const title = getBoxTypeTitle(boxType, currentLang);
+    const canDelete = Number(boxType) > 1;
+    return `
+      <article class="box-type-card" data-box-type-card="${boxType}">
+        <div class="box-type-card-head">
+          <strong data-box-type-title>${title}</strong>
+          ${canDelete ? `<button class="box-type-remove-button" type="button" data-remove-box-type="${boxType}">${translations[currentLang].calcRemoveBoxType}</button>` : ""}
+        </div>
+        <div class="box-type-fields">
+          <label class="mini-field">
+            <span data-i18n="calcStorageQty">${translations[currentLang].calcStorageQty}</span>
+            <input id="boxCount${boxType}" class="box-order-input" data-box-count="${boxType}" type="number" min="0" step="1" value="${values.storageQty || 0}" inputmode="numeric">
+          </label>
+          <label class="mini-field">
+            <span data-i18n="calcPurchaseQty">${translations[currentLang].calcPurchaseQty}</span>
+            <input id="boxPurchase${boxType}" class="box-order-input" data-box-purchase="${boxType}" type="number" min="0" step="1" value="${values.purchaseQty || 0}" inputmode="numeric">
+          </label>
+          <label class="mini-field">
+            <span data-i18n="calcMaximumWeight">${translations[currentLang].calcMaximumWeight}</span>
+            <input id="boxWeight${boxType}" class="box-order-input" data-box-weight="${boxType}" type="number" min="0" max="99" step="1" value="${values.maxWeightKg || ""}" inputmode="numeric">
+          </label>
+        </div>
+      </article>
+    `;
+  }
+
+  function renderBoxTypeCards(values) {
+    if (!boxTypeCardList) {
+      refreshBoxInputs();
+      return;
     }
 
+    const validBoxTypes = Object.keys(storageBoxCatalog);
+    const seenBoxTypes = new Set();
+    const cards = (values.length ? values : [{ boxType: "1", storageQty: "0", purchaseQty: "0", maxWeightKg: "" }])
+      .map(value => ({
+        ...value,
+        boxType: validBoxTypes.includes(String(value.boxType || "")) ? String(value.boxType) : "1"
+      }))
+      .filter(value => {
+        if (seenBoxTypes.has(value.boxType)) {
+          return false;
+        }
+        seenBoxTypes.add(value.boxType);
+        return true;
+      })
+      .sort((a, b) => Number(a.boxType) - Number(b.boxType))
+      .slice(0, maxBoxTypes);
+
+    boxTypeCardList.innerHTML = cards.map(value => createBoxTypeCardMarkup(value.boxType, value)).join("");
+    refreshBoxInputs();
+    syncBoxTypeCards();
+  }
+
+  function syncBoxTypeCards() {
+    const currentLang = form.dataset.lang || activeLang;
+    const activeBoxTypes = new Set();
+    Array.from(boxTypeCardList?.querySelectorAll("[data-box-type-card]") || []).forEach(card => {
+      const boxType = card.dataset.boxTypeCard || "1";
+      activeBoxTypes.add(boxType);
+      const title = card.querySelector("[data-box-type-title]");
+      if (title) {
+        title.textContent = getBoxTypeTitle(boxType, currentLang);
+      }
+      const removeButton = card.querySelector("[data-remove-box-type]");
+      if (removeButton) {
+        removeButton.dataset.removeBoxType = boxType;
+        removeButton.textContent = translations[currentLang].calcRemoveBoxType;
+      }
+    });
+
+    if (boxTypeChoices) {
+      const availableBoxTypes = Object.keys(storageBoxCatalog).filter(boxType => !activeBoxTypes.has(boxType));
+      boxTypeChoices.innerHTML = availableBoxTypes.length
+        ? availableBoxTypes.map(boxType => `
+          <button class="box-type-choice-button" type="button" data-add-box-type="${boxType}">
+            + ${getBoxTypeTitle(boxType, currentLang)}
+          </button>
+        `).join("")
+        : `<span class="box-type-choice-empty">${translations[currentLang].calcNoMoreBoxTypes}</span>`;
+    }
+  }
+
+  function syncDateRange() {
+    startDateInput.min = "";
     const startDate = startDateInput.value;
     if (!startDate) {
-      endDateInput.min = formatDateInputValue(returnLeadDate);
+      endDateInput.min = "";
       return;
     }
 
     const minEnd = addDays(parseDateAtMidnight(startDate), 1);
-    const minEndText = formatDateInputValue(minEnd > returnLeadDate ? minEnd : returnLeadDate);
+    const minEndText = formatDateInputValue(minEnd);
     endDateInput.min = minEndText;
 
     if (endDateInput.value && endDateInput.value < minEndText) {
@@ -2420,7 +2635,6 @@ function initStorageCalculator(activeLang) {
   }
 
   function syncAppointmentFields() {
-    const boxLeadDateText = formatDateInputValue(getStorageBoxDeliveryLeadDate());
     const purchaseCounts = getPurchaseCounts();
     const totalPurchaseBoxes = Object.values(purchaseCounts).reduce((sum, value) => sum + value, 0);
     const needsBoxDelivery = totalPurchaseBoxes > 0;
@@ -2432,21 +2646,10 @@ function initStorageCalculator(activeLang) {
     }
 
     boxDeliveryDateInput.disabled = !needsBoxDelivery;
-    boxDeliveryDateInput.min = boxLeadDateText;
-    if (startDateInput.value) {
-      boxDeliveryDateInput.max = formatDateInputValue(addDays(parseDateAtMidnight(startDateInput.value), -2));
-    } else {
-      boxDeliveryDateInput.max = "";
-    }
+    boxDeliveryDateInput.min = "";
+    boxDeliveryDateInput.max = "";
     if (!needsBoxDelivery) {
       boxDeliveryDateInput.value = "";
-    } else {
-      if (boxDeliveryDateInput.value && boxDeliveryDateInput.value < boxLeadDateText) {
-        boxDeliveryDateInput.value = boxLeadDateText;
-      }
-      if (boxDeliveryDateInput.max && boxDeliveryDateInput.value && boxDeliveryDateInput.value > boxDeliveryDateInput.max) {
-        boxDeliveryDateInput.value = boxDeliveryDateInput.max;
-      }
     }
   }
 
@@ -2461,7 +2664,7 @@ function initStorageCalculator(activeLang) {
     pickupAccessInput.disabled = !isHomeCollection;
 
     if (!isHomeCollection) {
-      pickupAccessInput.value = "ground";
+      pickupAccessInput.value = "";
     }
   }
 
@@ -2478,7 +2681,7 @@ function initStorageCalculator(activeLang) {
     deliveryMethodInput.disabled = !isLocalReturn;
 
     if (!isLocalReturn) {
-      deliveryMethodInput.value = "home";
+      deliveryMethodInput.value = "";
     }
 
     if (returnAccessField) {
@@ -2490,20 +2693,22 @@ function initStorageCalculator(activeLang) {
     returnAccessInput.disabled = !isLocalReturn || !isHomeDelivery;
 
     if (!isLocalReturn || !isHomeDelivery) {
-      returnAccessInput.value = "ground";
+      returnAccessInput.value = "";
     }
   }
 
   function syncWeightInputs(showPrompt = false) {
     const currentLang = form.dataset.lang || activeLang;
     const boxCounts = getBoxCounts();
+    const purchaseCounts = getPurchaseCounts();
 
     boxWeightInputs.forEach(input => {
       const boxType = input.dataset.boxWeight;
       const storageQty = Math.max(0, boxCounts[boxType] || 0);
+      const purchaseQty = Math.max(0, purchaseCounts[boxType] || 0);
       const rawValue = input.value.trim();
 
-      if (storageQty <= 0) {
+      if (storageQty <= 0 && purchaseQty <= 0) {
         input.value = "";
         input.disabled = true;
         input.required = false;
@@ -2775,202 +2980,30 @@ function initStorageCalculator(activeLang) {
     return draft;
   }
 
-  function getBoxQuickField(name) {
-    return storageBoxQuickOrder?.querySelector(`[name="${name}"]`);
-  }
+  function getStorageEntryDateValidationMessage(summary) {
+    const today = new Date();
+    const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const startDate = parseDateAtMidnight(summary.startDate);
+    const boxDeliveryDate = parseDateAtMidnight(summary.boxDeliveryDate);
+    const needsBoxDeliveryDate = Number(summary.totalPurchaseBoxes || 0) > 0;
 
-  function getBoxQuickValue(name) {
-    return getBoxQuickField(name)?.value.trim() || "";
+    if (!startDate || startDate <= todayMidnight) {
+      return "请提交有效日期：寄存开始日期必须大于当天日期。";
+    }
+
+    if (needsBoxDeliveryDate && (!boxDeliveryDate || boxDeliveryDate <= todayMidnight)) {
+      return "请提交有效日期：送箱日期必须大于当天日期。";
+    }
+
+    if (needsBoxDeliveryDate && boxDeliveryDate && startDate && boxDeliveryDate >= startDate) {
+      return "请提交有效日期：送箱日期必须早于寄存开始日期。";
+    }
+
+    return "";
   }
 
   function getTotalBoxPurchaseQuantity() {
     return Object.values(getPurchaseCounts()).reduce((sum, qty) => sum + Math.max(0, Number(qty) || 0), 0);
-  }
-
-  function prefillBoxQuickOrder() {
-    if (!storageBoxQuickOrder) {
-      return;
-    }
-    const quantityField = getBoxQuickField("boxPurchaseQuantity");
-    const dateField = getBoxQuickField("boxServiceDate");
-    const nameField = getBoxQuickField("boxContactName");
-    const phoneField = getBoxQuickField("boxContactPhone");
-    const totalPurchase = getTotalBoxPurchaseQuantity();
-    if (quantityField && totalPurchase > 0 && !quantityField.value) {
-      quantityField.value = String(totalPurchase);
-    }
-    if (dateField && boxDeliveryDateInput?.value && !dateField.value) {
-      dateField.value = boxDeliveryDateInput.value;
-    }
-    if (window.SiteAuth?.getSession) {
-      window.SiteAuth.getSession().then(session => {
-        const user = session?.user || {};
-        const profileState = window.SiteAuth.getProfileCompletionState?.(user);
-        if (nameField && !nameField.value && user.nickname) {
-          nameField.value = user.nickname;
-        }
-        if (phoneField && !phoneField.value && user.phone) {
-          phoneField.value = user.phone;
-        }
-        if (profileState && !profileState.isComplete) {
-          setBookingFormMessage(`资料未完善，提交前需补全${profileState.missingFields.join("、")}。`);
-        }
-      }).catch(() => {});
-    }
-  }
-
-  function showBoxQuickOrder() {
-    if (!storageBoxQuickOrder) {
-      return;
-    }
-    storageBoxQuickOrder.hidden = false;
-    prefillBoxQuickOrder();
-    storageBoxQuickOrder.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  }
-
-  function validateBoxQuickOrder(customerForm, serviceDetails) {
-    if (!customerForm.noticeConfirmed) {
-      return "请先阅读并同意下单须知。";
-    }
-    const required = [
-      ["purchaseQuantity", "请填写购买数量。"],
-      ["serviceDate", "请填写送箱日期。"],
-      ["serviceTimeSlot", "请选择送箱时间段。"],
-      ["serviceAddress", "请填写送箱地址。"],
-      ["roomOrBuilding", "请填写房间 / 楼栋 / 公寓名。"],
-      ["postcode", "请填写邮编。"],
-      ["contactName", "请填写联系人姓名。"],
-      ["contactPhone", "请填写联系电话。"]
-    ].find(([key]) => {
-      const value = serviceDetails[key];
-      return value === "" || value === null || value === undefined || (key === "purchaseQuantity" && Number(value) <= 0);
-    });
-    if (required) {
-      return required[1];
-    }
-    if (!customerForm.contactHandle) {
-      return "请先到个人资料页补全微信号。";
-    }
-    return "";
-  }
-
-  function buildBoxQuickReadableMessage(details) {
-    return [
-      "服务类型：买箱子 / 送箱",
-      `购买数量：${details.purchaseQuantity}`,
-      `送箱日期：${details.serviceDate}`,
-      `时间段：${details.serviceTimeSlot}`,
-      `送箱地址：${details.serviceAddress}`,
-      `房间 / 楼栋 / 公寓名：${details.roomOrBuilding}`,
-      `邮编：${details.postcode}`,
-      `联系人姓名：${details.contactName}`,
-      `联系电话：${details.contactPhone}`,
-      "送箱服务默认楼下交接。如有特殊情况，请在备注中说明，客服会确认是否可安排。",
-      details.notes ? `备注：${details.notes}` : ""
-    ].filter(Boolean).join("\n");
-  }
-
-  async function submitBoxQuickOrder(event) {
-    event.preventDefault();
-    if (isStorageLocalFileMode()) {
-      setBookingFormMessage(getStorageLocalModeMessage());
-      return;
-    }
-    if (!window.SiteAuth) {
-      setBookingFormMessage("请先登录后再提交买箱订单。");
-      return;
-    }
-    const session = await window.SiteAuth.getSession();
-    if (!session.authenticated) {
-      await window.SiteAuth.requireLogin({ returnTo: "/storage.html#storageBoxQuickOrder" });
-      return;
-    }
-    const profileState = window.SiteAuth.getProfileCompletionState(session.user);
-    if (!profileState.isComplete) {
-      setBookingFormMessage(`资料未完善，提交前需补全${profileState.missingFields.join("、")}。`);
-      return;
-    }
-
-    const serviceDetails = {
-      purchaseQuantity: Number(getBoxQuickValue("boxPurchaseQuantity") || 0),
-      serviceDate: getBoxQuickValue("boxServiceDate"),
-      serviceTimeSlot: getBoxQuickValue("boxServiceTimeSlot"),
-      serviceAddress: getBoxQuickValue("boxServiceAddress"),
-      roomOrBuilding: getBoxQuickValue("boxRoomOrBuilding"),
-      postcode: getBoxQuickValue("boxPostcode"),
-      contactName: getBoxQuickValue("boxContactName"),
-      contactPhone: getBoxQuickValue("boxContactPhone"),
-      notes: getBoxQuickValue("boxNotes")
-    };
-    const customerForm = {
-      noticeConfirmed: storageBoxQuickOrder.querySelector('input[name="boxNoticeConfirmed"]:checked')?.value === "yes",
-      contactPreference: profileState.contactPreference || "wechat",
-      contactPreferenceLabel: profileState.contactPreferenceLabel || "微信",
-      contactHandle: profileState.contactHandle || "",
-      customerName: serviceDetails.contactName,
-      phone: serviceDetails.contactPhone
-    };
-    const validationMessage = validateBoxQuickOrder(customerForm, serviceDetails);
-    if (validationMessage) {
-      setBookingFormMessage(validationMessage);
-      return;
-    }
-
-    renderEstimate();
-    const draft = buildCurrentDraftPayload("box_delivery");
-    const payload = {
-      ...(draft || {}),
-      source: "storage_box_quick_order",
-      orderType: "box_delivery",
-      serviceLabel: "买箱子 / 送箱",
-      customerForm,
-      serviceDetails,
-      estimateSummary: draft?.estimateSummary || {
-        totalBoxes: 0,
-        totalPurchaseBoxes: serviceDetails.purchaseQuantity,
-        boxDeliveryDate: serviceDetails.serviceDate,
-        estimatedTotalPrice: 0
-      },
-      calculatorSnapshot: draft?.calculatorSnapshot || {
-        purchaseCounts: getPurchaseCounts(),
-        boxDeliveryDate: serviceDetails.serviceDate
-      },
-      serviceFlags: {
-        box_delivery: true
-      },
-      finalReadableMessage: buildBoxQuickReadableMessage(serviceDetails)
-    };
-
-    setBookingFormMessage("正在提交买箱订单...");
-    if (storageBoxQuickSubmitButton) {
-      storageBoxQuickSubmitButton.disabled = true;
-    }
-    try {
-      const response = await fetch(getStorageSubmitEndpoint(), {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json"
-        },
-        body: JSON.stringify(payload)
-      });
-      const result = await response.json().catch(() => ({
-        data: null,
-        error: { message: "提交失败，请稍后重试。" }
-      }));
-      if (!response.ok) {
-        throw new Error(result.error?.message || "提交失败，请稍后重试。");
-      }
-      setBookingFormMessage(`买箱订单已提交：${result.data?.orderNo || "--"}`, true);
-      storageBoxQuickOrder.reset();
-      storageBoxQuickOrder.hidden = true;
-    } catch (error) {
-      setBookingFormMessage(error?.message === "Failed to fetch" ? getStorageLocalModeMessage() : (error.message || "提交失败，请稍后重试。"));
-    } finally {
-      if (storageBoxQuickSubmitButton) {
-        storageBoxQuickSubmitButton.disabled = false;
-      }
-    }
   }
 
   function validateBookingForm(summary, customerForm) {
@@ -2979,6 +3012,10 @@ function initStorageCalculator(activeLang) {
     }
     if (summary.blocked || summary.totalBoxes <= 0 || summary.days <= 0 || summary.total === null) {
       return "请先完成有效估价后再提交预约。";
+    }
+    const dateValidationMessage = getStorageEntryDateValidationMessage(summary);
+    if (dateValidationMessage) {
+      return dateValidationMessage;
     }
     if (!customerForm.serviceDate) {
       return "请填写服务日期。";
@@ -3157,6 +3194,7 @@ function initStorageCalculator(activeLang) {
   form.__syncReturnFields = syncReturnFields;
   form.__syncWeightInputs = syncWeightInputs;
   form.__syncBookingFields = syncBookingFields;
+  form.__syncBoxTypeCards = syncBoxTypeCards;
 
   form.addEventListener("submit", event => {
     event.preventDefault();
@@ -3167,61 +3205,76 @@ function initStorageCalculator(activeLang) {
     renderEstimate();
   });
 
-  [
-    ...boxCountInputs,
-    ...boxPurchaseInputs,
-    startDateInput,
-    endDateInput,
-    boxDeliveryDateInput,
-    pickupMethodInput,
-    pickupAccessInput,
-    ...boxWeightInputs,
-    returnTypeInput,
-    deliveryMethodInput,
-    returnAccessInput
-  ].forEach(input => {
-    input.addEventListener("input", () => {
-      if (input === startDateInput || boxPurchaseInputs.includes(input)) {
-        syncDateRange();
-      }
-      if (boxCountInputs.includes(input) || boxPurchaseInputs.includes(input) || input === boxDeliveryDateInput || input === startDateInput || input === returnTypeInput) {
-        syncAppointmentFields();
-      }
-      if (input === pickupMethodInput) {
-        syncPickupFields();
-      }
-      if (input === returnTypeInput) {
-        syncReturnFields();
-      }
-      if (input === deliveryMethodInput) {
-        syncReturnFields();
-      }
-      if (boxWeightInputs.includes(input) || boxCountInputs.includes(input)) {
-        syncWeightInputs(boxWeightInputs.includes(input));
-      }
-      renderEstimate();
+  function handleCalculatorInput(input) {
+    refreshBoxInputs();
+    if (input === startDateInput || boxPurchaseInputs.includes(input)) {
+      syncDateRange();
+    }
+    if (boxCountInputs.includes(input) || boxPurchaseInputs.includes(input) || input === boxDeliveryDateInput || input === startDateInput || input === returnTypeInput) {
+      syncAppointmentFields();
+    }
+    if (input === pickupMethodInput) {
+      syncPickupFields();
+    }
+    if (input === returnTypeInput) {
+      syncReturnFields();
+    }
+    if (input === deliveryMethodInput) {
+      syncReturnFields();
+    }
+    if (boxWeightInputs.includes(input) || boxCountInputs.includes(input) || boxPurchaseInputs.includes(input)) {
+      syncWeightInputs(boxWeightInputs.includes(input));
+    }
+    renderEstimate();
+  }
+
+  form.addEventListener("input", event => {
+    const input = event.target;
+    if (!(input instanceof HTMLInputElement) && !(input instanceof HTMLSelectElement)) {
+      return;
+    }
+    handleCalculatorInput(input);
+  });
+
+  form.addEventListener("change", event => {
+    const input = event.target;
+    if (!(input instanceof HTMLInputElement) && !(input instanceof HTMLSelectElement)) {
+      return;
+    }
+    handleCalculatorInput(input);
+  });
+
+  boxTypeChoices?.addEventListener("click", event => {
+    const button = event.target.closest("[data-add-box-type]");
+    if (!button) {
+      return;
+    }
+    const boxType = button.dataset.addBoxType;
+    if (!storageBoxCatalog[boxType]) {
+      return;
+    }
+    const values = readBoxTypeCardValues();
+    if (values.some(value => value.boxType === boxType) || values.length >= maxBoxTypes) {
+      return;
+    }
+    values.push({ boxType, storageQty: "0", purchaseQty: "0", maxWeightKg: "" });
+    renderBoxTypeCards(values);
+    renderEstimate();
+  });
+
+  boxTypeCardList?.addEventListener("click", event => {
+    const button = event.target.closest("[data-remove-box-type]");
+    if (!button) {
+      return;
+    }
+    const card = button.closest("[data-box-type-card]");
+    const values = readBoxTypeCardValues().filter((_, index) => {
+      const currentCard = boxTypeCardList.querySelectorAll("[data-box-type-card]")[index];
+      return currentCard !== card;
     });
-    input.addEventListener("change", () => {
-      if (input === startDateInput || boxPurchaseInputs.includes(input)) {
-        syncDateRange();
-      }
-      if (boxCountInputs.includes(input) || boxPurchaseInputs.includes(input) || input === boxDeliveryDateInput || input === startDateInput || input === returnTypeInput) {
-        syncAppointmentFields();
-      }
-      if (input === pickupMethodInput) {
-        syncPickupFields();
-      }
-      if (input === returnTypeInput) {
-        syncReturnFields();
-      }
-      if (input === deliveryMethodInput) {
-        syncReturnFields();
-      }
-      if (boxWeightInputs.includes(input) || boxCountInputs.includes(input)) {
-        syncWeightInputs(boxWeightInputs.includes(input));
-      }
-      renderEstimate();
-    });
+    renderBoxTypeCards(values.length ? values : [{ boxType: "1", storageQty: "0", purchaseQty: "0", maxWeightKg: "" }]);
+    syncAppointmentFields();
+    renderEstimate();
   });
 
   noticeToggle?.addEventListener("click", () => {
@@ -3274,13 +3327,7 @@ function initStorageCalculator(activeLang) {
     event.preventDefault();
     const target = event.currentTarget;
     const preferredOrderType = target?.dataset?.storageBookingTarget || "storage_collection";
-    const isBoxDelivery = preferredOrderType === "box_delivery";
     const targetUrl = target?.getAttribute("href") || "./storage-booking.html";
-
-    if (isBoxDelivery) {
-      showBoxQuickOrder();
-      return;
-    }
 
     let draft = null;
     if (preferredOrderType === "storage_collection") {
@@ -3291,6 +3338,16 @@ function initStorageCalculator(activeLang) {
         window.alert(message);
         return;
       }
+      const dateValidationMessage = getStorageEntryDateValidationMessage(draft.estimateSummary || {});
+      if (dateValidationMessage) {
+        setBookingFormMessage(dateValidationMessage);
+        window.alert(dateValidationMessage);
+        return;
+      }
+    }
+
+    if (preferredOrderType === "storage_return") {
+      clearStorageBookingDraft();
     }
 
     if (window.SiteAuth) {
@@ -3310,13 +3367,7 @@ function initStorageCalculator(activeLang) {
   }
 
   goToStorageBookingButton?.addEventListener("click", handleStorageBookingEntryClick);
-  goToStorageBoxDeliveryButton?.addEventListener("click", handleStorageBookingEntryClick);
   goToStorageReturnButton?.addEventListener("click", handleStorageBookingEntryClick);
-  storageBoxQuickOrder?.addEventListener("submit", submitBoxQuickOrder);
-
-  if (window.location.hash === "#storageBoxQuickOrder") {
-    showBoxQuickOrder();
-  }
 
   bookingForm?.addEventListener("submit", async event => {
     event.preventDefault();
@@ -3435,6 +3486,7 @@ function initStorageCalculator(activeLang) {
     }
   });
 
+  syncBoxTypeCards();
   syncAppointmentFields();
   syncDateRange();
   syncPickupFields();
@@ -3466,6 +3518,12 @@ function initStorageBookingPage() {
   const submitSuccessTitle = document.querySelector("#storageSubmitSuccessTitle");
   const submitSuccessDescription = document.querySelector("#storageSubmitSuccessDescription");
   const submitSuccessOrderNo = document.querySelector("#storageSubmitSuccessOrderNo");
+  const receiptOverlay = document.querySelector("#storageReceiptOverlay");
+  const receiptDescription = document.querySelector("#storageReceiptDescription");
+  const receiptOrderNo = document.querySelector("#storageReceiptOrderNo");
+  const receiptSummary = document.querySelector("#storageReceiptSummary");
+  const receiptCreatedDate = document.querySelector("#storageReceiptCreatedDate");
+  const receiptCreatedTime = document.querySelector("#storageReceiptCreatedTime");
   const contactPreferenceInput = document.querySelector("#bookingContactPreference");
   const contactHandleInput = document.querySelector("#bookingContactHandle");
   const customerNameInput = document.querySelector("#bookingCustomerName");
@@ -3476,29 +3534,71 @@ function initStorageBookingPage() {
   const noticeContent = document.querySelector("#storageNoticeContent");
   const copyBookingSummaryButton = document.querySelector("#copyBookingSummaryButton");
   const bookingPageHint = document.querySelector("#storageBookingPageHint");
-  const returnHistoryPanel = document.querySelector("#storageReturnHistoryPanel");
-  const returnHistoryStatus = document.querySelector("#storageReturnHistoryStatus");
-  const returnHistoryList = document.querySelector("#storageReturnHistoryList");
+  const collectionLockedSummary = document.querySelector("#collectionLockedSummary");
+  const bookingHeroTitle = document.querySelector(".storage-booking-hero-copy h1");
+  const summaryTitle = document.querySelector(".storage-summary-card .storage-summary-head strong");
+  const summaryTip = document.querySelector(".storage-summary-card .storage-summary-tip");
+  const sideActionCard = document.querySelector(".storage-booking-side .storage-inline-form-card");
+  const sideActionTitle = sideActionCard?.querySelector(".storage-inline-form-head strong");
+  const sideActionText = sideActionCard?.querySelector(".storage-inline-form-head p");
+  const sideActionLink = sideActionCard?.querySelector(".storage-inline-cta a");
+  const bookingFormIntroTitle = bookingForm.querySelector(":scope > .storage-inline-form-head strong");
+  const bookingFormIntroText = bookingForm.querySelector(":scope > .storage-inline-form-head p");
   const serviceSections = Array.from(bookingForm.querySelectorAll("[data-storage-service-section]"));
+  const returnServiceDateInput = bookingForm.querySelector('[name="returnServiceDate"]');
+  const returnDateHelp = bookingForm.querySelector("[data-return-date-help]");
   const serviceLabels = {
-    box_delivery: "买箱子 / 送箱",
     storage_collection: "预约寄存 / 入仓",
     storage_return: "取寄存 / 取回"
   };
-  const allowedOrderTypes = ["storage_collection", "storage_return"];
   const requestedOrderType = new URLSearchParams(window.location.search).get("service") || draft?.preferredOrderType || "";
   if (requestedOrderType === "box_delivery") {
-    window.location.replace("./storage.html#storageBoxQuickOrder");
+    window.location.replace("./storage.html#storage-calculator");
     return;
   }
-  const boxDeliveryTypeInput = bookingForm.querySelector('input[name="storageOrderType"][value="box_delivery"]');
-  if (boxDeliveryTypeInput) {
-    boxDeliveryTypeInput.disabled = true;
-    const boxDeliveryCard = boxDeliveryTypeInput.closest(".storage-service-type-card") || boxDeliveryTypeInput.closest("label");
-    if (boxDeliveryCard) {
-      boxDeliveryCard.hidden = true;
+  const activeOrderType = requestedOrderType === "storage_return" ? "storage_return" : "storage_collection";
+
+  function applyBookingModeCopy() {
+    const isReturnMode = activeOrderType === "storage_return";
+
+    if (bookingHeroTitle) {
+      bookingHeroTitle.textContent = isReturnMode ? "取寄存登记表" : "寄存服务预约表";
+    }
+    if (summaryTitle) {
+      summaryTitle.textContent = isReturnMode ? "取寄存登记说明" : "估价摘要";
+    }
+    if (summaryTip) {
+      summaryTip.textContent = isReturnMode
+        ? "取回已有寄存不需要计算器。请直接填写取回日期、送回地址和物品信息，客服会人工核验。"
+        : "如你从估价页进入，这里会保留上一页的价格结果，包含需要购买的箱子数量。";
+    }
+    if (copyBookingSummaryButton) {
+      copyBookingSummaryButton.hidden = isReturnMode;
+      copyBookingSummaryButton.disabled = isReturnMode;
+    }
+    if (sideActionTitle) {
+      sideActionTitle.textContent = isReturnMode ? "要预约新寄存？" : "返回估价页";
+    }
+    if (sideActionText) {
+      sideActionText.textContent = isReturnMode
+        ? "只有预约新的寄存/入仓才需要先返回估价页填写计算器。"
+        : "如需修改寄存价格、箱型数量或寄存周期，请返回上一页重新估价。";
+    }
+    if (sideActionLink) {
+      sideActionLink.textContent = isReturnMode ? "去计算器预约寄存" : "返回估价页修改";
+      sideActionLink.setAttribute("href", "./storage.html#storage-calculator");
+    }
+    if (bookingFormIntroTitle) {
+      bookingFormIntroTitle.textContent = isReturnMode ? "取寄存信息填写" : "预约信息填写";
+    }
+    if (bookingFormIntroText) {
+      bookingFormIntroText.textContent = isReturnMode
+        ? "请填写取回已有寄存所需的信息。无需估价，提交后客服会核验原寄存记录并联系确认。"
+        : "请选择本次只要提交的一项服务。不同服务的字段互不干扰。";
     }
   }
+
+  applyBookingModeCopy();
 
   function setMessage(message, isSuccess = false) {
     if (!bookingFormMessage) {
@@ -3512,21 +3612,46 @@ function initStorageBookingPage() {
     return bookingForm.querySelector(`[name="${name}"]`)?.value.trim() || "";
   }
 
-  function getRadioValue(name) {
-    return bookingForm.querySelector(`input[name="${name}"]:checked`)?.value || "";
-  }
-
   function getSelectedOrderType() {
-    return getRadioValue("storageOrderType") || "storage_collection";
+    return activeOrderType;
   }
 
-  function selectOrderType(orderType) {
-    if (!allowedOrderTypes.includes(orderType)) {
+  function getStorageReturnDateValidationMessage(dateText) {
+    const selectedDate = String(dateText || "").trim();
+    const today = getUkTodayInputValue();
+    const earliestDate = getEarliestStorageReturnDateValue();
+    if (!selectedDate) {
+      return "请填写送回 / 自取日期。";
+    }
+    if (selectedDate <= today) {
+      return "送回 / 自取日期必须大于英国当天日期。";
+    }
+    if (selectedDate < earliestDate) {
+      return `当前英国时间下，最早可选择 ${earliestDate}。12 点前提交最早第二天可取，12 点后提交最早第三天可取。`;
+    }
+    return "";
+  }
+
+  function getStorageReturnDateNotice(dateText) {
+    const validationMessage = getStorageReturnDateValidationMessage(dateText);
+    if (validationMessage) {
+      return validationMessage;
+    }
+    if (isWeekendDateInputValue(dateText)) {
+      return "周六周日是否有可用司机需要再和客服确认。";
+    }
+    return "12 点前提交最早第二天可取；12 点后提交最早第三天可取。";
+  }
+
+  function syncReturnDateRules() {
+    if (!returnServiceDateInput) {
       return;
     }
-    const input = bookingForm.querySelector(`input[name="storageOrderType"][value="${orderType}"]`);
-    if (input) {
-      input.checked = true;
+    const earliestDate = getEarliestStorageReturnDateValue();
+    returnServiceDateInput.min = earliestDate;
+    if (returnDateHelp) {
+      returnDateHelp.textContent = getStorageReturnDateNotice(returnServiceDateInput.value);
+      returnDateHelp.classList.toggle("is-warning", isWeekendDateInputValue(returnServiceDateInput.value));
     }
   }
 
@@ -3541,31 +3666,75 @@ function initStorageBookingPage() {
     };
   }
 
-  function getServiceDetails(orderType) {
-    if (orderType === "box_delivery") {
-      return {
-        purchaseQuantity: Number(getFieldValue("boxPurchaseQuantity") || 0),
-        serviceDate: getFieldValue("boxServiceDate"),
-        serviceTimeSlot: getFieldValue("boxServiceTimeSlot"),
-        serviceAddress: getFieldValue("boxServiceAddress"),
-        roomOrBuilding: getFieldValue("boxRoomOrBuilding"),
-        postcode: getFieldValue("boxPostcode"),
-        contactName: getFieldValue("boxContactName"),
-        contactPhone: getFieldValue("boxContactPhone"),
-        notes: getFieldValue("boxNotes")
-      };
-    }
+  function getDraftPurchaseDetails() {
+    const estimateItems = Array.isArray(draft?.estimateSummary?.items) ? draft.estimateSummary.items : [];
+    const purchaseItems = estimateItems
+      .filter(item => Number(item.purchaseQty || 0) > 0)
+      .map(item => ({
+        boxType: item.boxType,
+        label: item.label || `${item.boxType} 号箱`,
+        quantity: Number(item.purchaseQty || 0),
+        subtotal: Number(item.purchase || 0)
+      }));
+    return {
+      purchaseQuantity: Number(draft?.estimateSummary?.totalPurchaseBoxes || 0),
+      purchaseItems,
+      purchaseCounts: draft?.calculatorSnapshot?.purchaseCounts || {},
+      purchaseTotal: Number(draft?.estimateSummary?.purchaseTotal || 0),
+      boxDeliveryDate: draft?.estimateSummary?.boxDeliveryDate || ""
+    };
+  }
 
+  function getCollectionLiftValue(summary) {
+    if (summary.pickupMethod !== "home") {
+      return "false";
+    }
+    return summary.pickupAccessType === "elevator" ? "true" : "false";
+  }
+
+  function getCollectionUpstairsValue(summary) {
+    if (summary.pickupMethod !== "home") {
+      return "false";
+    }
+    return summary.pickupAccessType === "elevator" || summary.pickupAccessType === "stairs" ? "true" : "false";
+  }
+
+  function renderCollectionLockedSummary(summary) {
+    if (!collectionLockedSummary || !summary) {
+      return;
+    }
+    const pickupAccessLabel = summary.pickupMethod === "home"
+      ? getStorageAccessLabel(summary.pickupAccessType)
+      : "自行送至仓库";
+    const rows = [
+      ["寄存箱数", `${summary.totalBoxes || 0} 个`],
+      ["取件 / 自送日期", summary.startDate || "—"],
+      ["预计寄存结束日期", summary.endDate || "—"],
+      ["取件方式", getStoragePickupMethodLabel(summary.pickupMethod)],
+      ["取寄存交接方式", pickupAccessLabel]
+    ];
+    collectionLockedSummary.innerHTML = rows.map(([label, value]) => `
+      <div class="storage-locked-summary-item">
+        <span>${label}</span>
+        <strong>${value}</strong>
+      </div>
+    `).join("");
+  }
+
+  function getServiceDetails(orderType) {
     if (orderType === "storage_collection") {
+      const purchaseDetails = getDraftPurchaseDetails();
+      const estimateSummary = draft?.estimateSummary || {};
       return {
         storageBoxCount: Number(getFieldValue("collectionBoxCount") || 0),
+        ...purchaseDetails,
         serviceDate: getFieldValue("collectionServiceDate"),
         serviceTimeSlot: getFieldValue("collectionServiceTimeSlot"),
         collectionAddress: getFieldValue("collectionAddress"),
         roomOrBuilding: getFieldValue("collectionRoomOrBuilding"),
         postcode: getFieldValue("collectionPostcode"),
-        hasLift: getRadioValue("collectionHasLift"),
-        needsUpstairs: getRadioValue("collectionNeedsUpstairs"),
+        hasLift: getCollectionLiftValue(estimateSummary),
+        needsUpstairs: getCollectionUpstairsValue(estimateSummary),
         expectedStorageEndDate: getFieldValue("collectionExpectedEndDate"),
         notes: getFieldValue("collectionNotes")
       };
@@ -3573,11 +3742,9 @@ function initStorageBookingPage() {
 
     return {
       relatedOrderNo: getFieldValue("returnRelatedOrderNo"),
-      storageCustomerName: getFieldValue("returnStorageCustomerName"),
-      storagePhone: getFieldValue("returnStoragePhone"),
-      storageContact: getFieldValue("returnStorageContact"),
-      approximateStorageTime: getFieldValue("returnApproximateStorageTime"),
-      originalCollectionAddress: getFieldValue("returnOriginalCollectionAddress"),
+      storageCustomerName: customerNameInput?.value.trim() || "",
+      storagePhone: phoneInput?.value.trim() || "",
+      storageContact: contactHandleInput?.value.trim() || "",
       itemCount: Number(getFieldValue("returnItemCount") || 0),
       itemDescription: getFieldValue("returnItemDescription"),
       serviceDate: getFieldValue("returnServiceDate"),
@@ -3585,16 +3752,15 @@ function initStorageBookingPage() {
       returnAddress: getFieldValue("returnAddress"),
       roomOrBuilding: getFieldValue("returnRoomOrBuilding"),
       postcode: getFieldValue("returnPostcode"),
-      hasLift: getRadioValue("returnHasLift"),
-      needsUpstairs: getRadioValue("returnNeedsUpstairs"),
+      hasLift: getFieldValue("returnHasLift"),
+      needsUpstairs: getFieldValue("returnNeedsUpstairs"),
       notes: getFieldValue("returnNotes")
     };
   }
 
   function syncServiceSections() {
-    const selectedOrderType = getSelectedOrderType();
     serviceSections.forEach(section => {
-      const active = section.dataset.storageServiceSection === selectedOrderType;
+      const active = section.dataset.storageServiceSection === activeOrderType;
       section.hidden = !active;
       section.querySelectorAll("input, select, textarea, button").forEach(field => {
         field.disabled = !active;
@@ -3605,111 +3771,34 @@ function initStorageBookingPage() {
     const phone = phoneInput?.value.trim() || "";
     const boxName = bookingForm.querySelector('[name="boxContactName"]');
     const boxPhone = bookingForm.querySelector('[name="boxContactPhone"]');
-    const returnName = bookingForm.querySelector('[name="returnStorageCustomerName"]');
-    const returnPhone = bookingForm.querySelector('[name="returnStoragePhone"]');
-    const returnContact = bookingForm.querySelector('[name="returnStorageContact"]');
     if (boxName && !boxName.value && customerName) {
       boxName.value = customerName;
     }
     if (boxPhone && !boxPhone.value && phone) {
       boxPhone.value = phone;
     }
-    if (returnName && !returnName.value && customerName) {
-      returnName.value = customerName;
-    }
-    if (returnPhone && !returnPhone.value && phone) {
-      returnPhone.value = phone;
-    }
-    if (returnContact && !returnContact.value && contactHandleInput?.value) {
-      returnContact.value = contactHandleInput.value;
-    }
   }
 
-  function setReturnField(name, value, overwrite = true) {
-    const field = bookingForm.querySelector(`[name="${name}"]`);
-    if (!field || (!overwrite && field.value)) {
+  function scrollToRequestedReturnSection() {
+    if (activeOrderType !== "storage_return" || window.location.hash !== "#storage-return-form") {
       return;
     }
-    field.value = value || "";
-  }
-
-  function fillReturnFormFromHistory(order) {
-    if (!order) {
+    const returnSection = document.querySelector("#storage-return-form");
+    if (!returnSection) {
       return;
     }
-    setReturnField("returnRelatedOrderNo", order.orderNo);
-    setReturnField("returnStorageCustomerName", order.customerName);
-    setReturnField("returnStoragePhone", order.phone);
-    setReturnField("returnStorageContact", order.contactHandle);
-    setReturnField("returnApproximateStorageTime", [order.serviceDate, order.expectedStorageEndDate].filter(Boolean).join(" 至 "));
-    setReturnField("returnOriginalCollectionAddress", order.addressFull);
-    setReturnField("returnItemCount", order.estimatedBoxCount ? String(order.estimatedBoxCount) : "");
-  }
-
-  function renderReturnHistoryOrders(orders) {
-    if (!returnHistoryPanel || !returnHistoryStatus || !returnHistoryList) {
-      return;
-    }
-    returnHistoryPanel.hidden = false;
-    returnHistoryList.innerHTML = "";
-    if (!orders.length) {
-      returnHistoryStatus.textContent = "当前账号未找到历史预约寄存订单，提交后后台会人工核验。";
-      returnHistoryPanel.classList.add("is-warning");
-      return;
-    }
-    returnHistoryPanel.classList.remove("is-warning");
-    returnHistoryStatus.textContent = "已找到以下历史预约寄存订单，默认选择最新一条。";
-    returnHistoryList.innerHTML = orders.map((order, index) => `
-      <button class="storage-return-history-option${index === 0 ? " is-active" : ""}" type="button" data-history-index="${index}">
-        <strong>${escapeHtml(order.orderNo || "--")}</strong>
-        <span>${escapeHtml(order.serviceDate || "--")} · ${escapeHtml(order.addressFull || "--")}</span>
-        <small>${escapeHtml(String(order.estimatedBoxCount || 0))} 件 / 箱 · ${escapeHtml(order.status || "--")}</small>
-      </button>
-    `).join("");
-    fillReturnFormFromHistory(orders[0]);
-    returnHistoryList.querySelectorAll("[data-history-index]").forEach(button => {
-      button.addEventListener("click", () => {
-        const index = Number(button.dataset.historyIndex || 0);
-        const selected = orders[index];
-        returnHistoryList.querySelectorAll(".storage-return-history-option").forEach(node => node.classList.remove("is-active"));
-        button.classList.add("is-active");
-        fillReturnFormFromHistory(selected);
-      });
-    });
-  }
-
-  async function loadReturnHistoryOrders() {
-    if (getSelectedOrderType() !== "storage_return" || !returnHistoryPanel || !window.SiteAuth) {
-      return;
-    }
-    returnHistoryPanel.hidden = false;
-    returnHistoryStatus.textContent = "正在检查当前账号的预约寄存订单...";
-    returnHistoryList.innerHTML = "";
-    try {
-      const session = await window.SiteAuth.getSession();
-      if (!session.authenticated) {
-        returnHistoryStatus.textContent = "请先登录后查看可对应的历史寄存订单。";
-        return;
-      }
-      const response = await fetch(getMyStorageOrdersEndpoint(), {
-        headers: {
-          Accept: "application/json"
-        }
-      });
-      const result = await response.json().catch(() => ({ data: [] }));
-      if (!response.ok) {
-        throw new Error(result.error?.message || "历史寄存订单加载失败。");
-      }
-      renderReturnHistoryOrders(Array.isArray(result.data) ? result.data : []);
-    } catch (error) {
-      returnHistoryStatus.textContent = error.message || "历史寄存订单加载失败，可手动填写并提交。";
-      returnHistoryPanel.classList.add("is-warning");
-    }
+    window.setTimeout(() => {
+      returnSection.scrollIntoView({ behavior: "smooth", block: "start" });
+      returnSection.querySelector("input:not([disabled]), select:not([disabled]), textarea:not([disabled])")?.focus?.({ preventScroll: true });
+    }, 180);
   }
 
   function validate(orderType, customerForm, serviceDetails) {
     if (!customerForm.noticeConfirmed) {
       return "请先阅读并同意下单须知。";
+    }
+    if (orderType === "storage_collection" && !draft?.estimateSummary) {
+      return "预约寄存 / 入仓需要先返回估价页完成计算器测算。";
     }
     if (!customerForm.customerName) {
       return "请填写姓名。";
@@ -3722,16 +3811,6 @@ function initStorageBookingPage() {
     }
 
     const requiredMessages = {
-      box_delivery: [
-        ["purchaseQuantity", "请填写购买箱子数量。"],
-        ["serviceDate", "请填写送箱日期。"],
-        ["serviceTimeSlot", "请选择送箱时间段。"],
-        ["serviceAddress", "请填写送箱地址。"],
-        ["roomOrBuilding", "请填写房间 / 楼栋 / 公寓名。"],
-        ["postcode", "请填写邮编。"],
-        ["contactName", "请填写联系人姓名。"],
-        ["contactPhone", "请填写联系电话。"]
-      ],
       storage_collection: [
         ["storageBoxCount", "请填写寄存箱数。"],
         ["serviceDate", "请填写取件 / 自送日期。"],
@@ -3739,16 +3818,12 @@ function initStorageBookingPage() {
         ["collectionAddress", "请填写取件地址或自送说明。"],
         ["roomOrBuilding", "请填写房间 / 楼栋 / 公寓名。"],
         ["postcode", "请填写邮编。"],
-        ["expectedStorageEndDate", "请填写预计寄存结束日期。"],
-        ["hasLift", "请选择是否有电梯。"],
-        ["needsUpstairs", "请选择是否需要上楼取件。"]
+        ["expectedStorageEndDate", "请填写预计寄存结束日期。"]
       ],
       storage_return: [
         ["storageCustomerName", "请填写寄存人姓名。"],
         ["storagePhone", "请填写寄存时使用的手机号。"],
         ["storageContact", "请填写微信 / WhatsApp / 邮箱中的至少一项。"],
-        ["approximateStorageTime", "请填写大概寄存时间。"],
-        ["originalCollectionAddress", "请填写当时取件地址 / 公寓名。"],
         ["itemCount", "请填写寄存物品数量。"],
         ["itemDescription", "请填写物品简单描述。"],
         ["serviceDate", "请填写送回 / 自取日期。"],
@@ -3767,37 +3842,31 @@ function initStorageBookingPage() {
     if (missing) {
       return missing[1];
     }
+    if (orderType === "storage_return") {
+      const returnDateValidationMessage = getStorageReturnDateValidationMessage(serviceDetails.serviceDate);
+      if (returnDateValidationMessage) {
+        return returnDateValidationMessage;
+      }
+    }
     return "";
   }
 
   function buildServiceReadableMessage(orderType, details) {
-    if (orderType === "box_delivery") {
-      return [
-        "服务类型：买箱子 / 送箱",
-        `购买数量：${details.purchaseQuantity}`,
-        `送箱日期：${details.serviceDate}`,
-        `时间段：${details.serviceTimeSlot}`,
-        `送箱地址：${details.serviceAddress}`,
-        `房间 / 楼栋 / 公寓名：${details.roomOrBuilding}`,
-        `邮编：${details.postcode}`,
-        `联系人姓名：${details.contactName}`,
-        `联系电话：${details.contactPhone}`,
-        "送箱服务默认楼下交接。如有特殊情况，请在备注中说明，客服会确认是否可安排。",
-        details.notes ? `备注：${details.notes}` : ""
-      ].filter(Boolean).join("\n");
-    }
-
     if (orderType === "storage_collection") {
+      const purchaseLines = (details.purchaseItems || [])
+        .map(item => `${item.label}：${item.quantity} 个${item.subtotal ? `，小计 ${formatMoney(item.subtotal)}` : ""}`);
       return [
-        "服务类型：取寄存 / 入仓",
+        "服务类型：预约寄存 / 入仓",
         `寄存箱数：${details.storageBoxCount}`,
+        Number(details.purchaseQuantity || 0) > 0 ? `需购买箱子：${details.purchaseQuantity} 个` : "需购买箱子：无",
+        ...purchaseLines,
+        details.boxDeliveryDate ? `送箱日期：${details.boxDeliveryDate}` : "",
         `取件 / 自送日期：${details.serviceDate}`,
         `时间段：${details.serviceTimeSlot}`,
         `取件地址 / 自送说明：${details.collectionAddress}`,
         `房间 / 楼栋 / 公寓名：${details.roomOrBuilding}`,
         `邮编：${details.postcode}`,
-        `是否有电梯：${details.hasLift === "true" ? "是" : "否"}`,
-        `是否需要上楼取件：${details.needsUpstairs === "true" ? "是" : "否"}`,
+        `取寄存交接方式：${draft?.estimateSummary?.pickupMethod === "home" ? getStorageAccessLabel(draft?.estimateSummary?.pickupAccessType) : "自行送至仓库"}`,
         `预计寄存结束日期：${details.expectedStorageEndDate}`,
         "本次仅提交取件入仓预约，后续送回/取回请单独提交送回寄存预约或联系客服安排。",
         details.notes ? `备注：${details.notes}` : ""
@@ -3811,11 +3880,10 @@ function initStorageBookingPage() {
       `寄存人姓名：${details.storageCustomerName}`,
       `寄存时使用的手机号：${details.storagePhone}`,
       `微信 / WhatsApp / 邮箱：${details.storageContact}`,
-      `大概寄存时间：${details.approximateStorageTime}`,
-      `当时取件地址 / 公寓名：${details.originalCollectionAddress}`,
       `寄存物品数量：${details.itemCount}`,
       `物品简单描述：${details.itemDescription}`,
       `送回 / 自取日期：${details.serviceDate}`,
+      isWeekendDateInputValue(details.serviceDate) ? "周末日期提示：周六周日是否有可用司机需要再和客服确认。" : "",
       `时间段：${details.serviceTimeSlot}`,
       `送回地址：${details.returnAddress}`,
       `房间 / 楼栋 / 公寓名：${details.roomOrBuilding}`,
@@ -3824,6 +3892,99 @@ function initStorageBookingPage() {
       `是否需要上楼送回：${details.needsUpstairs === "true" ? "是" : "否"}`,
       details.notes ? `备注：${details.notes}` : ""
     ].filter(Boolean).join("\n");
+  }
+
+  function formatReceiptBoolean(value) {
+    if (value === true || value === "true") {
+      return "是";
+    }
+    if (value === false || value === "false") {
+      return "否";
+    }
+    return "—";
+  }
+
+  function renderReceiptSummary({ orderType, customerForm, serviceDetails }) {
+    if (!receiptSummary) {
+      return;
+    }
+    const rows = [
+      ["服务类型", serviceLabels[orderType] || "寄存服务预约"],
+      ["姓名", customerForm.customerName],
+      ["联系电话", customerForm.phone],
+      ["联系方式", [customerForm.contactPreferenceLabel, customerForm.contactHandle].filter(Boolean).join(" / ")]
+    ];
+
+    if (orderType === "storage_collection") {
+      const purchaseText = Number(serviceDetails.purchaseQuantity || 0) > 0
+        ? `${serviceDetails.purchaseQuantity} 个`
+        : "无";
+      rows.push(
+        ["寄存箱数", `${serviceDetails.storageBoxCount || 0} 个`],
+        ["需购买箱子", purchaseText],
+        ["送箱日期", serviceDetails.boxDeliveryDate || "—"],
+        ["预约 / 取件日期", serviceDetails.serviceDate],
+        ["时间段", serviceDetails.serviceTimeSlot],
+        ["预计结束日期", serviceDetails.expectedStorageEndDate],
+        ["地址 / 位置", serviceDetails.collectionAddress],
+        ["房间 / 公寓", serviceDetails.roomOrBuilding],
+        ["邮编", serviceDetails.postcode]
+      );
+    } else {
+      rows.push(
+        ["原寄存订单", serviceDetails.relatedOrderNo || "未填写"],
+        ["寄存人", serviceDetails.storageCustomerName],
+        ["寄存手机号", serviceDetails.storagePhone],
+        ["物品数量", `${serviceDetails.itemCount || 0} 件 / 箱`],
+        ["送回 / 自取日期", serviceDetails.serviceDate],
+        ["时间段", serviceDetails.serviceTimeSlot],
+        ["送回地址", serviceDetails.returnAddress],
+        ["房间 / 公寓", serviceDetails.roomOrBuilding],
+        ["邮编", serviceDetails.postcode],
+        ["是否有电梯", formatReceiptBoolean(serviceDetails.hasLift)],
+        ["是否上楼", formatReceiptBoolean(serviceDetails.needsUpstairs)]
+      );
+    }
+
+    receiptSummary.innerHTML = rows
+      .filter(([, value]) => value !== "" && value !== null && value !== undefined)
+      .map(([label, value]) => `
+        <div class="storage-receipt-row">
+          <span>${escapeHtml(label)}</span>
+          <strong>${escapeHtml(String(value || "—"))}</strong>
+        </div>
+      `).join("");
+  }
+
+  function openStorageReceipt({ orderNo, description, orderType, customerForm, serviceDetails }) {
+    if (!receiptOverlay) {
+      return;
+    }
+    if (receiptDescription) {
+      receiptDescription.textContent = description || "感谢你选择我们的存储服务，请保存订单号并联系客服确认。未添加客服并完成确认的订单，不算正式安排。";
+    }
+    if (receiptOrderNo) {
+      receiptOrderNo.textContent = orderNo || "--";
+    }
+    const now = new Date();
+    if (receiptCreatedDate) {
+      receiptCreatedDate.textContent = now.toISOString().slice(0, 10);
+    }
+    if (receiptCreatedTime) {
+      receiptCreatedTime.textContent = now.toTimeString().slice(0, 8);
+    }
+    renderReceiptSummary({ orderType, customerForm, serviceDetails });
+    receiptOverlay.hidden = false;
+    document.body.classList.add("storage-receipt-open");
+    receiptOverlay.querySelector("[data-storage-receipt-close]")?.focus();
+  }
+
+  function closeStorageReceipt() {
+    if (!receiptOverlay) {
+      return;
+    }
+    receiptOverlay.hidden = true;
+    document.body.classList.remove("storage-receipt-open");
   }
 
   async function hydrateStorageProfileState() {
@@ -3870,15 +4031,25 @@ function initStorageBookingPage() {
     }
   }
 
-  if (!draft || !draft.estimateSummary) {
+  if (requestedOrderType === "storage_return") {
     bookingSummary.innerHTML = `
       <div class="storage-summary-item">
         <strong>提示</strong>
-        <span>当前没有估价摘要，可继续提交买箱/送箱或送回/取回预约。如需价格测算，请返回估价页。</span>
+        <span>取寄存不用填写计算器。请直接填写下方取寄存表格，后台会人工核验并联系确认。</span>
       </div>
     `;
     if (bookingPageHint) {
-      bookingPageHint.textContent = "请选择本次服务类型。取寄存价格如需自动估算，请先返回估价页完成测算。";
+      bookingPageHint.textContent = "取寄存 / 取回不需要先填写计算器，登录后可直接填写表格并提交。";
+    }
+  } else if (!draft || !draft.estimateSummary) {
+    bookingSummary.innerHTML = `
+      <div class="storage-summary-item">
+        <strong>提示</strong>
+        <span>当前没有估价摘要。预约寄存请先返回估价页完成测算；取寄存可直接登录后提交。</span>
+      </div>
+    `;
+    if (bookingPageHint) {
+      bookingPageHint.textContent = "预约寄存需要先返回估价页完成测算；取寄存请从估价页右侧的取寄存入口进入。";
     }
   } else {
     bookingSummary.innerHTML = buildStorageSummaryData(draft.estimateSummary).map(([label, value]) => `
@@ -3891,37 +4062,24 @@ function initStorageBookingPage() {
     if (boxQuantity && draft.estimateSummary.totalBoxes) {
       boxQuantity.value = String(draft.estimateSummary.totalBoxes || "");
     }
-    const boxPurchaseQuantity = bookingForm.querySelector('[name="boxPurchaseQuantity"]');
-    if (boxPurchaseQuantity && draft.estimateSummary.totalPurchaseBoxes) {
-      boxPurchaseQuantity.value = String(draft.estimateSummary.totalPurchaseBoxes || "");
-    }
-    const boxServiceDate = bookingForm.querySelector('[name="boxServiceDate"]');
-    if (boxServiceDate && draft.estimateSummary.boxDeliveryDate) {
-      boxServiceDate.value = draft.estimateSummary.boxDeliveryDate;
-    }
     const collectionDate = bookingForm.querySelector('[name="collectionServiceDate"]');
     const collectionEndDate = bookingForm.querySelector('[name="collectionExpectedEndDate"]');
     if (collectionDate && draft.estimateSummary.startDate) {
       collectionDate.value = draft.estimateSummary.startDate;
-      collectionDate.min = draft.estimateSummary.startDate;
     }
     if (collectionEndDate && draft.estimateSummary.endDate) {
       collectionEndDate.value = draft.estimateSummary.endDate;
-      collectionEndDate.min = draft.estimateSummary.startDate || "";
     }
+    renderCollectionLockedSummary(draft.estimateSummary);
   }
 
   if (isStorageLocalFileMode() && bookingPageHint) {
     bookingPageHint.textContent = "当前是直接打开本地文件（file://），页面可填写，但最终提交接口不可用。请先运行 npm run dev，再通过 http://localhost:3000/storage.html 进入本流程。";
   }
 
-  selectOrderType(allowedOrderTypes.includes(requestedOrderType) ? requestedOrderType : "storage_collection");
   hydrateStorageProfileState()
     .catch(() => {
       bookingForm.dataset.profileComplete = "false";
-    })
-    .finally(() => {
-      loadReturnHistoryOrders();
     });
 
   const isMobile = window.matchMedia("(max-width: 720px)").matches;
@@ -3944,13 +4102,32 @@ function initStorageBookingPage() {
     noticeToggle.setAttribute("aria-expanded", nextOpen ? "true" : "false");
   });
 
-  bookingForm.addEventListener("change", event => {
-    const target = event.target;
-    if (target instanceof HTMLElement && target.getAttribute("name") === "storageOrderType") {
-      syncServiceSections();
-      loadReturnHistoryOrders();
+  receiptOverlay?.addEventListener("click", event => {
+    if (event.target === receiptOverlay) {
+      closeStorageReceipt();
     }
   });
+
+  receiptOverlay?.querySelectorAll("[data-storage-receipt-close]").forEach(button => {
+    button.addEventListener("click", closeStorageReceipt);
+  });
+
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape" && receiptOverlay && !receiptOverlay.hidden) {
+      closeStorageReceipt();
+    }
+  });
+
+  bookingForm.addEventListener("change", event => {
+    const target = event.target;
+    if (target instanceof HTMLElement && target.getAttribute("name") === "returnServiceDate") {
+      syncReturnDateRules();
+    }
+  });
+
+  returnServiceDateInput?.addEventListener("input", syncReturnDateRules);
+  syncReturnDateRules();
+  scrollToRequestedReturnSection();
 
   copyBookingSummaryButton?.addEventListener("click", async () => {
     const orderType = getSelectedOrderType();
@@ -3973,12 +4150,16 @@ function initStorageBookingPage() {
       setMessage(getStorageLocalModeMessage());
       return;
     }
+    const orderType = getSelectedOrderType();
+    if (orderType === "storage_collection" && !draft?.estimateSummary) {
+      setMessage("预约寄存 / 入仓需要先返回估价页完成计算器测算。");
+      return;
+    }
     if (bookingForm.dataset.profileComplete !== "true") {
       setMessage("资料未完善，提交前请先补全姓名、手机号和联系方式。");
       return;
     }
     const customerForm = getCustomerFormData();
-    const orderType = getSelectedOrderType();
     const serviceDetails = getServiceDetails(orderType);
     const validationMessage = validate(orderType, customerForm, serviceDetails);
     if (validationMessage) {
@@ -4025,9 +4206,16 @@ function initStorageBookingPage() {
       setMessage("");
       bookingForm.hidden = true;
       submitSuccess.hidden = false;
-      submitSuccessTitle.textContent = result.data?.successTitle || "订单已提交，等待客服确认";
-      submitSuccessDescription.textContent = result.data?.successDescription || "订单已提交，需等待客服人工确认后才算正式安排。";
+      submitSuccessTitle.textContent = result.data?.successTitle || "订单已提交，请联系客服确认";
+      submitSuccessDescription.textContent = result.data?.successDescription || "系统已生成订单编号。此订单必须添加客服微信 Nottsngn，并由客服人工确认后才算正式安排；未添加客服确认的订单不算。";
       submitSuccessOrderNo.textContent = result.data?.orderNo || "--";
+      openStorageReceipt({
+        orderNo: result.data?.orderNo || "--",
+        description: result.data?.successDescription,
+        orderType,
+        customerForm,
+        serviceDetails
+      });
     } catch (error) {
       const message = error?.message === "Failed to fetch"
         ? getStorageLocalModeMessage()
@@ -6163,6 +6351,7 @@ function applyLanguage(lang) {
   });
 
   window.localStorage.setItem("ngn-lang", lang);
+  initStorageIntroModal();
   initStorageCalculator(lang);
   initStorageBookingPage();
   initPickupQuoteForm(lang);

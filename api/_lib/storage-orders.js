@@ -4,11 +4,11 @@ const STORAGE_ORDER_TYPES = {
     orderNoPrefix: "ST-B"
   },
   storage_collection: {
-    label: "取寄存 / 入仓",
+    label: "预约寄存 / 入仓",
     orderNoPrefix: "ST-C"
   },
   storage_return: {
-    label: "送回寄存 / 取回",
+    label: "取寄存 / 取回",
     orderNoPrefix: "ST-R"
   }
 };
@@ -57,6 +57,75 @@ function assertDateField(fieldName, value) {
     throw new Error(`${fieldName} is required`);
   }
   return text;
+}
+
+function getUkDateTimeParts(now = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/London",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    hourCycle: "h23"
+  }).formatToParts(now);
+  const values = Object.fromEntries(parts.map(part => [part.type, part.value]));
+  return {
+    year: Number(values.year),
+    month: Number(values.month),
+    day: Number(values.day),
+    hour: Number(values.hour)
+  };
+}
+
+function formatUtcDateInputValue(date) {
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(date.getUTCDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function addDaysToDateInputValue(dateText, days) {
+  const [year, month, day] = String(dateText || "").split("-").map(Number);
+  if (!year || !month || !day) {
+    return "";
+  }
+  return formatUtcDateInputValue(new Date(Date.UTC(year, month - 1, day + days)));
+}
+
+function getUkTodayInputValue(now = new Date()) {
+  const parts = getUkDateTimeParts(now);
+  return [
+    parts.year,
+    String(parts.month).padStart(2, "0"),
+    String(parts.day).padStart(2, "0")
+  ].join("-");
+}
+
+function getEarliestStorageReturnDateValue(now = new Date()) {
+  const ukParts = getUkDateTimeParts(now);
+  const today = getUkTodayInputValue(now);
+  return addDaysToDateInputValue(today, ukParts.hour < 12 ? 1 : 2);
+}
+
+function isWeekendDateInputValue(dateText) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(dateText || ""))) {
+    return false;
+  }
+  const day = new Date(`${dateText}T12:00:00Z`).getUTCDay();
+  return day === 0 || day === 6;
+}
+
+function assertStorageReturnServiceDate(value) {
+  const serviceDate = assertDateField("service_date", value);
+  const today = getUkTodayInputValue();
+  const earliestDate = getEarliestStorageReturnDateValue();
+  if (serviceDate <= today) {
+    throw new Error("送回 / 自取日期必须大于英国当天日期。");
+  }
+  if (serviceDate < earliestDate) {
+    throw new Error(`当前英国时间下，最早可选择 ${earliestDate}。12 点前提交最早第二天可取，12 点后提交最早第三天可取。`);
+  }
+  return serviceDate;
 }
 
 function normalizeAddressKey(...values) {
@@ -226,17 +295,16 @@ function mapStorageCollectionPayload(body, details) {
 }
 
 function mapStorageReturnPayload(body, details) {
-  const serviceDate = assertDateField("service_date", details.serviceDate);
+  const serviceDate = assertStorageReturnServiceDate(details.serviceDate);
   const itemCount = Math.max(0, normalizeInteger(details.itemCount, 0));
   if (itemCount <= 0) {
     throw new Error("itemCount is required");
   }
 
-  const storageCustomerName = normalizeString(details.storageCustomerName);
-  const storagePhone = normalizeString(details.storagePhone);
-  const storageContact = normalizeString(details.storageContact);
-  const approximateStorageTime = normalizeString(details.approximateStorageTime);
-  const originalCollectionAddress = normalizeString(details.originalCollectionAddress);
+  const customerForm = isObject(body.customerForm) ? body.customerForm : {};
+  const storageCustomerName = normalizeString(details.storageCustomerName || customerForm.customerName);
+  const storagePhone = normalizeString(details.storagePhone || customerForm.phone);
+  const storageContact = normalizeString(details.storageContact || customerForm.contactHandle || customerForm.contactPreferenceLabel);
   const itemDescription = normalizeString(details.itemDescription);
   const returnAddress = normalizeString(details.returnAddress);
   const roomOrBuilding = normalizeString(details.roomOrBuilding);
@@ -248,8 +316,6 @@ function mapStorageReturnPayload(body, details) {
   const required = [
     ["storageCustomerName", storageCustomerName],
     ["storagePhone", storagePhone],
-    ["approximateStorageTime", approximateStorageTime],
-    ["originalCollectionAddress", originalCollectionAddress],
     ["itemDescription", itemDescription],
     ["serviceTimeSlot", serviceTimeSlot],
     ["returnAddress", returnAddress],
@@ -292,10 +358,9 @@ function mapStorageReturnPayload(body, details) {
       `寄存人姓名：${storageCustomerName}`,
       `寄存时使用的手机号：${storagePhone}`,
       `微信 / WhatsApp / 邮箱：${storageContact}`,
-      `大概寄存时间：${approximateStorageTime}`,
-      `当时取件地址 / 公寓名：${originalCollectionAddress}`,
       `寄存物品数量：${itemCount}`,
-      `物品简单描述：${itemDescription}`
+      `物品简单描述：${itemDescription}`,
+      isWeekendDateInputValue(serviceDate) ? "周末日期提示：周六周日是否有可用司机需要再和客服确认。" : ""
     ].filter(Boolean).join("\n")
   };
 }
@@ -316,7 +381,7 @@ function mapStorageOrderPayload(body) {
   const calculatorSnapshot = isObject(body.calculatorSnapshot) ? body.calculatorSnapshot : {};
   const finalReadableMessage = mapped.finalReadableMessage || normalizeString(body.finalReadableMessage);
 
-  return {
+  const payload = {
     source: normalizeString(body.source) || "storage_service_booking",
     order_type: orderType,
     customer_name: mapped.customerName,
@@ -364,6 +429,12 @@ function mapStorageOrderPayload(body) {
     needs_upstairs: mapped.needsUpstairs === undefined ? null : mapped.needsUpstairs,
     item_description: mapped.itemDescription || null
   };
+
+  if (orderType === "box_delivery") {
+    delete payload.related_order_no;
+  }
+
+  return payload;
 }
 
 function buildStorageOrderWebhookPayload(orderRecord) {
@@ -397,15 +468,33 @@ function buildStorageOrderWebhookPayload(orderRecord) {
   };
 }
 
-function buildStorageOrderAdminFilters(query, queryParams = {}) {
+function buildStorageOrderAdminFilters(query, queryParams = {}, options = {}) {
   const search = normalizeString(queryParams.search);
   const status = normalizeString(queryParams.status);
   const notificationStatus = normalizeString(queryParams.notification_status);
-  const orderType = normalizeString(queryParams.order_type);
+  const orderType = normalizeString(queryParams.order_type) === "box_delivery"
+    ? ""
+    : normalizeString(queryParams.order_type);
 
   if (search) {
     const safe = search.replace(/,/g, " ").trim();
-    query.or(`order_no.ilike.%${safe}%,customer_name.ilike.%${safe}%,wechat_id.ilike.%${safe}%,phone.ilike.%${safe}%,related_order_no.ilike.%${safe}%`);
+    const supportedColumns = options.supportedColumns instanceof Set ? options.supportedColumns : null;
+    const hasColumn = column => !supportedColumns || supportedColumns.has(column);
+    const searchParts = [
+      hasColumn("order_no") ? `order_no.ilike.%${safe}%` : "",
+      hasColumn("customer_name") ? `customer_name.ilike.%${safe}%` : "",
+      hasColumn("wechat_id") ? `wechat_id.ilike.%${safe}%` : "",
+      hasColumn("phone") ? `phone.ilike.%${safe}%` : "",
+      hasColumn("student_email") ? `student_email.ilike.%${safe}%` : "",
+      hasColumn("related_order_no") ? `related_order_no.ilike.%${safe}%` : ""
+    ].filter(Boolean);
+    const matchingSiteUserIds = Array.isArray(options.matchingSiteUserIds) ? options.matchingSiteUserIds : [];
+    if (matchingSiteUserIds.length && hasColumn("site_user_id")) {
+      searchParts.push(`site_user_id.in.(${matchingSiteUserIds.join(",")})`);
+    }
+    if (searchParts.length) {
+      query.or(searchParts.join(","));
+    }
   }
 
   if (status) {
@@ -416,8 +505,14 @@ function buildStorageOrderAdminFilters(query, queryParams = {}) {
     query.eq("notification_status", notificationStatus);
   }
 
-  if (orderType) {
-    query.eq("order_type", orderType);
+  if (orderType === "storage_collection") {
+    query.or("order_type.eq.storage_collection,service_label.ilike.%预约寄存%,service_label.ilike.%送寄存%,service_label.ilike.%入仓%");
+  } else if (orderType === "storage_return") {
+    query.or("order_type.eq.storage_return,service_label.ilike.%取回%");
+  } else if (orderType === "storage") {
+    query.eq("order_type", "storage");
+  } else {
+    query.neq("order_type", "box_delivery");
   }
 }
 

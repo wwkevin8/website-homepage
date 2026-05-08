@@ -170,7 +170,8 @@
       return;
     }
 
-    container.innerHTML = '<a class="button button-secondary site-auth-nav-button" href="./login.html">登录</a>';
+    const loginLabel = String(container.dataset.authLoginLabel || "登录").trim() || "登录";
+    container.innerHTML = `<a class="button button-secondary site-auth-nav-button" href="./login.html">${loginLabel}</a>`;
   }
 
   function renderMobileAuth(container, session) {
@@ -197,6 +198,7 @@
     const user = session.user;
     const displayName = getDisplayName(user);
     const profileState = getProfileCompletionState(user);
+    const publicUserId = user.public_user_id || "待生成";
     const emailValue = user.email || "未获取";
     const emailStatus = user.email_verified_at ? "已验证" : "未验证";
     const nameStatus = profileState.hasName ? "已填写" : "待补充";
@@ -233,6 +235,9 @@
     });
     document.querySelectorAll("[data-site-user-login-id]").forEach(node => {
       node.textContent = loginIdText;
+    });
+    document.querySelectorAll("[data-site-user-public-id]").forEach(node => {
+      node.textContent = publicUserId;
     });
     document.querySelectorAll("[data-site-user-contact-note]").forEach(node => {
       node.textContent = contactNote;

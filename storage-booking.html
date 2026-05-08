@@ -4,41 +4,52 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>左邻右里 | 寄存服务预约</title>
-  <meta name="description" content="寄存服务预约提交页，可选择买箱/送箱、取寄存/入仓或送回/取回，并提交给客服确认。">
+  <meta name="description" content="寄存服务预约提交页，可提交预约寄存/入仓或取寄存/取回，并提交给客服确认。">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./styles.css?v=20260505-cache-bust-1">
+  <link rel="stylesheet" href="./styles.css?v=20260507-storage-booking-nav">
 </head>
-<body class="storage-page">
-  <header class="site-header service-header">
-    <div class="site-header-inner service-header-inner">
-      <a class="brand" href="./index.html" aria-label="NGN 首页">
+<body class="storage-page storage-booking-page">
+  <div class="topbar topbar-storage storage-service-topbar storage-booking-topbar">
+    <header class="site-header storage-service-header">
+      <a class="brand" href="./index.html" aria-label="左邻右里首页">
         <div class="brand-lockup brand-lockup-header">
-          <div class="logo-bubbles">
-            <span>英国·诺丁汉</span>
-            <span>左邻右里</span>
-            <span>生活服务</span>
-          </div>
           <div class="logo-wordmark">NGN</div>
           <div class="logo-subtitle">NOTTINGHAM GOOD NEIGHBOR</div>
         </div>
       </a>
-      <nav class="service-nav">
+
+      <nav class="site-nav" aria-label="主导航">
         <a href="./index.html">首页</a>
-        <a href="./storage.html">返回估价页</a>
+        <a href="./storage.html#storage-calculator">返回估价页</a>
         <a href="./service-center.html">联系客服</a>
       </nav>
+
+      <div class="header-actions">
+        <button class="storage-mobile-menu-toggle" type="button" aria-label="菜单" data-storage-menu-toggle>
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+        <div class="site-auth-nav" data-site-auth-nav data-auth-login-label="用户登录"></div>
+      </div>
+    </header>
+    <div class="storage-mobile-menu" id="storage-mobile-menu" hidden>
+      <div class="storage-mobile-menu-inner">
+        <a href="./index.html" data-storage-menu-link>首页</a>
+        <a href="./storage.html#storage-calculator" data-storage-menu-link>返回估价页</a>
+        <a href="./service-center.html" data-storage-menu-link>联系客服</a>
+        <div class="site-auth-mobile-slot" data-site-auth-mobile></div>
+      </div>
     </div>
-  </header>
+  </div>
 
   <main class="storage-main">
     <section class="storage-hero">
       <div class="storage-container">
-        <div class="storage-hero-copy">
-          <span class="storage-eyebrow">寄存服务预约</span>
-          <h1>请选择本次服务类型</h1>
-          <p id="storageBookingPageHint">买箱/送箱、取寄存/入仓、送回/取回需要分别提交。每次只生成一张订单和一个订单编号，提交后需等待客服人工确认后才算正式安排。</p>
+        <div class="storage-hero-copy storage-booking-hero-copy">
+          <h1>寄存服务预约表</h1>
           <div class="profile-gate-banner" id="storageProfileGate" hidden>
             <strong id="storageProfileGateTitle">提交前需补全资料</strong>
             <p id="storageProfileGateMessage">请先补全姓名、手机号和联系方式。</p>
@@ -58,14 +69,14 @@
             <div class="storage-summary-head">
               <div>
                 <strong>估价摘要</strong>
-                <p class="storage-summary-tip">如你从估价页进入，这里会保留上一页的价格结果；买箱或送回服务也可以直接提交。</p>
+                <p class="storage-summary-tip">如你从估价页进入，这里会保留上一页的价格结果，包含需要购买的箱子数量。</p>
               </div>
               <button class="button button-secondary" id="copyBookingSummaryButton" type="button">复制摘要</button>
             </div>
             <div class="storage-summary-grid" id="storageBookingSummary">
               <div class="storage-summary-item">
                 <strong>提示</strong>
-                <span>当前没有估价摘要，可继续提交单独服务预约。</span>
+                <span>当前没有估价摘要。预约寄存请先返回估价页完成测算；取寄存不用计算器，可直接登录后提交。</span>
               </div>
             </div>
           </div>
@@ -78,7 +89,7 @@
               </div>
             </div>
             <div class="storage-inline-cta">
-              <a class="button button-secondary full-width" href="./storage.html">返回估价页修改</a>
+              <a class="button button-secondary full-width" href="./storage.html#storage-calculator">返回估价页修改</a>
             </div>
           </div>
         </aside>
@@ -102,37 +113,16 @@
               </div>
               <div class="storage-notice-content" id="storageNoticeContent">
                 <ol class="storage-notice-list">
-                  <li>送箱、取寄存和送回寄存请分别下单，便于客服确认执行。</li>
+                  <li>买箱需求会并入预约寄存订单；取寄存/取回请单独提交，便于客服确认执行。</li>
                   <li>预约提交后只是进入待确认队列，需等待客服人工确认后才算正式安排。</li>
-                  <li>取寄存/入仓只提交入仓预约，后续送回/取回请单独提交送回寄存预约或联系客服安排。</li>
-                  <li>送箱服务默认楼下交接。如有特殊情况，请在备注中说明，客服会确认是否可安排。</li>
+                  <li>预约寄存/入仓只提交入仓预约，后续送回/取回请单独提交送回寄存预约或联系客服安排。</li>
+                  <li>如预约寄存中包含买箱，送箱默认楼下交接；如有特殊情况，请在备注中说明，客服会确认是否可安排。</li>
                   <li>超尺寸、超重、无包装或需特殊看护的物品，请先联系客服确认。</li>
                 </ol>
               </div>
               <div class="storage-radio-group compact">
                 <label><input type="radio" name="noticeConfirmed" value="yes"> 是，我已阅读并同意</label>
                 <label><input type="radio" name="noticeConfirmed" value="no" checked> 否</label>
-              </div>
-            </section>
-
-            <section class="storage-form-section">
-              <h4>请选择本次服务类型</h4>
-              <div class="storage-service-type-grid" role="radiogroup" aria-label="请选择本次服务类型">
-                <label class="storage-service-type-card">
-                  <input type="radio" name="storageOrderType" value="box_delivery" checked>
-                  <strong>买箱子 / 送箱</strong>
-                  <span>只预约购买箱子和送箱。</span>
-                </label>
-                <label class="storage-service-type-card">
-                  <input type="radio" name="storageOrderType" value="storage_collection">
-                  <strong>预约寄存 / 入仓</strong>
-                  <span>提交寄存取件或自送入仓。</span>
-                </label>
-                <label class="storage-service-type-card">
-                  <input type="radio" name="storageOrderType" value="storage_return">
-                  <strong>取寄存 / 取回</strong>
-                  <span>登录后优先匹配历史预约寄存订单。</span>
-                </label>
               </div>
             </section>
 
@@ -158,66 +148,14 @@
               </div>
             </section>
 
-            <section class="storage-form-section storage-service-section" data-storage-service-section="box_delivery">
-              <h4>买箱子 / 送箱</h4>
-              <p class="storage-section-hint">送箱服务默认楼下交接。如有特殊情况，请在备注中说明，客服会确认是否可安排。</p>
-              <div class="storage-form-grid">
-                <label>
-                  <span class="storage-field-label">购买数量</span>
-                  <input name="boxPurchaseQuantity" type="number" min="1" step="1" required>
-                </label>
-                <label>
-                  <span class="storage-field-label">送箱日期</span>
-                  <input name="boxServiceDate" type="date" required>
-                </label>
-                <label>
-                  <span class="storage-field-label">时间段</span>
-                  <select name="boxServiceTimeSlot" required>
-                    <option value="">请选择</option>
-                    <option value="10:00 - 13:00">白天 10:00 - 13:00</option>
-                    <option value="20:00 - 23:00">晚上 20:00 - 23:00</option>
-                    <option value="待客服确认">待客服确认</option>
-                  </select>
-                </label>
-                <label>
-                  <span class="storage-field-label">邮编</span>
-                  <input name="boxPostcode" type="text" required>
-                </label>
-                <label class="storage-field-span-2">
-                  <span class="storage-field-label">送箱地址</span>
-                  <textarea name="boxServiceAddress" rows="3" required></textarea>
-                </label>
-                <label>
-                  <span class="storage-field-label">房间 / 楼栋 / 公寓名</span>
-                  <input name="boxRoomOrBuilding" type="text" required>
-                </label>
-                <label>
-                  <span class="storage-field-label">联系人姓名</span>
-                  <input name="boxContactName" type="text" required>
-                </label>
-                <label>
-                  <span class="storage-field-label">联系电话</span>
-                  <input name="boxContactPhone" type="tel" required>
-                </label>
-                <label class="storage-field-span-2">
-                  <span class="storage-field-label">备注</span>
-                  <textarea name="boxNotes" rows="3"></textarea>
-                </label>
-              </div>
-            </section>
-
             <section class="storage-form-section storage-service-section" data-storage-service-section="storage_collection" hidden>
-              <h4>取寄存 / 入仓</h4>
-              <p class="storage-section-hint">本次仅提交取件入仓预约，后续送回/取回请单独提交送回寄存预约或联系客服安排。</p>
+              <h4>预约寄存 / 入仓</h4>
+              <p class="storage-section-hint">下方估价信息已由计算器锁定，如需修改箱数、日期或上楼方式，请返回估价页重新测算。</p>
+              <div class="storage-locked-summary" id="collectionLockedSummary" aria-live="polite"></div>
+              <input name="collectionBoxCount" type="hidden">
+              <input name="collectionServiceDate" type="hidden">
+              <input name="collectionExpectedEndDate" type="hidden">
               <div class="storage-form-grid">
-                <label>
-                  <span class="storage-field-label">寄存箱数</span>
-                  <input name="collectionBoxCount" type="number" min="1" step="1" required>
-                </label>
-                <label>
-                  <span class="storage-field-label">取件 / 自送日期</span>
-                  <input name="collectionServiceDate" type="date" required>
-                </label>
                 <label>
                   <span class="storage-field-label">时间段</span>
                   <select name="collectionServiceTimeSlot" required>
@@ -226,10 +164,6 @@
                     <option value="20:00 - 23:00">晚上 20:00 - 23:00</option>
                     <option value="待客服确认">待客服确认</option>
                   </select>
-                </label>
-                <label>
-                  <span class="storage-field-label">预计寄存结束日期</span>
-                  <input name="collectionExpectedEndDate" type="date" required>
                 </label>
                 <label class="storage-field-span-2">
                   <span class="storage-field-label">取件地址 / 自送说明</span>
@@ -243,20 +177,6 @@
                   <span class="storage-field-label">邮编</span>
                   <input name="collectionPostcode" type="text" required>
                 </label>
-                <div>
-                  <span class="storage-field-label">是否有电梯</span>
-                  <div class="storage-radio-group compact">
-                    <label><input type="radio" name="collectionHasLift" value="true"> 是</label>
-                    <label><input type="radio" name="collectionHasLift" value="false"> 否</label>
-                  </div>
-                </div>
-                <div>
-                  <span class="storage-field-label">是否需要上楼取件</span>
-                  <div class="storage-radio-group compact">
-                    <label><input type="radio" name="collectionNeedsUpstairs" value="true"> 是</label>
-                    <label><input type="radio" name="collectionNeedsUpstairs" value="false"> 否</label>
-                  </div>
-                </div>
                 <label class="storage-field-span-2">
                   <span class="storage-field-label">备注</span>
                   <textarea name="collectionNotes" rows="3"></textarea>
@@ -264,38 +184,13 @@
               </div>
             </section>
 
-            <section class="storage-form-section storage-service-section" data-storage-service-section="storage_return" hidden>
+            <section class="storage-form-section storage-service-section" id="storage-return-form" data-storage-service-section="storage_return" hidden>
               <h4>取寄存 / 取回</h4>
-              <p class="storage-section-hint">系统会优先读取当前账号已有的预约寄存订单；如未找到，也可以手动填写并提交，后台会人工核验。</p>
-              <div class="storage-return-history" id="storageReturnHistoryPanel">
-                <strong>可对应的历史寄存订单</strong>
-                <p id="storageReturnHistoryStatus">正在检查当前账号的预约寄存订单...</p>
-                <div class="storage-return-history-list" id="storageReturnHistoryList"></div>
-              </div>
+              <p class="storage-section-hint">请直接填写取寄存信息并提交，后台会人工核验并联系确认。</p>
               <div class="storage-form-grid">
                 <label>
                   <span class="storage-field-label">原寄存订单号（选填）</span>
                   <input name="returnRelatedOrderNo" type="text">
-                </label>
-                <label>
-                  <span class="storage-field-label">寄存人姓名</span>
-                  <input name="returnStorageCustomerName" type="text" required>
-                </label>
-                <label>
-                  <span class="storage-field-label">寄存时使用的手机号</span>
-                  <input name="returnStoragePhone" type="tel" required>
-                </label>
-                <label>
-                  <span class="storage-field-label">微信 / WhatsApp / 邮箱</span>
-                  <input name="returnStorageContact" type="text" required>
-                </label>
-                <label>
-                  <span class="storage-field-label">大概寄存时间</span>
-                  <input name="returnApproximateStorageTime" type="text" required>
-                </label>
-                <label class="storage-field-span-2">
-                  <span class="storage-field-label">当时取件地址 / 公寓名</span>
-                  <textarea name="returnOriginalCollectionAddress" rows="3" required></textarea>
                 </label>
                 <label>
                   <span class="storage-field-label">寄存物品数量</span>
@@ -304,6 +199,7 @@
                 <label>
                   <span class="storage-field-label">送回 / 自取日期</span>
                   <input name="returnServiceDate" type="date" required>
+                  <small class="storage-field-help" data-return-date-help>请按英国时间选择最早可取日期。</small>
                 </label>
                 <label>
                   <span class="storage-field-label">时间段</span>
@@ -316,11 +212,11 @@
                 </label>
                 <label class="storage-field-span-2">
                   <span class="storage-field-label">物品简单描述</span>
-                  <textarea name="returnItemDescription" rows="3" required></textarea>
+                  <input name="returnItemDescription" type="text" required>
                 </label>
                 <label class="storage-field-span-2">
                   <span class="storage-field-label">送回地址</span>
-                  <textarea name="returnAddress" rows="3" required></textarea>
+                  <input name="returnAddress" type="text" required>
                 </label>
                 <label>
                   <span class="storage-field-label">房间 / 楼栋 / 公寓名</span>
@@ -330,20 +226,22 @@
                   <span class="storage-field-label">邮编</span>
                   <input name="returnPostcode" type="text" required>
                 </label>
-                <div>
+                <label>
                   <span class="storage-field-label">是否有电梯</span>
-                  <div class="storage-radio-group compact">
-                    <label><input type="radio" name="returnHasLift" value="true"> 是</label>
-                    <label><input type="radio" name="returnHasLift" value="false"> 否</label>
-                  </div>
-                </div>
-                <div>
+                  <select name="returnHasLift" required>
+                    <option value="">请选择</option>
+                    <option value="true">是</option>
+                    <option value="false">否</option>
+                  </select>
+                </label>
+                <label>
                   <span class="storage-field-label">是否需要上楼送回</span>
-                  <div class="storage-radio-group compact">
-                    <label><input type="radio" name="returnNeedsUpstairs" value="true"> 是</label>
-                    <label><input type="radio" name="returnNeedsUpstairs" value="false"> 否</label>
-                  </div>
-                </div>
+                  <select name="returnNeedsUpstairs" required>
+                    <option value="">请选择</option>
+                    <option value="true">是</option>
+                    <option value="false">否</option>
+                  </select>
+                </label>
                 <label class="storage-field-span-2">
                   <span class="storage-field-label">备注</span>
                   <textarea name="returnNotes" rows="3"></textarea>
@@ -357,12 +255,60 @@
           </form>
 
           <div class="storage-submit-success" id="storageSubmitSuccess" hidden>
-            <strong id="storageSubmitSuccessTitle">订单已提交，等待客服确认</strong>
-            <p id="storageSubmitSuccessDescription">订单已提交，需等待客服人工确认后才算正式安排。</p>
+            <strong id="storageSubmitSuccessTitle">订单已提交，请联系客服确认</strong>
+            <p id="storageSubmitSuccessDescription">系统已生成订单编号。此订单必须联系人工客服确认后才算正式安排。</p>
             <p class="storage-submit-success-order">订单编号：<span id="storageSubmitSuccessOrderNo">--</span></p>
             <div class="storage-inline-cta">
-              <a class="button button-secondary full-width" href="./storage.html">返回估价页</a>
+              <a class="button button-secondary full-width" href="./storage.html#storage-calculator">返回估价页</a>
             </div>
+          </div>
+
+          <div class="storage-receipt-overlay" id="storageReceiptOverlay" hidden>
+            <section class="storage-receipt-modal" role="dialog" aria-modal="true" aria-labelledby="storageReceiptTitle">
+              <div class="storage-receipt-paper">
+                <button class="storage-receipt-close" type="button" data-storage-receipt-close aria-label="关闭小票">×</button>
+                <div class="storage-receipt-header">
+                  <div class="storage-receipt-check" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" focusable="false">
+                      <path d="M5 12.5l4.2 4.2L19 6.8" />
+                    </svg>
+                  </div>
+                  <h2 id="storageReceiptTitle">订单已提交</h2>
+                  <p id="storageReceiptDescription">感谢你选择我们的存储服务，请保存订单号并联系客服确认。</p>
+                  <div class="storage-receipt-required">务必添加客服微信确认；未添加客服并完成确认的订单，不算正式安排。</div>
+                </div>
+                <div class="storage-receipt-order">
+                  <span>订单编号</span>
+                  <strong id="storageReceiptOrderNo">--</strong>
+                </div>
+                <div class="storage-receipt-summary" id="storageReceiptSummary"></div>
+                <div class="storage-receipt-contact">
+                  <div class="storage-receipt-service-line">
+                    <span>联系客服团队</span>
+                    <strong>微信号：<b>Nottsngn</b></strong>
+                    <small>请添加客服后发送订单编号，客服确认后才会进入正式安排。</small>
+                  </div>
+                </div>
+                <div class="storage-receipt-meta">
+                  <div>
+                    <img src="./img/storage-service-qr.jpg" alt="寄存客服二维码">
+                    <span>扫码添加客服微信 Nottsngn</span>
+                  </div>
+                  <div>
+                    <span>订单时间</span>
+                    <strong id="storageReceiptCreatedDate">--</strong>
+                    <small id="storageReceiptCreatedTime">--</small>
+                  </div>
+                </div>
+                <div class="storage-receipt-footnote">
+                  <span>请妥善保管此订单凭证，并务必完成客服确认</span>
+                  <strong>ngn.best</strong>
+                </div>
+                <div class="storage-receipt-actions">
+                  <button class="button button-primary full-width" type="button" data-storage-receipt-close>我知道了</button>
+                </div>
+              </div>
+            </section>
           </div>
         </div>
       </div>
@@ -370,6 +316,6 @@
   </main>
 
   <script src="./site-auth.js?v=20260505-cache-bust-1" defer></script>
-  <script src="./script.js?v=20260505-cache-bust-1" defer></script>
+  <script src="./script.js?v=20260506-cache-bust-21" defer></script>
 </body>
 </html>

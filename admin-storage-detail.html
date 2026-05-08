@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>寄存订单详情 | NGN 管理后台</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css?v=20260507-cache-bust-5">
+</head>
+<body
+  data-admin-shell
+  data-admin-page="storage"
+  data-admin-section="运营后台"
+  data-admin-title="寄存订单详情"
+  data-admin-description="查看该寄存订单的客户信息，并编辑服务信息、地址和备注。"
+>
+  <div class="admin-layout">
+    <aside class="admin-sidebar" data-admin-sidebar></aside>
+    <div class="admin-main">
+      <header class="admin-header" data-admin-header></header>
+      <main class="admin-content" data-admin-content>
+        <section class="admin-page storage-admin-detail-page" id="adminStorageDetailPage">
+          <div class="admin-page-actions">
+            <a class="button button-secondary" id="adminStorageDetailBack" href="./admin-storage.html">返回寄存订单列表</a>
+            <button class="button button-primary" type="submit" form="adminStorageDetailForm" id="adminStorageDetailSave">保存修改</button>
+          </div>
+
+          <p class="transport-form-message" id="adminStorageDetailMessage"></p>
+
+          <form class="admin-panel transport-form-grid storage-detail-form" id="adminStorageDetailForm" hidden>
+            <div class="storage-detail-fixed-type transport-field-span-2">
+              <span>服务类型</span>
+              <strong id="storageDetailOrderType">--</strong>
+            </div>
+
+            <div class="storage-detail-section-title transport-field-span-2">
+              <h2>基础信息</h2>
+              <p>订单编号和 User ID 只用于核对，不允许在这里修改。</p>
+            </div>
+            <label class="field"><span>订单编号</span><input name="order_no" readonly></label>
+            <label class="field"><span>User ID</span><input name="public_user_id" readonly></label>
+
+            <div class="storage-detail-section-title transport-field-span-2">
+              <h2>客户信息</h2>
+              <p>这里是订单提交时留下的客户联系方式快照，只用于核对，不允许后台修改。</p>
+            </div>
+            <label class="field"><span>姓名</span><input name="customer_name" readonly></label>
+            <label class="field"><span>邮箱</span><input name="student_email" type="email" readonly></label>
+            <label class="field"><span>电话</span><input name="phone" readonly></label>
+            <label class="field"><span>微信号 / 联系方式</span><input name="wechat_id" readonly></label>
+
+            <div class="storage-detail-section-title transport-field-span-2">
+              <h2>服务信息</h2>
+              <p id="storageDetailServiceHint">箱型明细会从用户提交时的估价记录自动读取。</p>
+            </div>
+            <label class="field"><span>时间段</span><input name="service_time_slot"></label>
+            <label class="field" data-storage-detail-type="return"><span>送回 / 自取日期</span><input name="service_date" type="date"></label>
+            <label class="field" data-storage-detail-type="return"><span>原寄存订单号</span><input name="related_order_no"></label>
+            <label class="field" data-storage-detail-type="return"><span>寄存物品数量</span><input name="estimated_box_count" type="number" min="0" step="1"></label>
+            <label class="field" data-storage-detail-type="return"><span>物品简单描述</span><input name="item_description"></label>
+            <label class="field transport-field-span-2" data-storage-detail-type="collection"><span>箱型 / 物品信息</span><textarea name="box_type_summary" rows="4" readonly></textarea></label>
+
+            <div class="storage-detail-section-title transport-field-span-2">
+              <h2>地址信息</h2>
+              <p id="storageDetailAddressHint">取件地址为订单主要地址；房间、邮编和楼层服务信息可在这里核对。</p>
+            </div>
+            <label class="field transport-field-span-2"><span id="storageDetailAddressLabel">取件地址 / 服务地址</span><textarea name="address_full" rows="4"></textarea></label>
+            <label class="field"><span>房间 / 楼栋 / 公寓名</span><input name="room_or_building"></label>
+            <label class="field"><span>邮编</span><input name="postcode"></label>
+            <label class="field"><span>是否有电梯</span><select name="has_lift"><option value="">未选择</option><option value="true">是</option><option value="false">否</option></select></label>
+            <label class="field"><span>是否需要上楼服务</span><select name="needs_upstairs"><option value="">未选择</option><option value="true">是</option><option value="false">否</option></select></label>
+
+            <div class="storage-detail-section-title transport-field-span-2">
+              <h2>备注信息</h2>
+              <p>用户备注和寄存信息摘要用于客服核对订单内容。</p>
+            </div>
+            <label class="field transport-field-span-2"><span>用户备注</span><textarea name="notes" rows="1"></textarea></label>
+            <label class="field transport-field-span-2"><span>寄存信息摘要</span><textarea name="final_readable_message" rows="8"></textarea></label>
+
+            <div class="transport-card-actions transport-field-span-2">
+              <button class="button button-primary" type="submit" id="adminStorageDetailSaveBottom">保存修改</button>
+            </div>
+          </form>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script src="./admin-api.js?v=20260507-cache-bust-5"></script>
+  <script src="./admin-shell.js?v=20260506-cache-bust-19"></script>
+  <script src="./admin-pages.js?v=20260507-cache-bust-5"></script>
+</body>
+</html>

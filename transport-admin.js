@@ -4,20 +4,41 @@
   if (!Shared || !Api) return;
   const ADMIN_SESSION_CACHE_KEY = "ngn_admin_session_cache";
 
+  function isUsableAdminSession(session) {
+    return Boolean(session?.authenticated && session?.is_admin);
+  }
+
+  function readCachedAdminSession() {
+    try {
+      const raw = window.sessionStorage.getItem(ADMIN_SESSION_CACHE_KEY);
+      if (!raw) {
+        return null;
+      }
+      const parsed = JSON.parse(raw);
+      const session = parsed?.session || parsed;
+      return isUsableAdminSession(session) ? session : null;
+    } catch (error) {
+      return null;
+    }
+  }
+
   const q = name => new URLSearchParams(window.location.search).get(name) || "";
 
   async function requireSession() {
-    try {
-      const raw = window.sessionStorage.getItem(ADMIN_SESSION_CACHE_KEY);
-      if (raw) {
-        const cached = JSON.parse(raw);
-        if (cached?.authenticated && cached?.is_admin) {
-          return true;
-        }
-      }
-    } catch (error) {}
-    const session = await Api.session().catch(() => ({ authenticated: false, is_admin: false }));
-    if (!session.authenticated || !session.is_admin) {
+    let session = window.AdminShellSession;
+    if (!isUsableAdminSession(session) && window.AdminShellSessionPromise) {
+      session = await window.AdminShellSessionPromise.catch(() => null);
+    }
+    if (!isUsableAdminSession(session) && window.AdminShell?.getSession) {
+      session = await window.AdminShell.getSession().catch(() => null);
+    }
+    if (!isUsableAdminSession(session)) {
+      session = readCachedAdminSession();
+    }
+    if (!isUsableAdminSession(session) && !window.AdminShell) {
+      session = await Api.session().catch(() => ({ authenticated: false, is_admin: false }));
+    }
+    if (!isUsableAdminSession(session)) {
       window.location.href = "./admin-login.html";
       return false;
     }
@@ -31,6 +52,7 @@
       button.addEventListener("click", async event => {
         event.preventDefault();
         await Api.logout().catch(() => {});
+        window.AdminShell?.clearSessionCache?.();
         window.location.href = "./admin-login.html";
       });
     });

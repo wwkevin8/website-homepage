@@ -4,6 +4,7 @@ const ORDER_SOURCE_STATUS_MAP = {
 };
 
 const ORDER_TERMINAL_STATUSES = new Set(["confirmed", "closed", "cancelled"]);
+const ORDERS_LIST_COUNT_MODE = "exact";
 
 function normalizeString(value) {
   return String(value || "").trim();
@@ -86,7 +87,7 @@ function buildOrdersListQuery(supabase, filters = {}) {
   const ascending = sort === "oldest";
   const query = supabase
     .from("orders")
-    .select("id, source_table, source_id, order_no, user_id, service_type, customer_name, phone, wechat_or_whatsapp, status, flight_no, pickup_date, storage_start_date, storage_end_date, archived, archived_at, completed_at, latest_note_at, created_at, updated_at", { count: "exact" })
+    .select("id, source_table, source_id, order_no, user_id, service_type, customer_name, phone, wechat_or_whatsapp, status, flight_no, pickup_date, storage_start_date, storage_end_date, archived, archived_at, completed_at, latest_note_at, created_at, updated_at", { count: ORDERS_LIST_COUNT_MODE })
     .order("created_at", { ascending });
 
   applyOrdersFilters(query, filters);
@@ -306,6 +307,7 @@ module.exports = {
   parsePageSize,
   parseArchivedMode,
   parseSortOrder,
+  ORDERS_LIST_COUNT_MODE,
   buildOrdersListQuery,
   getAllowedStatuses,
   assertStatusAllowed,

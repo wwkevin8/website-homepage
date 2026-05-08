@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./styles.css?v=20260505-cache-bust-1">
+  <link rel="stylesheet" href="./styles.css?v=20260505-cache-bust-15">
   <style>
     .storage-contact-fab {
       display: none;
@@ -305,6 +305,45 @@
     </div>
   </div>
 
+  <div class="storage-intro-modal" id="storageIntroModal" hidden>
+    <section class="storage-intro-dialog" role="dialog" aria-modal="true" aria-labelledby="storageIntroTitle">
+      <button class="storage-intro-close" id="storageIntroClose" type="button" aria-label="关闭寄存流程说明">×</button>
+      <h2 id="storageIntroTitle">寄存流程—转运存储</h2>
+      <p class="storage-intro-lead">先看规则，再估价下单，提交后等待客服确认，适合暑期回国、换房和短期寄存需求</p>
+      <div class="storage-intro-steps" role="list" aria-label="寄存操作流程">
+        <button class="storage-intro-step is-active" type="button" data-storage-intro-step="rules" aria-pressed="true">
+          <span class="storage-intro-step-number">1</span>
+          <span class="storage-intro-step-icon" data-intro-icon="rules" aria-hidden="true"></span>
+          <strong>查看寄存规则</strong>
+          <small>了解服务条款</small>
+        </button>
+        <button class="storage-intro-step" type="button" data-storage-intro-step="calculator" aria-pressed="false">
+          <span class="storage-intro-step-number">2</span>
+          <span class="storage-intro-step-icon" data-intro-icon="calculator" aria-hidden="true"></span>
+          <strong>使用计算器估价</strong>
+          <small>智能价格计算</small>
+        </button>
+        <button class="storage-intro-step" type="button" data-storage-intro-step="form" aria-pressed="false">
+          <span class="storage-intro-step-number">3</span>
+          <span class="storage-intro-step-icon" data-intro-icon="form" aria-hidden="true"></span>
+          <strong>填写预约信息</strong>
+          <small>提交订单详情</small>
+        </button>
+        <button class="storage-intro-step" type="button" data-storage-intro-step="support" aria-pressed="false">
+          <span class="storage-intro-step-number">4</span>
+          <span class="storage-intro-step-icon" data-intro-icon="support" aria-hidden="true"></span>
+          <strong>联系客服确认</strong>
+          <small>专属服务对接</small>
+        </button>
+      </div>
+      <p class="storage-intro-detail" id="storageIntroDetail" aria-live="polite">请选择一个步骤查看详情</p>
+      <div class="storage-intro-actions">
+        <a class="button button-primary" id="storageIntroCalculatorButton" href="#storage-calculator">预约寄存（请先填写计算器）</a>
+        <a class="button button-secondary" id="storageIntroReturnButton" href="./storage-booking.html?service=storage_return#storage-return-form">取寄存登记</a>
+      </div>
+    </section>
+  </div>
+
   <main class="page-shell storage-page">
     <section class="storage-hero storage-hero-poster">
       <div class="storage-hero-inner">
@@ -546,7 +585,6 @@
     <section class="storage-section calculator-section" id="storage-calculator">
       <div class="section-heading">
         <h2 data-i18n="storageCalcTitle">非会员价格计算器</h2>
-        <p data-i18n="storageCalcIntro">输入各箱型数量、日期、取件方式和送还方式后，系统会分别计算寄存费、购箱费、折扣和附加费用。</p>
       </div>
 
       <div class="calculator-layout">
@@ -555,7 +593,6 @@
             <div>
               <span class="calculator-tool-kicker">Storage Calculator</span>
               <h3 data-i18n="calcToolTitle">快速估算寄存费用</h3>
-              <p data-i18n="calcToolIntro">先填箱子数量，再选寄存周期和取送方式，右侧会实时整理参考费用。</p>
             </div>
             <span class="calculator-tool-badge" data-i18n="calcToolBadge">实时估价</span>
           </div>
@@ -565,51 +602,32 @@
           </div>
           <div class="field">
             <span data-i18n="calcBoxCounts">各箱型数量</span>
-            <div class="box-order-grid">
-              <div class="box-order-head">
-                <span data-i18n="calcBoxTypeLabel">箱型</span>
-                <span data-i18n="calcStorageQty">寄存数量</span>
-                <span data-i18n="calcPurchaseQty">购买数量</span>
-                <span data-i18n="calcMaximumWeight">最大重量（kg/箱）</span>
-              </div>
-              <label class="mini-field">
-                <span data-i18n="calcBox1">1 号箱</span>
-                <input id="boxCount1" class="box-order-input" data-box-count="1" type="number" min="0" step="1" value="0" inputmode="numeric">
-                <input id="boxPurchase1" class="box-order-input" data-box-purchase="1" type="number" min="0" step="1" value="0" inputmode="numeric">
-                <input id="boxWeight1" class="box-order-input" data-box-weight="1" type="number" min="0" max="99" step="1" inputmode="numeric" disabled aria-disabled="true">
-              </label>
-              <label class="mini-field">
-                <span data-i18n="calcBox2">2 号箱</span>
-                <input id="boxCount2" class="box-order-input" data-box-count="2" type="number" min="0" step="1" value="0" inputmode="numeric">
-                <input id="boxPurchase2" class="box-order-input" data-box-purchase="2" type="number" min="0" step="1" value="0" inputmode="numeric">
-                <input id="boxWeight2" class="box-order-input" data-box-weight="2" type="number" min="0" max="99" step="1" inputmode="numeric" disabled aria-disabled="true">
-              </label>
-              <label class="mini-field">
-                <span data-i18n="calcBox3">3 号箱</span>
-                <input id="boxCount3" class="box-order-input" data-box-count="3" type="number" min="0" step="1" value="0" inputmode="numeric">
-                <input id="boxPurchase3" class="box-order-input" data-box-purchase="3" type="number" min="0" step="1" value="0" inputmode="numeric">
-                <input id="boxWeight3" class="box-order-input" data-box-weight="3" type="number" min="0" max="99" step="1" inputmode="numeric" disabled aria-disabled="true">
-              </label>
-              <label class="mini-field">
-                <span data-i18n="calcBox4">4 号箱</span>
-                <input id="boxCount4" class="box-order-input" data-box-count="4" type="number" min="0" step="1" value="0" inputmode="numeric">
-                <input id="boxPurchase4" class="box-order-input" data-box-purchase="4" type="number" min="0" step="1" value="0" inputmode="numeric">
-                <input id="boxWeight4" class="box-order-input" data-box-weight="4" type="number" min="0" max="99" step="1" inputmode="numeric" disabled aria-disabled="true">
-              </label>
-              <label class="mini-field">
-                <span data-i18n="calcBox5">5 号箱</span>
-                <input id="boxCount5" class="box-order-input" data-box-count="5" type="number" min="0" step="1" value="0" inputmode="numeric">
-                <input id="boxPurchase5" class="box-order-input" data-box-purchase="5" type="number" min="0" step="1" value="0" inputmode="numeric">
-                <input id="boxWeight5" class="box-order-input" data-box-weight="5" type="number" min="0" max="99" step="1" inputmode="numeric" disabled aria-disabled="true">
-              </label>
-              <label class="mini-field">
-                <span data-i18n="calcBox6">6 号箱</span>
-                <input id="boxCount6" class="box-order-input" data-box-count="6" type="number" min="0" step="1" value="0" inputmode="numeric">
-                <input id="boxPurchase6" class="box-order-input" data-box-purchase="6" type="number" min="0" step="1" value="0" inputmode="numeric">
-                <input id="boxWeight6" class="box-order-input" data-box-weight="6" type="number" min="0" max="99" step="1" inputmode="numeric" disabled aria-disabled="true">
-              </label>
+            <div class="box-type-card-list" id="boxTypeCardList">
+              <article class="box-type-card" data-box-type-card="1">
+                <div class="box-type-card-head">
+                  <strong data-box-type-title data-i18n="calcBox1">1 号箱</strong>
+                </div>
+                <div class="box-type-fields">
+                  <label class="mini-field">
+                    <span data-i18n="calcStorageQty">寄存数量</span>
+                    <input id="boxCount1" class="box-order-input" data-box-count="1" type="number" min="0" step="1" value="0" inputmode="numeric">
+                  </label>
+                  <label class="mini-field">
+                    <span data-i18n="calcPurchaseQty">购买数量</span>
+                    <input id="boxPurchase1" class="box-order-input" data-box-purchase="1" type="number" min="0" step="1" value="0" inputmode="numeric">
+                  </label>
+                  <label class="mini-field">
+                    <span data-i18n="calcMaximumWeight">最大重量（kg/箱）</span>
+                    <input id="boxWeight1" class="box-order-input" data-box-weight="1" type="number" min="0" max="99" step="1" inputmode="numeric" disabled aria-disabled="true">
+                  </label>
+                </div>
+              </article>
             </div>
-            <p class="field-help" data-i18n="calcBoxCountHelp">至少填写一种寄存数量；购买数量不能大于寄存数量；有寄存数量的箱型必须填写最大重量，并建议每箱尽量控制在 23kg 内。</p>
+            <div class="box-type-picker" id="boxTypePicker">
+              <span data-i18n="calcAddBoxTypePrompt">添加具体箱型</span>
+              <div class="box-type-choice-list" id="boxTypeChoices" aria-label="添加具体箱型"></div>
+            </div>
+            <p class="field-help" data-i18n="calcBoxCountHelp">请至少填写一种寄存数量；购买数量不能大于寄存数量；有寄存数量或购买数量的箱型必须填写最大重量。建议每箱尽量控制在 23kg 以内，且单箱最大重量不得超过 30kg。</p>
           </div>
           <div class="calculator-section-label">
             <span>02</span>
@@ -618,17 +636,17 @@
           <label class="field">
             <span data-i18n="calcStartDate">开始日期</span>
             <input id="startDate" type="date">
-            <p class="field-help" data-i18n="calcStartDateHelp">开始日期同时作为寄存预约日期。建议至少提前 7 天预约，最少需提前 3 天。</p>
+            <p class="field-help" data-i18n="calcStartDateHelp">计算器可先用任意日期估算；进入预约表格时，开始日期必须大于当天日期。</p>
           </label>
           <label class="field">
             <span data-i18n="calcEndDate">结束日期</span>
             <input id="endDate" type="date">
-            <p class="field-help" data-i18n="calcEndDateHelp">结束日期同时作为送回 / 取回日期。返还服务在任何情况下都需至少提前 7 天预约。</p>
+            <p class="field-help" data-i18n="calcEndDateHelp">结束日期用于计算寄存天数；进入预约后客服会再确认实际返还安排。</p>
           </label>
           <label class="field" id="boxDeliveryDateField">
             <span data-i18n="calcBoxDeliveryDate">送箱日期</span>
             <input id="boxDeliveryDate" type="date">
-            <p class="field-help" data-i18n="calcBoxDeliveryDateHelp">送箱服务需至少提前 7 天预约；如需先送箱再寄存，送箱日期需早于开始日期至少 2 天。</p>
+            <p class="field-help" data-i18n="calcBoxDeliveryDateHelp">有购买箱子时填写送箱日期；进入预约表格时，送箱日期必须大于当天日期，并早于寄存开始日期。</p>
           </label>
           <div class="calculator-section-label">
             <span>03</span>
@@ -636,14 +654,16 @@
           </div>
           <label class="field">
             <span data-i18n="calcPickupMethod">取件方式</span>
-            <select id="pickupMethod">
+            <select id="pickupMethod" required>
+              <option value="" data-i18n="calcSelectPlaceholder" selected disabled>请选择</option>
               <option value="home" data-i18n="calcPickupMethodHome">上门取件</option>
               <option value="self" data-i18n="calcPickupMethodSelf">自行送至仓库</option>
             </select>
           </label>
           <label class="field" id="pickupAccessField">
             <span data-i18n="calcPickupAccess">取寄存交接方式</span>
-            <select id="pickupAccess">
+            <select id="pickupAccess" required>
+              <option value="" data-i18n="calcSelectPlaceholder" selected disabled>请选择</option>
               <option value="ground" data-i18n="calcAccessGround">楼下交接</option>
               <option value="elevator" data-i18n="calcAccessElevator">电梯上楼</option>
               <option value="stairs" data-i18n="calcAccessStairs">楼梯上楼</option>
@@ -659,14 +679,16 @@
           </label>
           <label class="field" id="deliveryMethodField">
             <span data-i18n="calcDeliveryMethod">送件方式</span>
-            <select id="deliveryMethod">
+            <select id="deliveryMethod" required>
+              <option value="" data-i18n="calcSelectPlaceholder" selected disabled>请选择</option>
               <option value="home" data-i18n="calcDeliveryMethodHome">上门送件</option>
               <option value="self" data-i18n="calcDeliveryMethodSelf">自行到仓库取件</option>
             </select>
           </label>
           <label class="field" id="returnAccessField">
             <span data-i18n="calcReturnAccess">送回去交接方式</span>
-            <select id="returnAccess">
+            <select id="returnAccess" required>
+              <option value="" data-i18n="calcSelectPlaceholder" selected disabled>请选择</option>
               <option value="ground" data-i18n="calcAccessGround">楼下交接</option>
               <option value="elevator" data-i18n="calcAccessElevator">电梯上楼</option>
               <option value="stairs" data-i18n="calcAccessStairs">楼梯上楼</option>
@@ -747,24 +769,16 @@
             <div class="storage-inline-form-head">
               <div>
                 <strong>请选择预约类型</strong>
-                <p>寄存、送还和买箱子分开提交，进入下一页后只填写对应表单。</p>
+                <p>预约寄存 / 入仓：必须先完成左侧计算器，再登记预约。<br>取寄存 / 取回：不需要填写计算器，可直接登录后登记。</p>
               </div>
             </div>
             <div class="storage-inline-cta">
               <p hidden></p>
-              <a class="button button-primary full-width storage-booking-entry" id="goToStorageBoxDeliveryButton" data-storage-booking-target="box_delivery" href="#storageBoxQuickOrder">
-                <span class="storage-booking-entry-icon" aria-hidden="true"></span>
-                <span class="storage-booking-entry-copy">
-                  <strong class="storage-booking-entry-title">买箱子 / 送箱</strong>
-                  <small>填写送箱信息，直接生成买箱订单</small>
-                </span>
-                <span class="storage-booking-entry-arrow" aria-hidden="true"></span>
-              </a>
               <a class="button button-primary full-width storage-booking-entry" id="goToStorageBookingButton" data-storage-booking-target="storage_collection" href="./storage-booking.html?service=storage_collection">
                 <span class="storage-booking-entry-icon" aria-hidden="true"></span>
                 <span class="storage-booking-entry-copy">
                   <strong class="storage-booking-entry-title">预约寄存 / 入仓</strong>
-                  <small>先完成计算器估价，再提交寄存预约</small>
+                  <small>先完成计算器，再登记预约</small>
                 </span>
                 <span class="storage-booking-entry-arrow" aria-hidden="true"></span>
               </a>
@@ -772,65 +786,11 @@
                 <span class="storage-booking-entry-icon" aria-hidden="true"></span>
                 <span class="storage-booking-entry-copy">
                   <strong class="storage-booking-entry-title">取寄存 / 取回</strong>
-                  <small>登录后自动查找历史寄存订单</small>
+                  <small>无需填写计算器，直接登记</small>
                 </span>
                 <span class="storage-booking-entry-arrow" aria-hidden="true"></span>
               </a>
               <p class="storage-form-message" id="storageBookingFormMessage"></p>
-              <form class="storage-box-quick-order" id="storageBoxQuickOrder" hidden novalidate>
-                <div class="storage-box-quick-head">
-                  <strong>买箱子 / 送箱信息</strong>
-                  <p>请写全送箱信息，提交后会生成买箱订单并等待客服确认。</p>
-                </div>
-                <div class="storage-form-grid">
-                  <label>
-                    <span class="storage-field-label">购买数量</span>
-                    <input name="boxPurchaseQuantity" type="number" min="1" step="1" required>
-                  </label>
-                  <label>
-                    <span class="storage-field-label">送箱日期</span>
-                    <input name="boxServiceDate" type="date" required>
-                  </label>
-                  <label>
-                    <span class="storage-field-label">时间段</span>
-                    <select name="boxServiceTimeSlot" required>
-                      <option value="">请选择</option>
-                      <option value="10:00 - 13:00">白天 10:00 - 13:00</option>
-                      <option value="20:00 - 23:00">晚上 20:00 - 23:00</option>
-                      <option value="待客服确认">待客服确认</option>
-                    </select>
-                  </label>
-                  <label>
-                    <span class="storage-field-label">邮编</span>
-                    <input name="boxPostcode" type="text" required>
-                  </label>
-                  <label class="storage-field-span-2">
-                    <span class="storage-field-label">送箱地址</span>
-                    <textarea name="boxServiceAddress" rows="3" required></textarea>
-                  </label>
-                  <label>
-                    <span class="storage-field-label">房间 / 楼栋 / 公寓名</span>
-                    <input name="boxRoomOrBuilding" type="text" required>
-                  </label>
-                  <label>
-                    <span class="storage-field-label">联系人姓名</span>
-                    <input name="boxContactName" type="text" required>
-                  </label>
-                  <label>
-                    <span class="storage-field-label">联系电话</span>
-                    <input name="boxContactPhone" type="tel" required>
-                  </label>
-                  <label class="storage-field-span-2">
-                    <span class="storage-field-label">备注</span>
-                    <textarea name="boxNotes" rows="3"></textarea>
-                  </label>
-                </div>
-                <div class="storage-radio-group compact">
-                  <label><input type="radio" name="boxNoticeConfirmed" value="yes"> 是，我已阅读并同意下单须知</label>
-                  <label><input type="radio" name="boxNoticeConfirmed" value="no" checked> 否</label>
-                </div>
-                <button class="button button-primary full-width" id="storageBoxQuickSubmitButton" type="submit">提交买箱订单</button>
-              </form>
             </div>
           </div>
         </div>
@@ -1123,7 +1083,7 @@
   </footer>
 
   <script src="./site-auth.js?v=20260505-cache-bust-1"></script>
-  <script src="./script.js?v=20260505-cache-bust-1"></script>
+  <script src="./script.js?v=20260506-cache-bust-20"></script>
   <script>
     (function () {
       const storageFieldLabels = [

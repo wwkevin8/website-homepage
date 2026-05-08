@@ -70,6 +70,20 @@
     listStorageOrders(filters) {
       return request(`/api/admin/storage-orders${buildQuery(filters)}`);
     },
+    getStorageOrder(id) {
+      return request(`/api/admin/storage-orders?id=${encodeURIComponent(id)}`);
+    },
+    deleteStorageOrder(id) {
+      return request(`/api/admin/storage-orders?id=${encodeURIComponent(id)}`, {
+        method: "DELETE"
+      });
+    },
+    updateStorageOrder(id, payload) {
+      return request(`/api/admin/storage-orders?id=${encodeURIComponent(id)}`, {
+        method: "PATCH",
+        body: JSON.stringify(payload)
+      });
+    },
     listOrders(filters) {
       return request(`/api/admin/orders${buildQuery(filters)}`);
     },

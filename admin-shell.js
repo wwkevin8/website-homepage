@@ -19,9 +19,18 @@
         { key: "transport-sync-logs", label: "同步巡检日志", href: "./transport-admin-sync-logs.html" }
       ]
     },
-    { key: "storage", label: "寄存管理", href: "./admin-storage.html" }
+    {
+      key: "storage",
+      label: "寄存管理",
+      children: [
+        { key: "storage-all", label: "全部寄存订单", href: "./admin-storage.html" },
+        { key: "storage-collection", label: "预约寄存订单", href: "./admin-storage.html?order_type=storage_collection" },
+        { key: "storage-return", label: "取寄存订单", href: "./admin-storage.html?order_type=storage_return" }
+      ]
+    }
   ];
   const ADMIN_SESSION_CACHE_KEY = "ngn_admin_session_cache";
+  const ADMIN_SESSION_CACHE_TTL_MS = 30 * 1000;
 
   function escapeHtml(value) {
     return String(value || "")
@@ -46,17 +55,46 @@
     return `${window.location.pathname}${window.location.search}${window.location.hash}`;
   }
 
-  function readCachedSession() {
+  function normalizeCachedSession(parsed) {
+    if (!parsed) {
+      return null;
+    }
+    if (parsed.session) {
+      return {
+        session: parsed.session,
+        cachedAt: Number(parsed.cached_at || parsed.cachedAt || 0)
+      };
+    }
+    return {
+      session: parsed,
+      cachedAt: 0
+    };
+  }
+
+  function isUsableSession(session) {
+    return Boolean(session?.authenticated && session?.is_admin && session?.admin);
+  }
+
+  function readCachedSession(options = {}) {
     try {
       const raw = window.sessionStorage.getItem(ADMIN_SESSION_CACHE_KEY);
       if (!raw) {
         return null;
       }
-      const parsed = JSON.parse(raw);
-      if (!parsed || !parsed.authenticated || !parsed.admin) {
+      const cached = normalizeCachedSession(JSON.parse(raw));
+      if (!isUsableSession(cached?.session)) {
         return null;
       }
-      return parsed;
+      if (!options.allowStale && !cached.cachedAt) {
+        return null;
+      }
+      if (!options.allowStale) {
+        const ageMs = Date.now() - cached.cachedAt;
+        if (ageMs > ADMIN_SESSION_CACHE_TTL_MS) {
+          return null;
+        }
+      }
+      return cached.session;
     } catch (error) {
       return null;
     }
@@ -64,11 +102,16 @@
 
   function writeCachedSession(session) {
     try {
-      if (!session || !session.authenticated || !session.admin) {
+      if (!isUsableSession(session)) {
         window.sessionStorage.removeItem(ADMIN_SESSION_CACHE_KEY);
+        window.AdminShellSession = null;
         return;
       }
-      window.sessionStorage.setItem(ADMIN_SESSION_CACHE_KEY, JSON.stringify(session));
+      window.AdminShellSession = session;
+      window.sessionStorage.setItem(ADMIN_SESSION_CACHE_KEY, JSON.stringify({
+        session,
+        cached_at: Date.now()
+      }));
     } catch (error) {}
   }
 
@@ -76,6 +119,52 @@
     try {
       window.sessionStorage.removeItem(ADMIN_SESSION_CACHE_KEY);
     } catch (error) {}
+    window.AdminShellSession = null;
+    window.AdminShellSessionPromise = null;
+  }
+
+  function fetchSession() {
+    if (window.AdminShellSessionPromise) {
+      return window.AdminShellSessionPromise;
+    }
+
+    window.AdminShellSessionPromise = AdminApi.session()
+      .then(session => {
+        if (isUsableSession(session)) {
+          writeCachedSession(session);
+        } else {
+          clearCachedSession();
+        }
+        return session;
+      })
+      .catch(() => {
+        clearCachedSession();
+        return {
+          authenticated: false,
+          is_admin: false,
+          admin: null,
+          permissions: null
+        };
+      })
+      .finally(() => {
+        window.AdminShellSessionPromise = null;
+      });
+
+    return window.AdminShellSessionPromise;
+  }
+
+  async function getSession(options = {}) {
+    if (!options.refresh && isUsableSession(window.AdminShellSession)) {
+      return window.AdminShellSession;
+    }
+    if (!options.refresh) {
+      const cachedSession = readCachedSession();
+      if (cachedSession) {
+        window.AdminShellSession = cachedSession;
+        return cachedSession;
+      }
+    }
+    return fetchSession();
   }
 
   function renderSidebar(meta, session) {
@@ -85,7 +174,10 @@
     }
 
     const items = NAV_ITEMS.filter(item => !item.permission || session.permissions?.[item.permission]);
+    const currentUrl = new URL(window.location.href);
     const isTransportPage = ["transport-forms", "transport-orders", "transport-sync-logs"].includes(meta.key);
+    const isStoragePage = meta.key === "storage";
+    const storageOrderType = isStoragePage ? currentUrl.searchParams.get("order_type") || "" : "";
 
     sidebar.innerHTML = `
       <div class="admin-sidebar-brand">
@@ -98,15 +190,16 @@
       <nav class="admin-sidebar-nav">
         ${items.map(item => {
           if (Array.isArray(item.children)) {
+            const isGroupOpen = item.key === "transport" ? isTransportPage : item.key === "storage" ? isStoragePage : false;
             return `
-              <div class="admin-sidebar-group ${isTransportPage ? "is-open" : ""}">
-                <button class="admin-sidebar-link admin-sidebar-button admin-sidebar-group-toggle ${isTransportPage ? "is-current" : ""}" type="button" data-admin-nav-toggle="${item.key}" aria-expanded="${isTransportPage ? "true" : "false"}">
+              <div class="admin-sidebar-group ${isGroupOpen ? "is-open" : ""}">
+                <button class="admin-sidebar-link admin-sidebar-button admin-sidebar-group-toggle ${isGroupOpen ? "is-current" : ""}" type="button" data-admin-nav-toggle="${item.key}" aria-expanded="${isGroupOpen ? "true" : "false"}">
                   <span>${item.label}</span>
                   <span class="admin-sidebar-caret" aria-hidden="true"></span>
                 </button>
-                <div class="admin-sidebar-subnav" ${isTransportPage ? "" : "hidden"}>
+                <div class="admin-sidebar-subnav" ${isGroupOpen ? "" : "hidden"}>
                   ${item.children.map(child => `
-                    <a class="admin-sidebar-link admin-sidebar-sublink ${meta.key === child.key ? "is-current" : ""}" href="${child.href}">
+                    <a class="admin-sidebar-link admin-sidebar-sublink ${(meta.key === child.key) || (item.key === "storage" && (storageOrderType ? child.href.includes(`order_type=${storageOrderType}`) : !child.href.includes("order_type="))) ? "is-current" : ""}" href="${child.href}">
                       <span>${child.label}</span>
                     </a>
                   `).join("")}
@@ -290,6 +383,7 @@
             detail: { message: "密码已修改成功" }
           })
         );
+        clearCachedSession();
         window.setTimeout(() => {
           closeChangePasswordModal();
         }, 500);
@@ -524,18 +618,14 @@
     const cachedSession = readCachedSession();
 
     if (cachedSession) {
+      window.AdminShellSession = cachedSession;
       renderSidebar(meta, cachedSession);
       renderHeader(meta, cachedSession);
       bindLogout();
       bindChangePassword();
     }
 
-    const session = await AdminApi.session().catch(() => ({
-      authenticated: false,
-      is_admin: false,
-      admin: null,
-      permissions: null
-    }));
+    const session = cachedSession || await getSession({ refresh: true });
 
     if (!session.authenticated) {
       clearCachedSession();
@@ -575,6 +665,8 @@
     init: initAdminShell,
     escapeHtml,
     logout: handleLogout,
+    getSession,
+    getCachedSession: readCachedSession,
     cacheSession: writeCachedSession,
     clearSessionCache: clearCachedSession
   };
