@@ -8,26 +8,24 @@
 ## Last Updated Task
 
 - Date: 2026-05-09
-- Scope: P2 second-pass transport group legacy `open` compatibility cleanup
+- Scope: P2 third-pass transport group lifecycle legacy `open` cleanup
 
 ## Completed In This Task
 
 - Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before making changes.
-- Updated `E:\webside\api\transport-groups\index.js` so legacy `status=open` input is normalized to `active`, and the missing-`group_id` fallback insert no longer writes `open`.
-- Updated `E:\webside\api\transport-groups\[id].js` so legacy `status=open` input is normalized to `active`, and the missing-`group_id` fallback update no longer writes `open`.
-- Updated `E:\webside\public-api-handlers\transport-groups.js` so public joinable group listing queries `single_member` and `active`; legacy public `status=open` input maps to those two current statuses.
-- Checked `E:\webside\transport-shared.js`; no change was needed because `open` remains only as a legacy display label.
-- Updated `E:\webside\docs\RISK_REGISTER.md` with second-pass P2 mitigation status and the remaining lifecycle-helper risk.
-- No HTML, CSS, other frontend JS, other admin page JS, SQL, `package.json`, transport request API, orders API, admin dashboard, deployment, or commit was performed.
+- Updated `E:\webside\api\_lib\transport-group-lifecycle.js` so lifecycle group creation and sync fallback paths no longer write or compute `open`.
+- Lifecycle creation fallback now writes `single_member` for non-closed single-request groups and `closed` for closed requests.
+- Lifecycle sync fallback now writes the computed current status directly: `single_member`, `active`, `full`, or `closed`.
+- Legacy `open` group records read by the lifecycle helper are normalized to `active` before return, preserving read compatibility without returning `open`.
+- Updated `E:\webside\docs\RISK_REGISTER.md` with third-pass P2 mitigation status.
+- No HTML, CSS, frontend JS, admin page JS, SQL, `package.json`, transport request API, transport-groups API, public transport group API, orders API, admin dashboard, deployment, or commit was performed.
 
 ## Verification
 
-- `node --check api\transport-groups\index.js`
-- `node --check "api\transport-groups\[id].js"`
-- `node --check public-api-handlers\transport-groups.js`
-- `git diff --name-status` confirmed only allowed files were modified in this task.
-- `rg` check confirmed the edited group API/listing files no longer contain a `status: "open"` write path; remaining `open` occurrences are compatibility handling or outside-scope lifecycle code.
-- Pending manual/API check: verify admin group list/create/update flows and public transport group listing with safe test data.
+- `node --check api\_lib\transport-group-lifecycle.js`
+- `git diff --name-status` confirmed only the allowed lifecycle helper and two docs files were modified.
+- `rg` check confirmed the only remaining `open` occurrence in `api/_lib/transport-group-lifecycle.js` is read compatibility inside `normalizeGroupStatus`.
+- Pending manual/API check: verify lifecycle flows that create, split, add to, remove from, close, and regroup transport groups with safe test data.
 
 ## Current Project Status
 
@@ -44,7 +42,7 @@
 - `styles-pickup-backup.css` remains deployable because it is still an active dependency of `pickup.html`.
 - The P2 transport request status contract is partially aligned at the orders/admin statistics layer: transport requests now use `published`, `matched`, `closed` there.
 - The P2 transport group API/listing fallback paths are partially aligned: edited group API endpoints no longer write `open`, and public joinable listing now uses `single_member` and `active`.
-- Transport group lifecycle helper legacy `open` logic remains unresolved because `api/_lib/transport-group-lifecycle.js` was outside this task's allowed edit scope.
+- The P2 transport group lifecycle helper now avoids new `open` writes and normalizes historical `open` reads to `active`.
 
 ## Open Issues Or Risks
 
@@ -55,8 +53,8 @@
 - P1 follow-up: verify the next Vercel deployment does not include the newly excluded historical root files.
 - P1 follow-up: rename `styles-pickup-backup.css` to a formal production filename in a separate task and update `pickup.html` at the same time.
 - P2 follow-up: verify admin dashboard transport counts and general order status updates after first-pass mapping cleanup.
-- P2 follow-up: transport group legacy `open` compatibility remains in `api/_lib/transport-group-lifecycle.js` and related deeper normalization logic.
 - P2 follow-up: confirm whether existing production rows or SQL/index files still depend on legacy `open`.
+- P2 follow-up: decide whether `api/_lib/transport.js` legacy `open` / `draft` normalization should remain as read compatibility or be narrowed in a future task.
 - P2: `transport-public.previous-good.js` is captured HTML with old Vercel auth URLs/nonces.
 - P3: `admin-storage.html` storage label issue needs runtime/browser confirmation before code changes.
 - Exact production email provider mix remains unclear because code supports Resend and SMTP across different flows.
@@ -67,5 +65,5 @@
 1. Rotate the admin and operations account passwords that may have appeared in the previous root JSON payload files.
 2. Decide whether local root payload files should eventually be replaced by non-sensitive example files under `docs/examples`.
 3. Commit and deploy the sanitized/ignore/index-removal changes after review.
-4. Verify admin group list/create/update flows and public group listing after the second-pass group API/listing cleanup.
-5. Plan the next scoped P2 task for `api/_lib/transport-group-lifecycle.js` legacy `open` cleanup if the current patch verifies cleanly.
+4. Verify lifecycle flows that create, add to, remove from, close, and regroup transport groups after the third-pass lifecycle cleanup.
+5. Plan any future SQL/data migration only after confirming whether production still contains legacy `open` rows.

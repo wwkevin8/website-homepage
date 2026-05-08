@@ -11,7 +11,7 @@ Scope: documentation-only risk review. No business code, config, SQL, HTML, CSS,
 | P0 | Root JSON files contained admin/ops credential payloads and were tracked by Git | Mitigated locally; removed from tracking; credential rotation still required | 1 |
 | P1 | Missing `api/_lib/transport-payment-email.js` breaks transport payment confirmation email path | Mitigated locally; needs endpoint smoke test | 2 |
 | P1 | Static backup/temporary/inspection files may be publicly deployable | Mitigated locally; needs next deploy verification | 3 |
-| P2 | Transport status model mixes current and legacy values | Partially mitigated; group API/listing open fallback reduced, lifecycle helper still needs separate scope | 4 |
+| P2 | Transport status model mixes current and legacy values | Partially mitigated; group API/listing and lifecycle open write paths reduced | 4 |
 | P2 | `transport-public.previous-good.js` is HTML captured as `.js` | Confirmed | 5 |
 | P3 | `admin-storage.html` `storageTypeLabels is not defined` risk appears stale or non-reproducible by static scan | Needs confirmation | 6 |
 
@@ -229,7 +229,10 @@ Status as of 2026-05-09:
   - `api/transport-groups/index.js` and `api/transport-groups/[id].js` now normalize legacy input `status=open` to `active` before payload validation, so `open` is not written by these endpoints.
   - `public-api-handlers/transport-groups.js` now treats public `status=open` input as `single_member` plus `active` and no longer includes `open` or `full` in the default public joinable listing query.
 - `transport-shared.js` still keeps the legacy `open` label only as display compatibility.
-- `api/_lib/transport-group-lifecycle.js` still contains legacy `open` write/compute logic and was not modified because it was outside the allowed file scope for this task.
+- Third application-layer cleanup completed for `api/_lib/transport-group-lifecycle.js`:
+  - legacy missing-`group_id` group creation fallback now writes `single_member` for non-closed single-request groups instead of `open`.
+  - legacy missing-`group_id` group sync fallback now writes the computed current status directly: `single_member`, `active`, `full`, or `closed`.
+  - legacy `open` group records are still accepted on read, but normalized to `active` before the helper returns them.
 
 Confirmed current transport request statuses:
 
@@ -249,8 +252,8 @@ Legacy or conflicting status usage:
 - Before first mitigation, `api/admin/[...action].js:635` counted pending transport requests with `["draft", "open"]`.
 - `api/_lib/transport.js:164` maps group values `open` or `draft` to `single_member`.
 - `api/_lib/transport.js:304` normalizes group records with `open` or `draft`.
-- `api/_lib/transport-group-lifecycle.js:99` writes group status `"open"` when a request is not closed.
-- `api/_lib/transport-group-lifecycle.js:316-319` can compute `"open"` in group lifecycle logic.
+- Before third mitigation, `api/_lib/transport-group-lifecycle.js:99` wrote group status `"open"` when a request was not closed.
+- Before third mitigation, `api/_lib/transport-group-lifecycle.js:316-319` could compute `"open"` in group lifecycle logic.
 - Before second mitigation, `api/transport-groups/index.js:463` mapped `single_member`/`active` to `"open"` in an insert path.
 - Before second mitigation, `api/transport-groups/[id].js:314` mapped `single_member`/`active` to `"open"` in an update path.
 - Before second mitigation, `public-api-handlers/transport-groups.js:45` included `open` and `full` in the public joinable listing status filter.
@@ -268,7 +271,7 @@ Impact:
 - Dashboard pending/active transport count has been aligned to `published/matched`.
 - The edited group insert/update fallback paths no longer write `open` to `transport_groups`.
 - Public group listing now queries only `single_member` and `active` by default, so `full`, `closed`, and `cancelled` are excluded from the joinable public list.
-- A separate lifecycle helper may still write or compute `open`, which conflicts with the current group status contract and needs its own scoped fix.
+- The edited lifecycle helper paths no longer write or compute `open`; historical `open` records read through this helper normalize to `active` before return.
 - General order status validation for transport source rows has been aligned to current `transport_requests.status`.
 
 Needs confirmation:
@@ -276,7 +279,7 @@ Needs confirmation:
 - Whether production database still contains legacy `open` group statuses.
 - Whether any DB trigger/view maps `open` to `single_member` after API writes.
 - Whether general `orders` table intentionally keeps legacy transport labels independent of `transport_requests.status`.
-- Whether `api/_lib/transport-group-lifecycle.js` should map generated replacement/single-member groups to `single_member` or `active` in every legacy `open` branch.
+- Whether production database rows still store `open` and need a data migration to convert them to `single_member` or `active` based on member counts.
 
 Recommended limited fix scope:
 
@@ -288,8 +291,9 @@ Recommended limited fix scope:
   - `api/transport-groups/[id].js`
   - `public-api-handlers/transport-groups.js`
   - `transport-shared.js` checked; no code change needed because `open` is label-only compatibility there.
-- Next pass should handle remaining group lifecycle and persistence compatibility points:
+- Completed third pass for lifecycle write/compute paths:
   - `api/_lib/transport-group-lifecycle.js`
+- Next pass should handle remaining deeper normalization or persistence compatibility points:
   - `api/_lib/transport.js` legacy normalization if the team wants to remove or narrow `open`/`draft` compatibility
   - any needed Supabase migration/view file
 - Verify admin dashboard counts and general order transport status updates before continuing to group status cleanup.
