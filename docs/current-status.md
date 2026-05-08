@@ -8,56 +8,48 @@
 ## Last Updated Task
 
 - Date: 2026-05-08
-- Scope: Fixed pickup/dropoff registration time showing one hour later after submission
+- Scope: Pushed and deployed transport timezone and storage payload fixes to Vercel production
 
 ## Completed In This Task
 
-- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before testing and changes.
-- Investigated the pickup/dropoff registration time path without changing business code.
-- Confirmed `pickup-form.js` submits `datetime-local` values such as `2026-06-01T10:00` without timezone information.
-- Confirmed backend normalization in `api/_lib/transport.js` uses `new Date(value).toISOString()`, so on Vercel's UTC runtime a summer UK local time can be saved one hour later than intended when later displayed in `Europe/London`.
-- Reproduced the offset with a UTC runtime example: `2026-06-01T10:00` saves as `2026-06-01T10:00:00.000Z` and displays as `2026/06/01 11:00` in London time.
-- Fixed `api/_lib/transport.js` so timezone-less transport datetime values from `datetime-local` inputs are parsed as `Europe/London` local time before being stored as UTC ISO strings.
-- Preserved existing behavior for datetime values that already include an explicit timezone, such as values ending in `Z`.
-- Ran a 30-account local comprehensive browser test on an isolated local helper server at `http://localhost:3108`.
-- Covered 30 mocked authenticated accounts across:
-  - 10 `storage_return`取寄存/取回 submissions
-  - 10 `storage_collection` calculator-to-booking submissions
-  - 5 pickup form submissions
-  - 5 logged-in navigation/service-center checks
-- Verified each account could load public pages, view only its own mocked service-center storage order, and avoid leaking the next account's mocked order number.
-- Verified 20 storage booking submissions and 5 pickup form submissions via mocked public submit endpoints, so no real orders or notifications were created.
-- Found and fixed a storage booking payload issue: when a user had previously visited the storage estimate page, `storage_return` could carry stale estimate/calculator data. `storage_return` now submits empty `estimateSummary` and `calculatorSnapshot`; only `storage_collection` carries calculator data.
-- Final QA30 report:
-  - Run ID: `qa30-green-2026-05-08T02-51-45-106Z`
-  - Output: `E:\webside\output\qa30\qa30-green-2026-05-08T02-51-45-106Z\`
-  - 30/30 accounts passed
-  - 90/90 checks passed
-  - Page errors: 0
-  - Failed non-static/non-external requests: 0
-  - Storage submits: 20 total, 10 return and 10 collection
-  - `storage_return` with estimate summary: 0
-  - Transport submits: 5
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before deployment work.
+- Read the Vercel CLI deployment guidance before using Vercel production deploy commands.
+- Confirmed branch `codex/full-sync` was in sync with `origin/codex/full-sync` before committing.
+- Committed and pushed commit `e7d292c` to `origin/codex/full-sync`.
+- Deployed the pushed code to Vercel production.
+- Deployed fixes:
+  - `api/_lib/transport.js`: timezone-less transport datetime values from `datetime-local` inputs now parse as `Europe/London` local time before being stored as UTC ISO strings.
+  - `script.js`: `storage_return` no longer carries stale calculator estimate data; calculator payload data remains only for `storage_collection`.
+- New Vercel deployment:
+  - ID: `dpl_6dQyCUEzE4VwGpz83rf4vjFpPBSs`
+  - URL: `https://webside-c5q5l26i9-wwkevin8s-projects.vercel.app`
+  - Status: `READY`
+  - Production alias: `https://ngn.best`
+- Verified Vercel aliases include `https://ngn.best` and `https://www.ngn.best`.
 
 ## Verification
 
-- Reviewed `pickup-form.js`, `api/_lib/transport.js`, `public-api-handlers/transport-request-submit.js`, `api/_lib/transport-group-lifecycle.js`, `transport-shared.js`, and `service-center.js`.
-- Ran a UTC runtime date parsing check for `datetime-local` values.
-- Verified `mapRequestPayload` converts summer UK local `2026-06-01T10:00` to `2026-06-01T09:00:00.000Z` and displays back as `2026/06/01 10:00` in `Europe/London`.
-- Verified `mapRequestPayload` keeps winter UK local `2026-01-01T10:00` as `2026-01-01T10:00:00.000Z`.
-- Verified `mapGroupPayload` applies the same London-local conversion for transport group flight and preferred times.
 - `node --check E:\webside\api\_lib\transport.js`
 - `node --check E:\webside\script.js`
-- QA30 comprehensive browser automation against `http://localhost:3108`
+- `git push origin codex/full-sync`
 - `npm run build:prod`
+- `npm run deploy:prod`
+- `npx --yes vercel@53.1.0 inspect webside-c5q5l26i9-wwkevin8s-projects.vercel.app`
+- Production HTTP checks:
+  - `https://ngn.best/` returned 200.
+  - `https://ngn.best/pickup-form.html` returned 200.
+  - `https://ngn.best/transport-board.html` returned 200.
+  - `https://ngn.best/service-center.html` returned 200.
+  - `https://ngn.best/api/public/transport-board` returned 200.
+  - `https://ngn.best/api/public/my-transport-requests` returned 401 when unauthenticated.
+  - `https://ngn.best/api/admin/session` returned 200.
 
 ## Current Project Status
 
 - The transport dispatch app remains a static multi-page website plus Vercel serverless APIs.
 - Production is live at `https://ngn.best`.
-- Latest deployed production URL is `https://webside-kfq6rikzk-wwkevin8s-projects.vercel.app`.
-- Latest deployed code commit is `52ac208` on branch `codex/full-sync`.
-- The latest local QA30 run passed across 30 mocked accounts and 90 checks, but the payload fix in `script.js` is a new local change after the latest production deployment.
+- Latest deployed production URL is `https://webside-c5q5l26i9-wwkevin8s-projects.vercel.app`.
+- Latest deployed code commit is `e7d292c` on branch `codex/full-sync`.
 - Public-facing pages must continue to avoid exposing private user data.
 - Backend admin APIs still perform their own server-side auth checks and must not trust frontend `sessionStorage`.
 - Admin session frontend caching is working across same-tab page switches.
@@ -72,9 +64,8 @@
 
 ## Open Issues Or Risks
 
-- The `script.js` payload fix has passed local QA and production build, but it is not yet pushed or deployed in the latest production deployment listed above.
-- The `api/_lib/transport.js` timezone fix has passed local parsing checks and production build, but it is not yet pushed or deployed in the latest production deployment listed above.
-- Vercel error logs still show Node `[DEP0169] url.parse()` deprecation warnings on some unauthenticated requests. This should be cleaned up later so error-level logs stay useful.
+- The deployment was verified with production page/API smoke checks, but no real authenticated pickup/dropoff submission was made during deployment verification.
+- Vercel error logs have previously shown Node `[DEP0169] url.parse()` deprecation warnings on some unauthenticated requests. This should be cleaned up later so error-level logs stay useful.
 - Vercel cold starts and separate serverless instances can make online API timing differ from local warm-instance logs.
 - Local Chrome Network timings around 1.5s-2s should not be treated as direct business-query time without comparing backend `[perf]` totals.
 - Dashboard display counts using estimated count may be approximate and should not be treated as audit-grade totals.
@@ -86,7 +77,7 @@
 
 ## Recommended Next Steps
 
-1. Push and deploy the local `script.js` payload fix and `api/_lib/transport.js` timezone fix before relying on the current QA30 result in production.
+1. Run one controlled authenticated pickup/dropoff submission on production to confirm the displayed time remains exactly the submitted UK time.
 2. Retest key admin pages while logged in on `https://ngn.best`, then compare Chrome Network with online Vercel Function Logs.
 3. Run one controlled real storage submission in the intended environment before officially opening the storage flow.
 4. Confirm whether `img/pickupvideo/pickupvideo2.0.mp4` should exist, be removed from markup, or be treated as optional.
