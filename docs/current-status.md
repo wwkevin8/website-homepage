@@ -23,7 +23,9 @@
 - Added Vercel redirects from `/index.html` to `/` and `/storage.html` to `/storage`.
 - Added a Vercel rewrite so `/storage` serves the existing `storage.html` page.
 - Updated active public-facing homepage and storage links to use `./` and `./storage` instead of `./index.html` and `./storage.html`.
-- No backend API, admin auth, database, SQL, email, package, dependency, payment, or deployment action was performed.
+- No backend API, admin auth, database, SQL, email, package, dependency, or payment action was performed.
+- Committed and pushed the clean URL / sitewide favicon changes before production deployment.
+- Deployed production to Vercel and aliased the deployment to `https://ngn.best`.
 
 ## Verification
 
@@ -36,14 +38,16 @@
 - Local helper server served `/favicon.ico`, `/favicon.png`, and `/apple-touch-icon.png` with HTTP 200 and the expected image content types.
 - Local helper server served `/`, `/storage`, and `/pickup` with HTTP 200.
 - Playwright opened `/` and `/storage`, confirmed both rendered page titles and each had favicon declarations.
-- Pending: after the next Vercel deployment, confirm `https://ngn.best/`, `https://ngn.best/storage`, and `https://ngn.best/pickup` load and their `.html` counterparts redirect.
+- Production verification passed: `https://ngn.best/`, `https://ngn.best/storage`, and `https://ngn.best/pickup` return HTTP 200 and include favicon declarations.
+- Production verification passed: `https://ngn.best/index.html`, `https://ngn.best/storage.html`, and `https://ngn.best/pickup.html` return HTTP 308 redirects to `/`, `/storage`, and `/pickup`.
+- Production verification passed: `/favicon.ico`, `/favicon.png`, and `/apple-touch-icon.png` return HTTP 200 with expected image content types.
 
 ## Current Project Status
 
 - The transport dispatch app remains a static multi-page website plus Vercel serverless APIs.
 - Production is live at `https://ngn.best`.
-- Latest deployed production URL remains `https://webside-9camg7h8j-wwkevin8s-projects.vercel.app`.
-- Latest deployed code commit remains `3498fb9` on branch `codex/full-sync`.
+- Latest deployed production URL is `https://webside-ij7ozt4kw-wwkevin8s-projects.vercel.app`.
+- Latest deployed code commit is `6b8fe5f` on branch `codex/full-sync`.
 - The P0 root JSON exposure risk is mitigated in the current working tree by sanitization, deployment ignores, `.gitignore` rules, and removal from the Git index.
 - The three JSON files are no longer tracked in the current Git index, and local copies remain ignored.
 - Manual credential rotation is still required because previous values must be treated as potentially exposed and may remain in Git history.
@@ -69,8 +73,7 @@
 - P0 follow-up: consider moving example payloads to `docs/examples/*.example.json` in a future task.
 - P1 follow-up: run a focused API smoke test against `PATCH /api/transport-requests/:id` with safe test data and configured email variables.
 - P1 follow-up: verify the next Vercel deployment does not include the newly excluded historical root files.
-- P1 follow-up: verify the next Vercel deployment applies clean URL redirects from `/index.html` to `/`, `/pickup.html` to `/pickup`, and `/storage.html` to `/storage`.
-- P1 follow-up: after deployment, confirm Chrome shows the new favicon; if it still shows the globe, clear Chrome's favicon cache or test in a private window.
+- P1 follow-up: if Chrome still shows the globe after the verified deployment, clear Chrome's favicon cache or test in a private window.
 - P1 follow-up: rename `styles-pickup-backup.css` to a formal production filename in a separate task and update `pickup.html` at the same time.
 - P2 follow-up: verify admin dashboard transport counts in a separate focused check.
 - P2 follow-up: decide whether `api/_lib/transport.js` legacy `open` / `draft` normalization should remain as read compatibility or be narrowed in a future task.
@@ -81,7 +84,7 @@
 
 ## Recommended Next Steps
 
-1. Deploy the clean URL and sitewide favicon change, then confirm `https://ngn.best/`, `https://ngn.best/storage`, and `https://ngn.best/pickup` load and their `.html` counterparts redirect.
+1. If Chrome still shows the globe, test in a private window or clear Chrome's favicon cache.
 2. Rotate the admin and operations account passwords that may have appeared in the previous root JSON payload files.
 3. Decide whether local root payload files should eventually be replaced by non-sensitive example files under `docs/examples`.
 4. Manually retest the admin change-password modal, then commit the small admin auth UI/API routing fix if acceptable.
