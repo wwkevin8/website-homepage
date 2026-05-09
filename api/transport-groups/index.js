@@ -5,6 +5,21 @@ const { applyGroupFilters, applyEffectiveGroupCounts, mapGroupPayload, deriveDis
 const { loadGroupStatsMap } = require("../_lib/transport-group-stats");
 const { allocateGroupId } = require("../_lib/order-numbers");
 
+function isPerfLogEnabled() {
+  return process.env.NODE_ENV !== "production";
+}
+
+function nowMs() {
+  return Number(process.hrtime.bigint() / 1000000n);
+}
+
+function logPerf(label, details) {
+  if (!isPerfLogEnabled()) {
+    return;
+  }
+  console.info(`[perf][transport-groups] ${label}`, details);
+}
+
 function isMissingColumnError(error, marker) {
   return Boolean(error?.message && error.message.includes(marker));
 }
@@ -13,6 +28,15 @@ function parsePaymentStatus(adminNote) {
   const text = String(adminNote || "");
   const match = text.match(/\[payment:(paid|unpaid)\]/i);
   return match ? match[1].toLowerCase() : "unpaid";
+}
+
+function normalizeLegacyGroupStatusInput(input = {}) {
+  if (!input || typeof input !== "object" || Array.isArray(input)) return input;
+  if (String(input.status || "").trim().toLowerCase() !== "open") return input;
+  return {
+    ...input,
+    status: "active"
+  };
 }
 
 function buildListItem(group) {
@@ -109,33 +133,36 @@ async function findMatchedGroupIdsBySearchTerm(supabase, searchTerm) {
   return Array.from(matchedGroupIds);
 }
 
-function buildGroupsBaseQuery(supabase, queryParams) {
+function buildGroupsBaseQuery(supabase, queryParams, options = {}) {
+  const normalizedQueryParams = normalizeLegacyGroupStatusInput(queryParams);
   const query = supabase
     .from("transport_groups_public_view")
-    .select("*", { count: "exact" })
+    .select("*", options.count ? { count: options.count } : undefined)
     .gt("current_passenger_count", 0)
     .order("group_date", { ascending: true })
     .order("preferred_time_start", { ascending: true, nullsFirst: false })
     .order("created_at", { ascending: false });
 
-  applyGroupFilters(query, queryParams);
-  if (Array.isArray(queryParams._matched_group_ids) && queryParams._matched_group_ids.length) {
-    query.in("group_id", queryParams._matched_group_ids);
+  applyGroupFilters(query, normalizedQueryParams);
+  if (Array.isArray(normalizedQueryParams._matched_group_ids) && normalizedQueryParams._matched_group_ids.length) {
+    query.in("group_id", normalizedQueryParams._matched_group_ids);
   }
   return query;
 }
 
-async function enrichGroupsBatch(supabase, groups) {
+async function enrichGroupsBatch(supabase, groups, metrics = {}) {
   const groupIds = groups.map(item => item.group_id || item.id).filter(Boolean);
   if (!groupIds.length) {
     return [];
   }
 
+  const memberQueryStartedAt = nowMs();
   const { data: memberRows, error: memberRowsError } = await supabase
     .from("transport_group_members")
     .select("group_id, request_id, passenger_count_snapshot, created_at, transport_requests(id, order_no, student_name, site_user_id, service_type, passenger_count, status, terminal, flight_datetime, airport_code, flight_no, notes, luggage_count, admin_note)")
     .in("group_id", groupIds)
     .order("created_at", { ascending: true });
+  metrics.memberQueryMs = (metrics.memberQueryMs || 0) + (nowMs() - memberQueryStartedAt);
 
   if (memberRowsError) {
     throw memberRowsError;
@@ -199,6 +226,7 @@ async function enrichGroupsBatch(supabase, groups) {
   const duplicateOrderMap = new Map();
   const crossServiceOrderMap = new Map();
   const allSiteUserIds = Array.from(new Set(Array.from(memberUserMap.values()).flat().filter(Boolean)));
+  const duplicateFutureStartedAt = nowMs();
   if (allSiteUserIds.length) {
       const { data: activeFutureRows, error: activeFutureRowsError } = await supabase
         .from("transport_requests")
@@ -252,11 +280,15 @@ async function enrichGroupsBatch(supabase, groups) {
       crossServiceOrderMap.set(groupId, Array.from(crossServiceOrderNos));
     });
   }
+  metrics.duplicateFutureMs = (metrics.duplicateFutureMs || 0) + (nowMs() - duplicateFutureStartedAt);
 
+  const statsStartedAt = nowMs();
   const groupStatsById = await loadGroupStatsMap(supabase, groupIds, {
     groups,
-    members: memberRows || []
+    members: memberRows || [],
+    metrics
   });
+  metrics.statsMs = (metrics.statsMs || 0) + (nowMs() - statsStartedAt);
 
   return groups.map(group => {
     const groupRef = group.group_id || group.id;
@@ -281,35 +313,44 @@ async function enrichGroupsBatch(supabase, groups) {
   }).filter(group => Number(group.current_passenger_count || 0) > 0);
 }
 
-async function listPaginatedGroups(supabase, queryParams, page, pageSize) {
+async function listPaginatedGroups(supabase, queryParams, page, pageSize, perfContext = {}) {
+  const startedAt = nowMs();
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
-  const query = buildGroupsBaseQuery(supabase, queryParams).range(from, to);
+  const queryStartedAt = nowMs();
+  const query = buildGroupsBaseQuery(supabase, queryParams, { count: "exact" }).range(from, to);
   const { data, error, count } = await query;
-  if (error && String(error.message || "").includes("Requested range not satisfiable")) {
-    const countQuery = buildGroupsBaseQuery(supabase, queryParams)
-      .select("id", { count: "exact", head: true });
-    const { count: totalCount, error: countError } = await countQuery;
-    if (countError) {
-      throw countError;
-    }
-
-    return {
-      items: [],
-      pagination: {
-        page,
-        page_size: pageSize,
-        total: Number(totalCount || 0),
-        total_pages: totalCount ? Math.ceil(Number(totalCount) / pageSize) : 0
-      }
-    };
-  }
+  const queryMs = nowMs() - queryStartedAt;
   if (error) {
     throw error;
   }
 
-  const items = await enrichGroupsBatch(supabase, (data || []).map(applyEffectiveGroupCounts));
-  const total = Number(count || 0);
+  const enrichmentStartedAt = nowMs();
+  const enrichMetrics = {};
+  const items = await enrichGroupsBatch(supabase, (data || []).map(applyEffectiveGroupCounts), enrichMetrics);
+  const enrichmentMs = nowMs() - enrichmentStartedAt;
+  const total = count || 0;
+
+  logPerf("listPaginatedGroups", {
+    authMs: perfContext.authMs,
+    page,
+    pageSize,
+    returned: items.length,
+    rows: items.length,
+    total,
+    baseQueryMs: queryMs,
+    queryMs,
+    countMs: queryMs,
+    enrichGroupsMs: enrichmentMs,
+    enrichmentMs,
+    statsMs: enrichMetrics.statsMs || 0,
+    duplicateFutureMs: enrichMetrics.duplicateFutureMs || 0,
+    memberQueryMs: enrichMetrics.memberQueryMs || 0,
+    totalMs: nowMs() - startedAt,
+    handlerTotalMs: perfContext.startedAt ? nowMs() - perfContext.startedAt : undefined,
+    countMode: "exact",
+    cacheHit: null
+  });
 
   return {
     items,
@@ -323,8 +364,11 @@ async function listPaginatedGroups(supabase, queryParams, page, pageSize) {
 }
 
 module.exports = async function handler(req, res) {
+  const handlerStartedAt = nowMs();
   const supabase = getSupabaseAdmin();
+  const authStartedAt = nowMs();
   const adminUser = await requireAdminUser(req, res, supabase);
+  const authMs = nowMs() - authStartedAt;
   if (!adminUser) {
     return;
   }
@@ -363,18 +407,41 @@ module.exports = async function handler(req, res) {
       }
 
       if (paginate) {
-        const response = await listPaginatedGroups(supabase, effectiveQueryParams, page, pageSize);
+        const response = await listPaginatedGroups(supabase, effectiveQueryParams, page, pageSize, {
+          authMs,
+          startedAt: handlerStartedAt
+        });
         ok(res, response);
         return;
       }
 
       const query = buildGroupsBaseQuery(supabase, effectiveQueryParams);
+      const queryStartedAt = nowMs();
       const { data, error } = await query;
+      const queryMs = nowMs() - queryStartedAt;
       if (error) {
         throw error;
       }
 
-      const items = await enrichGroupsBatch(supabase, (data || []).map(applyEffectiveGroupCounts));
+      const enrichmentStartedAt = nowMs();
+      const enrichMetrics = {};
+      const items = await enrichGroupsBatch(supabase, (data || []).map(applyEffectiveGroupCounts), enrichMetrics);
+      const enrichmentMs = nowMs() - enrichmentStartedAt;
+      logPerf("list", {
+        authMs,
+        baseQueryMs: queryMs,
+        queryMs,
+        countMs: 0,
+        enrichGroupsMs: enrichmentMs,
+        enrichmentMs,
+        statsMs: enrichMetrics.statsMs || 0,
+        duplicateFutureMs: enrichMetrics.duplicateFutureMs || 0,
+        memberQueryMs: enrichMetrics.memberQueryMs || 0,
+        totalMs: nowMs() - handlerStartedAt,
+        rows: items.length,
+        countMode: "none",
+        cacheHit: null
+      });
       ok(res, items);
       return;
     }
@@ -383,7 +450,7 @@ module.exports = async function handler(req, res) {
       const body = await parseJsonBody(req);
       let payload;
       try {
-        payload = mapGroupPayload(body);
+        payload = mapGroupPayload(normalizeLegacyGroupStatusInput(body));
       } catch (error) {
         badRequest(res, error.message);
         return;
@@ -402,8 +469,7 @@ module.exports = async function handler(req, res) {
         result = await supabase
           .from("transport_groups")
           .insert({
-            ...payload,
-            status: payload.status === "single_member" || payload.status === "active" ? "open" : payload.status
+            ...payload
           })
           .select("*")
           .single();

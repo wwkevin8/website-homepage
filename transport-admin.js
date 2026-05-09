@@ -4,20 +4,41 @@
   if (!Shared || !Api) return;
   const ADMIN_SESSION_CACHE_KEY = "ngn_admin_session_cache";
 
+  function isUsableAdminSession(session) {
+    return Boolean(session?.authenticated && session?.is_admin);
+  }
+
+  function readCachedAdminSession() {
+    try {
+      const raw = window.sessionStorage.getItem(ADMIN_SESSION_CACHE_KEY);
+      if (!raw) {
+        return null;
+      }
+      const parsed = JSON.parse(raw);
+      const session = parsed?.session || parsed;
+      return isUsableAdminSession(session) ? session : null;
+    } catch (error) {
+      return null;
+    }
+  }
+
   const q = name => new URLSearchParams(window.location.search).get(name) || "";
 
   async function requireSession() {
-    try {
-      const raw = window.sessionStorage.getItem(ADMIN_SESSION_CACHE_KEY);
-      if (raw) {
-        const cached = JSON.parse(raw);
-        if (cached?.authenticated && cached?.is_admin) {
-          return true;
-        }
-      }
-    } catch (error) {}
-    const session = await Api.session().catch(() => ({ authenticated: false, is_admin: false }));
-    if (!session.authenticated || !session.is_admin) {
+    let session = window.AdminShellSession;
+    if (!isUsableAdminSession(session) && window.AdminShellSessionPromise) {
+      session = await window.AdminShellSessionPromise.catch(() => null);
+    }
+    if (!isUsableAdminSession(session) && window.AdminShell?.getSession) {
+      session = await window.AdminShell.getSession().catch(() => null);
+    }
+    if (!isUsableAdminSession(session)) {
+      session = readCachedAdminSession();
+    }
+    if (!isUsableAdminSession(session) && !window.AdminShell) {
+      session = await Api.session().catch(() => ({ authenticated: false, is_admin: false }));
+    }
+    if (!isUsableAdminSession(session)) {
       window.location.href = "./admin-login.html";
       return false;
     }
@@ -31,6 +52,7 @@
       button.addEventListener("click", async event => {
         event.preventDefault();
         await Api.logout().catch(() => {});
+        window.AdminShell?.clearSessionCache?.();
         window.location.href = "./admin-login.html";
       });
     });
@@ -512,25 +534,25 @@
       list.innerHTML = `
         <section class="admin-panel"><div class="admin-table-wrap"><table class="admin-table">
           <thead><tr>
-            <th>Order No</th><th>提交时间</th><th>学生</th><th>服务</th><th>机场</th><th>航班</th><th>您抵达/起飞日期和时间</th><th>目的地</th><th>行李数</th><th>Group ID</th><th>操作</th>
+            <th>提交时间</th><th>Order No</th><th>学生</th><th>微信号</th><th>服务</th><th>机场</th><th>航班</th><th>您抵达/起飞日期和时间</th><th>目的地</th><th>Group ID</th><th>操作</th>
           </tr></thead>
           <tbody>
             ${items.map(item => `
               <tr>
-                <td><strong>${Shared.escapeHtml(item.order_no || "--")}</strong></td>
                 <td>${Shared.escapeHtml(Shared.formatDateTime(item.created_at))}</td>
+                <td><strong>${Shared.escapeHtml(item.order_no || "--")}</strong></td>
                 <td>
                   <strong>${Shared.escapeHtml(item.student_name || "--")}</strong>
                   <div class="admin-table-subtle">${Shared.escapeHtml(item.phone || "--")}</div>
                   <div class="admin-table-subtle">${Shared.escapeHtml(item.student_email || "--")}</div>
                   ${renderFutureRequestHint(item)}
                 </td>
+                <td>${Shared.escapeHtml(item.wechat || "--")}</td>
                 <td>${Shared.escapeHtml(Shared.serviceLabel(item.service_type))}</td>
                 <td><strong>${Shared.escapeHtml(item.airport_code || "--")}</strong><div class="admin-table-subtle">${Shared.escapeHtml(item.terminal || "--")}</div></td>
                 <td><strong>${Shared.escapeHtml(item.flight_no || "--")}</strong></td>
                 <td>${Shared.escapeHtml(requestFlightDateLabel(item))}</td>
                 <td>${Shared.escapeHtml(item.location_to || "--")}</td>
-                <td>${Number(item.luggage_count || 0)}</td>
                 <td>${requestGroupLink(item)}</td>
                 <td><div class="admin-table-actions">
                   <a class="button button-secondary admin-table-action" href="./transport-admin-request-edit.html?id=${encodeURIComponent(item.id)}">查看</a>

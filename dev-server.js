@@ -85,6 +85,7 @@ function toApiModulePath(urlPathname) {
   if (
     urlPathname.startsWith("/api/admin/managers") ||
     urlPathname.startsWith("/api/admin/users") ||
+    urlPathname.startsWith("/api/admin/storage-orders") ||
     urlPathname.startsWith("/api/admin/orders")
   ) {
     return path.join(ROOT, "api", "admin", "[...action].js");
@@ -104,6 +105,10 @@ function toApiModulePath(urlPathname) {
 
   if (urlPathname === "/api/transport-requests") {
     return path.join(ROOT, "api", "transport-requests", "index.js");
+  }
+
+  if (urlPathname === "/api/transport-requests/export") {
+    return path.join(ROOT, "api", "transport-requests", "export.js");
   }
 
   if (/^\/api\/transport-requests\/[^/]+$/.test(urlPathname)) {
@@ -180,8 +185,12 @@ async function handleApi(req, res, parsedUrl) {
     return;
   }
 
+  const hotReloadRoots = [
+    path.join(ROOT, "api") + path.sep,
+    path.join(ROOT, "public-api-handlers") + path.sep
+  ];
   for (const cacheKey of Object.keys(require.cache)) {
-    if (cacheKey.startsWith(path.join(ROOT, "api") + path.sep)) {
+    if (hotReloadRoots.some(rootPath => cacheKey.startsWith(rootPath))) {
       delete require.cache[cacheKey];
     }
   }

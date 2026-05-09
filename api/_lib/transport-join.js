@@ -15,7 +15,7 @@ function normalizeCity(value) {
 function normalizeLocation(value) {
   return String(value || "")
     .toLowerCase()
-    .replace(/[锛?]/g, " ")
+    .replace(/[閿?]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -106,31 +106,31 @@ function evaluateJoin({ targetRequest, group, activeMembers, joinPayload, active
 
   if (!sameServiceType) {
     joinable = false;
-    reason = "鏈嶅姟绫诲瀷涓嶄竴鑷达紝鏃犳硶鍔犲叆鍚屼竴鎷艰溅缁勩€?";
+    reason = "服务类型不同，无法加入当前拼车组。";
   } else if (!sameAirport) {
     joinable = false;
-    reason = "鏈哄満涓嶅悓锛屾棤娉曟嫾杞︺€?";
+    reason = "机场不同，无法加入当前拼车组。";
   } else if (!sameDate) {
     joinable = false;
-    reason = joinPayload.service_type === "dropoff" ? "璧烽鏃ユ湡涓嶅悓锛屾棤娉曟嫾杞︺€?" : "钀藉湴鏃ユ湡涓嶅悓锛屾棤娉曟嫾杞︺€?";
+    reason = joinPayload.service_type === "dropoff" ? "送机日期不同，无法拼车。" : "接机日期不同，无法拼车。";
   } else if (!withinTimeWindow) {
     joinable = false;
-    reason = joinPayload.service_type === "dropoff" ? "璧烽鏃堕棿宸秴杩?3 灏忔椂锛屾棤娉曟嫾杞︺€?" : "钀藉湴鏃堕棿宸秴杩?3 灏忔椂锛屾棤娉曟嫾杞︺€?";
+    reason = joinPayload.service_type === "dropoff" ? "送机时间差超过 3 小时，无法拼车。" : "接机时间差超过 3 小时，无法拼车。";
   } else if (!["published", "matched"].includes(targetRequest.status)) {
     joinable = false;
-    reason = "褰撳墠璁㈠崟鐘舵€佷笉鍙姞鍏ャ€?";
+    reason = "当前拼车组状态不可加入。";
   } else if (!targetRequest.shareable) {
     joinable = false;
-    reason = "褰撳墠璁㈠崟涓嶅厑璁告嫾杞︺€?";
+    reason = "当前拼车组不接受拼车。";
   } else if (new Date(targetRequest.flight_datetime).getTime() <= Date.now()) {
     joinable = false;
-    reason = "褰撳墠璁㈠崟宸茶繃鏈熴€?";
+    reason = "当前拼车组已过期。";
   } else if ((activeFutureRequests || []).length >= 3) {
     joinable = false;
-    reason = "褰撳墠璐﹀彿鏈€澶氬彧鑳藉悓鏃朵繚鐣?3 寮犳湭瀹屾垚鐨勬帴閫佹満璁㈠崟銆?";
+    reason = "当前账号最多只能保留 3 张未来有效订单。";
   } else if (earliestSameTypeRequest && !Number.isNaN(nextFlightTime) && !Number.isNaN(earliestSameTypeFlightTime) && nextFlightTime < earliestSameTypeFlightTime) {
     joinable = false;
-    reason = joinPayload.service_type === "dropoff" ? "鏂板缓閫佹満鏃ユ湡涓嶈兘鏃╀簬绗竴寮犻€佹満鍗曘€?" : "鏂板缓鎺ユ満鏃ユ湡涓嶈兘鏃╀簬绗竴寮犳帴鏈哄崟銆?";
+    reason = joinPayload.service_type === "dropoff" ? "新送机单时间不能早于当前最早送机单。" : "新接机单时间不能早于当前最早接机单。";
   } else if (nextPassengerCount > DEFAULT_GROUP_MAX_PASSENGERS) {
     joinable = false;
     reason = `加入后总人数将超过 ${DEFAULT_GROUP_MAX_PASSENGERS} 人。`;
@@ -180,34 +180,34 @@ function evaluateJoinByPickupTime({ targetRequest, group, activeMembers, joinPay
 
   if (!sameServiceType) {
     joinable = false;
-    reason = "鏈嶅姟绫诲瀷涓嶄竴鑷达紝鏃犳硶鍔犲叆鍚屼竴鎷艰溅缁勩€?";
+    reason = "服务类型不同，无法加入当前拼车组。";
   } else if (!sameAirport) {
     joinable = false;
-    reason = "鏈哄満涓嶅悓锛屾棤娉曟嫾杞︺€?";
+    reason = "机场不同，无法加入当前拼车组。";
   } else if (!sameCity) {
     joinable = false;
-    reason = joinPayload.service_type === "dropoff" ? "鍑哄彂鍦颁笉鍚岋紝鏃犳硶鎷艰溅銆?" : "鐩殑鍦板煄甯備笉鍚岋紝鏃犳硶鎷艰溅銆?";
+    reason = joinPayload.service_type === "dropoff" ? "出发城市不同，无法拼车。" : "目的地城市不同，无法拼车。";
   } else if (!sameDate) {
     joinable = false;
-    reason = joinPayload.service_type === "dropoff" ? "閫佹満鏃ユ湡涓嶅悓锛屾棤娉曟嫾杞︺€?" : "鎺ユ満鏃ユ湡涓嶅悓锛屾棤娉曟嫾杞︺€?";
+    reason = joinPayload.service_type === "dropoff" ? "送机日期不同，无法拼车。" : "接机日期不同，无法拼车。";
   } else if (!withinTimeWindow) {
     joinable = false;
-    reason = joinPayload.service_type === "dropoff" ? "閫佹満鏃堕棿宸秴杩?4 灏忔椂锛屾棤娉曟嫾杞︺€?" : "鎺ユ満鏃堕棿宸秴杩?4 灏忔椂锛屾棤娉曟嫾杞︺€?";
+    reason = joinPayload.service_type === "dropoff" ? "送机时间差超过 4 小时，无法拼车。" : "接机时间差超过 4 小时，无法拼车。";
   } else if (!["published", "matched"].includes(targetRequest.status)) {
     joinable = false;
-    reason = "褰撳墠璁㈠崟鐘舵€佷笉鍙姞鍏ャ€?";
+    reason = "当前拼车组状态不可加入。";
   } else if (!targetRequest.shareable) {
     joinable = false;
-    reason = "褰撳墠璁㈠崟涓嶅厑璁告嫾杞︺€?";
+    reason = "当前拼车组不接受拼车。";
   } else if (new Date(targetRequest.flight_datetime).getTime() <= Date.now()) {
     joinable = false;
-    reason = "褰撳墠璁㈠崟宸茶繃鏈熴€?";
+    reason = "当前拼车组已过期。";
   } else if ((activeFutureRequests || []).length >= 3) {
     joinable = false;
-    reason = "褰撳墠璐﹀彿鏈€澶氬彧鑳藉悓鏃朵繚鐣?3 寮犳湭瀹屾垚鐨勬帴閫佹満璁㈠崟銆?";
+    reason = "当前账号最多只能保留 3 张未来有效订单。";
   } else if (earliestSameTypeRequest && !Number.isNaN(nextFlightTime) && !Number.isNaN(earliestSameTypeFlightTime) && nextFlightTime < earliestSameTypeFlightTime) {
     joinable = false;
-    reason = joinPayload.service_type === "dropoff" ? "鏂板缓閫佹満鏃ユ湡涓嶈兘鏃╀簬绗竴寮犻€佹満鍗曘€?" : "鏂板缓鎺ユ満鏃ユ湡涓嶈兘鏃╀簬绗竴寮犳帴鏈哄崟銆?";
+    reason = joinPayload.service_type === "dropoff" ? "新送机单时间不能早于当前最早送机单。" : "新接机单时间不能早于当前最早接机单。";
   } else if (nextPassengerCount > DEFAULT_GROUP_MAX_PASSENGERS) {
     joinable = false;
     reason = `加入后总人数将超过 ${DEFAULT_GROUP_MAX_PASSENGERS} 人。`;
@@ -250,28 +250,28 @@ function evaluateJoinFinal({ targetRequest, group, activeMembers, joinPayload, a
 
   if (!sameServiceType) {
     joinable = false;
-    reason = "鏈嶅姟绫诲瀷涓嶄竴鑷达紝鏃犳硶鍔犲叆鍚屼竴鎷艰溅缁勩€?";
+    reason = "服务类型不同，无法加入当前拼车组。";
   } else if (!sameAirport) {
     joinable = false;
-    reason = "鏈哄満涓嶅悓锛屾棤娉曟嫾杞︺€?";
+    reason = "机场不同，无法加入当前拼车组。";
   } else if (!sameDate) {
     joinable = false;
-    reason = joinPayload.service_type === "dropoff" ? "閫佹満鏃ユ湡涓嶅悓锛屾棤娉曟嫾杞︺€?" : "鎺ユ満鏃ユ湡涓嶅悓锛屾棤娉曟嫾杞︺€?";
+    reason = joinPayload.service_type === "dropoff" ? "送机日期不同，无法拼车。" : "接机日期不同，无法拼车。";
   } else if (!withinTimeWindow) {
     joinable = false;
-    reason = joinPayload.service_type === "dropoff" ? "閫佹満鏃堕棿宸秴杩?4 灏忔椂锛屾棤娉曟嫾杞︺€?" : "鎺ユ満鏃堕棿宸秴杩?4 灏忔椂锛屾棤娉曟嫾杞︺€?";
+    reason = joinPayload.service_type === "dropoff" ? "送机时间差超过 4 小时，无法拼车。" : "接机时间差超过 4 小时，无法拼车。";
   } else if (!["published", "matched"].includes(targetRequest.status)) {
     joinable = false;
-    reason = "褰撳墠璁㈠崟鐘舵€佷笉鍙姞鍏ャ€?";
+    reason = "当前拼车组状态不可加入。";
   } else if (!targetRequest.shareable) {
     joinable = false;
-    reason = "褰撳墠璁㈠崟涓嶅厑璁告嫾杞︺€?";
+    reason = "当前拼车组不接受拼车。";
   } else if (new Date(targetRequest.flight_datetime).getTime() <= Date.now()) {
     joinable = false;
-    reason = "褰撳墠璁㈠崟宸茶繃鏈熴€?";
+    reason = "当前拼车组已过期。";
   } else if ((activeFutureRequests || []).length >= 3) {
     joinable = false;
-    reason = "褰撳墠璐﹀彿鏈€澶氬彧鑳藉悓鏃朵繚鐣?3 寮犳湭瀹屾垚鐨勬帴閫佹満璁㈠崟銆?";
+    reason = "当前账号最多只能保留 3 张未来有效订单。";
   } else if (nextPassengerCount > DEFAULT_GROUP_MAX_PASSENGERS) {
     joinable = false;
     reason = `加入后总人数将超过 ${DEFAULT_GROUP_MAX_PASSENGERS} 人。`;
@@ -315,28 +315,28 @@ function evaluateJoinStrict({ targetRequest, group, activeMembers, joinPayload, 
 
   if (!sameServiceType) {
     joinable = false;
-    reason = "鏈嶅姟绫诲瀷涓嶄竴鑷达紝鏃犳硶鍔犲叆鍚屼竴鎷艰溅缁勩€?";
+    reason = "服务类型不同，无法加入当前拼车组。";
   } else if (!sameAirport) {
     joinable = false;
-    reason = "鏈哄満涓嶅悓锛屾棤娉曟嫾杞︺€?";
+    reason = "机场不同，无法加入当前拼车组。";
   } else if (!sameDate) {
     joinable = false;
-    reason = joinPayload.service_type === "dropoff" ? "閫佹満鏃ユ湡涓嶅悓锛屾棤娉曟嫾杞︺€?" : "鎺ユ満鏃ユ湡涓嶅悓锛屾棤娉曟嫾杞︺€?";
+    reason = joinPayload.service_type === "dropoff" ? "送机日期不同，无法拼车。" : "接机日期不同，无法拼车。";
   } else if (!withinTimeWindow) {
     joinable = false;
-    reason = joinPayload.service_type === "dropoff" ? "閫佹満鏃堕棿宸秴杩?4 灏忔椂锛屾棤娉曟嫾杞︺€?" : "鎺ユ満鏃堕棿宸秴杩?4 灏忔椂锛屾棤娉曟嫾杞︺€?";
+    reason = joinPayload.service_type === "dropoff" ? "送机时间差超过 4 小时，无法拼车。" : "接机时间差超过 4 小时，无法拼车。";
   } else if (!["published", "matched"].includes(targetRequest.status)) {
     joinable = false;
-    reason = "褰撳墠璁㈠崟鐘舵€佷笉鍙姞鍏ャ€?";
+    reason = "当前拼车组状态不可加入。";
   } else if (!targetRequest.shareable) {
     joinable = false;
-    reason = "褰撳墠璁㈠崟涓嶅厑璁告嫾杞︺€?";
+    reason = "当前拼车组不接受拼车。";
   } else if (new Date(targetRequest.flight_datetime).getTime() <= Date.now()) {
     joinable = false;
-    reason = "褰撳墠璁㈠崟宸茶繃鏈熴€?";
+    reason = "当前拼车组已过期。";
   } else if (sameTypeRequest) {
     joinable = false;
-    reason = `褰撳墠璐﹀彿宸插瓨鍦ㄤ竴寮犳湭鏉ユ湁鏁?{joinPayload.service_type === "dropoff" ? "閫佹満" : "鎺ユ満"}鍗曪紙${sameTypeRequest.order_no}锛夛紝鍚屼竴璐﹀彿鍚岀被鏈嶅姟涓€娆″彧鑳戒繚鐣欎竴鍗曘€俙`;
+    reason = `当前账号已存在一张未来有效${joinPayload.service_type === "dropoff" ? "送机" : "接机"}单（${sameTypeRequest.order_no}），同一账号同类服务一次只保留一张有效单。`;
   } else if (nextPassengerCount > DEFAULT_GROUP_MAX_PASSENGERS) {
     joinable = false;
     reason = `加入后总人数将超过 ${DEFAULT_GROUP_MAX_PASSENGERS} 人。`;
@@ -385,28 +385,28 @@ function evaluateJoinWindowAware({ targetRequest, group, activeMembers, joinPayl
 
   if (!sameServiceType) {
     joinable = false;
-    reason = "鏈嶅姟绫诲瀷涓嶄竴鑷达紝鏃犳硶鍔犲叆鍚屼竴鎷艰溅缁勩€?";
+    reason = "服务类型不同，无法加入当前拼车组。";
   } else if (!sameAirport) {
     joinable = false;
-    reason = "鏈哄満涓嶅悓锛屾棤娉曟嫾杞︺€?";
+    reason = "机场不同，无法加入当前拼车组。";
   } else if (!sameDate) {
     joinable = false;
-    reason = joinPayload.service_type === "dropoff" ? "閫佹満鏃ユ湡涓嶅悓锛屾棤娉曟嫾杞︺€?" : "鎺ユ満鏃ユ湡涓嶅悓锛屾棤娉曟嫾杞︺€?";
+    reason = joinPayload.service_type === "dropoff" ? "送机日期不同，无法拼车。" : "接机日期不同，无法拼车。";
   } else if (!withinTimeWindow) {
     joinable = false;
-    reason = joinPayload.service_type === "dropoff" ? "閫佹満鏃堕棿宸秴杩?6 灏忔椂锛屾棤娉曟嫾杞︺€?" : "鎺ユ満鏃堕棿宸秴杩?4 灏忔椂锛屾棤娉曟嫾杞︺€?";
+    reason = joinPayload.service_type === "dropoff" ? "送机时间差超过 6 小时，无法拼车。" : "接机时间差超过 4 小时，无法拼车。";
   } else if (!["published", "matched"].includes(targetRequest.status)) {
     joinable = false;
-    reason = "褰撳墠璁㈠崟鐘舵€佷笉鍙姞鍏ャ€?";
+    reason = "当前拼车组状态不可加入。";
   } else if (!targetRequest.shareable) {
     joinable = false;
-    reason = "褰撳墠璁㈠崟涓嶅厑璁告嫾杞︺€?";
+    reason = "当前拼车组不接受拼车。";
   } else if (new Date(targetRequest.flight_datetime).getTime() <= Date.now()) {
     joinable = false;
-    reason = "褰撳墠璁㈠崟宸茶繃鏈熴€?";
+    reason = "当前拼车组已过期。";
   } else if (sameTypeRequest) {
     joinable = false;
-    reason = `褰撳墠璐﹀彿宸插瓨鍦ㄤ竴寮犳湭鏉ユ湁鏁?{joinPayload.service_type === "dropoff" ? "閫佹満" : "鎺ユ満"}鍗曪紙${sameTypeRequest.order_no}锛夛紝鍚屼竴璐﹀彿鍚岀被鏈嶅姟涓€娆″彧鑳戒繚鐣欎竴鍗曘€俙`;
+    reason = `当前账号已存在一张未来有效${joinPayload.service_type === "dropoff" ? "送机" : "接机"}单（${sameTypeRequest.order_no}），同一账号同类服务一次只保留一张有效单。`;
   } else if (nextPassengerCount > DEFAULT_GROUP_MAX_PASSENGERS) {
     joinable = false;
     reason = `加入后总人数将超过 ${DEFAULT_GROUP_MAX_PASSENGERS} 人。`;

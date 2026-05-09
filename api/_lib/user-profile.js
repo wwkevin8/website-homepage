@@ -15,16 +15,16 @@ function getProfileCompletionState(user) {
 
   const missingFields = [];
   if (!hasName) {
-    missingFields.push("濮撳悕");
+    missingFields.push("姓名");
   }
   if (!hasPhone) {
-    missingFields.push("鎵嬫満鍙?");
+    missingFields.push("手机号");
   }
   if (!hasWechat) {
-    missingFields.push("寰俊鍙?");
+    missingFields.push("微信号");
   }
   if (!hasEmailVerified) {
-    missingFields.push("閭楠岃瘉");
+    missingFields.push("邮箱验证");
   }
 
   return {

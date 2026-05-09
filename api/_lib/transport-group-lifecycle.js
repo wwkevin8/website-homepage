@@ -26,6 +26,11 @@ function deriveDisplayGroupId(sourceId, dateValue) {
   return `GRP-${yy}${mm}${dd}-${suffix}`;
 }
 
+function normalizeGroupStatus(status) {
+  if (status === "open") return GROUP_STATUS.ACTIVE;
+  return status;
+}
+
 function normalizeGroupRecord(group, requestLike) {
   if (!group) {
     return group;
@@ -35,7 +40,7 @@ function normalizeGroupRecord(group, requestLike) {
     ...group,
     group_ref: group.id || group.group_id,
     group_id: group.group_id || deriveDisplayGroupId(ref, group.group_date || requestLike?.flight_datetime || requestLike?.created_at),
-    status: group.status
+    status: normalizeGroupStatus(group.status)
   };
 }
 
@@ -96,7 +101,7 @@ async function createGroupForRequest(supabase, request, options = {}) {
         preferred_time_end: request.preferred_time_end,
         max_passengers: DEFAULT_GROUP_MAX_PASSENGERS,
         visible_on_frontend: request.status !== "closed",
-        status: request.status === "closed" ? "closed" : "open",
+        status: request.status === "closed" ? GROUP_STATUS.CLOSED : GROUP_STATUS.SINGLE_MEMBER,
         notes: request.notes || null
       })
       .select("*")
@@ -312,11 +317,7 @@ async function syncGroupState(supabase, groupId) {
   if (result.error && isMissingColumnError(result.error, "transport_groups.group_id")) {
     const legacyPayload = {
       ...updatePayload,
-      status: nextStatus === GROUP_STATUS.CLOSED
-        ? "closed"
-        : nextStatus === GROUP_STATUS.FULL
-          ? "full"
-          : "open"
+      status: nextStatus
     };
     result = await supabase
       .from("transport_groups")

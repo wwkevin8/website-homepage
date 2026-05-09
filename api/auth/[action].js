@@ -38,7 +38,8 @@ const OPTIONAL_SITE_USER_COLUMNS = new Set([
   "nationality",
   "contact_preference",
   "wechat_id",
-  "whatsapp_contact"
+  "whatsapp_contact",
+  "public_user_id"
 ]);
 
 function getRequestIp(req) {
@@ -336,6 +337,16 @@ async function finalizeUserLogin({ supabase, user, provider, req, res }) {
     throw updateUserError;
   }
 
+  const { data: publicIdUser, error: publicIdError } = await supabase
+    .from("site_users")
+    .select("public_user_id")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (!publicIdError && publicIdUser?.public_user_id) {
+    updatedUser.public_user_id = publicIdUser.public_user_id;
+  }
+
   setUserSessionCookie(res, createUserSessionToken(user.id));
   return updatedUser;
 }
@@ -524,7 +535,10 @@ module.exports = async function handler(req, res) {
         throw updateError;
       }
 
-      ok(res, updatedUser);
+      ok(res, {
+        ...updatedUser,
+        public_user_id: user.public_user_id || updatedUser.public_user_id || null
+      });
       return;
     }
 

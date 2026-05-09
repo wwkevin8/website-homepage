@@ -1,5 +1,3 @@
-const XLSX = require("xlsx");
-
 const { getSupabaseAdmin } = require("../_lib/supabase");
 const { requireAdminUser } = require("../_lib/admin-auth");
 const { serverError, methodNotAllowed } = require("../_lib/http");
@@ -11,6 +9,7 @@ const REQUEST_EXPORT_SELECT = [
   "student_name",
   "email",
   "phone",
+  "wechat",
   "site_user_id",
   "service_type",
   "airport_code",
@@ -18,11 +17,8 @@ const REQUEST_EXPORT_SELECT = [
   "terminal",
   "flight_no",
   "flight_datetime",
-  "location_to",
   "location_from",
-  "luggage_count",
-  "passenger_count",
-  "status",
+  "location_to",
   "created_at",
   "transport_group_members(group_id,is_initiator,request_id)",
   "site_users(email)"
@@ -70,43 +66,28 @@ function formatDateTime(value) {
   return year && month && day && hour && minute ? `${year}-${month}-${day} ${hour}:${minute}` : "";
 }
 
+function formatExcelTextDateTime(value) {
+  const text = formatDateTime(value);
+  return text ? `="${text}"` : "";
+}
+
 function serviceLabel(value) {
   return value === "dropoff" ? "送机" : "接机";
 }
 
-function statusLabel(item) {
-  if (item?.closed_reason === "expired") {
-    return "已过期";
-  }
-  if (item?.status === "matched") {
-    return "已匹配";
-  }
-  if (item?.status === "closed") {
-    return "已关闭";
-  }
-  return "拼车中";
-}
-
 function buildRows(items) {
   return (items || []).map(item => ({
+    "提交时间": formatExcelTextDateTime(item.created_at),
     "Order No": item.order_no || "",
-    "提交时间": formatDateTime(item.created_at),
-    "学生姓名": item.student_name || "",
-    "邮箱": item.student_email || item.email || "",
-    "电话": item.phone || "",
-    "服务类型": serviceLabel(item.service_type),
-    "机场代码": item.airport_code || "",
-    "机场名称": item.airport_name || "",
-    "航站楼": item.terminal || "",
-    "航班号": item.flight_no || "",
-    "抵达/起飞日期时间": formatDateTime(item.flight_datetime),
+    "学生": item.student_name || "",
+    "微信号": item.wechat || "",
+    "服务": serviceLabel(item.service_type),
+    "机场": item.airport_code || "",
+    "航班": item.flight_no || "",
+    "您抵达/起飞日期和时间": formatExcelTextDateTime(item.flight_datetime),
     "出发地": item.location_from || "",
     "目的地": item.location_to || "",
-    "乘车人数": Number(item.passenger_count || 0),
-    "行李数": Number(item.luggage_count || 0),
-    "状态": statusLabel(item),
-    "Group ID": item.group_id || "",
-    "是否发起人": item.is_initiator ? "是" : "否"
+    "Group ID": item.group_id || ""
   }));
 }
 
@@ -120,7 +101,36 @@ function buildFilename(queryParams) {
     String(now.getUTCMinutes()).padStart(2, "0")
   ].join("");
   const servicePart = queryParams.service_type ? `-${queryParams.service_type}` : "";
-  return `transport-requests${servicePart}-${stamp}.xlsx`;
+  return `transport-requests${servicePart}-${stamp}.csv`;
+}
+
+function csvEscape(value) {
+  const text = value === null || value === undefined ? "" : String(value);
+  if (!/[",\r\n]/.test(text)) {
+    return text;
+  }
+  return `"${text.replace(/"/g, '""')}"`;
+}
+
+function rowsToCsv(rows) {
+  const columns = rows.length ? Object.keys(rows[0]) : [
+    "提交时间",
+    "Order No",
+    "学生",
+    "微信号",
+    "服务",
+    "机场",
+    "航班",
+    "您抵达/起飞日期和时间",
+    "出发地",
+    "目的地",
+    "Group ID"
+  ];
+  const lines = [
+    columns.map(csvEscape).join(","),
+    ...rows.map(row => columns.map(column => csvEscape(row[column])).join(","))
+  ];
+  return `\ufeff${lines.join("\r\n")}\r\n`;
 }
 
 module.exports = async function handler(req, res) {
@@ -159,20 +169,13 @@ module.exports = async function handler(req, res) {
 
     const items = (data || []).map(item => deriveRequestDisplayFlags(item));
     const rows = buildRows(items);
-    const worksheet = XLSX.utils.json_to_sheet(rows);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Transport Requests");
-
-    const buffer = XLSX.write(workbook, {
-      type: "buffer",
-      bookType: "xlsx"
-    });
+    const csv = rowsToCsv(rows);
 
     const filename = buildFilename(queryParams);
     res.statusCode = 200;
-    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
     res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
-    res.end(buffer);
+    res.end(Buffer.from(csv, "utf8"));
   } catch (error) {
     serverError(res, error);
   }

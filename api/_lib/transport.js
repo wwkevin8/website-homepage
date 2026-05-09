@@ -5,6 +5,8 @@ const MANUAL_CURRENT_PREFIX = "manual_current:";
 const PUBLIC_REQUEST_STATUSES = ["published", "matched"];
 const ACTIVE_PICKUP_REQUEST_STATUSES = ["published", "matched"];
 const DEFAULT_GROUP_MAX_PASSENGERS = 5;
+const TRANSPORT_TIME_ZONE = "Europe/London";
+const LOCAL_DATE_TIME_PATTERN = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,3}))?)?$/;
 
 function deriveDisplayGroupId(sourceId, dateValue) {
   if (!sourceId) {
@@ -49,8 +51,76 @@ function isIsoDateTime(value) {
   if (!value) {
     return false;
   }
+  const parsed = parseTransportDateTime(value);
+  return Boolean(parsed);
+}
+
+function getTimeZoneParts(date, timeZone = TRANSPORT_TIME_ZONE) {
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+    hourCycle: "h23"
+  });
+
+  return formatter.formatToParts(date).reduce((parts, part) => {
+    if (part.type !== "literal") {
+      parts[part.type] = Number(part.value);
+    }
+    return parts;
+  }, {});
+}
+
+function getTimeZoneOffsetMs(date, timeZone = TRANSPORT_TIME_ZONE) {
+  const parts = getTimeZoneParts(date, timeZone);
+  const localAsUtc = Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second, date.getUTCMilliseconds());
+  return localAsUtc - date.getTime();
+}
+
+function parseLocalTransportDateTime(value) {
+  const match = String(value || "").trim().match(LOCAL_DATE_TIME_PATTERN);
+  if (!match) {
+    return null;
+  }
+
+  const [, year, month, day, hour, minute, second = "0", fraction = "0"] = match;
+  const localAsUtc = Date.UTC(
+    Number(year),
+    Number(month) - 1,
+    Number(day),
+    Number(hour),
+    Number(minute),
+    Number(second),
+    Number(fraction.padEnd(3, "0").slice(0, 3))
+  );
+
+  let utcTime = localAsUtc;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const offset = getTimeZoneOffsetMs(new Date(utcTime), TRANSPORT_TIME_ZONE);
+    const nextUtcTime = localAsUtc - offset;
+    if (nextUtcTime === utcTime) {
+      break;
+    }
+    utcTime = nextUtcTime;
+  }
+
+  const parsed = new Date(utcTime);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function parseTransportDateTime(value) {
+  const localDate = parseLocalTransportDateTime(value);
+  if (localDate) {
+    return localDate;
+  }
+
   const parsed = new Date(value);
-  return !Number.isNaN(parsed.getTime());
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
 function normalizeNullableText(value) {
@@ -109,10 +179,11 @@ function ensureDateTime(value, field, required = true) {
   if (!value && !required) {
     return null;
   }
-  if (!isIsoDateTime(value)) {
+  const parsed = parseTransportDateTime(value);
+  if (!parsed) {
     throw new Error(`${field} must be a valid datetime`);
   }
-  return new Date(value).toISOString();
+  return parsed.toISOString();
 }
 
 function ensureDate(value, field) {

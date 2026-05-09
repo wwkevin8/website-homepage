@@ -3,6 +3,15 @@ const { applyEffectiveGroupCounts } = require("../api/_lib/transport");
 const { ok, methodNotAllowed, serverError } = require("../api/_lib/http");
 const { loadGroupStatsMap } = require("../api/_lib/transport-group-stats");
 
+const PUBLIC_JOINABLE_GROUP_STATUSES = ["single_member", "active"];
+
+function getPublicGroupStatuses(queryParams = {}) {
+  const status = String(queryParams.status || "").trim().toLowerCase();
+  if (status === "single_member") return ["single_member"];
+  if (status === "active" || status === "open") return PUBLIC_JOINABLE_GROUP_STATUSES;
+  return PUBLIC_JOINABLE_GROUP_STATUSES;
+}
+
 function getLondonTodayIsoDate() {
   const formatter = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Europe/London",
@@ -42,7 +51,7 @@ function buildPublicGroupsBaseQuery(supabase, queryParams, dateFrom, sort) {
     .from("transport_groups_public_view")
     .select("*", { count: "exact" })
     .eq("visible_on_frontend", true)
-    .in("status", ["single_member", "active", "full", "open"])
+    .in("status", getPublicGroupStatuses(queryParams))
     .gt("current_passenger_count", 0);
 
   if (queryParams.service_type) {

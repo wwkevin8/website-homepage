@@ -1,0 +1,373 @@
+# Project Map
+
+This document is the editable project inventory for `webside-transport-dispatch`. Keep it current when pages, APIs, tables, status flows, roles, services, or environment variables change.
+
+Last structure scan: 2026-05-08. Scope: documentation-only scan of current files; unclear items are marked `需要确认`.
+
+## System Summary
+
+| Area | Current Shape | Notes |
+| --- | --- | --- |
+| Frontend | Static HTML/CSS/JS | No framework detected. Most pages use `styles.css`; service-specific pages add page scripts. |
+| Backend | Vercel Serverless Functions under `api/` | Public and admin APIs use aggregate dispatch routes plus shared handlers/helpers. |
+| Database/Auth | Supabase | Server-side code uses service-role client in `api/_lib/supabase.js`; user/admin sessions are custom signed cookies. |
+| Email | Resend and SMTP/nodemailer | Different flows use Resend-only or Resend/SMTP fallback. Production provider settings need confirmation. |
+| Deployment | Vercel | `vercel.json` defines cache headers and two cron jobs. Node engine is `24.x` in `package.json`. |
+| Main business areas | Storage orders, pickup/dropoff, carpool/transport requests, public board, admin operations | Public data boundaries are critical. |
+
+## Page Inventory
+
+| File Path | Page Purpose | Type | Associated JS/CSS | Associated API | Notes |
+| --- | --- | --- | --- | --- | --- |
+| `index.html` | Homepage | 前台 | `site-auth.js`, `script.js`, `styles.css` | `/api/auth/session` via site auth | Active public entry. |
+| `benefits.html` | Benefits/content page | 前台 | `script.js`, `styles.css` | None detected | Content page. |
+| `campus.html` | Campus/content page | 前台 | `script.js`, `styles.css` | None detected | Content page. |
+| `team.html` | Team/content page | 前台 | `script.js`, `styles.css` | None detected | Content page. |
+| `privacy-policy.html` | Privacy policy | 前台 | `styles.css` | None detected | Legal/static. |
+| `terms-of-service.html` | Terms of service | 前台 | `styles.css` | None detected | Legal/static. |
+| `service-center.html` | Service entry page | 前台/用户 | `site-auth.js`, `service-center.js`, `styles.css` | `/api/auth/session` via site auth | Service hub. |
+| `pickup.html` | Pickup/dropoff public service and board entry | 前台 | `site-auth.js`, `script.js`, `transport-shared.js`, `transport-api.js`, `transport-public.js`, `styles.css`, `styles-pickup-backup.css` | `/api/public/transport-board`, `/api/public/transport-groups`, join APIs through `transport-api.js` | Uses `img/pickupvideo/pickupvideo2.0.mp4`; file existence/status needs confirmation. |
+| `pickup-form.html` | Pickup/dropoff or transport request form | 用户前台 | `site-auth.js`, `script.js`, `pickup-form.js`, `styles.css` | `/api/public/transport-request-submit`, `/api/public/my-transport-requests`, `/api/auth/session` | Auth-related user form. |
+| `transport-board.html` | Public transport board/carpool display | 前台 | `site-auth.js`, `transport-shared.js`, `transport-api.js`, `transport-public.js`, `styles.css` | `/api/public/transport-board`, `/api/public/transport-groups`, `/api/public/transport-join-preview`, `/api/public/transport-join-submit`, `/api/public/my-transport-requests` | Critical public privacy boundary. |
+| `storage.html` | Storage service public page/calculator | 前台 | `site-auth.js`, `script.js`, `styles.css` | Uses storage booking links; submission is on `storage-booking.html` | Public service page. |
+| `storage-booking.html` | Storage booking form | 用户前台 | `site-auth.js`, `script.js`, `styles.css` | `/api/public/storage-order-submit`, `/api/auth/session` | User-facing storage order flow. |
+| `login.html` | User login | 用户前台 | Cloudflare Turnstile script, `auth-i18n.js`, `site-auth.js`, `login.js`, `styles.css` | `/api/public/auth-config`, `/api/auth/login` | Uses Turnstile. |
+| `register.html` | User registration | 用户前台 | Cloudflare Turnstile script, `auth-i18n.js`, `site-auth.js`, `register.js`, `styles.css` | `/api/public/auth-config`, `/api/auth/request-signup-code`, `/api/auth/verify-signup-code`, `/api/auth/register` | Sends auth code email. |
+| `reset-password.html` | Password reset | 用户前台 | Cloudflare Turnstile script, `auth-i18n.js`, `site-auth.js`, `reset-password.js`, `styles.css` | `/api/public/auth-config`, `/api/auth/request-password-reset`, `/api/auth/reset-password` | Sends password reset email. |
+| `profile.html` | User profile | 用户前台 | `site-auth.js`, `profile.js`, `styles.css` | `/api/auth/profile` | Requires logged-in user. |
+| `auth-callback.html` | Auth callback page | 用户前台/不确定 | inline script, `styles.css` | Supabase/provider callback behavior needs confirmation | No external JS detected in scan. |
+| `admin-login.html` | Unified admin login | 后台 | `admin-api.js`, `styles.css` | `/api/admin/login`, `/api/admin/session` | Admin entry point. |
+| `admin-dashboard.html` | Admin dashboard | 后台 | `admin-api.js`, `admin-shell.js`, `admin-pages.js`, `styles.css` | `/api/admin/dashboard`, `/api/admin/session` | Dashboard counts can be cached/estimated. |
+| `admin-orders.html` | General order admin | 后台 | `admin-api.js`, `admin-shell.js`, `admin-orders.js`, `styles.css` | `/api/admin/orders`, `/api/admin/orders/:id`, notes/archive APIs | General order workflow. |
+| `admin-storage.html` | Storage order admin list | 后台 | `admin-api.js`, `admin-shell.js`, `admin-pages.js`, `styles.css` | `/api/admin/storage-orders` | Known risk: `storageTypeLabels is not defined` before public opening. |
+| `admin-storage-detail.html` | Storage order admin detail | 后台 | `admin-api.js`, `admin-shell.js`, `admin-pages.js`, `styles.css` | `/api/admin/storage-orders?id=...` | Keep storage list API lightweight. |
+| `admin-users.html` | User management | 后台 | `admin-api.js`, `admin-shell.js`, `admin-pages.js`, `styles.css` | `/api/admin/users`, `/api/admin/users/:id` | Admin only. |
+| `admin-managers.html` | Admin manager management | 后台 | `admin-api.js`, `admin-shell.js`, `admin-pages.js`, `styles.css` | `/api/admin/managers`, `/api/admin/managers/:id`, reset password | Super-admin-only operations. |
+| `transport-admin-login.html` | Transport admin login redirect | 后台/兼容入口 | `styles.css` | redirects to `admin-login.html` | Contains meta refresh; appears to be compatibility shim. |
+| `transport-admin-requests.html` | Transport request admin list/export | 后台 | `admin-api.js`, `admin-shell.js`, `transport-shared.js`, `transport-api.js`, `transport-admin.js`, `styles.css` | `/api/transport-requests`, `/api/transport-requests/export` | Critical operator workflow. |
+| `transport-admin-request-new.html` | Create transport request | 后台 | same transport admin bundle | `/api/transport-requests` | Critical operator workflow. |
+| `transport-admin-request-edit.html` | Edit transport request | 后台 | same transport admin bundle | `/api/transport-requests/:id`, `/api/transport-requests/:id/recreate` | Payment email risk noted below. |
+| `transport-admin-groups.html` | Transport group admin list | 后台 | same transport admin bundle | `/api/transport-groups` | Critical grouping workflow. |
+| `transport-admin-group-new.html` | Create transport group | 后台 | same transport admin bundle | `/api/transport-groups` | Group lifecycle-sensitive. |
+| `transport-admin-group-edit.html` | Edit group and members | 后台 | same transport admin bundle | `/api/transport-groups/:id`, `/api/transport-groups/:id/members`, `/api/transport-group-members/:id` | Group/member lifecycle-sensitive. |
+| `transport-admin-sync-logs.html` | Transport sync audit logs | 后台 | same transport admin bundle | `/api/transport-sync-audit-logs` | Cron/email audit support. |
+| `pickup-admin.html` | Local/browser pickup admin prototype | 不确定/可能历史 | `script.js`, `styles.css` | No server API detected; script references local pickup-admin flow | Text says local-only admin; production use needs confirmation. |
+| `pickup-backup.html` | Pickup page backup variant | 备份 | `script.js`, `styles.css`, `styles-pickup-backup.css` | No active API detected in scan | Filename indicates backup; `pickup.html` reuses backup CSS/classes. |
+| `pickup-original-backup.html` | Older pickup backup variant | 备份 | `script.js`, `transport-shared.js`, `transport-api.js`, `transport-public.js`, `styles.css` | Public transport APIs through transport scripts | Backup status needs confirmation. |
+| `index-homepage-backup.html` | Homepage backup variant | 备份 | `site-auth.js`, `script-homepage-backup.js`, `styles-homepage-backup.css` | Storage submit endpoint exists inside associated backup script | Backup status needs confirmation. |
+| `index-homepage-brand.html` | Homepage brand variant | 备份/不确定 | `site-auth.js`, `script-homepage-brand.js`, `styles-homepage-brand.css` | Storage submit endpoint exists inside associated brand script | Whether this is still in use needs confirmation. |
+| `index-homepage-brand-v2.html` | Homepage brand v2 variant | 备份/不确定 | `site-auth.js`, `script-homepage-brand-v2.js`, `styles-homepage-brand-v2.css` | Storage submit endpoint exists inside associated brand script | Whether this is still in use needs confirmation. |
+
+## Backup / Brand / Archive-Like Files
+
+| Path | Classification | Evidence | Current Risk/Action |
+| --- | --- | --- | --- |
+| `_inspect_src_zip_2/` | 历史/检查目录 | Name and work-log references indicate imported/inspection content | 需要确认是否 should stay in repo/deploy output. |
+| `.tmp-*` files/directories | 临时输出 | Many `.tmp-*.log` and deployment output folders present | 需要确认 cleanup policy; not touched. |
+| `work-log/` | Historical artifacts | AGENTS says not canonical handoff | Keep as history unless user decides otherwise. |
+| `index-homepage-backup.html`, `script-homepage-backup.js`, `styles-homepage-backup.css` | 备份 | Filename says backup | 需要确认 whether deployable/static access should remain. |
+| `index-homepage-brand.html`, `index-homepage-brand-v2.html`, related scripts/styles | 备份/不确定 | Brand variants are standalone pages; not primary `index.html` | 需要确认 active vs historical. |
+| `pickup-backup.html`, `pickup-original-backup.html` | 备份 | Filename says backup | `pickup.html` uses `styles-pickup-backup.css`, so CSS may still be active. |
+| `transport-public.previous-good.js` | 备份/风险 | File extension `.js` but content appears to be Vercel auth HTML capture, not valid app JS | 需要确认 retention; do not load from production pages. |
+| `pickup-admin.html` | 不确定 | Local-only text; `script.js` contains `pickup-admin` code | 需要确认 whether it is a supported admin page or historical prototype. |
+
+## API Route Inventory
+
+| Route Path | File/Handler | Methods | Purpose | Login Required | Admin Required | Related Tables |
+| --- | --- | --- | --- | --- | --- | --- |
+| `/api/public/auth-config` | `api/public/[...action].js` -> `public-api-handlers/auth-config.js` | GET | Exposes safe auth config | No | No | None |
+| `/api/public/storage-order-submit` | public aggregate -> `storage-order-submit.js` | POST | Submit storage order | Yes, via user session | No | `storage_orders`, `site_users`, `order_number_counters`, possibly `orders` via DB trigger |
+| `/api/public/my-storage-orders` | public aggregate -> `my-storage-orders.js` | GET | Current user's storage orders | Yes | No | `storage_orders` |
+| `/api/public/transport-request-submit` | public aggregate -> `transport-request-submit.js` | POST | Submit pickup/dropoff/transport request | Yes | No | `transport_requests`, `site_users`, `order_number_counters`, possibly `orders` via DB trigger |
+| `/api/public/my-transport-requests` | public aggregate -> `my-transport-requests.js` | GET | Current user's transport requests | Yes | No | `transport_requests`, `transport_groups`, `transport_group_members` |
+| `/api/public/transport-board` | public aggregate -> `transport-board.js` | GET | Public transport board data | No | No | `transport_requests`, `transport_groups`, `transport_group_members` |
+| `/api/public/transport-groups` | public aggregate -> `transport-groups.js` | GET | Public/public-safe transport group listing | No | No | `transport_groups_public_view`, `transport_group_members`, `transport_requests` |
+| `/api/public/transport-join-preview` | public aggregate -> `transport-join-preview.js` | POST | Preview joining a pickup/carpool request | Yes | No | `transport_requests`, `transport_groups`, `transport_group_members` |
+| `/api/public/transport-join-submit` | public aggregate -> `transport-join-submit.js` | POST | Submit join request and create/add transport request | Yes | No | `transport_requests`, `transport_groups`, `transport_group_members` |
+| `/api/auth/session` | `api/auth/[action].js` | GET | User session lookup | Cookie optional | No | `site_users` |
+| `/api/auth/logout` | `api/auth/[action].js` | POST | Clear user session | Cookie optional | No | None |
+| `/api/auth/profile` | `api/auth/[action].js` | GET, POST | Read/update current user profile | Yes | No | `site_users` |
+| `/api/auth/login` | `api/auth/[action].js` | POST | Password login with Turnstile | No | No | `site_users`, `user_login_events` |
+| `/api/auth/request-signup-code` | `api/auth/[action].js` | POST | Request signup code email | No | No | `site_users`, `email_login_codes` |
+| `/api/auth/verify-signup-code` | `api/auth/[action].js` | POST | Verify signup code | No | No | `site_users`, `email_login_codes` |
+| `/api/auth/register` | `api/auth/[action].js` | POST | Create user account and session | No, uses signup ticket | No | `site_users`, `email_login_codes`, `user_login_events` |
+| `/api/auth/request-password-reset` | `api/auth/[action].js` | POST | Request reset email | No | No | `site_users`, `password_reset_tokens` |
+| `/api/auth/reset-password` | `api/auth/[action].js` | POST | Reset password and log in | No, uses reset token | No | `site_users`, `password_reset_tokens`, `user_login_events` |
+| `/api/admin/login` | `api/admin/[...action].js` | POST | Admin login | No | No, but checks admin credentials | `admin_users` |
+| `/api/admin/logout` | `api/admin/[...action].js` | POST | Clear admin session | Cookie optional | No | None |
+| `/api/admin/session` | `api/admin/[...action].js` | GET | Admin session lookup | Cookie optional | No | `admin_users` |
+| `/api/admin/me/change-password` | `api/admin/[...action].js` | POST | Current admin password change | Yes | Yes | `admin_users` |
+| `/api/admin/dashboard` | `api/admin/[...action].js` | GET | Dashboard counts | Yes | Yes | `admin_users`, `users`, `user_login_events`, `transport_requests`, `storage_orders`, `orders` |
+| `/api/admin/users` | `api/admin/[...action].js` | GET | Admin user/customer listing | Yes | Yes | `users` |
+| `/api/admin/users/:id` | `api/admin/[...action].js` | GET | Admin user/customer detail | Yes | Yes | `users` |
+| `/api/admin/storage-orders` | `api/admin/[...action].js` | GET, PATCH, DELETE | Storage order list/detail/update/delete via query `id` | Yes | Yes | `storage_orders`, `site_users`, `admin_operation_logs` |
+| `/api/admin/orders` | `api/admin/[...action].js` | GET | General order list | Yes | Yes | `orders` |
+| `/api/admin/orders/:id` | `api/admin/[...action].js` and `api/admin/orders/[id].js` | GET, PATCH | General order detail/update | Yes | Yes | `orders`, `order_status_logs`, `order_notes`, `order_attachments`, `admin_operation_logs`, source tables |
+| `/api/admin/orders/:id/notes` | admin aggregate | POST | Add order note | Yes | Yes | `order_notes`, `admin_operation_logs` |
+| `/api/admin/orders/:id/archive` | admin aggregate | POST | Archive order | Yes | Yes | `orders`, `admin_operation_logs` |
+| `/api/admin/orders/:id/unarchive` | admin aggregate | POST | Unarchive order | Yes | Yes | `orders`, `admin_operation_logs` |
+| `/api/admin/orders/archive/run` | admin aggregate | POST | Bulk archive old orders | Yes | Yes | `orders`, `admin_operation_logs` |
+| `/api/admin/managers` | admin aggregate | GET, POST | List/create admin users | Yes | Super admin | `admin_users` |
+| `/api/admin/managers/:id` | admin aggregate | PATCH, DELETE | Update/delete admin user | Yes | Super admin | `admin_users` |
+| `/api/admin/managers/:id/reset-password` | admin aggregate | POST | Reset admin password | Yes | Super admin | `admin_users` |
+| `/api/transport-requests` | `api/transport-requests/index.js` | GET, POST | Admin list/create transport requests | Yes | Yes | `transport_requests`, `site_users`, `transport_group_members` |
+| `/api/transport-requests/:id` | `api/transport-requests/[id].js` | GET, PATCH, DELETE | Admin read/update/delete request | Yes | Yes | `transport_requests`, `transport_group_members`, `site_users` |
+| `/api/transport-requests/:id/recreate` | `api/transport-requests/[id]/recreate.js` | POST | Recreate/regroup transport request | Yes | Yes | `transport_requests`, `transport_groups`, `transport_group_members` |
+| `/api/transport-requests/export` | `api/transport-requests/export.js` | GET | Admin request export | Yes | Yes | `transport_requests`, `site_users` |
+| `/api/transport-groups` | `api/transport-groups/index.js` | GET, POST | Admin list/create groups | Yes | Yes | `transport_groups`, `transport_groups_public_view`, `transport_requests`, `transport_group_members` |
+| `/api/transport-groups/:id` | `api/transport-groups/[id].js` | GET, PATCH, DELETE | Admin group detail/update/delete | Yes | Yes | `transport_groups`, `transport_group_members`, `transport_requests` |
+| `/api/transport-groups/:id/members` | `api/transport-groups/[id]/members.js` | POST | Replace/add group members | Yes | Yes | `transport_groups`, `transport_group_members`, `transport_requests` |
+| `/api/transport-group-members/:id` | `api/transport-group-members/[id].js` | DELETE | Remove group member | Yes | Yes | `transport_group_members`, related lifecycle tables |
+| `/api/transport-sync-audit-logs` | `api/transport-sync-audit-logs.js` | GET | Admin sync audit log list | Yes | Yes | `transport_sync_audit_logs` |
+| `/api/cron/close-expired-transport-requests` | `api/cron/close-expired-transport-requests.js` | GET | Close expired transport requests | Secret | No admin session; requires `CRON_SECRET` | `transport_requests` |
+| `/api/cron/send-transport-sync-digest` | `api/cron/send-transport-sync-digest.js` | GET | Send daily sync digest | Secret | No admin session; requires `CRON_SECRET` | `transport_sync_audit_logs` |
+| `/api/cron/run-transport-daily-flow-test` | `api/cron/run-transport-daily-flow-test.js` | GET | Run scheduled transport QA flow | Secret | No admin session; requires `CRON_SECRET` | `admin_users`, `site_users`, `transport_requests`, `transport_groups`, `transport_group_members`, `transport_sync_audit_logs` |
+
+## Supabase Files
+
+| File | Purpose | Notes |
+| --- | --- | --- |
+| `supabase/admin_management.sql` | Creates `admin_users` | Admin auth and roles. |
+| `supabase/order_numbering.sql` | Creates counters and order numbering helpers | Touches transport/storage order numbers. |
+| `supabase/order_system_optimization.sql` | Creates general order system and sync triggers/functions | Includes `users`, `orders`, logs/notes/attachments. |
+| `supabase/storage_orders.sql` | Creates `storage_orders` | Storage status and notification status constraints. |
+| `supabase/transport_dispatch.sql` | Creates transport request/group tables and public view | Core transport schema. |
+| `supabase/transport_group_backfill.sql` | Transport group data backfill | Need confirmation before re-running. |
+| `supabase/transport_request_status_unification.sql` | Transport status unification | Normalizes request statuses to `published/matched/closed`. |
+| `supabase/transport_requests_email_column.sql` | Adds/adjusts transport email column | Used by request export/email flows. |
+| `supabase/20260415_public_schema_hardening.sql` | Enables/forces RLS on public tables | Security hardening. |
+| `supabase/20260415_function_search_path_hardening.sql` | Function search path hardening | Security hardening. |
+| `supabase/20260415_transport_group_listing_optimization.sql` | Group listing optimization | Performance/index/view related. |
+| `supabase/20260416_admin_transport_requests_indexes.sql` | Admin transport request indexes | Performance. |
+| `supabase/20260416_admin_transport_groups_indexes.sql` | Admin transport group indexes | Performance. |
+| `supabase/20260416_public_transport_groups_indexes.sql` | Public transport group indexes | Performance. |
+| `supabase/20260416_transport_sync_audit_logs.sql` | Creates transport sync audit logs | Used by cron/admin log page. |
+| `supabase/20260416_transport_sync_audit_logs_perf.sql` | Audit log performance changes | Performance. |
+| `supabase/20260503_storage_service_order_types.sql` | Adds/adjusts storage service order types | Storage collection/return flow. |
+| `supabase/migrations/20260506140108_user_public_id_storage_link.sql` | User public ID and storage linkage | User/storage identity linkage. |
+| `supabase/migrations/20260506164358_storage_order_type_constraints.sql` | Storage order type constraints | Storage validation. |
+| `supabase/migrations/20260506165709_bind_legacy_storage_orders_to_site_users.sql` | Bind legacy storage orders | Migration/backfill; rerun needs caution. |
+| `supabase/migrations/20260508000100_users_source_table_source_user_id_unique.sql` | Users source uniqueness | General users/order linkage. |
+
+## Database Table Inventory
+
+| Table/View | Purpose | APIs/Helpers Using It | User Privacy | Notes |
+| --- | --- | --- | --- | --- |
+| `site_users` | User auth/profile identity | `/api/auth/*`, public "my" APIs, storage/transport submit, admin storage search, cron QA | Yes | Public ID linkage exists; do not expose private fields. |
+| `users` | General user/order listing table | `/api/admin/users`, dashboard, order system SQL | Yes | Relationship to `site_users` needs confirmation before changes. |
+| `email_login_codes` | Signup verification codes | `/api/auth/request-signup-code`, `/api/auth/verify-signup-code`, `/api/auth/register` | Yes | Contains code hashes and IP metadata. |
+| `user_login_events` | User login audit | `/api/auth/login`, registration/reset finalization, dashboard | Yes | Contains IP/user-agent. |
+| `password_reset_tokens` | Password reset tokens | `/api/auth/request-password-reset`, `/api/auth/reset-password` | Yes | Contains token hashes and IP metadata. |
+| `admin_users` | Admin accounts/roles/status | `/api/admin/*`, admin session helpers, cron QA | Yes | `super_admin` protections apply. |
+| `admin_operation_logs` | Admin audit log | order/storage admin mutation helpers | Yes/Operational | Keep for accountability. |
+| `orders` | General unified order records | `/api/admin/orders*`, dashboard, sync SQL | Yes | Mirrors source order tables via SQL triggers/functions. |
+| `order_status_logs` | General order status history | order detail helper | Yes/Operational | Populated by order sync/status changes. |
+| `order_notes` | Admin notes | `/api/admin/orders/:id/notes` | Yes | Internal/admin-only. |
+| `order_attachments` | Order attachments metadata | order detail helper | Yes | Storage/privacy model needs confirmation. |
+| `order_number_counters` | Sequential business order number counters | storage/transport submit helpers | No/low | Avoid manual edits. |
+| `storage_orders` | Storage bookings and admin fields | public submit/my orders, admin storage APIs, dashboard, order sync SQL | Yes | Active statuses: `pending_confirmation`, `confirmed`; terminal/cancel: `cancelled`. |
+| `transport_requests` | Pickup/dropoff/carpool requests | public submit/my/board/join, admin transport APIs, cron, order sync SQL | Yes | Public board must expose safe subset only. |
+| `transport_groups` | Transport/carpool group entities | public board/groups/join, admin group APIs, lifecycle helpers, cron | Some/Operational | Lifecycle-sensitive. |
+| `transport_group_members` | Request-to-group membership | public board/groups/join, admin group/member APIs, lifecycle helpers, cron | Some/Operational | Lifecycle-sensitive. |
+| `transport_groups_public_view` | Public/admin group listing view | public groups, admin groups, stats helpers | Public-safe intended | View definition/field exposure should be checked before expansion. |
+| `transport_sync_audit_logs` | Sync/daily-flow audit records | `/api/transport-sync-audit-logs`, cron digest/test | Operational | Admin-only display. |
+
+## Order And Status Flows
+
+### Storage Orders
+
+| Status | Meaning | Visibility/Owner | Typical Transition | Notes |
+| --- | --- | --- | --- | --- |
+| `pending_confirmation` | Submitted and awaiting confirmation | User/admin | `confirmed`, `cancelled` | Default in `storage_orders.sql`; dashboard counts this as pending. |
+| `confirmed` | Confirmed/active | User/admin | `cancelled` or completion via general order rules, 需要确认 | Active storage status. |
+| `cancelled` | Cancelled | Admin/user display, 需要确认 | Terminal | SQL marks completed_at for sync. |
+
+Notification sub-statuses:
+
+| Field | Values | Notes |
+| --- | --- | --- |
+| `notification_status` | `pending`, `sent`, `failed` | Admin notification status. |
+| `student_email_status` | `pending`, `sent`, `failed`, `skipped` | Student confirmation email status. |
+
+### General Orders
+
+| Source Table | Allowed Statuses In Helper | Terminal Statuses | Notes |
+| --- | --- | --- | --- |
+| `storage_orders` | `pending_confirmation`, `confirmed`, `cancelled` | `confirmed`, `cancelled` | `api/_lib/orders.js` maps source statuses. |
+| `transport_requests` | `draft`, `open`, `closed`, `cancelled` | `closed`, `cancelled` | Potential legacy mismatch with current transport request statuses; needs confirmation. |
+
+### Transport Requests
+
+| Status | Meaning | Public Board | Typical Transition | Notes |
+| --- | --- | --- | --- | --- |
+| `published` | Active and visible/matchable | Visible | `matched`, `closed` | Default/current status. |
+| `matched` | Request has matched/grouped state | Visible | `closed` | Used when multiple active members/grouped. |
+| `closed` | Closed/expired/completed | Hidden from active public board | Terminal unless explicitly reopened | Cron can close expired requests. |
+| `draft` / `open` | Legacy/general-order statuses | 需要确认 | Normalized or mapped in places | Dashboard/order helper references these; needs cleanup/confirmation before changing. |
+| `cancelled` | General-order helper status | 需要确认 | Terminal | Not in current `REQUEST_STATUSES`; referenced in general order mapping. |
+
+### Transport Groups
+
+| Status | Meaning | Typical Transition | Notes |
+| --- | --- | --- | --- |
+| `single_member` | One active member | `active`, `full`, `closed`, `cancelled` | Current normalized status. |
+| `active` | Active group | `full`, `closed`, `cancelled` | Public/admin active grouping state. |
+| `full` | Capacity reached | `closed`, `cancelled` | Capacity-sensitive. |
+| `closed` | Closed/completed | Terminal | Closing group may close member requests. |
+| `cancelled` | Cancelled | Terminal | Cancelling group may close member requests. |
+| `open` / `draft` | Legacy group statuses | Normalized to current statuses | Some lifecycle/admin code still maps to/from `open`; needs caution. |
+
+## User Roles And Permissions
+
+| Role/Actor | Meaning | Can Do | Must Not Do | Notes |
+| --- | --- | --- | --- | --- |
+| `guest` | Public visitor | View public pages, auth config, public-safe transport board/groups | See private order/user/admin data | No login. |
+| `logged-in user` | Site user with signed user session | Submit storage/transport requests; view own profile/orders/requests; join/preview transport requests | Access other users' data or admin APIs | Enforced by `getAuthenticatedUser`. |
+| `admin` | Generic admin actor | 需要确认; likely `super_admin` or `operations_admin` only | 需要确认 | No separate `admin` role constant found. |
+| `operations_admin` | Admin role | Manage business operations | Manage admin managers | From `api/_lib/admin-auth.js`. |
+| `super_admin` | Admin role | Manage business operations and admin managers | Delete/demote last active super admin | Protected by `admin-managers` helper. |
+| Cron secret caller | Vercel cron or authorized caller | Run cron maintenance/digest/QA routes with `CRON_SECRET` | Access user/admin APIs without normal auth | Not an admin session. |
+| Unknown/legacy roles | 需要确认 | 需要确认 | 需要确认 | No other active role constants found in scan. |
+
+## Auth / Session Related Files
+
+| File | Purpose | Notes |
+| --- | --- | --- |
+| `site-auth.js` | Frontend user session/nav/profile hydration | Uses `/api/auth/session`; caches in browser/session context. |
+| `login.js`, `register.js`, `reset-password.js`, `profile.js` | User auth UI flows | Use `/api/auth/*` and `/api/public/auth-config`. |
+| `auth-i18n.js` | Auth page translations | UI only. |
+| `google-auth.js` | Google/auth helper | Active provider status needs confirmation. |
+| `auth-callback.html` | Callback page | Provider flow needs confirmation. |
+| `api/auth/[action].js` | User auth API aggregate | Custom HMAC/session cookie, Turnstile, email codes. |
+| `api/_lib/user-auth.js` | User session cookie helpers | Uses `USER_SESSION_SECRET`. |
+| `api/_lib/user-profile.js` | Profile completion state | Used before submit/join flows. |
+| `api/_lib/auth-email.js` | Auth code/password reset email | Resend. |
+| `api/_lib/admin-auth.js` | Admin auth/session/permissions | Defines `super_admin`, `operations_admin`. |
+| `api/_lib/admin-security.js` | Admin cookie/password hashing | Uses `ADMIN_SESSION_SECRET` or `USER_SESSION_SECRET`. |
+| `api/_lib/admin-managers.js` | Admin manager validation and protections | Super admin mutation rules. |
+
+## Business Area File Map
+
+### Storage
+
+| File/Area | Purpose |
+| --- | --- |
+| `storage.html` | Public storage service page/calculator. |
+| `storage-booking.html` | User booking form. |
+| `admin-storage.html`, `admin-storage-detail.html` | Admin storage order operations. |
+| `script.js` | Storage calculator/booking frontend logic. |
+| `admin-pages.js` | Storage admin UI logic. |
+| `api/_lib/storage-orders.js` | Storage mapping/filter/status helpers. |
+| `api/_lib/storage-order-notifier.js` | Storage admin/student emails via SMTP/Resend. |
+| `api/_lib/storage-order-webhook.js` | Optional storage webhook. |
+| `public-api-handlers/storage-order-submit.js` | Public storage submission handler. |
+| `public-api-handlers/my-storage-orders.js` | User storage order lookup. |
+| `supabase/storage_orders.sql`, storage migrations | Storage schema/constraints. |
+
+### Transport / Pickup / Carpool
+
+| File/Area | Purpose |
+| --- | --- |
+| `pickup.html`, `pickup-form.html`, `transport-board.html` | Public/user transport pages. |
+| `transport-admin-*.html` | Admin request/group/sync-log screens. |
+| `pickup-form.js`, `transport-public.js`, `transport-admin.js`, `transport-api.js`, `transport-shared.js` | Transport frontend and client API logic. |
+| `api/_lib/transport.js` | Core request/group status and mapping helpers. |
+| `api/_lib/transport-join.js` | Join/matching evaluation logic. |
+| `api/_lib/transport-group-lifecycle.js` | Group/member lifecycle operations. |
+| `api/_lib/transport-group-stats.js` | Public/admin group stats and pricing helpers. |
+| `api/_lib/transport-order-submission-email.js` | Transport request/join confirmation email via Resend. |
+| `api/_lib/transport-sync-audit-email.js` | Transport sync/daily-flow emails via Resend or SMTP. |
+| `public-api-handlers/transport-*.js`, `api/transport-*` | Public and admin transport APIs. |
+| `supabase/transport_dispatch.sql`, transport migrations/index files | Transport schema, views, indexes, status unification. |
+
+## External Services
+
+| Service | Purpose | Integration Points | Required/Related Env | Notes |
+| --- | --- | --- | --- | --- |
+| Supabase | Database and auth data | `api/_lib/supabase.js`, SQL in `supabase/` | `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` | Service role must stay server-only. |
+| Vercel | Hosting, serverless APIs, cron | `vercel.json`, `api/`, deploy scripts | Vercel project env vars, `VERCEL_URL` optional in email URL building | Cron configured for daily flow test and sync digest. |
+| Resend | Transactional email | `auth-email.js`, `transport-order-submission-email.js`, `storage-order-notifier.js`, `transport-sync-audit-email.js` | `RESEND_API_KEY`, sender env vars | Some flows require Resend; production sender needs confirmation. |
+| SMTP/nodemailer | Email fallback/admin notifications | `storage-order-notifier.js`, `transport-sync-audit-email.js` | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`, `SMTP_SECURE` | Some email flows can fallback to SMTP. |
+| Cloudflare Turnstile | Bot protection | login/register/reset UI, `api/_lib/turnstile.js`, `auth-config.js` | `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` | Site key is public; secret is server-only. |
+| Google Fonts | Fonts | HTML `<link>` tags | None | External dependency; previous QA noted font request failures. |
+| Google/Auth provider | Possible OAuth callback | `google-auth.js`, `auth-callback.html` | Supabase/provider config, 需要确认 | Active use needs confirmation. |
+| Optional storage webhook | External webhook receiver | `api/_lib/storage-order-webhook.js` | `STORAGE_ORDER_WEBHOOK_URL`, `STORAGE_ORDER_WEBHOOK_SECRET` | Optional; production use needs confirmation. |
+
+## Environment Variables
+
+| Variable | Purpose | Frontend Visible? | Sensitive? | Confirm In Vercel Production? | Notes |
+| --- | --- | --- | --- | --- | --- |
+| `SUPABASE_URL` | Supabase project URL | Yes via auth config | No/low | Yes | Public URL, still environment-specific. |
+| `SUPABASE_ANON_KEY` | Public Supabase anon key | Yes via auth config | No/medium | Yes | Must not be service role. |
+| `SUPABASE_SERVICE_ROLE_KEY` | Server-side Supabase admin client | No | Yes | Yes | Server-only secret. |
+| `USER_SESSION_SECRET` | User session HMAC | No | Yes | Yes | Required for user session security. |
+| `ADMIN_SESSION_SECRET` | Admin session HMAC | No | Yes | Yes | Falls back to user secret if absent; production should prefer distinct value. |
+| `ADMIN_BOOTSTRAP_USERNAME` | Bootstrap/smoke admin username | No | Yes/operational | Yes | Used by admin bootstrap and QA scripts. |
+| `ADMIN_BOOTSTRAP_PASSWORD` | Bootstrap/smoke admin password | No | Yes | Yes | Strong secret. |
+| `ADMIN_BOOTSTRAP_NAME` | Bootstrap admin display name | No | No/low | Yes | Operational metadata. |
+| `ADMIN_BOOTSTRAP_EMAIL` | Bootstrap admin email | No | Yes/PII | Yes | Operational metadata. |
+| `APP_BASE_URL` | Email links/base URL | No | No/low | Yes | Used by reset/transport/audit emails. |
+| `PUBLIC_SITE_URL` | Public site URL for storage email links/assets | May appear in emails | No/low | Yes if storage emails active | Optional. |
+| `SITE_URL` | Site URL fallback for storage emails | May appear in emails | No/low | Yes if storage emails active | Optional. |
+| `VERCEL_URL` | Vercel deployment URL fallback | May appear in emails | No/low | Usually automatic | Used as fallback by storage notifier. |
+| `CRON_SECRET` | Cron route authorization | No | Yes | Yes | Required for cron endpoints. |
+| `RESEND_API_KEY` | Resend email API key | No | Yes | Yes if Resend active | Required by auth and transport submission emails. |
+| `AUTH_EMAIL_FROM` | Sender for auth and fallback emails | May appear in emails | No/medium | Yes | Used by auth, storage, transport email flows. |
+| `TRANSPORT_EMAIL_FROM` | Sender for transport order submission email | May appear in emails | No/medium | Yes if transport emails active | Optional override. |
+| `TRANSPORT_QR_CODE_URL` | QR code image URL for transport emails | May appear in emails | No/low | Yes if used | Optional. |
+| `TRANSPORT_SYNC_AUDIT_NOTIFY_EMAIL` | Audit/digest recipient | No | Yes/PII | Yes if digest active | Defaults exist in code, but production recipient should be confirmed. |
+| `TRANSPORT_SYNC_AUDIT_EMAIL_FROM` | Sender for transport sync emails | May appear in emails | No/medium | Yes if digest active | Optional override. |
+| `TRANSPORT_FLOW_TEST_PASSWORD` | QA user password for daily flow test | No | Yes | Yes if cron QA active | Defaults in code if absent; production behavior needs confirmation. |
+| `SMTP_HOST` | SMTP host | No | No/medium | Yes if SMTP active | Required for SMTP path. |
+| `SMTP_PORT` | SMTP port | No | No/low | Yes if SMTP active | Commonly `587` or provider value. |
+| `SMTP_SECURE` | SMTP TLS mode | No | No/low | Yes if SMTP active | Boolean-like. |
+| `SMTP_USER` | SMTP username | No | Yes | Yes if SMTP active | Credential. |
+| `SMTP_PASS` | SMTP password | No | Yes | Yes if SMTP active | Credential. |
+| `SMTP_FROM` | SMTP sender | May appear in emails | No/medium | Yes if SMTP active | Also fallback sender for some Resend emails. |
+| `STORAGE_ORDER_NOTIFY_EMAIL` | Storage admin notification recipient | No | Yes/PII | Yes if storage notifications active | SMTP admin notification. |
+| `STORAGE_ORDER_ADMIN_URL` | Storage admin link in email | May appear in emails | No/low | Yes if storage notifications active | Should be production admin URL in prod. |
+| `STORAGE_ORDER_WEBHOOK_URL` | Optional storage webhook URL | No | Yes/operational | Yes if webhook active | Required by webhook helper when used. |
+| `STORAGE_ORDER_WEBHOOK_SECRET` | Optional webhook secret | No | Yes | Yes if webhook active | Shared secret. |
+| `STORAGE_STUDENT_EMAIL_FROM` | Student storage confirmation sender | May appear in emails | No/medium | Yes if student emails active | Optional override. |
+| `STORAGE_EMAIL_FROM` | Storage email sender fallback | May appear in emails | No/medium | Yes if storage emails active | Optional override. |
+| `STORAGE_SERVICE_QR_URL` | Storage service QR image URL | May appear in emails | No/low | Yes if used | Defaults to `/img/storage-service-qr.jpg`. |
+| `STORAGE_CUSTOMER_SERVICE_WECHAT` | Storage customer service WeChat ID | May appear in emails | No/medium | Yes if storage emails active | Defaults to `Nottsngn`. |
+| `STORAGE_SERVICE_CONTACT` | Storage contact text | May appear in emails | No/low | Yes if storage emails active | Optional. |
+| `TURNSTILE_SITE_KEY` | Turnstile widget site key | Yes via auth config | No/low | Yes if Turnstile active | Public key. |
+| `TURNSTILE_SECRET_KEY` | Turnstile server verification secret | No | Yes | Yes if Turnstile active | Server-only secret. |
+| `NODE_ENV` | Runtime mode | No | No | Yes | Controls secure cookies/perf logging. |
+| `PORT` | Local dev server port | No | No | No | Local `dev-server.js`. |
+| `PLAYWRIGHT_BASE_URL` | QA target URL | No | No | No/QA only | Scripts only. |
+| `PLAYWRIGHT_HEADED` | QA browser mode | No | No | No/QA only | Scripts only. |
+| `PLAYWRIGHT_QA_PASSWORD` | QA password | No | Yes | No/QA only | Scripts only. |
+| `QA300_BASE_URL` | QA300 target URL | No | No | No/QA only | Script only. |
+| `QA300_TURNSTILE_TOKEN` | QA Turnstile token | No | Yes | No/QA only | Script only. |
+| `PLAYWRIGHT_TURNSTILE_TOKEN` | QA Turnstile token | No | Yes | No/QA only | Script only. |
+| `TURNSTILE_TEST_TOKEN` | QA Turnstile token | No | Yes | No/QA only | Script only. |
+
+## Unclear Items To Confirm
+
+| Item | Why It Is Unclear |
+| --- | --- |
+| Active status of `index-homepage-brand*.html` and backup homepage scripts/styles | Standalone static files exist but `index.html` appears primary. |
+| Active status of `pickup-admin.html` | Page says local-only admin; script still contains logic. |
+| Whether `_inspect_src_zip_2/`, `.tmp-*`, deployment output, and JSON payload files should remain in deployable workspace | They look like generated/inspection artifacts. |
+| Exact production email provider mix | Code supports Resend and SMTP in different flows. |
+| Exact Google/OAuth provider status | `google-auth.js` and `auth-callback.html` exist, but active provider config is not visible in repo. |
+| General order transport statuses | `orders.js` maps transport source statuses as `draft/open/closed/cancelled` while current transport requests use `published/matched/closed`. |
+| Public view `transport_groups_public_view` field contract | It is intended public-safe, but any expansion needs SQL/view review. |
+
+## Risks Found During Scan
+
+| Risk | Evidence | Action This Round |
+| --- | --- | --- |
+| Missing module for transport payment email | `api/transport-requests/[id].js` requires `../_lib/transport-payment-email`, but no `api/_lib/transport-payment-email.js` file exists. | Recorded only; not fixed. |
+| Possible invalid backup JS file | `transport-public.previous-good.js` appears to contain Vercel auth HTML rather than app JS. | Recorded only; not fixed. |
+| Legacy status mismatch | General order helper references `draft/open/cancelled` for transport while current request statuses are `published/matched/closed`. | Recorded only; not fixed. |
+| Public/static backup files may be deployable | Backup/brand/archive-like files live at project root. | Recorded only; not removed. |
+| Known storage admin frontend issue | Current status says `admin-storage.html` has `storageTypeLabels is not defined`. | Recorded only; not fixed. |
+| External/media dependencies can fail | Prior QA noted pickup video, Turnstile, Google Fonts failures. | Recorded only; not fixed. |
+
+## Maintenance Rule
+
+When a task adds or changes a page, endpoint, table, role, status, external service, or environment variable, update the relevant table in this document during the same task.

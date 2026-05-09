@@ -468,9 +468,12 @@ async function verifyAdminRequestAbsent(page, baseUrl, orderNo, screenshotPrefix
     waitUntil: "domcontentloaded",
     timeout: 30000
   });
+  await waitForAdminRequestsPageReady(page);
   await page.locator('input[name="order_no"]').fill(orderNo);
   await page.locator('select[name="status"]').selectOption("active");
-  await page.locator("#transportRequestFilters").evaluate(form => form.requestSubmit());
+  const responsePromise = waitForAdminRequestsResponse(page, orderNo, "active");
+  await submitAdminRequestFilters(page);
+  await responsePromise;
   await page.waitForTimeout(1200);
 
   const bodyText = await page.locator("body").innerText();
@@ -481,6 +484,31 @@ async function verifyAdminRequestAbsent(page, baseUrl, orderNo, screenshotPrefix
   await page.screenshot({
     path: path.join(outputDir, `${screenshotPrefix}-admin-request-deleted.png`),
     fullPage: true
+  });
+}
+
+async function waitForAdminRequestsPageReady(page) {
+  await page.locator("#transportRequestFilters").waitFor({ state: "visible", timeout: 10000 });
+  await page.waitForFunction(() => {
+    const list = document.querySelector("#transportRequestsList");
+    return Boolean(window.TransportApi && list && !list.querySelector(".admin-loading"));
+  }, { timeout: 15000 });
+}
+
+async function waitForAdminRequestsResponse(page, orderNo, status) {
+  const encodedOrderNo = encodeURIComponent(orderNo);
+  const encodedStatus = encodeURIComponent(status);
+  return page.waitForResponse(response => {
+    const url = response.url();
+    return url.includes("/api/transport-requests")
+      && url.includes(`order_no=${encodedOrderNo}`)
+      && url.includes(`status=${encodedStatus}`);
+  }, { timeout: 15000 });
+}
+
+async function submitAdminRequestFilters(page) {
+  await page.locator("#transportRequestFilters").evaluate(form => {
+    form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
   });
 }
 
@@ -512,9 +540,12 @@ async function verifyAdminSearchPages(page, baseUrl, orderNo, groupId, screensho
     waitUntil: "domcontentloaded",
     timeout: 30000
   });
+  await waitForAdminRequestsPageReady(page);
   await page.locator('input[name="order_no"]').fill(orderNo);
   await page.locator('select[name="status"]').selectOption(requestStatus);
-  await page.locator("#transportRequestFilters").evaluate(form => form.requestSubmit());
+  const responsePromise = waitForAdminRequestsResponse(page, orderNo, requestStatus);
+  await submitAdminRequestFilters(page);
+  await responsePromise;
   await page.getByText(orderNo, { exact: false }).first().waitFor({ timeout: 10000 });
   await page.screenshot({
     path: path.join(outputDir, `${screenshotPrefix}-admin-requests.png`),
@@ -763,7 +794,7 @@ async function main() {
     }
 
     await verifyAdminSearchPages(adminPage, baseUrl, orderInfo1.orderNo, orderInfo1.groupId, `transport-flow-${slug(runId)}`, {
-      requestStatus: "expired"
+      requestStatus: "closed"
     });
 
     await userPage5.goto(new URL("/transport-board.html", baseUrl).toString(), {

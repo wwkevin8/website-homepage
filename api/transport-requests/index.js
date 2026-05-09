@@ -4,12 +4,28 @@ const { ok, created, badRequest, parseJsonBody, methodNotAllowed, serverError } 
 const { applyRequestFilters, mapRequestPayload, deriveRequestDisplayFlags } = require("../_lib/transport");
 const { createPickupRequestWithGroup } = require("../_lib/transport-group-lifecycle");
 
+function isPerfLogEnabled() {
+  return process.env.NODE_ENV !== "production";
+}
+
+function nowMs() {
+  return Number(process.hrtime.bigint() / 1000000n);
+}
+
+function logPerf(label, details) {
+  if (!isPerfLogEnabled()) {
+    return;
+  }
+  console.info(`[perf][transport-requests] ${label}`, details);
+}
+
 const REQUEST_LIST_SELECT = [
   "id",
   "order_no",
   "student_name",
   "email",
   "phone",
+  "wechat",
   "site_user_id",
   "service_type",
   "airport_code",
@@ -117,8 +133,11 @@ async function attachDuplicateFutureFlags(supabase, items) {
 }
 
 module.exports = async function handler(req, res) {
+  const startedAt = nowMs();
   const supabase = getSupabaseAdmin();
+  const authStartedAt = nowMs();
   const adminUser = await requireAdminUser(req, res, supabase);
+  const authMs = nowMs() - authStartedAt;
   if (!adminUser) {
     return;
   }
@@ -151,13 +170,35 @@ module.exports = async function handler(req, res) {
         query.range(from, to);
       }
 
+      const queryStartedAt = nowMs();
       const { data, error, count } = await query;
+      const baseQueryMs = nowMs() - queryStartedAt;
       if (error) {
         throw error;
       }
 
       const baseItems = (data || []).map(item => deriveRequestDisplayFlags(item));
+      const duplicateFutureStartedAt = nowMs();
       const items = compact ? baseItems : await attachDuplicateFutureFlags(supabase, baseItems);
+      const duplicateFutureMs = compact ? 0 : nowMs() - duplicateFutureStartedAt;
+      const rows = Array.isArray(items) ? items.length : 0;
+
+      logPerf("list", {
+        authMs,
+        baseQueryMs,
+        queryMs: baseQueryMs,
+        countMs: paginate ? baseQueryMs : 0,
+        duplicateFutureMs,
+        enrichmentMs: duplicateFutureMs,
+        totalMs: nowMs() - startedAt,
+        rows,
+        page: paginate ? page : null,
+        pageSize: paginate ? pageSize : null,
+        compact,
+        countMode: paginate ? "exact" : "none",
+        cacheHit: null
+      });
+
       if (!paginate) {
         ok(res, items);
         return;

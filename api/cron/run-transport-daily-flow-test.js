@@ -4,7 +4,6 @@ const { ok, methodNotAllowed, forbidden, serverError, getCronSuppliedSecret } = 
 const { hashPassword, createAdminSessionToken, ADMIN_COOKIE_NAME } = require("../_lib/admin-security");
 const { createUserSessionToken, COOKIE_NAME } = require("../_lib/user-auth");
 const { createPickupRequestWithGroup, createRequestRecord, addRequestToGroup } = require("../_lib/transport-group-lifecycle");
-const { sendTransportDailyFlowTestEmail } = require("../_lib/transport-sync-audit-email");
 
 const myRequestsHandler = require("../../public-api-handlers/my-transport-requests");
 const publicGroupsHandler = require("../../public-api-handlers/transport-groups");
@@ -384,7 +383,7 @@ module.exports = async function handler(req, res) {
   let notification = {
     sent: false,
     skipped: true,
-    reason: "not_attempted"
+    reason: "daily_flow_email_disabled"
   };
 
   function trackOrder(data) {
@@ -602,11 +601,6 @@ module.exports = async function handler(req, res) {
     await cleanupQaRun(supabase, createdUsers.map(item => item.id).filter(Boolean));
     createdUsers.length = 0;
 
-    notification = await sendTransportDailyFlowTestEmail(report, cleanupResult).then(result => ({
-      ...result,
-      sent: Boolean(result?.ok && !result?.skipped)
-    }));
-
     ok(res, {
       ...report,
       storage,
@@ -659,15 +653,6 @@ module.exports = async function handler(req, res) {
       };
       console.error("[transport-daily-flow-test] cleanup failed", cleanupError);
     }
-
-    notification = await sendTransportDailyFlowTestEmail(failureReport, cleanupResult).then(result => ({
-      ...result,
-      sent: Boolean(result?.ok && !result?.skipped)
-    })).catch(emailError => ({
-      sent: false,
-      skipped: false,
-      error: emailError && emailError.message ? emailError.message : "daily_flow_email_failed"
-    }));
 
     res.statusCode = 500;
     res.setHeader("Content-Type", "application/json; charset=utf-8");

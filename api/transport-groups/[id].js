@@ -21,6 +21,15 @@ function isNoRowsError(error) {
   );
 }
 
+function normalizeLegacyGroupStatusInput(input = {}) {
+  if (!input || typeof input !== "object" || Array.isArray(input)) return input;
+  if (String(input.status || "").trim().toLowerCase() !== "open") return input;
+  return {
+    ...input,
+    status: "active"
+  };
+}
+
 function normalizeMembers(members) {
   return (members || []).map(member => {
     const request = member.transport_requests || {};
@@ -288,7 +297,7 @@ module.exports = async function handler(req, res) {
       const body = await parseJsonBody(req);
       let payload;
       try {
-        payload = mapGroupPayload(body, existing);
+        payload = mapGroupPayload(normalizeLegacyGroupStatusInput(body), existing);
       } catch (error) {
         badRequest(res, error.message);
         return;
@@ -310,8 +319,7 @@ module.exports = async function handler(req, res) {
         result = await supabase
           .from("transport_groups")
           .update({
-            ...payload,
-            status: payload.status === "single_member" || payload.status === "active" ? "open" : payload.status
+            ...payload
           })
           .eq("id", existing.id)
           .select("*");

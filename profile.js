@@ -95,7 +95,7 @@
   function validateForm(form) {
     const contactPreference = getSelectedContactPreference(form);
     const contactInputs = form.querySelectorAll('input[name="contact_preference"]');
-    const contactValidityMessage = contactPreference ? "" : "请选择联系方式偏好。";
+    const contactValidityMessage = contactPreference ? "" : "请选择偏好的联系方式。";
 
     form.nickname.setCustomValidity(form.nickname.value.trim() ? "" : "请填写姓名。");
     form.phone.setCustomValidity(form.phone.value.trim() ? "" : "请填写手机号。");
@@ -105,7 +105,7 @@
     if (form.whatsapp_contact) {
       form.whatsapp_contact.setCustomValidity(
         contactPreference === "whatsapp" && !form.whatsapp_contact.value.trim()
-          ? "请选择 WhatsApp 时请补充 WhatsApp 联系方式。"
+          ? "如果选择 WhatsApp，请补充 WhatsApp 联系方式。"
           : ""
       );
     }

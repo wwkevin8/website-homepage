@@ -11,7 +11,8 @@ const OPTIONAL_SITE_USER_COLUMNS = [
   "wechat_id",
   "whatsapp_contact",
   "nationality",
-  "email_verified_at"
+  "email_verified_at",
+  "public_user_id"
 ];
 
 function signValue(value) {

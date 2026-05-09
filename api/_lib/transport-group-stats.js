@@ -1,5 +1,9 @@
 const { DEFAULT_GROUP_MAX_PASSENGERS } = require("./transport");
 
+function nowMs() {
+  return Number(process.hrtime.bigint() / 1000000n);
+}
+
 const PICKUP_PRICING = {
   normal: {
     LHR: { perPerson: { 1: 185, 2: 100, 3: 75, 4: 60, 5: 55 } },
@@ -123,17 +127,26 @@ function buildGroupStats(group, members, options = {}) {
 }
 
 async function loadGroupStatsMap(supabase, groupIds, options = {}) {
+  const startedAt = nowMs();
+  const metrics = options.metrics || null;
   const normalizedGroupIds = Array.from(new Set((groupIds || []).filter(Boolean)));
   if (!normalizedGroupIds.length) {
+    if (metrics) {
+      metrics.statsTotalMs = (metrics.statsTotalMs || 0) + (nowMs() - startedAt);
+    }
     return new Map();
   }
 
   let groups = Array.isArray(options.groups) ? options.groups : null;
   if (!groups) {
+    const groupsQueryStartedAt = nowMs();
     const { data, error: groupsError } = await supabase
       .from("transport_groups_public_view")
       .select("*")
       .in("group_id", normalizedGroupIds);
+    if (metrics) {
+      metrics.statsGroupQueryMs = (metrics.statsGroupQueryMs || 0) + (nowMs() - groupsQueryStartedAt);
+    }
 
     if (groupsError) {
       throw groupsError;
@@ -144,10 +157,14 @@ async function loadGroupStatsMap(supabase, groupIds, options = {}) {
 
   let members = Array.isArray(options.members) ? options.members : null;
   if (!members) {
+    const membersQueryStartedAt = nowMs();
     const { data, error: membersError } = await supabase
       .from("transport_group_members")
       .select("group_id, passenger_count_snapshot, transport_requests(passenger_count, status, terminal, flight_datetime, airport_code, flight_no, notes, luggage_count)")
       .in("group_id", normalizedGroupIds);
+    if (metrics) {
+      metrics.statsMemberQueryMs = (metrics.statsMemberQueryMs || 0) + (nowMs() - membersQueryStartedAt);
+    }
 
     if (membersError) {
       throw membersError;
@@ -172,6 +189,10 @@ async function loadGroupStatsMap(supabase, groupIds, options = {}) {
 
     groupStatsById.set(groupId, buildGroupStats(group, membersByGroup.get(groupId) || [], options));
   });
+
+  if (metrics) {
+    metrics.statsTotalMs = (metrics.statsTotalMs || 0) + (nowMs() - startedAt);
+  }
 
   return groupStatsById;
 }

@@ -3,7 +3,6 @@ const { requireAdminUser } = require("../_lib/admin-auth");
 const { ok, badRequest, parseJsonBody, methodNotAllowed, serverError } = require("../_lib/http");
 const { mapRequestPayload, deriveRequestDisplayFlags, closeExpiredRequests, syncGroupStatus } = require("../_lib/transport");
 const { removeRequestFromGroup, backfillMissingPickupGroups } = require("../_lib/transport-group-lifecycle");
-const { sendTransportPaymentConfirmationEmail } = require("../_lib/transport-payment-email");
 
 function parsePaymentStatus(adminNote) {
   const match = String(adminNote || "").match(/\[payment:(paid|unpaid)\]/i);
@@ -146,6 +145,7 @@ module.exports = async function handler(req, res) {
       let paymentEmail = null;
       if (!wasPaid && isPaid) {
         try {
+          const { sendTransportPaymentConfirmationEmail } = require("../_lib/transport-payment-email");
           paymentEmail = await sendTransportPaymentConfirmationEmail(supabase, updatedRequest);
         } catch (emailError) {
           paymentEmail = {
