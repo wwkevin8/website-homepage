@@ -22536,6 +22536,7 @@ body.storage-receipt-open {
   .storage-mobile-menu-inner {
     position: relative;
     overflow: hidden;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 9px;
     padding: 14px;
     border: 1px solid rgba(143, 165, 205, 0.2);
@@ -22586,6 +22587,7 @@ body.storage-receipt-open {
   }
 
   .storage-mobile-menu-inner a.is-contact {
+    grid-column: 1 / -1;
     border-color: rgba(122, 156, 242, 0.28);
     background:
       linear-gradient(135deg, rgba(232, 240, 255, 0.96), rgba(255, 248, 240, 0.9));
@@ -22604,6 +22606,8 @@ body.storage-receipt-open {
   }
 
   .storage-mobile-menu-card[data-menu-icon="home"] .storage-mobile-menu-icon::before,
+  .storage-mobile-menu-card[data-menu-icon="storage"] .storage-mobile-menu-icon::before,
+  .storage-mobile-menu-card[data-menu-icon="storage"] .storage-mobile-menu-icon::after,
   .storage-mobile-menu-card[data-menu-icon="pickup"] .storage-mobile-menu-icon::before,
   .storage-mobile-menu-card[data-menu-icon="price"] .storage-mobile-menu-icon::before,
   .storage-mobile-menu-card[data-menu-icon="rules"] .storage-mobile-menu-icon::before,
@@ -22653,6 +22657,21 @@ body.storage-receipt-open {
     border-radius: 50%;
     background: currentColor;
     box-shadow: 11px 0 0 currentColor;
+  }
+
+  .storage-mobile-menu-card[data-menu-icon="storage"] .storage-mobile-menu-icon::before {
+    width: 18px;
+    height: 14px;
+    border: 2px solid currentColor;
+    border-radius: 4px;
+  }
+
+  .storage-mobile-menu-card[data-menu-icon="storage"] .storage-mobile-menu-icon::after {
+    top: 15px;
+    width: 12px;
+    height: 2px;
+    background: currentColor;
+    box-shadow: 0 -5px 0 currentColor;
   }
 
   .storage-mobile-menu-card[data-menu-icon="price"] .storage-mobile-menu-icon::before {

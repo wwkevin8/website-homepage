@@ -8,11 +8,16 @@
 ## Last Updated Task
 
 - Date: 2026-05-09
-- Scope: deploy pickup mobile menu visual alignment
+- Scope: align storage and pickup mobile menus to the two-column service-card style
 
 ## Completed In This Task
 
 - Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before making changes.
+- Read `C:\Users\75262\.agents\skills\ui-ux-pro-max\SKILL.md` for the requested mobile UI refinement.
+- Re-aligned the shared public mobile service menu style so both storage and pickup menus use the requested `2 + 2 + 1` card layout: two cards per row and a full-width `联系我们` card.
+- Added a shared CSS-only storage icon for the `寄存服务` mobile menu card so the pickup page can use the same visual system without page-specific icon overrides.
+- Updated `pickup.html` and `storage.html` stylesheet cache-bust query strings so browsers request the latest shared menu CSS.
+- No backend API, admin page, database, SQL, email, package, dependency, payment, or deployment configuration code was changed for this menu correction.
 - Added mobile-specific visual and spacing overrides for the public storage page in `styles.css`.
 - Reworked the mobile storage first screen so the main storage copy leads the page, with the service video kept as a smaller supporting media block below it.
 - Tightened mobile typography, spacing, feature pills, process steps, box price cards, calculator fields, estimate results, and storage rules floating action button placement.
@@ -103,6 +108,10 @@
 
 ## Verification
 
+- `node --check script.js` passed after the shared mobile menu correction.
+- Local helper server served `http://localhost:3000/pickup` and `http://localhost:3000/storage` with HTTP 200.
+- Playwright checked `http://localhost:3000/pickup` at a 390px mobile viewport and confirmed the menu opens as two 162px columns plus a 332px full-width contact card, has five cards, the header remains fixed at top 0 after scrolling, and there is no horizontal overflow.
+- Playwright checked `http://localhost:3000/storage` at a 390px mobile viewport and confirmed the menu opens as two 150px columns plus a 308px full-width contact card, has five cards, the header remains fixed at top 0 after scrolling, and there is no horizontal overflow.
 - `node --check script.js` passed.
 - Local helper server served `http://localhost:3000/storage` with HTTP 200.
 - Playwright opened `http://localhost:3000/storage` at a 390px mobile viewport.
@@ -207,6 +216,7 @@
 - Production is live at `https://ngn.best`.
 - Latest deployed production URL is `https://webside-n7jork9ah-wwkevin8s-projects.vercel.app`.
 - Production is currently aliased to deployment `dpl_AgaKdkshWPRZrGLK6HEapr7p2KHG`.
+- Local working tree now corrects both public storage and pickup mobile menus to the requested two-column card style; production will need a GitHub-first release followed by Vercel deployment for this newest correction.
 - Latest production deployment followed the required GitHub-then-Vercel order; the deployed pickup menu alignment is captured in Git commit `062eab1` on branch `codex/full-sync`.
 - The P0 root JSON exposure risk is mitigated in the current working tree by sanitization, deployment ignores, `.gitignore` rules, and removal from the Git index.
 - The three JSON files are no longer tracked in the current Git index, and local copies remain ignored.
