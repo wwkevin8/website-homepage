@@ -8,27 +8,29 @@
 ## Last Updated Task
 
 - Date: 2026-05-09
-- Scope: Supabase read-only transport status verification record
+- Scope: transport-flow QA closed request search fix and verification
 
 ## Completed In This Task
 
 - Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before making changes.
-- Recorded Supabase read-only verification results for transport status data.
-- `transport_groups.status` distribution: `active` 2, `closed` 3, `full` 1, `single_member` 12.
-- `transport_groups.status = open`: 0 rows.
-- `transport_requests.status` distribution: `closed` 3, `matched` 2, `published` 2.
-- Invalid `transport_requests.status` rows outside `published` / `matched` / `closed`: 0 rows.
-- Transport-source `orders.status` distribution: `closed` 3, `matched` 2, `published` 2.
-- `orders.status` mismatches against `transport_requests.status`: 0 rows.
-- Updated `E:\webside\docs\RISK_REGISTER.md` with the read-only database verification result.
-- No HTML, CSS, JS, API routes, SQL, `package.json`, `.env`, database writes, deployment, or commit was performed during the documentation update step.
+- Investigated the `qa:playwright:transport-flow` failure where the admin requests page could not find a `status=closed` QA order.
+- Confirmed the admin requests page uses `transport-admin.js` and `transport-api.js` to call `GET /api/transport-requests`.
+- Confirmed `api/_lib/transport.js` supports `status=closed` and exact `transport_requests.order_no` filtering.
+- Identified the failure as a QA timing/submission issue: the script could submit the admin requests form before frontend submit handling was fully initialized, causing native query-string navigation instead of the AJAX list refresh.
+- Updated `scripts/playwright-transport-flow.js` so admin requests searches wait for page initialization, dispatch the already-bound submit handler, and wait for the matching `/api/transport-requests` response.
+- Ran `node --check scripts/playwright-transport-flow.js`.
+- Ran `npm run qa:playwright:transport-flow`; the flow passed.
+- Cleaned all QA/test data created by the successful run and deleted the run's generated `output/playwright/transport-flow-*` screenshots and JSON report.
+- No API routes, SQL, schema, CSS, package files, deployment, or production data were modified.
 
 ## Verification
 
-- Supabase read-only SELECT queries confirmed no legacy `open` group rows, no invalid request statuses, and no transport-source order/request status mismatch.
-- No Supabase write operation was executed.
-- Pending: document-only Git diff verification before committing this record.
-- Pending manual/API check: verify public board, request creation, join, full group, admin group page, and dashboard behavior with safe test data.
+- `node --check scripts/playwright-transport-flow.js` passed.
+- `npm run qa:playwright:transport-flow` passed against `http://localhost:3000`.
+- The QA flow covered pickup request creation, group creation, regrouping, public board sync, capacity update, group close hiding from public board, admin request/group search, join preview/submit, request deletion, replacement group creation, and service-center sync.
+- QA/test data cleanup completed: run-specific `site_users`, `transport_requests`, `transport_group_members`, `transport_groups`, and transport-source `orders` all returned to 0 residual rows.
+- Post-QA status checks: `transport_groups.status = open` is 0, invalid `transport_requests.status` is 0, and transport-source `orders.status` mismatches against `transport_requests.status` are 0.
+- Pending: review and commit the local `scripts/playwright-transport-flow.js` and `docs/current-status.md` changes.
 
 ## Current Project Status
 
@@ -47,6 +49,7 @@
 - The P2 transport group API/listing fallback paths are partially aligned: edited group API endpoints no longer write `open`, and public joinable listing now uses `single_member` and `active`.
 - The P2 transport group lifecycle helper now avoids new `open` writes and normalizes historical `open` reads to `active`.
 - Supabase read-only verification found no current production data migration need for transport status cleanup.
+- The local transport-flow QA now passes after making the admin requests search step wait for the page's AJAX filtering path.
 
 ## Open Issues Or Risks
 
@@ -56,7 +59,7 @@
 - P1 follow-up: run a focused API smoke test against `PATCH /api/transport-requests/:id` with safe test data and configured email variables.
 - P1 follow-up: verify the next Vercel deployment does not include the newly excluded historical root files.
 - P1 follow-up: rename `styles-pickup-backup.css` to a formal production filename in a separate task and update `pickup.html` at the same time.
-- P2 follow-up: verify admin dashboard transport counts and general order status updates after first-pass mapping cleanup.
+- P2 follow-up: verify admin dashboard transport counts in a separate focused check.
 - P2 follow-up: decide whether `api/_lib/transport.js` legacy `open` / `draft` normalization should remain as read compatibility or be narrowed in a future task.
 - P2: `transport-public.previous-good.js` is captured HTML with old Vercel auth URLs/nonces.
 - P3: `admin-storage.html` storage label issue needs runtime/browser confirmation before code changes.
@@ -67,6 +70,6 @@
 
 1. Rotate the admin and operations account passwords that may have appeared in the previous root JSON payload files.
 2. Decide whether local root payload files should eventually be replaced by non-sensitive example files under `docs/examples`.
-3. Commit and deploy the sanitized/ignore/index-removal changes after review.
-4. Verify business chain behavior: public board, pickup request creation, join, full group, admin group page, and admin dashboard.
+3. Review and commit the transport-flow QA timing fix if acceptable.
+4. Run a separate focused admin dashboard check for `published` / `matched` transport statistics.
 5. Defer any transport status database migration unless future checks find legacy rows.
