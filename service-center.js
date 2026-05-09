@@ -348,7 +348,7 @@
   function patchServiceLinks() {
     const primaryActions = document.querySelectorAll(".service-center-primary-actions a");
     if (primaryActions[0]) {
-      primaryActions[0].setAttribute("href", "./pickup.html");
+      primaryActions[0].setAttribute("href", "./pickup");
       primaryActions[0].textContent = "查看接机服务";
     }
     if (primaryActions[1]) {
@@ -364,7 +364,7 @@
       if (!titleNode || !copyNode) return;
 
       if (href.includes("pickup-form")) {
-        link.setAttribute("href", "./pickup.html");
+        link.setAttribute("href", "./pickup");
         titleNode.innerHTML = '<span class="service-center-link-icon" aria-hidden="true">✈</span>接机服务';
         copyNode.textContent = "查看接机流程、拼车说明与服务安排，再决定是否继续填写预约。";
         if (ctaNode) ctaNode.textContent = "前往";

@@ -4294,7 +4294,7 @@ function initPickupQuoteForm(activeLang) {
       const session = await window.SiteAuth.getSession();
       if (!session.authenticated) {
         await window.SiteAuth.requireLogin({
-          returnTo: "/pickup.html#pickup-quote"
+          returnTo: "/pickup#pickup-quote"
         });
         return;
       }

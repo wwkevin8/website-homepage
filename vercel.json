@@ -1,4 +1,17 @@
 {
+  "redirects": [
+    {
+      "source": "/pickup.html",
+      "destination": "/pickup",
+      "permanent": true
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/pickup",
+      "destination": "/pickup.html"
+    }
+  ],
   "headers": [
     {
       "source": "/",

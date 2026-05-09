@@ -8,28 +8,30 @@
 ## Last Updated Task
 
 - Date: 2026-05-09
-- Scope: admin change-password persistence and 404 fix
+- Scope: pickup public clean URL and favicon
 
 ## Completed In This Task
 
 - Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before making changes.
-- Investigated the admin shell "修改密码" modal showing `The page could not be found`.
-- Confirmed the modal logic lives in `admin-shell.js` and calls `AdminApi.changeOwnPassword()` from `admin-api.js`.
-- Confirmed the intended backend handler is `POST /api/admin/me/change-password` in `api/admin/[...action].js`.
-- Confirmed the request body fields are `current_password`, `new_password`, and `confirm_password`.
-- Kept the intended endpoint as the primary request, and added a one-segment admin action fallback for environments where deep catch-all admin routes return 404.
-- Added frontend validation for missing current password, short new password, and mismatched confirmation before sending the request.
-- Improved admin change-password error messages and changed success handling to log out and redirect to the admin login page.
-- Investigated why the old password still worked after changing the bootstrap admin password.
-- Confirmed `handleLogin()` runs `ensureBootstrapSuperAdmin()` before password verification, and the previous bootstrap path overwrote an existing bootstrap user's `password_hash` from `ADMIN_BOOTSTRAP_PASSWORD`.
-- Updated `api/_lib/admin-auth.js` so an existing bootstrap admin account no longer has `password_hash` overwritten from environment variables; bootstrap password is now only used for initial account creation.
-- No password values were logged or written to files.
-- No database, SQL, schema, CSS, package file, deployment, or commit was performed.
+- Added a Vercel route so `/pickup` serves the existing `pickup.html` page.
+- Added a permanent Vercel redirect from `/pickup.html` to `/pickup` so the old URL remains compatible but user-visible links become cleaner.
+- Updated active public-facing pickup service links from `./pickup.html` to `./pickup` in homepage/navigation, service center, storage, transport board, and pickup form return paths.
+- Updated the pickup quote login return path in `script.js` from `/pickup.html#pickup-quote` to `/pickup#pickup-quote`.
+- Did not rename `pickup.html`; it remains the canonical static file behind the clean route.
+- Added root `favicon.ico`, `favicon.png`, and `apple-touch-icon.png` files generated from the existing NGN brand logo so browsers have a real site icon instead of the default globe.
+- Added explicit favicon links to `pickup.html`; other pages can still fall back to root `/favicon.ico`.
+- No backend API, admin auth, database, SQL, email, package, dependency, payment, or deployment action was performed.
 
 ## Verification
 
-- `node --check admin-shell.js`, `node --check admin-api.js`, `node --check "api/admin/[...action].js"`, and `node --check api/_lib/admin-auth.js` passed.
-- Pending: manually retest the admin change-password modal with real credentials through the UI.
+- `node --check script.js` passed.
+- `node --check service-center.js` passed.
+- `vercel.json` parsed successfully as JSON.
+- Fixed-string search confirmed the edited active files no longer contain `pickup.html` references except the Vercel redirect/rewrite mapping.
+- Local helper server served `http://localhost:3000/pickup` with HTTP 200.
+- Playwright opened `http://localhost:3000/pickup` and confirmed the page rendered the pickup page heading.
+- Local helper server served `/favicon.ico`, `/favicon.png`, and `/apple-touch-icon.png` with HTTP 200 and the expected image content types.
+- Pending: after the next Vercel deployment, confirm `https://ngn.best/pickup` loads and `https://ngn.best/pickup.html` redirects to it.
 
 ## Current Project Status
 
@@ -44,6 +46,8 @@
 - Transport payment email delivery now depends on configured Resend or SMTP environment variables and a recipient email on the transport request.
 - The P1 deploy exposure risk for known root historical/backup HTML, JS, and CSS files is locally mitigated through explicit `.vercelignore` entries.
 - `styles-pickup-backup.css` remains deployable because it is still an active dependency of `pickup.html`.
+- The pickup service now has a clean public route configured as `/pickup`, with `/pickup.html` retained only as a redirected compatibility URL after deployment.
+- The pickup page now explicitly declares the site favicon; the root favicon files are present for browser fallback and use the existing NGN brand logo.
 - The P2 transport request status contract is partially aligned at the orders/admin statistics layer: transport requests now use `published`, `matched`, `closed` there.
 - The P2 transport group API/listing fallback paths are partially aligned: edited group API endpoints no longer write `open`, and public joinable listing now uses `single_member` and `active`.
 - The P2 transport group lifecycle helper now avoids new `open` writes and normalizes historical `open` reads to `active`.
@@ -59,6 +63,8 @@
 - P0 follow-up: consider moving example payloads to `docs/examples/*.example.json` in a future task.
 - P1 follow-up: run a focused API smoke test against `PATCH /api/transport-requests/:id` with safe test data and configured email variables.
 - P1 follow-up: verify the next Vercel deployment does not include the newly excluded historical root files.
+- P1 follow-up: verify the next Vercel deployment applies the pickup clean URL redirect from `/pickup.html` to `/pickup`.
+- P1 follow-up: after deployment, confirm Chrome shows the new favicon; if it still shows the globe, clear Chrome's favicon cache or test in a private window.
 - P1 follow-up: rename `styles-pickup-backup.css` to a formal production filename in a separate task and update `pickup.html` at the same time.
 - P2 follow-up: verify admin dashboard transport counts in a separate focused check.
 - P2 follow-up: decide whether `api/_lib/transport.js` legacy `open` / `draft` normalization should remain as read compatibility or be narrowed in a future task.
@@ -69,8 +75,8 @@
 
 ## Recommended Next Steps
 
-1. Rotate the admin and operations account passwords that may have appeared in the previous root JSON payload files.
-2. Decide whether local root payload files should eventually be replaced by non-sensitive example files under `docs/examples`.
-3. Manually retest the admin change-password modal, then commit the small admin auth UI/API routing fix if acceptable.
-4. Run a separate focused admin dashboard check for `published` / `matched` transport statistics.
-5. Defer any transport status database migration unless future checks find legacy rows.
+1. Deploy the clean pickup URL change, then confirm `https://ngn.best/pickup` loads and `https://ngn.best/pickup.html` redirects to it.
+2. Rotate the admin and operations account passwords that may have appeared in the previous root JSON payload files.
+3. Decide whether local root payload files should eventually be replaced by non-sensitive example files under `docs/examples`.
+4. Manually retest the admin change-password modal, then commit the small admin auth UI/API routing fix if acceptable.
+5. Run a separate focused admin dashboard check for `published` / `matched` transport statistics.
