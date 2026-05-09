@@ -8,7 +8,7 @@
 ## Last Updated Task
 
 - Date: 2026-05-09
-- Scope: pickup mobile menu visual alignment
+- Scope: deploy pickup mobile menu visual alignment
 
 ## Completed In This Task
 
@@ -96,6 +96,10 @@
 - Added a matching CSS-only storage/box icon for the pickup page's `寄存服务` menu item.
 - Updated `pickup.html` stylesheet cache-bust query strings so browsers request the latest pickup menu alignment CSS.
 - No backend API, admin page, database, SQL, email, package, dependency, payment, or deployment action was performed for the pickup mobile menu alignment pass.
+- Committed the pickup mobile menu alignment changes to GitHub before deployment, preserving the required GitHub-then-Vercel release order.
+- Commit `062eab1` (`Align pickup mobile menu with storage`) was pushed to `origin/codex/full-sync`.
+- Ran production build and production deploy for the pickup mobile menu alignment change.
+- Production deployment `dpl_AgaKdkshWPRZrGLK6HEapr7p2KHG` completed successfully and was aliased to `https://ngn.best`.
 
 ## Verification
 
@@ -189,14 +193,21 @@
 - Local helper server served `http://localhost:3000/pickup` with HTTP 200.
 - Playwright checked the pickup page at a 390px mobile viewport and confirmed the menu opens as five single-column cards, uses one 332px column, card titles/subtitles do not overflow, the header remains fixed, and there is no horizontal overflow.
 - Playwright checked the pickup page at a 1024px desktop viewport and confirmed desktop nav remains visible, the mobile toggle remains hidden, the menu remains closed, and there is no horizontal overflow.
+- `git commit -m "Align pickup mobile menu with storage"` completed successfully with commit `062eab1`.
+- `git push -u origin codex/full-sync` completed successfully and updated GitHub from `2cc6541` to `062eab1`.
+- `npm run build:prod` completed successfully.
+- `npm run deploy:prod` completed successfully and aliased the deployment to `https://ngn.best`.
+- Production verification passed: `https://ngn.best/`, `https://ngn.best/storage`, and `https://ngn.best/pickup` returned HTTP 200.
+- Production verification passed: `https://ngn.best/index.html`, `https://ngn.best/storage.html`, and `https://ngn.best/pickup.html` returned HTTP 308 redirects to `/`, `/storage`, and `/pickup`.
+- Playwright checked `https://ngn.best/pickup` at a 390px mobile viewport and confirmed the pickup menu opens as five single-column storage-style cards, uses one 332px column, contains no old `.pickup-mobile-menu-card` nodes, the header remains fixed, and there is no horizontal overflow.
 
 ## Current Project Status
 
 - The transport dispatch app remains a static multi-page website plus Vercel serverless APIs.
 - Production is live at `https://ngn.best`.
-- Latest deployed production URL is `https://webside-oyslmfewu-wwkevin8s-projects.vercel.app`.
-- Production is currently aliased to deployment `dpl_3yGfRh5k3dnb1c9vVrBjF342JBTt`.
-- Latest production deployment was made before the GitHub push; the deployed mobile UI changes are now captured in Git commit `e2155cd` on branch `codex/full-sync`.
+- Latest deployed production URL is `https://webside-n7jork9ah-wwkevin8s-projects.vercel.app`.
+- Production is currently aliased to deployment `dpl_AgaKdkshWPRZrGLK6HEapr7p2KHG`.
+- Latest production deployment followed the required GitHub-then-Vercel order; the deployed pickup menu alignment is captured in Git commit `062eab1` on branch `codex/full-sync`.
 - The P0 root JSON exposure risk is mitigated in the current working tree by sanitization, deployment ignores, `.gitignore` rules, and removal from the Git index.
 - The three JSON files are no longer tracked in the current Git index, and local copies remain ignored.
 - Manual credential rotation is still required because previous values must be treated as potentially exposed and may remain in Git history.
