@@ -2256,6 +2256,8 @@ function initStorageIntroModal() {
   };
 
   function selectIntroStep(stepKey, animate = true) {
+    dialog.dataset.storageIntroActive = stepKey;
+
     stepButtons.forEach(button => {
       const isActive = button.dataset.storageIntroStep === stepKey;
       button.classList.toggle("is-active", isActive);
@@ -3150,6 +3152,7 @@ function initStorageCalculator(activeLang) {
       );
     }
     resultNote.textContent = noteMessages.join(" ");
+    resultNote.classList.toggle("result-note-visible", uncalculated && noteMessages.length > 0);
     renderBreakdown(estimate.items, currentLang, noBoxes ? "resultBreakdownEmptyInvalid" : "resultBreakdownEmpty");
 
     if (resultPickupRow) {
@@ -4549,6 +4552,53 @@ function initStorageMobileMenu() {
   });
 
   document.body.dataset.storageMobileMenuBound = "true";
+}
+
+function initStorageRulesToggles(lang = "zh-CN") {
+  const ruleCards = Array.from(document.querySelectorAll("#storage-rules .rule-card"));
+
+  if (!ruleCards.length) {
+    return;
+  }
+
+  ruleCards.forEach(card => {
+    const content = card.querySelector("div");
+    const description = content ? content.querySelector("p") : null;
+
+    if (!content || !description) {
+      return;
+    }
+
+    let toggle = content.querySelector(".rule-card-toggle");
+
+    if (!toggle) {
+      toggle = document.createElement("button");
+      toggle.className = "rule-card-toggle";
+      toggle.type = "button";
+      content.append(toggle);
+    }
+
+    const syncToggle = () => {
+      const isOpen = card.classList.contains("is-open");
+      const isEnglish = document.documentElement.lang === "en";
+      toggle.textContent = isOpen
+        ? (isEnglish ? "Hide details" : "收起详情")
+        : (isEnglish ? "View details" : "查看详情");
+      toggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
+    };
+
+    syncToggle();
+
+    if (toggle.dataset.rulesToggleBound === "true") {
+      return;
+    }
+
+    toggle.dataset.rulesToggleBound = "true";
+    toggle.addEventListener("click", () => {
+      card.classList.toggle("is-open");
+      syncToggle();
+    });
+  });
 }
 
 function getTeamSummaryShortText(text, lang) {
@@ -6361,6 +6411,7 @@ function applyLanguage(lang) {
   initHomeMenu();
   initHomeWechatContact();
   initStorageMobileMenu();
+  initStorageRulesToggles(lang);
   initTeamSummaryCarousel(lang);
   initTeamDetailCarousel(lang);
   initTeamArchivePage(lang);

@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./styles.css?v=20260505-cache-bust-15">
+  <link rel="stylesheet" href="./styles.css?v=20260509-storage-mobile-23">
   <style>
     .storage-contact-fab {
       display: none;
@@ -285,6 +285,7 @@
       </nav>
 
       <div class="header-actions">
+        <div class="site-auth-nav" data-site-auth-nav></div>
         <button class="storage-mobile-menu-toggle" type="button" aria-label="菜单" data-storage-menu-toggle>
           <span></span>
           <span></span>
@@ -294,25 +295,64 @@
           <button class="lang-btn is-active" type="button" data-lang="zh-CN">中</button>
           <button class="lang-btn" type="button" data-lang="en">EN</button>
         </div>
-        <div class="site-auth-nav" data-site-auth-nav></div>
       </div>
     </header>
     <div class="storage-mobile-menu" id="storage-mobile-menu" hidden>
       <div class="storage-mobile-menu-inner">
-        <a href="./" data-storage-menu-link>其他服务</a>
-        <a href="#storage-calculator" data-storage-menu-link>价格</a>
-        <a href="#storage-rules" data-storage-menu-link>说明</a>
-        <a href="./service-center.html" data-storage-menu-link>联系我们</a>
-        <div class="site-auth-mobile-slot" data-site-auth-mobile></div>
+        <a class="storage-mobile-menu-card" href="./" data-menu-icon="home" data-storage-menu-link>
+          <span class="storage-mobile-menu-icon" aria-hidden="true"></span>
+          <span class="storage-mobile-menu-copy">
+            <strong>订房主页</strong>
+            <small>返回 NGN 服务首页</small>
+          </span>
+        </a>
+        <a class="storage-mobile-menu-card" href="./pickup" data-menu-icon="pickup" data-storage-menu-link>
+          <span class="storage-mobile-menu-icon" aria-hidden="true"></span>
+          <span class="storage-mobile-menu-copy">
+            <strong>接送机服务</strong>
+            <small>机场接送与拼车安排</small>
+          </span>
+        </a>
+        <a class="storage-mobile-menu-card" href="#storage-calculator" data-menu-icon="price" data-storage-menu-link>
+          <span class="storage-mobile-menu-icon" aria-hidden="true"></span>
+          <span class="storage-mobile-menu-copy">
+            <strong>价格</strong>
+            <small>填写计算器估算费用</small>
+          </span>
+        </a>
+        <a class="storage-mobile-menu-card" href="#storage-rules" data-menu-icon="rules" data-storage-menu-link>
+          <span class="storage-mobile-menu-icon" aria-hidden="true"></span>
+          <span class="storage-mobile-menu-copy">
+            <strong>说明</strong>
+            <small>查看寄存规则与注意事项</small>
+          </span>
+        </a>
+        <a class="storage-mobile-menu-card is-contact" href="./service-center.html" data-menu-icon="contact" data-storage-menu-link>
+          <span class="storage-mobile-menu-icon" aria-hidden="true"></span>
+          <span class="storage-mobile-menu-copy">
+            <strong>联系我们</strong>
+            <small>进入个人中心联系确认</small>
+          </span>
+        </a>
       </div>
     </div>
   </div>
 
   <div class="storage-intro-modal" id="storageIntroModal" hidden>
-    <section class="storage-intro-dialog" role="dialog" aria-modal="true" aria-labelledby="storageIntroTitle">
+    <section class="storage-intro-dialog" role="dialog" aria-modal="true" aria-labelledby="storageIntroTitle" data-storage-intro-active="rules">
       <button class="storage-intro-close" id="storageIntroClose" type="button" aria-label="关闭寄存流程说明">×</button>
-      <h2 id="storageIntroTitle">寄存流程—转运存储</h2>
-      <p class="storage-intro-lead">先看规则，再估价下单，提交后等待客服确认，适合暑期回国、换房和短期寄存需求</p>
+      <div class="storage-intro-hero">
+        <div class="storage-intro-hero-copy">
+          <span class="storage-intro-kicker">NGN Storage</span>
+          <h2 id="storageIntroTitle">把行李交给本地仓库，轻装回国</h2>
+          <p class="storage-intro-lead">选箱、估价、预约、客服确认，一步步把寄存安排清楚。适合暑期回国、换房和短期存放。</p>
+          <div class="storage-intro-trust" aria-label="寄存服务亮点">
+            <span>本地仓库</span>
+            <span>每件保险至 £50</span>
+            <span>先估价再预约</span>
+          </div>
+        </div>
+      </div>
       <div class="storage-intro-steps" role="list" aria-label="寄存操作流程">
         <button class="storage-intro-step is-active" type="button" data-storage-intro-step="rules" aria-pressed="true">
           <span class="storage-intro-step-number">1</span>
@@ -339,10 +379,23 @@
           <small>专属服务对接</small>
         </button>
       </div>
-      <p class="storage-intro-detail" id="storageIntroDetail" aria-live="polite">请选择一个步骤查看详情</p>
       <div class="storage-intro-actions">
-        <a class="button button-primary" id="storageIntroCalculatorButton" href="#storage-calculator">预约寄存（请先填写计算器）</a>
-        <a class="button button-secondary" id="storageIntroReturnButton" href="./storage-booking.html?service=storage_return#storage-return-form">取寄存登记</a>
+        <a class="button button-primary storage-intro-cta storage-intro-cta-primary" id="storageIntroCalculatorButton" href="#storage-calculator">
+          <span class="storage-intro-cta-icon" data-cta-icon="estimate" aria-hidden="true"></span>
+          <span class="storage-intro-cta-copy">
+            <strong>开始估价预约</strong>
+            <small>填箱数和日期，生成参考费用</small>
+          </span>
+          <span class="storage-intro-cta-arrow" aria-hidden="true"></span>
+        </a>
+        <a class="button button-secondary storage-intro-cta storage-intro-cta-secondary" id="storageIntroReturnButton" href="./storage-booking.html?service=storage_return#storage-return-form">
+          <span class="storage-intro-cta-icon" data-cta-icon="return" aria-hidden="true"></span>
+          <span class="storage-intro-cta-copy">
+            <strong>取寄存登记</strong>
+            <small>已有寄存物品，登记送回/自取</small>
+          </span>
+          <span class="storage-intro-cta-arrow" aria-hidden="true"></span>
+        </a>
       </div>
     </section>
   </div>
@@ -1086,7 +1139,7 @@
   </footer>
 
   <script src="./site-auth.js?v=20260505-cache-bust-1"></script>
-  <script src="./script.js?v=20260506-cache-bust-20"></script>
+  <script src="./script.js?v=20260509-storage-intro-mobile-1"></script>
   <script>
     (function () {
       const storageFieldLabels = [

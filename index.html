@@ -14,7 +14,16 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./styles.css?v=20260505-cache-bust-1">
+  <style>
+    [hidden] { display: none !important; }
+    @media (max-width: 720px) {
+      .topbar-home { min-height: 68px; }
+      .topbar-home .site-header { min-height: 68px; }
+      .topbar-home .site-auth-nav { min-width: 56px; min-height: 34px; }
+      .topbar-home .home-menu-panel[hidden] { display: none !important; }
+    }
+  </style>
+  <link rel="stylesheet" href="./styles.css?v=20260509-home-mobile-stable-1">
 </head>
 <body>
   <div class="topbar topbar-home">
@@ -82,19 +91,19 @@
       <div class="hero-banner">
         <div class="hero-overlay"></div>
         <div class="hero-content">
-          <span class="hero-badge" data-i18n="heroBadge">???????????????</span>
-          <h1 data-i18n="heroTitle">??????????</h1>
-          <p class="hero-subtitle" data-i18n="heroSubtitle">????????????????????????????????</p>
-          <p data-i18n="heroText">????????????????????????????????????????????????????????</p>
+          <span class="hero-badge" data-i18n="heroBadge">诺丁汉留学生订房与落地生活服务</span>
+          <h1 data-i18n="heroTitle">帮你更快找到合适公寓</h1>
+          <p class="hero-subtitle" data-i18n="heroSubtitle">我们会帮你看公寓、看校区、判断房型，并协助接机、寄存和入住衔接。</p>
+          <p data-i18n="heroText">从选房到订房，再到抵达后的接机、寄存和入住安排，我们尽量把这条线一起理清楚，让你不用一个环节一个环节单独去打听。</p>
           <div class="hero-actions">
-            <a class="button button-primary" href="weixin://" data-home-wechat-contact data-i18n="heroBtn1">????</a>
-            <a class="button button-secondary" href="#member-home" data-i18n="heroBtn2">??????</a>
+            <a class="button button-primary" href="weixin://" data-home-wechat-contact data-i18n="heroBtn1">立即咨询</a>
+            <a class="button button-secondary" href="#member-home" data-i18n="heroBtn2">查看会员权益</a>
           </div>
           <div class="hero-signals">
-            <span data-i18n="heroSignal1">????</span>
-            <span data-i18n="heroSignal2">????</span>
-            <span data-i18n="heroSignal3">???????</span>
-            <span data-i18n="heroSignal4">?????????</span>
+            <span data-i18n="heroSignal1">本地团队</span>
+            <span data-i18n="heroSignal2">资源透明</span>
+            <span data-i18n="heroSignal3">订房后继续跟进</span>
+            <span data-i18n="heroSignal4">可协助接机寄存搬家</span>
           </div>
         </div>
       </div>
@@ -276,46 +285,46 @@
 
     <section class="section scenarios-section" id="scenarios">
       <div class="section-heading">
-        <p class="eyebrow" data-i18n="scenariosEyebrow">??????</p>
-        <h2 data-i18n="scenariosTitle">?????????????????????</h2>
-        <p data-i18n="scenariosIntro">??????????????????????????????????</p>
+        <p class="eyebrow" data-i18n="scenariosEyebrow">常见咨询场景</p>
+        <h2 data-i18n="scenariosTitle">这些通常就是同学来找我们时，最先卡住的地方</h2>
+        <p data-i18n="scenariosIntro">如果你现在也卡在这些问题里，不需要先自己把所有信息研究完，再来咨询。</p>
       </div>
       <div class="card-grid three-grid">
         <article class="scenario-card">
-          <span class="card-kicker" data-i18n="scenarioProblemLabel">????</span>
-          <strong data-i18n="scenario1Title">?????????????????</strong>
-          <span class="card-benefit" data-i18n="scenarioHelpLabel">??????</span>
-          <p data-i18n="scenario1Text">????????????????????????????????</p>
+          <span class="card-kicker" data-i18n="scenarioProblemLabel">用户问题</span>
+          <strong data-i18n="scenario1Title">第一次来英国，不知道该先看哪类公寓</strong>
+          <span class="card-benefit" data-i18n="scenarioHelpLabel">我们如何帮助</span>
+          <p data-i18n="scenario1Text">我们先按校区、预算和入住时间缩小范围，不用你自己先筛完整个平台。</p>
         </article>
         <article class="scenario-card">
-          <span class="card-kicker" data-i18n="scenarioProblemLabel">????</span>
-          <strong data-i18n="scenario2Title">??? studio ? ensuite ?????</strong>
-          <span class="card-benefit" data-i18n="scenarioHelpLabel">??????</span>
-          <p data-i18n="scenario2Text">???????????????????????????????????</p>
+          <span class="card-kicker" data-i18n="scenarioProblemLabel">用户问题</span>
+          <strong data-i18n="scenario2Title">不知道 studio 和 ensuite 到底怎么选</strong>
+          <span class="card-benefit" data-i18n="scenarioHelpLabel">我们如何帮助</span>
+          <p data-i18n="scenario2Text">我们会按预算、作息和独立生活需求帮你判断，不让房型选择变成纯价格比较。</p>
         </article>
         <article class="scenario-card">
-          <span class="card-kicker" data-i18n="scenarioProblemLabel">????</span>
-          <strong data-i18n="scenario3Title">??????????????</strong>
-          <span class="card-benefit" data-i18n="scenarioHelpLabel">??????</span>
-          <p data-i18n="scenario3Text">????????????????????????????</p>
+          <span class="card-kicker" data-i18n="scenarioProblemLabel">用户问题</span>
+          <strong data-i18n="scenario3Title">预算有限，但又怕住太远或踩坑</strong>
+          <span class="card-benefit" data-i18n="scenarioHelpLabel">我们如何帮助</span>
+          <p data-i18n="scenario3Text">我们会先排除不合适的区域和合同节奏，再看真正适合的公寓。</p>
         </article>
         <article class="scenario-card">
-          <span class="card-kicker" data-i18n="scenarioProblemLabel">????</span>
-          <strong data-i18n="scenario4Title">???????????????????</strong>
-          <span class="card-benefit" data-i18n="scenarioHelpLabel">??????</span>
-          <p data-i18n="scenario4Text">???????????????????????????</p>
+          <span class="card-kicker" data-i18n="scenarioProblemLabel">用户问题</span>
+          <strong data-i18n="scenario4Title">已经快开学了，担心订房和落地安排接不上</strong>
+          <span class="card-benefit" data-i18n="scenarioHelpLabel">我们如何帮助</span>
+          <p data-i18n="scenario4Text">我们会把订房、接机、寄存和入住衔接放到一条线上一起看。</p>
         </article>
         <article class="scenario-card">
-          <span class="card-kicker" data-i18n="scenarioProblemLabel">????</span>
-          <strong data-i18n="scenario5Title">???????????</strong>
-          <span class="card-benefit" data-i18n="scenarioHelpLabel">??????</span>
-          <p data-i18n="scenario5Text">??????????????????????????</p>
+          <span class="card-kicker" data-i18n="scenarioProblemLabel">用户问题</span>
+          <strong data-i18n="scenario5Title">想短租、续租或中途换房</strong>
+          <span class="card-benefit" data-i18n="scenarioHelpLabel">我们如何帮助</span>
+          <p data-i18n="scenario5Text">我们会先看公寓政策和时间节点，避免只看价格就做判断。</p>
         </article>
         <article class="scenario-card">
-          <span class="card-kicker" data-i18n="scenarioProblemLabel">????</span>
-          <strong data-i18n="scenario6Title">?????????????</strong>
-          <span class="card-benefit" data-i18n="scenarioHelpLabel">??????</span>
-          <p data-i18n="scenario6Text">??????????????????????????</p>
+          <span class="card-kicker" data-i18n="scenarioProblemLabel">用户问题</span>
+          <strong data-i18n="scenario6Title">想看清返现、优惠和合同区别</strong>
+          <span class="card-benefit" data-i18n="scenarioHelpLabel">我们如何帮助</span>
+          <p data-i18n="scenario6Text">我们会尽量把官方活动、返现口径和签约差异讲得更清楚。</p>
         </article>
       </div>
     </section>
@@ -342,8 +351,8 @@
 
     <section class="section case-section" id="case-studies">
       <div class="section-heading centered">
-        <h2 data-i18n="casesTitle">??????????????</h2>
-        <p data-i18n="casesIntro">???????????????????????????????????</p>
+        <h2 data-i18n="casesTitle">最近一些更接近真实咨询的案例</h2>
+        <p data-i18n="casesIntro">这些卡片只保留背景、需求和结果，方便你快速判断自己像不像其中一种情况。</p>
       </div>
       <div class="card-grid three-grid">
         <article class="case-card">
@@ -351,27 +360,27 @@
             <span data-i18n="case1Tag1">UoN / Park</span>
             <span data-i18n="case1Tag2">EEE / 9 ???</span>
           </div>
-          <strong data-i18n="case1Title">??????????????</strong>
-          <span class="card-benefit" data-i18n="caseResultLabel">????</span>
-          <p data-i18n="case1Text">???????????????????????????????????????????? ensuite?</p>
+          <strong data-i18n="case1Title">预算有限，但希望通勤别太折腾</strong>
+          <span class="card-benefit" data-i18n="caseResultLabel">最终结果</span>
+          <p data-i18n="case1Text">先把范围压在合适预算内，再结合校区和日常动线筛掉不合适的楼，最后选到通勤和价格都更平衡的 ensuite。</p>
         </article>
         <article class="case-card">
           <div class="case-tags">
             <span data-i18n="case2Tag1">NTU / ???</span>
-            <span data-i18n="case2Tag2">??????</span>
+            <span data-i18n="case2Tag2">第一次来英国</span>
           </div>
-          <strong data-i18n="case2Title">??? studio ? ensuite ?????</strong>
-          <span class="card-benefit" data-i18n="caseResultLabel">????</span>
-          <p data-i18n="case2Text">?????????????????????? studio?????????????? ensuite?</p>
+          <strong data-i18n="case2Title">不懂 studio 和 ensuite 到底差在哪</strong>
+          <span class="card-benefit" data-i18n="caseResultLabel">最终结果</span>
+          <p data-i18n="case2Text">把预算、作息和独立生活需求说清楚后，没有硬上 studio，而是先定了更适合当前阶段的 ensuite。</p>
         </article>
         <article class="case-card">
           <div class="case-tags">
             <span data-i18n="case3Tag1">UoN / Jubilee</span>
-            <span data-i18n="case3Tag2">Finance / ?????</span>
+            <span data-i18n="case3Tag2">Finance / 市中心往返</span>
           </div>
-          <strong data-i18n="case3Title">?????????????????</strong>
-          <span class="card-benefit" data-i18n="caseResultLabel">????</span>
-          <p data-i18n="case3Text">???????? Jubilee?????????????????????????????</p>
+          <strong data-i18n="case3Title">更在意生活便利，不想被校区判断带偏</strong>
+          <span class="card-benefit" data-i18n="caseResultLabel">最终结果</span>
+          <p data-i18n="case3Text">先确认课程主要在 Jubilee，再结合生活节奏判断，最后选择了更适合从市中心往返的方案。</p>
         </article>
       </div>
     </section>
@@ -438,10 +447,10 @@
     <section class="section consult-section" id="consult">
       <div class="consult-shell consult-shell-compact">
         <div class="consult-copy">
-          <h2 data-i18n="consultTitle">????????????????????????</h2>
-          <p data-i18n="consultText">????????????????????????</p>
-          <a class="button button-primary consult-primary" href="weixin://" data-home-wechat-contact data-i18n="consultBtn">????</a>
-          <p class="consult-note" data-i18n="consultNote">????????????????????????????</p>
+          <h2 data-i18n="consultTitle">还没确定住哪里？把预算、校区、入住时间发给我们。</h2>
+          <p data-i18n="consultText">先把最基础的信息给到我们，就可以先帮你缩小范围。</p>
+          <a class="button button-primary consult-primary" href="weixin://" data-home-wechat-contact data-i18n="consultBtn">立即咨询</a>
+          <p class="consult-note" data-i18n="consultNote">预算、校区、入住时间和房型需求这四项，就足够先开始判断。</p>
         </div>
       </div>
     </section>
@@ -490,8 +499,8 @@
     <span data-i18n="navMenu">Menu</span>
   </button>
 
-  <script src="./site-auth.js?v=20260505-cache-bust-1"></script>
-  <script src="./script.js?v=20260505-cache-bust-1"></script>
+  <script src="./site-auth.js?v=20260509-home-mobile-stable-1"></script>
+  <script src="./script.js?v=20260509-home-mobile-stable-1"></script>
 </body>
 </html>
 
