@@ -763,7 +763,7 @@ async function main() {
     }
 
     await verifyAdminSearchPages(adminPage, baseUrl, orderInfo1.orderNo, orderInfo1.groupId, `transport-flow-${slug(runId)}`, {
-      requestStatus: "expired"
+      requestStatus: "closed"
     });
 
     await userPage5.goto(new URL("/transport-board.html", baseUrl).toString(), {
