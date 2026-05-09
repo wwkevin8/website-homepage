@@ -368,27 +368,51 @@
 
     form.addEventListener("submit", async event => {
       event.preventDefault();
+      const currentPassword = form.current_password.value;
+      const newPassword = form.new_password.value;
+      const confirmPassword = form.confirm_password.value;
+
+      if (!currentPassword) {
+        setChangePasswordMessage("请输入当前密码", true);
+        form.current_password?.focus();
+        return;
+      }
+      if (newPassword.length < 8) {
+        setChangePasswordMessage("新密码至少需要 8 位", true);
+        form.new_password?.focus();
+        return;
+      }
+      if (newPassword !== confirmPassword) {
+        setChangePasswordMessage("两次输入的新密码不一致", true);
+        form.confirm_password?.focus();
+        return;
+      }
+
       setChangePasswordMessage("正在保存新密码...");
 
       try {
         const payload = {
-          current_password: form.current_password.value,
-          new_password: form.new_password.value,
-          confirm_password: form.confirm_password.value
+          current_password: currentPassword,
+          new_password: newPassword,
+          confirm_password: confirmPassword
         };
         await AdminApi.changeOwnPassword(payload);
-        setChangePasswordMessage("密码修改成功");
+        setChangePasswordMessage("密码修改成功，请重新登录。");
         window.dispatchEvent(
           new CustomEvent("admin:assistant-message", {
-            detail: { message: "密码已修改成功" }
+            detail: { message: "密码已修改成功，请重新登录。" }
           })
         );
+        await AdminApi.logout().catch(() => {});
         clearCachedSession();
         window.setTimeout(() => {
-          closeChangePasswordModal();
-        }, 500);
+          window.location.href = "./admin-login.html";
+        }, 800);
       } catch (error) {
-        setChangePasswordMessage(error.message || "密码修改失败", true);
+        const message = error?.status === 404
+          ? "修改密码接口暂时不可用，请刷新页面后重试。"
+          : (error.message || "密码修改失败");
+        setChangePasswordMessage(message, true);
       }
     });
   }

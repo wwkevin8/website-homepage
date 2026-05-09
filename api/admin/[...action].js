@@ -100,6 +100,7 @@ function logPerf(label, details) {
 
 function parseActionParts(req) {
   const candidates = [
+    req.query?.admin_action,
     req.query?.action,
     req.query?.["...action"],
     req.query?.slug
@@ -548,7 +549,7 @@ async function handleMe(req, res, supabase, subAction) {
   }
 
   if (currentPassword === nextPassword) {
-    badRequest(res, "閺傛澘鐦戦惍浣风瑝閼虫垝绗岃ぐ鎾冲鐎靛棛鐖滈惄绋挎倱");
+    badRequest(res, "新密码不能与当前密码相同");
     return;
   }
 
@@ -568,7 +569,7 @@ async function handleMe(req, res, supabase, subAction) {
   }
 
   if (!verifyPassword(currentPassword, target.password_hash)) {
-    badRequest(res, "瑜版挸澧犵€靛棛鐖滈柨娆掝嚖");
+    badRequest(res, "当前密码不正确");
     return;
   }
 

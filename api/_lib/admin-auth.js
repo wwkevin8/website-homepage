@@ -157,11 +157,19 @@ async function runBootstrapSuperAdmin(supabase) {
     throw existingError;
   }
 
-  // Keep the configured bootstrap account aligned with the local env values.
+  // Do not keep password_hash aligned with env after creation; admins can rotate
+  // the bootstrap account password through the normal change-password flow.
   if (existing) {
     const { error: updateError } = await supabase
       .from("admin_users")
-      .update(payload)
+      .update({
+        username: payload.username,
+        name: payload.name,
+        email: payload.email,
+        phone: payload.phone,
+        role: payload.role,
+        status: payload.status
+      })
       .eq("id", existing.id);
 
     if (updateError) {

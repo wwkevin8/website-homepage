@@ -22,7 +22,10 @@
     }));
 
     if (!response.ok) {
-      const error = new Error(payload.error?.message || "请求失败");
+      const fallbackMessage = response.status === 404
+        ? "后台接口不存在，请刷新页面后重试。"
+        : "请求失败";
+      const error = new Error(payload.error?.message || fallbackMessage);
       error.status = response.status;
       error.details = payload.error?.details || null;
       throw error;
@@ -53,9 +56,18 @@
       return request("/api/admin/session");
     },
     changeOwnPassword(payload) {
+      const body = JSON.stringify(payload);
       return request("/api/admin/me/change-password", {
         method: "POST",
-        body: JSON.stringify(payload)
+        body
+      }).catch(error => {
+        if (error?.status !== 404) {
+          throw error;
+        }
+        return request("/api/admin/login?admin_action=me%2Fchange-password", {
+          method: "POST",
+          body
+        });
       });
     },
     logout() {
