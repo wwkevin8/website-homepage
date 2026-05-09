@@ -1,8 +1,18 @@
 {
   "redirects": [
     {
+      "source": "/index.html",
+      "destination": "/",
+      "permanent": true
+    },
+    {
       "source": "/pickup.html",
       "destination": "/pickup",
+      "permanent": true
+    },
+    {
+      "source": "/storage.html",
+      "destination": "/storage",
       "permanent": true
     }
   ],
@@ -10,6 +20,10 @@
     {
       "source": "/pickup",
       "destination": "/pickup.html"
+    },
+    {
+      "source": "/storage",
+      "destination": "/storage.html"
     }
   ],
   "headers": [

@@ -352,7 +352,7 @@
       primaryActions[0].textContent = "查看接机服务";
     }
     if (primaryActions[1]) {
-      primaryActions[1].setAttribute("href", "./storage.html");
+      primaryActions[1].setAttribute("href", "./storage");
       primaryActions[1].textContent = "查看寄存服务";
     }
 
@@ -371,7 +371,7 @@
       }
 
       if (href.includes("storage-booking")) {
-        link.setAttribute("href", "./storage.html");
+        link.setAttribute("href", "./storage");
         titleNode.innerHTML = '<span class="service-center-link-icon" aria-hidden="true">📦</span>寄存服务';
         copyNode.textContent = "先查看寄存价格、流程和注意事项，再进入后续预约或估价流程。";
         if (ctaNode) ctaNode.textContent = "前往";

@@ -2224,7 +2224,7 @@ function getStorageSubmitEndpoint() {
 }
 
 function getStorageLocalModeMessage() {
-  return "当前是直接打开本地文件（file://），预约接口无法提交。请先运行 `npm run dev`，再通过 http://localhost:3000/storage.html 打开页面后提交。";
+  return "当前是直接打开本地文件（file://），预约接口无法提交。请先运行 `npm run dev`，再通过 http://localhost:3000/storage 打开页面后提交。";
 }
 
 function initStorageIntroModal() {
@@ -3553,7 +3553,7 @@ function initStorageBookingPage() {
   };
   const requestedOrderType = new URLSearchParams(window.location.search).get("service") || draft?.preferredOrderType || "";
   if (requestedOrderType === "box_delivery") {
-    window.location.replace("./storage.html#storage-calculator");
+    window.location.replace("./storage#storage-calculator");
     return;
   }
   const activeOrderType = requestedOrderType === "storage_return" ? "storage_return" : "storage_collection";
@@ -3586,7 +3586,7 @@ function initStorageBookingPage() {
     }
     if (sideActionLink) {
       sideActionLink.textContent = isReturnMode ? "去计算器预约寄存" : "返回估价页修改";
-      sideActionLink.setAttribute("href", "./storage.html#storage-calculator");
+      sideActionLink.setAttribute("href", "./storage#storage-calculator");
     }
     if (bookingFormIntroTitle) {
       bookingFormIntroTitle.textContent = isReturnMode ? "取寄存信息填写" : "预约信息填写";
@@ -4074,7 +4074,7 @@ function initStorageBookingPage() {
   }
 
   if (isStorageLocalFileMode() && bookingPageHint) {
-    bookingPageHint.textContent = "当前是直接打开本地文件（file://），页面可填写，但最终提交接口不可用。请先运行 npm run dev，再通过 http://localhost:3000/storage.html 进入本流程。";
+    bookingPageHint.textContent = "当前是直接打开本地文件（file://），页面可填写，但最终提交接口不可用。请先运行 npm run dev，再通过 http://localhost:3000/storage 进入本流程。";
   }
 
   hydrateStorageProfileState()
