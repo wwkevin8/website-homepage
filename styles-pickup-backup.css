@@ -2725,6 +2725,28 @@ body {
     padding: 0 14px 12px;
   }
 
+  .pickup-backup-topbar .storage-mobile-menu-card[data-menu-icon="storage"] .storage-mobile-menu-icon::before,
+  .pickup-backup-topbar .storage-mobile-menu-card[data-menu-icon="storage"] .storage-mobile-menu-icon::after {
+    content: "";
+    position: absolute;
+    box-sizing: border-box;
+  }
+
+  .pickup-backup-topbar .storage-mobile-menu-card[data-menu-icon="storage"] .storage-mobile-menu-icon::before {
+    width: 17px;
+    height: 15px;
+    border: 2px solid currentColor;
+    border-radius: 4px;
+  }
+
+  .pickup-backup-topbar .storage-mobile-menu-card[data-menu-icon="storage"] .storage-mobile-menu-icon::after {
+    top: 10px;
+    width: 13px;
+    height: 3px;
+    border-top: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+  }
+
   .pickup-backup-topbar .pickup-mobile-menu-inner {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));

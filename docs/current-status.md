@@ -8,7 +8,7 @@
 ## Last Updated Task
 
 - Date: 2026-05-09
-- Scope: GitHub sync after production deployment
+- Scope: pickup mobile menu visual alignment
 
 ## Completed In This Task
 
@@ -92,6 +92,10 @@
 - Corrected the release ordering after deployment by committing the accumulated mobile UI changes to Git and pushing them to GitHub branch `codex/full-sync`.
 - Commit `e2155cd` (`Polish mobile storage and pickup UI`) is now on `origin/codex/full-sync`.
 - GitHub CLI is not installed in the local environment, so no pull request was opened from this machine.
+- Updated the public pickup mobile menu to use the same single-column `storage-mobile-menu-card` structure and visual style as the storage mobile menu.
+- Added a matching CSS-only storage/box icon for the pickup page's `寄存服务` menu item.
+- Updated `pickup.html` stylesheet cache-bust query strings so browsers request the latest pickup menu alignment CSS.
+- No backend API, admin page, database, SQL, email, package, dependency, payment, or deployment action was performed for the pickup mobile menu alignment pass.
 
 ## Verification
 
@@ -181,6 +185,10 @@
 - Playwright checked `http://localhost:3000/storage` at a 1024px desktop viewport and confirmed the storage intro modal still auto-opens and has no horizontal overflow.
 - `git commit -m "Polish mobile storage and pickup UI"` completed successfully with commit `e2155cd`.
 - `git push -u origin codex/full-sync` completed successfully and updated GitHub from `a8f7b5a` to `e2155cd`.
+- `node --check script.js` passed after aligning the pickup mobile menu with the storage style.
+- Local helper server served `http://localhost:3000/pickup` with HTTP 200.
+- Playwright checked the pickup page at a 390px mobile viewport and confirmed the menu opens as five single-column cards, uses one 332px column, card titles/subtitles do not overflow, the header remains fixed, and there is no horizontal overflow.
+- Playwright checked the pickup page at a 1024px desktop viewport and confirmed desktop nav remains visible, the mobile toggle remains hidden, the menu remains closed, and there is no horizontal overflow.
 
 ## Current Project Status
 
@@ -228,7 +236,7 @@
 - On mobile widths, the personal center and personal profile pages again show a sticky NGN brand header above the page content.
 - On mobile widths, the homepage now reserves the header/auth area and hides the menu at first paint to avoid the brief full-screen flash when opening the booking homepage.
 - The homepage first-paint fix has been deployed to production.
-- On mobile widths, the public pickup page now has a compact card-style header menu instead of the previous tall plain rows.
+- On mobile widths, the public pickup page now uses the same single-column card-style header menu pattern as the public storage page.
 - On mobile widths, the public pickup page now keeps the top header visible while scrolling.
 - The P2 transport request status contract is partially aligned at the orders/admin statistics layer: transport requests now use `published`, `matched`, `closed` there.
 - The P2 transport group API/listing fallback paths are partially aligned: edited group API endpoints no longer write `open`, and public joinable listing now uses `single_member` and `active`.
