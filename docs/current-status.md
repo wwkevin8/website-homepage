@@ -8,7 +8,7 @@
 ## Last Updated Task
 
 - Date: 2026-05-09
-- Scope: storage intro modal mobile auto-open
+- Scope: GitHub sync after production deployment
 
 ## Completed In This Task
 
@@ -89,6 +89,9 @@
 - Changed the public storage intro modal to auto-open on mobile as well as desktop so students see the storage flow guidance when entering the storage page.
 - Updated `storage.html` script cache-bust query string so browsers request the latest storage intro modal behavior.
 - No backend API, admin page, database, SQL, email, package, dependency, payment, or deployment action was performed for the storage intro modal auto-open change.
+- Corrected the release ordering after deployment by committing the accumulated mobile UI changes to Git and pushing them to GitHub branch `codex/full-sync`.
+- Commit `e2155cd` (`Polish mobile storage and pickup UI`) is now on `origin/codex/full-sync`.
+- GitHub CLI is not installed in the local environment, so no pull request was opened from this machine.
 
 ## Verification
 
@@ -176,6 +179,8 @@
 - Local helper server served `http://localhost:3000/storage` with HTTP 200.
 - Playwright checked `http://localhost:3000/storage` at a 390px mobile viewport and confirmed the storage intro modal auto-opens, renders as a 366px wide centered dialog, locks body scrolling, and has no horizontal overflow.
 - Playwright checked `http://localhost:3000/storage` at a 1024px desktop viewport and confirmed the storage intro modal still auto-opens and has no horizontal overflow.
+- `git commit -m "Polish mobile storage and pickup UI"` completed successfully with commit `e2155cd`.
+- `git push -u origin codex/full-sync` completed successfully and updated GitHub from `a8f7b5a` to `e2155cd`.
 
 ## Current Project Status
 
@@ -183,7 +188,7 @@
 - Production is live at `https://ngn.best`.
 - Latest deployed production URL is `https://webside-oyslmfewu-wwkevin8s-projects.vercel.app`.
 - Production is currently aliased to deployment `dpl_3yGfRh5k3dnb1c9vVrBjF342JBTt`.
-- Latest production deployment was made from the local working tree with uncommitted mobile UI changes; latest Git commit remains `6b8fe5f` on branch `codex/full-sync`.
+- Latest production deployment was made before the GitHub push; the deployed mobile UI changes are now captured in Git commit `e2155cd` on branch `codex/full-sync`.
 - The P0 root JSON exposure risk is mitigated in the current working tree by sanitization, deployment ignores, `.gitignore` rules, and removal from the Git index.
 - The three JSON files are no longer tracked in the current Git index, and local copies remain ignored.
 - Manual credential rotation is still required because previous values must be treated as potentially exposed and may remain in Git history.
