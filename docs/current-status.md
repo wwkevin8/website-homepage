@@ -17,6 +17,10 @@
 - Re-aligned the shared public mobile service menu style so both storage and pickup menus use the requested `2 + 2 + 1` card layout: two cards per row and a full-width `联系我们` card.
 - Added a shared CSS-only storage icon for the `寄存服务` mobile menu card so the pickup page can use the same visual system without page-specific icon overrides.
 - Updated `pickup.html` and `storage.html` stylesheet cache-bust query strings so browsers request the latest shared menu CSS.
+- Committed the mobile menu correction to GitHub before deployment, preserving the required GitHub-then-Vercel release order.
+- Commit `593aee8` (`Restore mobile menu grid style`) was pushed to `origin/codex/full-sync`.
+- Ran production build and production deploy for the corrected storage and pickup mobile menu style.
+- Production deployment `dpl_6BYYJoGp2kqyGto6qWd11NUGVxcs` completed successfully and was aliased to `https://ngn.best`.
 - No backend API, admin page, database, SQL, email, package, dependency, payment, or deployment configuration code was changed for this menu correction.
 - Added mobile-specific visual and spacing overrides for the public storage page in `styles.css`.
 - Reworked the mobile storage first screen so the main storage copy leads the page, with the service video kept as a smaller supporting media block below it.
@@ -112,6 +116,13 @@
 - Local helper server served `http://localhost:3000/pickup` and `http://localhost:3000/storage` with HTTP 200.
 - Playwright checked `http://localhost:3000/pickup` at a 390px mobile viewport and confirmed the menu opens as two 162px columns plus a 332px full-width contact card, has five cards, the header remains fixed at top 0 after scrolling, and there is no horizontal overflow.
 - Playwright checked `http://localhost:3000/storage` at a 390px mobile viewport and confirmed the menu opens as two 150px columns plus a 308px full-width contact card, has five cards, the header remains fixed at top 0 after scrolling, and there is no horizontal overflow.
+- `npm run build:prod` completed successfully.
+- `npm run deploy:prod` completed successfully and aliased the deployment to `https://ngn.best`.
+- Production verification passed: `https://ngn.best/`, `https://ngn.best/storage`, and `https://ngn.best/pickup` returned HTTP 200.
+- Production verification passed: `https://ngn.best/storage.html` and `https://ngn.best/pickup.html` returned HTTP 308 redirects to `/storage` and `/pickup`.
+- Production asset verification passed: both `https://ngn.best/pickup` and `https://ngn.best/storage` reference `20260509-mobile-menu-grid-1`.
+- Playwright checked `https://ngn.best/pickup` at a 390px mobile viewport and confirmed the menu opens as two 162px columns plus a 332px full-width contact card, the header remains fixed at top 0 after scrolling, and there is no horizontal overflow.
+- Playwright checked `https://ngn.best/storage` at a 390px mobile viewport and confirmed the menu opens as two 150px columns plus a 308px full-width contact card, the header remains fixed at top 0 after scrolling, and there is no horizontal overflow.
 - `node --check script.js` passed.
 - Local helper server served `http://localhost:3000/storage` with HTTP 200.
 - Playwright opened `http://localhost:3000/storage` at a 390px mobile viewport.
@@ -214,10 +225,10 @@
 
 - The transport dispatch app remains a static multi-page website plus Vercel serverless APIs.
 - Production is live at `https://ngn.best`.
-- Latest deployed production URL is `https://webside-n7jork9ah-wwkevin8s-projects.vercel.app`.
-- Production is currently aliased to deployment `dpl_AgaKdkshWPRZrGLK6HEapr7p2KHG`.
-- Local working tree now corrects both public storage and pickup mobile menus to the requested two-column card style; production will need a GitHub-first release followed by Vercel deployment for this newest correction.
-- Latest production deployment followed the required GitHub-then-Vercel order; the deployed pickup menu alignment is captured in Git commit `062eab1` on branch `codex/full-sync`.
+- Latest deployed production URL is `https://webside-gxzp3t9mf-wwkevin8s-projects.vercel.app`.
+- Production is currently aliased to deployment `dpl_6BYYJoGp2kqyGto6qWd11NUGVxcs`.
+- Latest production deployment followed the required GitHub-then-Vercel order; the deployed two-column mobile menu correction is captured in Git commit `593aee8` on branch `codex/full-sync`.
+- Both public storage and pickup mobile menus now use the same requested `2 + 2 + 1` service-card layout with a fixed top header.
 - The P0 root JSON exposure risk is mitigated in the current working tree by sanitization, deployment ignores, `.gitignore` rules, and removal from the Git index.
 - The three JSON files are no longer tracked in the current Git index, and local copies remain ignored.
 - Manual credential rotation is still required because previous values must be treated as potentially exposed and may remain in Git history.
