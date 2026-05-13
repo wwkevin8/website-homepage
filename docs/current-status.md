@@ -8,7 +8,7 @@
 ## Last Updated Task
 
 - Date: 2026-05-13
-- Scope: verify NGN membership database migration and API flow
+- Scope: implement NGN membership admin and user-center UI locally
 
 ## Latest Completed Work
 
@@ -35,6 +35,29 @@
   - Heathrow/Gatwick September free core scenario;
   - other pickup fallback discount of GBP 100.
 - Page-level user center and admin UI changes were intentionally not implemented in this verification stage.
+- Created local feature branch `codex/membership-v1` and committed the verified backend foundation locally:
+  - commit `bbf3494` (`Add membership entitlement backend foundation`);
+  - no push was performed and no Vercel deployment was run.
+- Added first-stage admin membership management:
+  - new `admin-memberships.html` and `admin-memberships.js`;
+  - added `会员权益` to the existing admin shell navigation;
+  - admin page supports searching `site_users`, manual 2026-27 membership grant, entitlement list, claim view, `benefit_type`, claim status, `linked_order_no`, mark-used, cancel, reset, and audit log display;
+  - no invite code, auto membership grant, binding application, coupon, furniture, referral, cashback, moving order, welcome pack flow, or package-claim flow was added.
+- Added user-center membership module to `profile.html` / `profile.js`:
+  - non-members see contact-service copy;
+  - members without a claim see only storage and pickup benefit choices;
+  - selected members see benefit type, status, and linked order number;
+  - users cannot cancel or change selected benefits from the frontend.
+- Added read-only membership discount fields to storage and transport request admin detail pages:
+  - `membership_benefit_claim_id`;
+  - `membership_discount_amount`;
+  - `extra_charge_amount`;
+  - `final_price`;
+  - `membership_discount_breakdown_json`.
+- Added local dev-server routing for `/api/admin/memberships*` and `/api/admin/membership-claims*` so the new admin page can be tested locally.
+- Committed the membership admin/user-center/detail-page work locally:
+  - commit message `Add membership admin and profile UI`;
+  - no push was performed and no Vercel deployment was run.
 
 ## Previous Completed Work
 
@@ -107,7 +130,7 @@
 - Current membership cycle is centralized in `api/_lib/membership.js` via `CURRENT_MEMBERSHIP_CYCLE`, defaulting to `2026-27`.
 - Website-supported member choices are limited to storage and pickup; other PDF benefits are manual/admin-note records only.
 - Pickup member benefit logic only applies to `service_type=pickup`; Heathrow/Gatwick in September is treated as the free core case, while other pickup cases get a service-side fallback discount/pending-admin-confirmation breakdown.
-- User center and admin membership pages are still not implemented.
+- User center and first-stage admin membership page are implemented locally but not deployed.
 - Registration flow remains email -> backend rate check -> send code -> verify code -> profile/password -> automatic login.
 - Login flow remains email/password -> backend risk check -> credential check -> signed user session cookie.
 - Login and register pages visually hide the full Turnstile block by default and show it only after `needCaptcha=true`; cooldown and temporary-block states do not show Turnstile.
@@ -137,6 +160,34 @@
 - QA cleanup verification confirmed zero leftover QA users, admins, entitlements, claims, audit logs, storage orders, transport requests, or transport groups; totals returned to 5 `storage_orders` and 9 `transport_requests`.
 - Supabase security advisor no longer reports `set_updated_at()` search-path warning. Remaining membership-related security INFO entries are expected `RLS Enabled No Policy` notices for service-role-only membership tables with direct grants revoked.
 - Supabase performance advisor no longer reports unindexed membership foreign keys. It still reports expected new unused membership indexes immediately after creation plus unrelated pre-existing duplicate/unused index notices on non-membership tables.
+- `node --check` passed for:
+  - `admin-memberships.js`
+  - `admin-api.js`
+  - `admin-shell.js`
+  - `api/admin/[...action].js`
+  - `profile.js`
+  - `transport-admin.js`
+  - `admin-pages.js`
+  - `dev-server.js`
+- Admin membership API smoke test passed using direct handler invocation:
+  - search membership users;
+  - manual grant;
+  - list membership with claim;
+  - mark-used;
+  - reset;
+  - audit log returned expected actions.
+- Browser verification against local dev server `http://localhost:5175` passed for `admin-memberships.html`:
+  - admin shell loaded;
+  - `会员权益` navigation highlighted;
+  - user search empty state and membership list empty state rendered;
+  - no bad responses or console/page errors.
+- Browser verification against local dev server `http://localhost:5175` passed for `profile.html` membership module:
+  - non-member state rendered;
+  - member storage/pickup choices rendered;
+  - storage selection succeeded;
+  - duplicate pickup selection was rejected by the API;
+  - QA rows were cleaned afterward.
+- `npm run build:prod` passed after the admin/user-center/detail-page changes.
 
 ## Previous Verification
 
@@ -181,14 +232,14 @@
 - Storage/pickup discount calculation is centralized in `api/_lib/membership.js`, but production pricing should still be validated against the actual calculator fields before release.
 - The PDF text layer did not expose searchable Heathrow/Gatwick/September lines in local extraction; current pickup rules are based on the explicit business rules supplied in the user request.
 - Supabase JS cannot wrap existing multi-step storage/pickup order creation plus claim binding in a single cross-table transaction. The implementation uses conditional claim binding (`status in selected/reserved` and `linked_order_id is null`) plus cleanup on bind conflict; a future RPC could make the full order-create/bind path fully atomic.
-- Membership backend code is not deployed yet; GitHub must be updated before any Vercel deployment.
+- Membership code is not pushed or deployed yet; GitHub must be updated before any Vercel deployment.
+- Working tree still contains unrelated pre-existing auth risk files/changes (`api/auth/[action].js`, `login.js`, `register.js`, and `supabase/20260513_auth_risk_events_device_id.sql`) that were not part of the membership UI work and should be handled separately.
 - `gh` is not installed on this machine, so GitHub PR creation still requires either installing `gh` or using the GitHub web UI.
 
 ## Recommended Next Steps
 
-- Commit and push the verified membership backend before any Vercel deployment.
-- After backend deployment, proceed to user center and admin membership page development.
-- Add UI tests or browser smoke checks once `profile.html`/`profile.js` and admin pages are updated.
+- Run one final end-to-end QA pass before any push or deployment.
+- Push the feature branch only when ready; do not push `main` or deploy production until the complete membership product flow is accepted.
 - Confirm exact pricing inputs for storage base-box allowance, buy-box fees, overweight fees, stairs fees, out-of-city return fees, pickup base fare, extra passengers/luggage, waiting fees, and special service fees before production release.
 - In WeChat and a normal browser, verify:
   - first login does not show Turnstile;

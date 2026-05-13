@@ -82,6 +82,11 @@ const STORAGE_ORDER_LIST_COLUMNS = [
   "address_full",
   "room_or_building",
   "postcode",
+  "membership_benefit_claim_id",
+  "membership_discount_amount",
+  "extra_charge_amount",
+  "final_price",
+  "membership_discount_breakdown_json",
   "status",
   "created_at"
 ];
@@ -1558,9 +1563,24 @@ async function handleManagerDetail(req, res, supabase, id, subAction) {
   methodNotAllowed(res, []);
 }
 
-async function handleMemberships(req, res, supabase) {
+async function handleMemberships(req, res, supabase, subAction = "") {
   const adminUser = await requireAdminUser(req, res, supabase);
   if (!adminUser) {
+    return;
+  }
+
+  if (subAction === "users") {
+    if (req.method !== "GET") {
+      methodNotAllowed(res, ["GET"]);
+      return;
+    }
+    const search = String(req.query?.search || "").trim();
+    if (!search) {
+      ok(res, { items: [] });
+      return;
+    }
+    const users = await querySiteUsersWithFallback(supabase, { search });
+    ok(res, { items: users.slice(0, 20) });
     return;
   }
 
@@ -1627,6 +1647,7 @@ async function handleMemberships(req, res, supabase) {
   const entitlementIds = entitlements.map(item => item.id);
   const userIds = entitlements.map(item => item.site_user_id).filter(Boolean);
   let claims = [];
+  let auditLogs = [];
   if (entitlementIds.length) {
     let claimsQuery = supabase
       .from("membership_benefit_claims")
@@ -1645,6 +1666,24 @@ async function handleMemberships(req, res, supabase) {
     }
     claims = claimsResult.data || [];
   }
+  if (entitlementIds.length) {
+    const claimIds = claims.map(claim => claim.id).filter(Boolean);
+    let auditQuery = supabase
+      .from("membership_audit_logs")
+      .select("id, admin_user_id, site_user_id, entitlement_id, claim_id, action, before_data, after_data, metadata, created_at")
+      .order("created_at", { ascending: false })
+      .limit(200);
+    if (claimIds.length) {
+      auditQuery = auditQuery.or(`entitlement_id.in.(${entitlementIds.join(",")}),claim_id.in.(${claimIds.join(",")})`);
+    } else {
+      auditQuery = auditQuery.in("entitlement_id", entitlementIds);
+    }
+    const auditResult = await auditQuery;
+    if (auditResult.error) {
+      throw auditResult.error;
+    }
+    auditLogs = auditResult.data || [];
+  }
   const users = userIds.length ? await querySiteUsersWithFallback(supabase, { ids: userIds }) : [];
   const claimByEntitlement = new Map();
   claims.forEach(claim => {
@@ -1653,13 +1692,25 @@ async function handleMemberships(req, res, supabase) {
     }
   });
   const userById = new Map(users.map(user => [String(user.id), user]));
+  const auditLogsByEntitlement = new Map();
+  auditLogs.forEach(log => {
+    const key = String(log.entitlement_id || "");
+    if (!key) {
+      return;
+    }
+    if (!auditLogsByEntitlement.has(key)) {
+      auditLogsByEntitlement.set(key, []);
+    }
+    auditLogsByEntitlement.get(key).push(log);
+  });
 
   ok(res, {
     items: entitlements
       .map(entitlement => ({
         ...entitlement,
         user: userById.get(String(entitlement.site_user_id)) || null,
-        claim: claimByEntitlement.get(entitlement.id) || null
+        claim: claimByEntitlement.get(entitlement.id) || null,
+        audit_logs: auditLogsByEntitlement.get(String(entitlement.id)) || []
       }))
       .filter(item => {
         if (!benefitType && !claimStatus) {
@@ -1764,7 +1815,7 @@ module.exports = async function handler(req, res) {
       return;
     }
     if (head === "memberships") {
-      await handleMemberships(req, res, supabase);
+      await handleMemberships(req, res, supabase, second || "");
       return;
     }
     if (head === "membership-claims") {

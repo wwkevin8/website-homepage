@@ -318,6 +318,21 @@
     padding: 14px;
   }
 
+  .profile-membership-header {
+    display: grid;
+    gap: 8px;
+  }
+
+  .profile-membership-benefits,
+  .profile-membership-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-membership-benefit {
+    min-height: 96px;
+    padding: 12px;
+  }
+
   .profile-page-copy p:last-child {
     margin-top: 7px;
     font-size: 0.68rem;
@@ -11232,6 +11247,108 @@ body.storage-receipt-open {
 
 .profile-card {
   padding: 20px 22px;
+}
+
+.profile-membership-card {
+  display: grid;
+  gap: 14px;
+}
+
+.profile-membership-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.profile-membership-header h2 {
+  margin: 4px 0 0;
+}
+
+.profile-membership-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #e8f5ef;
+  color: #196347;
+  font-size: 0.82rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.profile-membership-status.is-muted {
+  background: #eef2f7;
+  color: #526173;
+}
+
+.profile-membership-body p {
+  margin: 0;
+  color: #4b5c73;
+  line-height: 1.55;
+}
+
+.profile-membership-benefits {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.profile-membership-benefit {
+  display: grid;
+  gap: 6px;
+  min-height: 112px;
+  padding: 16px;
+  border: 1px solid rgba(24, 55, 109, 0.12);
+  border-radius: 16px;
+  background: #fff;
+  color: #163354;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: 0 10px 22px rgba(14, 33, 66, 0.05);
+}
+
+.profile-membership-benefit:hover,
+.profile-membership-benefit:focus-visible {
+  border-color: rgba(31, 79, 179, 0.28);
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.profile-membership-benefit:disabled {
+  cursor: wait;
+  opacity: 0.7;
+  transform: none;
+}
+
+.profile-membership-benefit strong,
+.profile-membership-summary strong {
+  color: #102844;
+  font-size: 1rem;
+}
+
+.profile-membership-benefit span,
+.profile-membership-summary span {
+  color: #607086;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.profile-membership-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.profile-membership-summary > div {
+  display: grid;
+  gap: 4px;
+  padding: 14px;
+  border: 1px solid rgba(24, 55, 109, 0.08);
+  border-radius: 14px;
+  background: #fff;
 }
 
 .profile-field-grid {

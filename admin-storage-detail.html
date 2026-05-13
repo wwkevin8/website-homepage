@@ -102,6 +102,16 @@
             <label class="field"><span>是否需要上楼服务</span><select name="needs_upstairs"><option value="">未选择</option><option value="true">是</option><option value="false">否</option></select></label>
 
             <div class="storage-detail-section-title transport-field-span-2">
+              <h2>会员抵扣信息</h2>
+              <p>只读展示会员权益绑定与服务端计算结果，实际核销请在会员权益后台处理。</p>
+            </div>
+            <label class="field transport-field-span-2"><span>membership_benefit_claim_id</span><input name="membership_benefit_claim_id" readonly></label>
+            <label class="field"><span>membership_discount_amount</span><input name="membership_discount_amount" readonly></label>
+            <label class="field"><span>extra_charge_amount</span><input name="extra_charge_amount" readonly></label>
+            <label class="field"><span>final_price</span><input name="final_price" readonly></label>
+            <label class="field transport-field-span-2"><span>membership_discount_breakdown_json</span><textarea name="membership_discount_breakdown_json" rows="6" readonly></textarea></label>
+
+            <div class="storage-detail-section-title transport-field-span-2">
               <h2>备注信息</h2>
               <p>用户备注和寄存信息摘要用于客服核对订单内容。</p>
             </div>

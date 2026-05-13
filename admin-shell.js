@@ -9,6 +9,7 @@
     { key: "dashboard", label: "控制台", href: "./admin-dashboard.html" },
     { key: "orders", label: "订单中心", href: "./admin-orders.html" },
     { key: "users", label: "用户管理", href: "./admin-users.html" },
+    { key: "memberships", label: "会员权益", href: "./admin-memberships.html" },
     { key: "managers", label: "管理员管理", href: "./admin-managers.html", permission: "canViewAdminManagers" },
     {
       key: "transport",

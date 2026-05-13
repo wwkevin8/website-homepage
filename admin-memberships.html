@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="/favicon.ico?v=20260509">
+  <link rel="icon" href="/favicon.png?v=20260509" type="image/png">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=20260509">
+  <title>会员权益 | NGN 管理后台</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css?v=20260513-membership-1">
+</head>
+<body
+  data-admin-shell
+  data-admin-page="memberships"
+  data-admin-section="运营后台"
+  data-admin-title="会员权益"
+  data-admin-description="手动开通 2026-27 NGN 会员，查看权益选择、订单绑定和核销记录。"
+>
+  <div class="admin-layout">
+    <aside class="admin-sidebar" data-admin-sidebar></aside>
+    <div class="admin-main">
+      <header class="admin-header" data-admin-header></header>
+      <main class="admin-content" data-admin-content>
+        <section class="admin-page" id="adminMembershipsPage">
+          <section class="admin-panel">
+            <form class="admin-toolbar admin-toolbar-inline" id="adminMembershipSearchForm">
+              <label class="field">
+                <span>搜索用户</span>
+                <input type="text" name="search" placeholder="User ID / 邮箱 / 昵称 / 手机号">
+              </label>
+              <label class="field">
+                <span>每页</span>
+                <select name="page_size">
+                  <option value="10">10</option>
+                  <option value="20" selected>20</option>
+                  <option value="50">50</option>
+                </select>
+              </label>
+              <div class="admin-inline-actions">
+                <button class="button button-primary" type="submit">搜索用户</button>
+                <button class="button button-secondary" type="reset">重置</button>
+              </div>
+            </form>
+            <div id="adminMembershipUserResults"></div>
+          </section>
+
+          <section class="admin-panel">
+            <form class="admin-form-grid" id="adminMembershipGrantForm">
+              <label class="field">
+                <span>Site User ID</span>
+                <input type="text" name="site_user_id" placeholder="从上方搜索结果选择用户" required>
+              </label>
+              <label class="field">
+                <span>会员周期</span>
+                <input type="text" name="membership_cycle" value="2026-27" required>
+              </label>
+              <label class="field admin-field-span-2">
+                <span>备注</span>
+                <textarea name="notes" rows="2" placeholder="例如：后台人工开通 2026-27 会员"></textarea>
+              </label>
+              <p class="transport-form-message admin-field-span-2" id="adminMembershipGrantMessage"></p>
+              <div class="admin-inline-actions admin-field-span-2">
+                <button class="button button-primary" type="submit">手动开通会员</button>
+              </div>
+            </form>
+          </section>
+
+          <section class="admin-panel">
+            <form class="admin-toolbar admin-toolbar-inline" id="adminMembershipFilters">
+              <label class="field">
+                <span>会员搜索</span>
+                <input type="text" name="search" placeholder="User ID / 邮箱 / 昵称 / 手机号">
+              </label>
+              <label class="field">
+                <span>会员周期</span>
+                <input type="text" name="cycle" value="2026-27">
+              </label>
+              <label class="field">
+                <span>Entitlement</span>
+                <select name="status">
+                  <option value="">全部</option>
+                  <option value="active">active</option>
+                  <option value="revoked">revoked</option>
+                  <option value="expired">expired</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>Claim 状态</span>
+                <select name="claim_status">
+                  <option value="">全部</option>
+                  <option value="selected">selected</option>
+                  <option value="reserved">reserved</option>
+                  <option value="used">used</option>
+                  <option value="manual">manual</option>
+                  <option value="cancelled">cancelled</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>权益类型</span>
+                <select name="benefit_type">
+                  <option value="">全部</option>
+                  <option value="storage">storage</option>
+                  <option value="pickup">pickup</option>
+                </select>
+              </label>
+              <div class="admin-inline-actions">
+                <button class="button button-primary" type="submit">刷新列表</button>
+                <button class="button button-secondary" type="reset">重置</button>
+              </div>
+            </form>
+          </section>
+
+          <section id="adminMembershipsTable"></section>
+          <div class="transport-pagination" id="adminMembershipsPagination"></div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script src="./admin-api.js?v=20260513-membership-1"></script>
+  <script src="./admin-shell.js?v=20260513-membership-1"></script>
+  <script src="./admin-memberships.js?v=20260513-membership-1"></script>
+</body>
+</html>

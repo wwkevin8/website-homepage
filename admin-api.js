@@ -138,6 +138,36 @@
     getUser(id) {
       return request(`/api/admin/users/${id}`);
     },
+    listMemberships(filters) {
+      return request(`/api/admin/memberships${buildQuery(filters)}`);
+    },
+    searchMembershipUsers(filters) {
+      return request(`/api/admin/memberships/users${buildQuery(filters)}`);
+    },
+    grantMembership(payload) {
+      return request("/api/admin/memberships", {
+        method: "POST",
+        body: JSON.stringify(payload)
+      });
+    },
+    markMembershipClaimUsed(id, payload = {}) {
+      return request(`/api/admin/membership-claims/${encodeURIComponent(id)}/mark-used`, {
+        method: "POST",
+        body: JSON.stringify(payload)
+      });
+    },
+    cancelMembershipClaim(id, payload = {}) {
+      return request(`/api/admin/membership-claims/${encodeURIComponent(id)}/cancel`, {
+        method: "POST",
+        body: JSON.stringify(payload)
+      });
+    },
+    resetMembershipClaim(id, payload = {}) {
+      return request(`/api/admin/membership-claims/${encodeURIComponent(id)}/reset`, {
+        method: "POST",
+        body: JSON.stringify(payload)
+      });
+    },
     listManagers(filters) {
       return request(`/api/admin/managers${buildQuery(filters)}`);
     },

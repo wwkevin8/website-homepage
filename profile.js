@@ -44,6 +44,29 @@
     return readJson(response);
   }
 
+  async function fetchMembership() {
+    const response = await fetch("/api/public/membership/me", {
+      credentials: "include",
+      headers: {
+        Accept: "application/json"
+      }
+    });
+    return readJson(response);
+  }
+
+  async function selectMembershipBenefit(benefitType) {
+    const response = await fetch("/api/public/membership/benefit-selection", {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json"
+      },
+      body: JSON.stringify({ benefit_type: benefitType })
+    });
+    return readJson(response);
+  }
+
   function fillForm(form, user) {
     form.nickname.value = user.nickname || "";
     form.phone.value = user.phone || "";
@@ -113,6 +136,107 @@
     return form.reportValidity();
   }
 
+  function escapeHtml(value) {
+    return String(value || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function getBenefitLabel(type) {
+    if (type === "storage") {
+      return "会员寄存权益";
+    }
+    if (type === "pickup") {
+      return "会员接机权益";
+    }
+    return type || "--";
+  }
+
+  function renderMembershipState(state) {
+    const statusNode = document.querySelector("#profileMembershipStatus");
+    const bodyNode = document.querySelector("#profileMembershipBody");
+    if (!statusNode || !bodyNode) {
+      return;
+    }
+
+    const entitlement = state?.entitlement || null;
+    const claim = state?.claim || null;
+
+    if (!state?.isMember || !entitlement) {
+      statusNode.textContent = "非会员";
+      statusNode.className = "profile-membership-status is-muted";
+      bodyNode.innerHTML = `
+        <p>当前不是 NGN 会员，如已通过 NGN 订房请联系客服开通会员权益。</p>
+        <p class="field-help">会员资格第一版由后台人工开通，登录账号本身不等于会员资格。</p>
+      `;
+      return;
+    }
+
+    if (claim) {
+      statusNode.textContent = claim.status || "已选择";
+      statusNode.className = "profile-membership-status is-active";
+      bodyNode.innerHTML = `
+        <div class="profile-membership-summary">
+          <div>
+            <strong>${escapeHtml(getBenefitLabel(claim.benefit_type))}</strong>
+            <span>已选择项目</span>
+          </div>
+          <div>
+            <strong>${escapeHtml(claim.status || "--")}</strong>
+            <span>当前状态</span>
+          </div>
+          <div>
+            <strong>${escapeHtml(claim.linked_order_no || "--")}</strong>
+            <span>绑定订单号</span>
+          </div>
+        </div>
+        <p class="field-help">权益选择后不能自行取消或更换。如需处理，请联系客服。</p>
+      `;
+      return;
+    }
+
+    statusNode.textContent = "会员未选择";
+    statusNode.className = "profile-membership-status is-active";
+    bodyNode.innerHTML = `
+      <div class="profile-membership-benefits">
+        <button class="profile-membership-benefit" type="button" data-membership-benefit="storage">
+          <strong>会员寄存权益</strong>
+          <span>最多抵扣 5 个标准箱基础寄存费用，额外费用由后台确认。</span>
+        </button>
+        <button class="profile-membership-benefit" type="button" data-membership-benefit="pickup">
+          <strong>会员接机权益</strong>
+          <span>仅适用于 pickup，不适用于 dropoff；具体抵扣由服务端判断。</span>
+        </button>
+      </div>
+      <p class="field-help">其他权益请联系客服处理。选择后会锁定，不能自行更换。</p>
+    `;
+  }
+
+  async function loadMembershipState() {
+    const statusNode = document.querySelector("#profileMembershipStatus");
+    const bodyNode = document.querySelector("#profileMembershipBody");
+    const messageNode = document.querySelector("#profileMembershipMessage");
+    if (!statusNode || !bodyNode) {
+      return;
+    }
+
+    setMessage(messageNode, "");
+    statusNode.textContent = "读取中";
+    bodyNode.innerHTML = '<p class="field-help">正在读取会员权益状态...</p>';
+    try {
+      const state = await fetchMembership();
+      renderMembershipState(state);
+    } catch (error) {
+      statusNode.textContent = "读取失败";
+      statusNode.className = "profile-membership-status is-muted";
+      bodyNode.innerHTML = "<p>会员状态暂时无法读取，请稍后刷新重试。</p>";
+      setMessage(messageNode, error.message || "会员状态读取失败", "error");
+    }
+  }
+
   async function initProfilePage() {
     const form = document.querySelector("#profileForm");
     if (!form) {
@@ -121,6 +245,7 @@
 
     const messageNode = document.querySelector("#profileFormMessage");
     const saveButton = document.querySelector("#profileSaveButton");
+    const membershipBody = document.querySelector("#profileMembershipBody");
 
     form.addEventListener("change", event => {
       if (event.target instanceof HTMLInputElement && event.target.name === "contact_preference") {
@@ -131,10 +256,39 @@
     try {
       const user = await fetchProfile();
       fillForm(form, user);
+      loadMembershipState();
     } catch (error) {
       setMessage(messageNode, error.message || "资料读取失败，请稍后重试。", "error");
       return;
     }
+
+    membershipBody?.addEventListener("click", async event => {
+      const button = event.target.closest("[data-membership-benefit]");
+      if (!button) {
+        return;
+      }
+      const benefitType = button.getAttribute("data-membership-benefit");
+      if (!benefitType) {
+        return;
+      }
+      const membershipMessage = document.querySelector("#profileMembershipMessage");
+      const buttons = membershipBody.querySelectorAll("[data-membership-benefit]");
+      buttons.forEach(item => {
+        item.disabled = true;
+      });
+      setMessage(membershipMessage, "正在提交会员权益选择...");
+      try {
+        await selectMembershipBenefit(benefitType);
+        setMessage(membershipMessage, "会员权益已选择。", "success");
+        await loadMembershipState();
+      } catch (error) {
+        setMessage(membershipMessage, error.message || "会员权益选择失败，请联系客服。", "error");
+      } finally {
+        buttons.forEach(item => {
+          item.disabled = false;
+        });
+      }
+    });
 
     form.addEventListener("submit", async event => {
       event.preventDefault();

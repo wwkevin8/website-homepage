@@ -61,6 +61,15 @@
             <label class="field transport-field-span-2"><span>接机时间</span><input type="datetime-local" name="preferred_time_start"></label>
             <label class="field transport-field-span-2"><span>备注</span><textarea name="notes" rows="4"></textarea></label>
             <label class="field transport-field-span-2"><span>内部备注</span><textarea name="admin_note" rows="3"></textarea></label>
+            <div class="storage-detail-section-title transport-field-span-2">
+              <h2>会员抵扣信息</h2>
+              <p>只读展示会员权益绑定与服务端计算结果，实际核销请在会员权益后台处理。</p>
+            </div>
+            <label class="field transport-field-span-2"><span>membership_benefit_claim_id</span><input name="membership_benefit_claim_id" readonly></label>
+            <label class="field"><span>membership_discount_amount</span><input name="membership_discount_amount" readonly></label>
+            <label class="field"><span>extra_charge_amount</span><input name="extra_charge_amount" readonly></label>
+            <label class="field"><span>final_price</span><input name="final_price" readonly></label>
+            <label class="field transport-field-span-2"><span>membership_discount_breakdown_json</span><textarea name="membership_discount_breakdown_json" rows="6" readonly></textarea></label>
             <p class="transport-form-message transport-field-span-2" id="transportRequestMessage"></p>
             <div class="transport-card-actions transport-field-span-2">
               <button class="button button-primary" type="submit">保存订单</button>

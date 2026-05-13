@@ -72,6 +72,25 @@
     node.value = Number.isNaN(date.getTime()) ? "" : date.toISOString().slice(0, 16);
   }
 
+  function formatMembershipMoney(value) {
+    if (value === null || value === undefined || value === "") {
+      return "";
+    }
+    const number = Number(value);
+    return Number.isFinite(number) ? `£${number.toFixed(2)}` : String(value);
+  }
+
+  function formatMembershipJson(value) {
+    if (!value || typeof value !== "object") {
+      return "";
+    }
+    try {
+      return JSON.stringify(value, null, 2);
+    } catch (error) {
+      return String(value);
+    }
+  }
+
   const DISPATCH_SUMMARY_START = "[dispatch_summary_override]";
   const DISPATCH_SUMMARY_END = "[/dispatch_summary_override]";
 
@@ -419,6 +438,21 @@
     });
     fillDateTimeInput(form.flight_datetime, record?.flight_datetime);
     fillDateTimeInput(form.preferred_time_start, record?.preferred_time_start);
+    if (form.membership_benefit_claim_id) {
+      form.membership_benefit_claim_id.value = record?.membership_benefit_claim_id || "";
+    }
+    if (form.membership_discount_amount) {
+      form.membership_discount_amount.value = formatMembershipMoney(record?.membership_discount_amount);
+    }
+    if (form.extra_charge_amount) {
+      form.extra_charge_amount.value = formatMembershipMoney(record?.extra_charge_amount);
+    }
+    if (form.final_price) {
+      form.final_price.value = formatMembershipMoney(record?.final_price);
+    }
+    if (form.membership_discount_breakdown_json) {
+      form.membership_discount_breakdown_json.value = formatMembershipJson(record?.membership_discount_breakdown_json);
+    }
     hydrateRequestLuggageDisplay(form, record);
     Shared.syncAirportNameField(form.airport_code, form.airport_name);
     setRequestHints(form);

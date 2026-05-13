@@ -1336,6 +1336,17 @@
     return Number.isFinite(number) ? `£${number.toFixed(2)}` : String(value);
   }
 
+  function formatStorageDetailJson(value) {
+    if (!value || typeof value !== "object") {
+      return "";
+    }
+    try {
+      return JSON.stringify(value, null, 2);
+    } catch (error) {
+      return String(value);
+    }
+  }
+
   function storageDetailBoolLabel(value) {
     if (value === true || value === "true") {
       return "是";
@@ -1620,6 +1631,11 @@
       setValue("postcode", order.postcode || "");
       setValue("has_lift", storageBoolValue(order.has_lift));
       setValue("needs_upstairs", storageBoolValue(order.needs_upstairs));
+      setValue("membership_benefit_claim_id", order.membership_benefit_claim_id || "");
+      setValue("membership_discount_amount", formatStorageDetailMoney(order.membership_discount_amount));
+      setValue("extra_charge_amount", formatStorageDetailMoney(order.extra_charge_amount));
+      setValue("final_price", formatStorageDetailMoney(order.final_price));
+      setValue("membership_discount_breakdown_json", formatStorageDetailJson(order.membership_discount_breakdown_json));
       setValue("notes", order.notes || "");
       setValue(
         "final_readable_message",
