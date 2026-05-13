@@ -27,6 +27,13 @@
   - `public.auth_risk_events.device_id` exists;
   - `idx_auth_risk_events_device_action_created_at` exists.
 - Updated `docs/PROJECT_MAP.md` for the new auth risk response contract and device risk metadata.
+- GitHub was updated before Vercel deployment as required:
+  - branch: `codex/auth-risk-release`;
+  - commit: `5fbfc92` (`Split auth risk response states`).
+- Production deployment completed:
+  - deployment id: `dpl_2JMGLd5pPML1Z8a8i8MqgETVVgfg`;
+  - deployment URL: `https://webside-dloin0vi7-wwkevin8s-projects.vercel.app`;
+  - production aliases include `https://ngn.best` and `https://www.ngn.best`.
 
 ## Previous Completed Release
 
@@ -62,6 +69,10 @@
   - `login.js`
   - `register.js`
 - `npm run build:prod` passed before release commit.
+- `npm run deploy:prod` completed with Vercel status `READY`.
+- `vercel inspect webside-dloin0vi7-wwkevin8s-projects.vercel.app` confirmed production target and aliases for `ngn.best` and `www.ngn.best`.
+- `https://ngn.best/login.html` returned HTTP 200.
+- `https://ngn.best/register.html` returned HTTP 200.
 - Supabase verification confirmed:
   - `public.auth_risk_events.device_id` exists;
   - `idx_auth_risk_events_device_action_created_at` exists;
@@ -69,13 +80,11 @@
 
 ## Open Issues Or Risks
 
-- The auth risk code changes are staged for release from the clean `codex/auth-risk-release` branch; production deployment should only run after this branch is pushed.
 - Local helper server could not bind to ports 3000 or 3011 on this machine (`EACCES`), so browser verification was not run locally before release.
 - `gh` is not installed on this machine, so GitHub PR creation still requires either installing `gh` or using the GitHub web UI.
 
 ## Recommended Next Steps
 
-- Deploy the pushed `codex/auth-risk-release` branch to Vercel production.
 - In WeChat and a normal browser, verify:
   - first login does not show Turnstile;
   - first registration code request does not show Turnstile;
