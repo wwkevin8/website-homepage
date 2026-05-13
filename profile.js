@@ -1,4 +1,32 @@
 (function () {
+  const MEMBERSHIP_BENEFITS = [
+    {
+      type: "storage",
+      title: "寄存权益",
+      label: "寄存权益 storage",
+      description: "最多抵扣 5 个标准箱基础寄存费用，最终金额由后台确认。"
+    },
+    {
+      type: "pickup",
+      title: "接机权益",
+      label: "接机权益 pickup",
+      description: "适用于会员接机服务，系统会在提交订单时由服务端识别会员优惠，最终金额由后台确认。"
+    },
+    {
+      type: "moving",
+      title: "搬家权益",
+      label: "搬家权益 moving",
+      description: "适用于基础搬家服务，选择后请联系客服安排时间和细节。该权益暂不走线上订单。"
+    },
+    {
+      type: "welcome_pack",
+      title: "新生大礼包",
+      label: "新生大礼包 welcome_pack",
+      description: "价值约 GBP 100，包含基础生活用品。选择后请联系客服确认领取或送达方式。"
+    }
+  ];
+  const PUBLIC_MEMBERSHIP_BENEFIT_TYPES = MEMBERSHIP_BENEFITS.map(benefit => benefit.type);
+
   async function readJson(response) {
     const payload = await response.json().catch(() => ({ data: null, error: { message: "Unexpected response" } }));
     if (!response.ok) {
@@ -146,13 +174,8 @@
   }
 
   function getBenefitLabel(type) {
-    if (type === "storage") {
-      return "寄存权益";
-    }
-    if (type === "pickup") {
-      return "接机权益";
-    }
-    return type || "--";
+    const benefit = MEMBERSHIP_BENEFITS.find(item => item.type === type);
+    return benefit ? benefit.title : type || "--";
   }
 
   function formatMoney(value) {
@@ -170,6 +193,15 @@
         <span>${escapeHtml(label)}</span>
       </div>
     `;
+  }
+
+  function renderBenefitCards() {
+    return MEMBERSHIP_BENEFITS.map(benefit => `
+      <button class="profile-membership-benefit" type="button" data-membership-benefit="${escapeHtml(benefit.type)}">
+        <strong>${escapeHtml(benefit.label)}</strong>
+        <span>${escapeHtml(benefit.description)}</span>
+      </button>
+    `).join("");
   }
 
   function renderMembershipState(state) {
@@ -199,17 +231,9 @@
         <p>您是 2026-27 NGN 会员。</p>
         <p>请选择一个会员权益。</p>
         <div class="profile-membership-benefits">
-          <button class="profile-membership-benefit" type="button" data-membership-benefit="storage">
-            <strong>寄存权益 storage</strong>
-            <span>最多抵扣 5 个标准箱基础寄存费用，最终金额由后台确认。</span>
-          </button>
-          <button class="profile-membership-benefit" type="button" data-membership-benefit="pickup">
-            <strong>接机权益 pickup</strong>
-            <span>仅适用于 pickup，系统会在提交订单时由服务端识别会员优惠。</span>
-          </button>
+          ${renderBenefitCards()}
         </div>
         <p class="field-help">每位会员只能选择一个主要权益。选择后不能自行更换，如需修改请联系客服。</p>
-        <p class="field-help">搬家、大礼包、返现等其他权益请联系客服处理。</p>
       `;
       return;
     }
@@ -240,6 +264,24 @@
       return;
     }
 
+    if (claim.status === "selected" && claim.benefit_type === "moving") {
+      bodyNode.innerHTML = `
+        <p>您已选择：搬家权益</p>
+        <p>当前状态：已选择，等待客服安排。</p>
+        <p>请联系客服确认搬家时间、地址、箱数和服务细节。</p>
+      `;
+      return;
+    }
+
+    if (claim.status === "selected" && claim.benefit_type === "welcome_pack") {
+      bodyNode.innerHTML = `
+        <p>您已选择：新生大礼包</p>
+        <p>当前状态：已选择，等待客服确认。</p>
+        <p>请联系客服确认领取或送达方式。</p>
+      `;
+      return;
+    }
+
     if (claim.status === "reserved") {
       statusNode.textContent = "权益已绑定订单";
       bodyNode.innerHTML = `
@@ -257,10 +299,10 @@
     if (claim.status === "used") {
       statusNode.textContent = "权益已使用";
       bodyNode.innerHTML = `
-        <p>权益已使用 / 已完成</p>
+        <p>权益已使用 / 已完成。</p>
         <div class="profile-membership-summary">
           ${detailRow("已使用权益", getBenefitLabel(claim.benefit_type))}
-          ${detailRow("绑定订单号", claim.linked_order_no)}
+          ${claim.linked_order_no ? detailRow("绑定订单号", claim.linked_order_no) : ""}
         </div>
       `;
       return;
@@ -326,7 +368,7 @@
         return;
       }
       const benefitType = button.getAttribute("data-membership-benefit");
-      if (benefitType !== "storage" && benefitType !== "pickup") {
+      if (!PUBLIC_MEMBERSHIP_BENEFIT_TYPES.includes(benefitType)) {
         return;
       }
       const confirmed = window.confirm("每位会员只能选择一个主要权益。选择后不能自行更换，如需修改请联系客服。是否确认选择？");

@@ -12,6 +12,19 @@
 
 ## Latest Completed Work
 
+- Read `E:\webside\AGENTS.md`, `E:\webside\docs\current-status.md`, and the Supabase skill before expanding the public membership benefit selection.
+- Checked the Supabase changelog before the API helper change; no relevant breaking change was found for this server-side claim-selection adjustment.
+- Expanded the user-center membership selection from two choices to four choices:
+  - `storage`;
+  - `pickup`;
+  - `moving`;
+  - `welcome_pack`.
+- Updated `/api/public/membership/benefit-selection` behavior through `api/_lib/membership.js` so public users can create selected claims for `moving` and `welcome_pack`; these remain unbound to orders and are handled offline by customer service.
+- Updated `profile.js` so moving/welcome_pack selected states show contact-service instructions and used states show completed usage; users still cannot cancel or change the selected benefit from the frontend.
+- Updated `admin-memberships.html` filter options to include `moving` and `welcome_pack`; existing backend claim actions still support mark-used, cancel, and reset for these selected claims.
+- Updated `docs/PROJECT_MAP.md` to reflect four public membership choices and the offline handling model for moving/welcome_pack.
+- No moving order page, welcome-pack claim table, inventory flow, price calculator, delivery system, deployment, or push was added.
+
 - Read `E:\webside\AGENTS.md`, `E:\webside\docs\current-status.md`, and the browser skill before continuing the local membership frontend work.
 - Refined first-stage membership frontend locally, without deployment and without pushing `main`:
   - `admin-memberships.html` / `admin-memberships.js` now expose a客服用会员管理 page in the existing admin shell;
@@ -140,7 +153,7 @@
 - Membership API handlers have been verified by direct local invocation against Supabase; membership backend, admin UI, user-center UI, and current frontend refinements are local to `codex/membership-v1` and have not been pushed or deployed.
 - Membership remains independent from `site_users.is_member`; it is represented through separate entitlement tables, server-side helper logic, admin APIs, and user-safe public APIs.
 - Current membership cycle is centralized in `api/_lib/membership.js` via `CURRENT_MEMBERSHIP_CYCLE`, defaulting to `2026-27`.
-- Website-supported member choices are limited to storage and pickup; other PDF benefits are manual/admin-note records only.
+- Website-supported member choices now include storage, pickup, moving, and welcome_pack. Moving and welcome_pack are selected claims only and remain offline customer-service flows with no online order or inventory system.
 - Pickup member benefit logic only applies to `service_type=pickup`; Heathrow/Gatwick in September is treated as the free core case, while other pickup cases get a service-side fallback discount/pending-admin-confirmation breakdown.
 - User center, first-stage admin membership page, and storage/pickup membership hint UI are implemented locally but not deployed.
 - Registration flow remains email -> backend rate check -> send code -> verify code -> profile/password -> automatic login.
@@ -205,6 +218,10 @@
   - local pages returned HTTP 200 on `http://localhost:5173` for `admin-memberships.html`, `profile.html`, `storage.html`, `storage-booking.html`, and `pickup-form.html`;
   - browser test with mocked logged-in API responses verified non-member profile state, member storage/pickup choices, confirmation-based storage selection payload, reserved claim discount fields, used claim display, admin member list fields, and user search with WeChat;
   - browser test with mocked membership responses verified storage hints on `storage.html` and `storage-booking.html`, and pickup hint on `pickup-form.html`.
+- Four-choice membership verification passed:
+  - `node --check` passed for `profile.js`, `api/_lib/membership.js`, `public-api-handlers/membership-benefit-selection.js`, and `admin-memberships.js`;
+  - direct helper test confirmed `storage`, `pickup`, `moving`, and `welcome_pack` can create `selected` claims, while `cashback` remains rejected from public selection;
+  - browser test with mocked logged-in API responses confirmed the profile page renders four benefit cards, posts `{ benefit_type: "moving" }`, hides all other choices after selection, shows moving customer-service copy, shows welcome_pack customer-service copy, and shows moving used/completed state.
 
 ## Previous Verification
 

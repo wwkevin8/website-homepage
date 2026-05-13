@@ -1,5 +1,5 @@
 const BENEFIT_TYPES = ["storage", "pickup", "moving", "welcome_pack", "cashback"];
-const PUBLIC_BENEFIT_TYPES = ["storage", "pickup"];
+const PUBLIC_BENEFIT_TYPES = ["storage", "pickup", "moving", "welcome_pack"];
 const LIVE_CLAIM_STATUSES = ["selected", "reserved", "used", "manual"];
 const ORDER_LINK_TABLES = ["storage_orders", "transport_requests", "manual"];
 
