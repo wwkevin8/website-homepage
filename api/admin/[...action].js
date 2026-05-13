@@ -39,6 +39,14 @@ const {
   bulkArchiveOrders,
   logAdminOperation
 } = require("../_lib/orders");
+const {
+  cancelOrResetClaim,
+  createManualClaim,
+  getCurrentMembershipCycle,
+  grantMembershipEntitlement,
+  logMembershipAudit,
+  markClaimUsed
+} = require("../_lib/membership");
 
 let cachedStorageOrderAdminColumns = null;
 let cachedStorageOrderDetailColumns = null;
@@ -1550,6 +1558,157 @@ async function handleManagerDetail(req, res, supabase, id, subAction) {
   methodNotAllowed(res, []);
 }
 
+async function handleMemberships(req, res, supabase) {
+  const adminUser = await requireAdminUser(req, res, supabase);
+  if (!adminUser) {
+    return;
+  }
+
+  if (req.method === "POST") {
+    const body = await parseJsonBody(req);
+    try {
+      const entitlement = await grantMembershipEntitlement(supabase, {
+        site_user_id: body.site_user_id,
+        membership_cycle: body.membership_cycle || getCurrentMembershipCycle(),
+        valid_from: body.valid_from || null,
+        valid_until: body.valid_until || null,
+        notes: body.notes || null,
+        metadata: isPlainObject(body.metadata) ? body.metadata : {}
+      }, adminUser.id);
+      created(res, { entitlement });
+    } catch (error) {
+      badRequest(res, error.message);
+    }
+    return;
+  }
+
+  if (req.method !== "GET") {
+    methodNotAllowed(res, ["GET", "POST"]);
+    return;
+  }
+
+  const queryParams = req.query || {};
+  const page = parsePositiveInteger(queryParams.page, 1);
+  const pageSize = parsePageSize(queryParams.page_size, 20);
+  const cycle = String(queryParams.cycle || getCurrentMembershipCycle()).trim();
+  const status = String(queryParams.status || "").trim();
+  const benefitType = String(queryParams.benefit_type || "").trim();
+  const claimStatus = String(queryParams.claim_status || "").trim();
+  const search = String(queryParams.search || "").trim();
+  const matchingUserIds = search ? await findStorageSearchSiteUserIds(supabase, search) : [];
+
+  let query = supabase
+    .from("membership_entitlements")
+    .select("*", { count: "exact" })
+    .eq("membership_cycle", cycle)
+    .order("created_at", { ascending: false });
+  if (status) {
+    query = query.eq("status", status);
+  }
+  if (search) {
+    if (!matchingUserIds.length) {
+      ok(res, {
+        items: [],
+        pagination: { page, page_size: pageSize, total: 0, total_pages: 0 }
+      });
+      return;
+    }
+    query = query.in("site_user_id", matchingUserIds);
+  }
+
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+  const { data, error, count } = await query.range(from, to);
+  if (error) {
+    throw error;
+  }
+
+  const entitlements = data || [];
+  const entitlementIds = entitlements.map(item => item.id);
+  const userIds = entitlements.map(item => item.site_user_id).filter(Boolean);
+  let claims = [];
+  if (entitlementIds.length) {
+    let claimsQuery = supabase
+      .from("membership_benefit_claims")
+      .select("*")
+      .in("entitlement_id", entitlementIds)
+      .order("created_at", { ascending: false });
+    if (benefitType) {
+      claimsQuery = claimsQuery.eq("benefit_type", benefitType);
+    }
+    if (claimStatus) {
+      claimsQuery = claimsQuery.eq("status", claimStatus);
+    }
+    const claimsResult = await claimsQuery;
+    if (claimsResult.error) {
+      throw claimsResult.error;
+    }
+    claims = claimsResult.data || [];
+  }
+  const users = userIds.length ? await querySiteUsersWithFallback(supabase, { ids: userIds }) : [];
+  const claimByEntitlement = new Map();
+  claims.forEach(claim => {
+    if (!claimByEntitlement.has(claim.entitlement_id)) {
+      claimByEntitlement.set(claim.entitlement_id, claim);
+    }
+  });
+  const userById = new Map(users.map(user => [String(user.id), user]));
+
+  ok(res, {
+    items: entitlements
+      .map(entitlement => ({
+        ...entitlement,
+        user: userById.get(String(entitlement.site_user_id)) || null,
+        claim: claimByEntitlement.get(entitlement.id) || null
+      }))
+      .filter(item => {
+        if (!benefitType && !claimStatus) {
+          return true;
+        }
+        return Boolean(item.claim);
+      }),
+    pagination: {
+      page,
+      page_size: pageSize,
+      total: count || 0,
+      total_pages: count ? Math.ceil(count / pageSize) : 0
+    }
+  });
+}
+
+async function handleMembershipClaimAction(req, res, supabase, claimId, subAction) {
+  const adminUser = await requireAdminUser(req, res, supabase);
+  if (!adminUser) {
+    return;
+  }
+  if (req.method !== "POST") {
+    methodNotAllowed(res, ["POST"]);
+    return;
+  }
+  const body = await parseJsonBody(req);
+  if (!claimId) {
+    try {
+      ok(res, { claim: await createManualClaim(supabase, body, adminUser.id) });
+    } catch (error) {
+      badRequest(res, error.message, error.claim ? { claim: error.claim } : null);
+    }
+    return;
+  }
+  if (subAction === "mark-used") {
+    ok(res, { claim: await markClaimUsed(supabase, claimId, adminUser.id) });
+    return;
+  }
+  if (subAction === "cancel") {
+    ok(res, { claim: await cancelOrResetClaim(supabase, claimId, adminUser.id, { reason: body.reason || body.note }) });
+    return;
+  }
+  if (subAction === "reset") {
+    ok(res, { claim: await cancelOrResetClaim(supabase, claimId, adminUser.id, { reset: true, reason: body.reason || body.note }) });
+    return;
+  }
+  methodNotAllowed(res, ["POST"]);
+}
+
 module.exports = async function handler(req, res) {
   try {
     const supabase = getSupabaseAdmin();
@@ -1602,6 +1761,14 @@ module.exports = async function handler(req, res) {
     }
     if (head === "managers" && second) {
       await handleManagerDetail(req, res, supabase, second, third || "");
+      return;
+    }
+    if (head === "memberships") {
+      await handleMemberships(req, res, supabase);
+      return;
+    }
+    if (head === "membership-claims") {
+      await handleMembershipClaimAction(req, res, supabase, second || "", third || "");
       return;
     }
 

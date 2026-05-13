@@ -11,6 +11,12 @@ const { enforceRateLimit } = require("../api/_lib/rate-limit");
 const { ACTIVE_STORAGE_STATUSES, mapStorageOrderPayload } = require("../api/_lib/storage-orders");
 const { allocateStorageServiceOrderNumber } = require("../api/_lib/order-numbers");
 const {
+  bindClaimToOrder,
+  calculateMembershipDiscount,
+  getActiveClaim,
+  getCurrentMembershipCycle
+} = require("../api/_lib/membership");
+const {
   sendStorageStudentConfirmationEmail
 } = require("../api/_lib/storage-order-notifier");
 const { getAuthenticatedUser } = require("../api/_lib/user-auth");
@@ -51,7 +57,12 @@ const OPTIONAL_STORAGE_ORDER_COLUMNS = [
   "webhook_payload_json",
   "student_email_status",
   "student_email_error",
-  "student_email_sent_at"
+  "student_email_sent_at",
+  "membership_benefit_claim_id",
+  "membership_discount_amount",
+  "extra_charge_amount",
+  "final_price",
+  "membership_discount_breakdown_json"
 ];
 
 async function getStorageOrderColumnSupport(supabase) {
@@ -407,8 +418,26 @@ module.exports = async function handler(req, res) {
         payload.box_order_no = formatStorageSubOrderNo("ST-B", orderIdentity);
       }
     }
+
+    const membershipClaim = payload.order_type === "storage_collection"
+      ? await getActiveClaim(supabase, siteUser.id, getCurrentMembershipCycle())
+      : null;
+    const membershipDiscount = membershipClaim?.benefit_type === "storage" && ["selected", "reserved"].includes(membershipClaim.status)
+      ? calculateMembershipDiscount(payload, membershipClaim)
+      : null;
+    const membershipPatch = membershipDiscount?.eligible
+      ? {
+          membership_benefit_claim_id: membershipClaim.id,
+          membership_discount_amount: membershipDiscount.membershipDiscountAmount,
+          extra_charge_amount: membershipDiscount.extraChargeAmount,
+          final_price: membershipDiscount.finalPrice,
+          membership_discount_breakdown_json: membershipDiscount.breakdown
+        }
+      : {};
+
     const insertResult = await insertStorageOrderWithCompatibility(supabase, {
       ...payload,
+      ...membershipPatch,
       site_user_id: siteUser.id,
       student_email: siteUser.email || null,
       order_no: orderIdentity.orderNo,
@@ -416,6 +445,28 @@ module.exports = async function handler(req, res) {
       business_date: orderIdentity.businessDate
     }, storageOrderColumnSupport);
     const insertedOrder = insertResult.data;
+
+    let boundMembershipClaim = null;
+    if (membershipDiscount?.eligible && membershipClaim?.id) {
+      try {
+        boundMembershipClaim = await bindClaimToOrder(
+          supabase,
+          membershipClaim.id,
+          "storage_orders",
+          insertedOrder.id,
+          insertedOrder.order_no,
+          membershipDiscount
+        );
+      } catch (bindError) {
+        try {
+          await supabase.from("storage_orders").delete().eq("id", insertedOrder.id);
+        } catch (cleanupError) {
+          console.warn("[membership] failed to cleanup storage order after claim bind conflict", cleanupError);
+        }
+        badRequest(res, bindError.message || "Membership benefit is no longer available for this order");
+        return;
+      }
+    }
 
     const studentEmailResult = await sendStorageStudentConfirmationEmail(req, {
       orderRecord: insertedOrder,
@@ -471,6 +522,10 @@ module.exports = async function handler(req, res) {
         boxOrderNo: finalOrder.box_order_no || payload.box_order_no || null,
         storagePickupOrderNo: finalOrder.storage_pickup_order_no || payload.storage_pickup_order_no || null,
         orderType: payload.order_type,
+        membershipBenefitClaimId: boundMembershipClaim?.id || null,
+        membershipDiscountAmount: membershipDiscount?.membershipDiscountAmount || 0,
+        extraChargeAmount: membershipDiscount?.extraChargeAmount || 0,
+        finalPrice: membershipDiscount?.finalPrice ?? null,
         notificationStatus: finalNotificationStatus,
         notificationError: finalOrder.notification_error || notificationPatch.notification_error || null,
         studentEmailStatus: finalStudentEmailStatus,

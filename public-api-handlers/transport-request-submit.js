@@ -12,6 +12,12 @@ const { getAuthenticatedUser } = require("../api/_lib/user-auth");
 const { getProfileCompletionState } = require("../api/_lib/user-profile");
 const { createPickupRequestWithGroup } = require("../api/_lib/transport-group-lifecycle");
 const { sendTransportOrderSubmissionEmail } = require("../api/_lib/transport-order-submission-email");
+const {
+  bindClaimToOrder,
+  calculateMembershipDiscount,
+  getActiveClaim,
+  getCurrentMembershipCycle
+} = require("../api/_lib/membership");
 
 const FLIGHT_NO_PATTERN = /^[A-Z0-9]{2,4}(?:[\s-]+)?\d{1,4}[A-Z]?$/i;
 const ACTIVE_REQUEST_STATUSES = ["published", "matched"];
@@ -141,12 +147,54 @@ module.exports = async function handler(req, res) {
       return;
     }
 
+    const membershipClaim = payload.service_type === "pickup"
+      ? await getActiveClaim(supabase, siteUser.id, getCurrentMembershipCycle())
+      : null;
+    const membershipDiscount = membershipClaim?.benefit_type === "pickup" && ["selected", "reserved"].includes(membershipClaim.status)
+      ? calculateMembershipDiscount(payload, membershipClaim)
+      : null;
+    const membershipPatch = membershipDiscount?.eligible
+      ? {
+          membership_benefit_claim_id: membershipClaim.id,
+          membership_discount_amount: membershipDiscount.membershipDiscountAmount,
+          extra_charge_amount: membershipDiscount.extraChargeAmount,
+          final_price: membershipDiscount.finalPrice,
+          membership_discount_breakdown_json: membershipDiscount.breakdown
+        }
+      : {};
+
     const { request, group } = await createPickupRequestWithGroup(supabase, {
       ...payload,
+      ...membershipPatch,
       site_user_id: siteUser.id,
       email_verified_snapshot: true,
       profile_verified_snapshot: true
     });
+
+    let boundMembershipClaim = null;
+    if (membershipDiscount?.eligible && membershipClaim?.id) {
+      try {
+        boundMembershipClaim = await bindClaimToOrder(
+          supabase,
+          membershipClaim.id,
+          "transport_requests",
+          request.id,
+          request.order_no,
+          membershipDiscount
+        );
+      } catch (bindError) {
+        try {
+          await supabase.from("transport_requests").delete().eq("id", request.id);
+          if (group?.group_ref || group?.id) {
+            await supabase.from("transport_groups").delete().eq("id", group.group_ref || group.id);
+          }
+        } catch (cleanupError) {
+          console.warn("[membership] failed to cleanup transport request after claim bind conflict", cleanupError);
+        }
+        badRequest(res, bindError.message || "Membership benefit is no longer available for this order");
+        return;
+      }
+    }
 
     let submissionEmail = null;
     try {
@@ -178,6 +226,10 @@ module.exports = async function handler(req, res) {
       businessDate: request.business_date,
       createdAt: request.created_at,
       status: request.status,
+      membershipBenefitClaimId: boundMembershipClaim?.id || null,
+      membershipDiscountAmount: membershipDiscount?.membershipDiscountAmount || 0,
+      extraChargeAmount: membershipDiscount?.extraChargeAmount || 0,
+      finalPrice: membershipDiscount?.finalPrice ?? null,
       submissionEmail
     });
   } catch (error) {

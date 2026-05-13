@@ -76,6 +76,8 @@ Last structure scan: 2026-05-08. Scope: documentation-only scan of current files
 | Route Path | File/Handler | Methods | Purpose | Login Required | Admin Required | Related Tables |
 | --- | --- | --- | --- | --- | --- | --- |
 | `/api/public/auth-config` | `api/public/[...action].js` -> `public-api-handlers/auth-config.js` | GET | Exposes safe auth config | No | No | None |
+| `/api/public/membership/me` | public aggregate -> `membership-me.js` | GET | Current user's membership entitlement/claim status for current cycle | Yes | No | `membership_entitlements`, `membership_benefit_claims` |
+| `/api/public/membership/benefit-selection` | public aggregate -> `membership-benefit-selection.js` | POST | Select one website-supported membership benefit (`storage` or `pickup`) for the current cycle | Yes | No | `membership_entitlements`, `membership_benefit_claims` |
 | `/api/public/storage-order-submit` | public aggregate -> `storage-order-submit.js` | POST | Submit storage order | Yes, via user session | No | `storage_orders`, `site_users`, `order_number_counters`, possibly `orders` via DB trigger |
 | `/api/public/my-storage-orders` | public aggregate -> `my-storage-orders.js` | GET | Current user's storage orders | Yes | No | `storage_orders` |
 | `/api/public/transport-request-submit` | public aggregate -> `transport-request-submit.js` | POST | Submit pickup/dropoff/transport request | Yes | No | `transport_requests`, `site_users`, `order_number_counters`, possibly `orders` via DB trigger |
@@ -87,8 +89,8 @@ Last structure scan: 2026-05-08. Scope: documentation-only scan of current files
 | `/api/auth/session` | `api/auth/[action].js` | GET | User session lookup | Cookie optional | No | `site_users` |
 | `/api/auth/logout` | `api/auth/[action].js` | POST | Clear user session | Cookie optional | No | None |
 | `/api/auth/profile` | `api/auth/[action].js` | GET, POST | Read/update current user profile | Yes | No | `site_users` |
-| `/api/auth/login` | `api/auth/[action].js` | POST | Password login with email/IP risk checks and conditional Turnstile | No | No | `site_users`, `user_login_events`, `auth_risk_events` |
-| `/api/auth/request-signup-code` | `api/auth/[action].js` | POST | Request signup code email with email/IP rate checks and conditional Turnstile | No | No | `site_users`, `email_login_codes` |
+| `/api/auth/login` | `api/auth/[action].js` | POST | Password login with email/IP risk checks, `needCaptcha`, and `temporarilyBlocked` responses | No | No | `site_users`, `user_login_events`, `auth_risk_events` |
+| `/api/auth/request-signup-code` | `api/auth/[action].js` | POST | Request signup code email with `cooldown`, `needCaptcha`, and `temporarilyBlocked` risk responses | No | No | `site_users`, `email_login_codes`, `auth_risk_events` |
 | `/api/auth/verify-signup-code` | `api/auth/[action].js` | POST | Verify signup code | No | No | `site_users`, `email_login_codes` |
 | `/api/auth/register` | `api/auth/[action].js` | POST | Create user account and session | No, uses signup ticket | No | `site_users`, `email_login_codes`, `user_login_events` |
 | `/api/auth/request-password-reset` | `api/auth/[action].js` | POST | Request reset email | No | No | `site_users`, `password_reset_tokens` |
@@ -100,6 +102,11 @@ Last structure scan: 2026-05-08. Scope: documentation-only scan of current files
 | `/api/admin/dashboard` | `api/admin/[...action].js` | GET | Dashboard counts | Yes | Yes | `admin_users`, `users`, `user_login_events`, `transport_requests`, `storage_orders`, `orders` |
 | `/api/admin/users` | `api/admin/[...action].js` | GET | Admin user/customer listing | Yes | Yes | `users` |
 | `/api/admin/users/:id` | `api/admin/[...action].js` | GET | Admin user/customer detail | Yes | Yes | `users` |
+| `/api/admin/memberships` | `api/admin/[...action].js` | GET, POST | List memberships and manually grant membership entitlements | Yes | Yes | `membership_entitlements`, `membership_benefit_claims`, `site_users`, `membership_audit_logs` |
+| `/api/admin/membership-claims` | `api/admin/[...action].js` | POST | Manually record an offline/non-website membership benefit claim such as moving, welcome pack, or cashback | Yes | Yes | `membership_benefit_claims`, `membership_audit_logs` |
+| `/api/admin/membership-claims/:id/mark-used` | `api/admin/[...action].js` | POST | Mark selected/reserved membership claim as used | Yes | Yes | `membership_benefit_claims`, `membership_audit_logs` |
+| `/api/admin/membership-claims/:id/cancel` | `api/admin/[...action].js` | POST | Cancel a membership claim | Yes | Yes | `membership_benefit_claims`, `membership_audit_logs` |
+| `/api/admin/membership-claims/:id/reset` | `api/admin/[...action].js` | POST | Reset a membership claim by cancelling the old claim | Yes | Yes | `membership_benefit_claims`, `membership_audit_logs` |
 | `/api/admin/storage-orders` | `api/admin/[...action].js` | GET, PATCH, DELETE | Storage order list/detail/update/delete via query `id` | Yes | Yes | `storage_orders`, `site_users`, `admin_operation_logs` |
 | `/api/admin/orders` | `api/admin/[...action].js` | GET | General order list | Yes | Yes | `orders` |
 | `/api/admin/orders/:id` | `api/admin/[...action].js` and `api/admin/orders/[id].js` | GET, PATCH | General order detail/update | Yes | Yes | `orders`, `order_status_logs`, `order_notes`, `order_attachments`, `admin_operation_logs`, source tables |
@@ -143,6 +150,8 @@ Last structure scan: 2026-05-08. Scope: documentation-only scan of current files
 | `supabase/20260416_public_transport_groups_indexes.sql` | Public transport group indexes | Performance. |
 | `supabase/20260416_transport_sync_audit_logs.sql` | Creates transport sync audit logs | Used by cron/admin log page. |
 | `supabase/20260513_auth_risk_events.sql` | Creates auth risk log and login failure counter table | Required for login/signup-code conditional captcha counting and audit logs. |
+| `supabase/20260513_auth_risk_events_device_id.sql` | Adds `device_id` to auth risk events | Supports session/device-based signup-code risk checks. |
+| `supabase/20260513_membership_entitlements.sql` | Creates NGN membership entitlement tables and order discount linkage fields | Adds membership entitlements, benefit claims, audit logs, updated_at triggers, claim identity trigger, RLS/revoke, and order price fields. |
 | `supabase/20260416_transport_sync_audit_logs_perf.sql` | Audit log performance changes | Performance. |
 | `supabase/20260503_storage_service_order_types.sql` | Adds/adjusts storage service order types | Storage collection/return flow. |
 | `supabase/migrations/20260506140108_user_public_id_storage_link.sql` | User public ID and storage linkage | User/storage identity linkage. |
@@ -160,7 +169,7 @@ Last structure scan: 2026-05-08. Scope: documentation-only scan of current files
 | `users` | General user/order listing table | `/api/admin/users`, dashboard, order system SQL | Yes | Relationship to `site_users` needs confirmation before changes. |
 | `email_login_codes` | Signup verification codes | `/api/auth/request-signup-code`, `/api/auth/verify-signup-code`, `/api/auth/register` | Yes | Contains code hashes and IP metadata. |
 | `user_login_events` | User login audit | `/api/auth/login`, registration/reset finalization, dashboard | Yes | Contains IP/user-agent. |
-| `auth_risk_events` | Auth risk log and failure counter | `/api/auth/login`, `/api/auth/request-signup-code` | Yes | Additive table from `supabase/20260513_auth_risk_events.sql`; stores email, IP, user-agent, action, success, captcha state, error code, and cleared login failures. |
+| `auth_risk_events` | Auth risk log and failure counter | `/api/auth/login`, `/api/auth/request-signup-code` | Yes | Additive table from `supabase/20260513_auth_risk_events.sql`; stores email, IP, user-agent, device ID, action, success, captcha state, error code, and cleared login failures. |
 | `password_reset_tokens` | Password reset tokens | `/api/auth/request-password-reset`, `/api/auth/reset-password` | Yes | Contains token hashes and IP metadata. |
 | `admin_users` | Admin accounts/roles/status | `/api/admin/*`, admin session helpers, cron QA | Yes | `super_admin` protections apply. |
 | `admin_operation_logs` | Admin audit log | order/storage admin mutation helpers | Yes/Operational | Keep for accountability. |
@@ -169,8 +178,11 @@ Last structure scan: 2026-05-08. Scope: documentation-only scan of current files
 | `order_notes` | Admin notes | `/api/admin/orders/:id/notes` | Yes | Internal/admin-only. |
 | `order_attachments` | Order attachments metadata | order detail helper | Yes | Storage/privacy model needs confirmation. |
 | `order_number_counters` | Sequential business order number counters | storage/transport submit helpers | No/low | Avoid manual edits. |
-| `storage_orders` | Storage bookings and admin fields | public submit/my orders, admin storage APIs, dashboard, order sync SQL | Yes | Active statuses: `pending_confirmation`, `confirmed`; terminal/cancel: `cancelled`. Buy-box collection orders can store `parent_order_no`, `box_order_no`, `storage_pickup_order_no`, `box_delivery_date`, `purchased_boxes`, `storage_intake_date`, and separate storage start/end dates. |
-| `transport_requests` | Pickup/dropoff/carpool requests | public submit/my/board/join, admin transport APIs, cron, order sync SQL | Yes | Public board must expose safe subset only. |
+| `membership_entitlements` | Per-user membership qualification for a membership cycle | `/api/public/membership/me`, `/api/admin/memberships`, membership helper | Yes | Independent from login identity; current cycle format is `YYYY-YY`, e.g. `2026-27`; service-role API only. |
+| `membership_benefit_claims` | One selected/reserved/used/manual/cancelled benefit claim per member cycle | `/api/public/membership/benefit-selection`, storage/transport submit, `/api/admin/membership-claims*`, membership helper | Yes | Public selection only supports `storage` and `pickup`; moving, welcome pack, and cashback are admin/manual records only. Live unique index prevents more than one selected/reserved/used/manual claim per user/cycle; claim user/cycle are derived from entitlement trigger. |
+| `membership_audit_logs` | Membership admin operation audit log | `/api/admin/memberships`, `/api/admin/membership-claims/*`, membership helper | Yes/Operational | Records grants, manual claim records, mark-used, cancel, and reset operations. |
+| `storage_orders` | Storage bookings and admin fields | public submit/my orders, admin storage APIs, dashboard, order sync SQL, membership helper | Yes | Active statuses: `pending_confirmation`, `confirmed`; terminal/cancel: `cancelled`. Buy-box collection orders can store `parent_order_no`, `box_order_no`, `storage_pickup_order_no`, `box_delivery_date`, `purchased_boxes`, `storage_intake_date`, separate storage start/end dates, and membership discount fields. |
+| `transport_requests` | Pickup/dropoff/carpool requests | public submit/my/board/join, admin transport APIs, cron, order sync SQL, membership helper | Yes | Public board must expose safe subset only. Membership pickup benefit only applies to `service_type=pickup`, not dropoff. |
 | `transport_groups` | Transport/carpool group entities | public board/groups/join, admin group APIs, lifecycle helpers, cron | Some/Operational | Lifecycle-sensitive. |
 | `transport_group_members` | Request-to-group membership | public board/groups/join, admin group/member APIs, lifecycle helpers, cron | Some/Operational | Lifecycle-sensitive. |
 | `transport_groups_public_view` | Public/admin group listing view | public groups, admin groups, stats helpers | Public-safe intended | View definition/field exposure should be checked before expansion. |
@@ -292,7 +304,7 @@ Notification sub-statuses:
 | Vercel | Hosting, serverless APIs, cron | `vercel.json`, `api/`, deploy scripts | Vercel project env vars, `VERCEL_URL` optional in email URL building | Cron configured for daily flow test and sync digest. |
 | Resend | Transactional email | `auth-email.js`, `transport-order-submission-email.js`, `storage-order-notifier.js`, `transport-sync-audit-email.js` | `RESEND_API_KEY`, sender env vars | Some flows require Resend; production sender needs confirmation. |
 | SMTP/nodemailer | Email fallback/admin notifications | `storage-order-notifier.js`, `transport-sync-audit-email.js` | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`, `SMTP_SECURE` | Some email flows can fallback to SMTP. |
-| Cloudflare Turnstile | Bot protection | conditional login/register challenges, reset UI, `api/_lib/turnstile.js`, `auth-config.js` | `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` | Site key is public; secret is server-only. Login and registration code sending only require Turnstile after backend risk thresholds return `needCaptcha=true`. |
+| Cloudflare Turnstile | Bot protection | conditional login/register challenges, reset UI, `api/_lib/turnstile.js`, `auth-config.js` | `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` | Site key is public; secret is server-only. Login and registration code sending only require Turnstile after backend risk thresholds return `needCaptcha=true`; cooldown and temporary-block responses do not show Turnstile. |
 | Google Fonts | Fonts | HTML `<link>` tags | None | External dependency; previous QA noted font request failures. |
 | Google/Auth provider | Possible OAuth callback | `google-auth.js`, `auth-callback.html` | Supabase/provider config, 需要确认 | Active use needs confirmation. |
 | Optional storage webhook | External webhook receiver | `api/_lib/storage-order-webhook.js` | `STORAGE_ORDER_WEBHOOK_URL`, `STORAGE_ORDER_WEBHOOK_SECRET` | Optional; production use needs confirmation. |
