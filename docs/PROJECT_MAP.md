@@ -148,6 +148,8 @@ Last structure scan: 2026-05-08. Scope: documentation-only scan of current files
 | `supabase/migrations/20260506164358_storage_order_type_constraints.sql` | Storage order type constraints | Storage validation. |
 | `supabase/migrations/20260506165709_bind_legacy_storage_orders_to_site_users.sql` | Bind legacy storage orders | Migration/backfill; rerun needs caution. |
 | `supabase/migrations/20260508000100_users_source_table_source_user_id_unique.sql` | Users source uniqueness | General users/order linkage. |
+| `supabase/migrations/20260512120000_storage_box_delivery_suborders.sql` | Adds storage buy-box suborder/date fields | Supports `parent_order_no`, `box_order_no`, `storage_pickup_order_no`, box delivery date/method, purchased boxes, and intake/end dates. |
+| `supabase/migrations/20260512180000_enable_transport_sync_audit_logs_rls.sql` | Enables RLS on transport sync audit logs | Security hardening; keeps anon/authenticated table access revoked and relies on service-role cron/admin routes. |
 
 ## Database Table Inventory
 
@@ -165,7 +167,7 @@ Last structure scan: 2026-05-08. Scope: documentation-only scan of current files
 | `order_notes` | Admin notes | `/api/admin/orders/:id/notes` | Yes | Internal/admin-only. |
 | `order_attachments` | Order attachments metadata | order detail helper | Yes | Storage/privacy model needs confirmation. |
 | `order_number_counters` | Sequential business order number counters | storage/transport submit helpers | No/low | Avoid manual edits. |
-| `storage_orders` | Storage bookings and admin fields | public submit/my orders, admin storage APIs, dashboard, order sync SQL | Yes | Active statuses: `pending_confirmation`, `confirmed`; terminal/cancel: `cancelled`. |
+| `storage_orders` | Storage bookings and admin fields | public submit/my orders, admin storage APIs, dashboard, order sync SQL | Yes | Active statuses: `pending_confirmation`, `confirmed`; terminal/cancel: `cancelled`. Buy-box collection orders can store `parent_order_no`, `box_order_no`, `storage_pickup_order_no`, `box_delivery_date`, `purchased_boxes`, `storage_intake_date`, and separate storage start/end dates. |
 | `transport_requests` | Pickup/dropoff/carpool requests | public submit/my/board/join, admin transport APIs, cron, order sync SQL | Yes | Public board must expose safe subset only. |
 | `transport_groups` | Transport/carpool group entities | public board/groups/join, admin group APIs, lifecycle helpers, cron | Some/Operational | Lifecycle-sensitive. |
 | `transport_group_members` | Request-to-group membership | public board/groups/join, admin group/member APIs, lifecycle helpers, cron | Some/Operational | Lifecycle-sensitive. |

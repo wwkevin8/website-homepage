@@ -23,9 +23,9 @@
       key: "storage",
       label: "寄存管理",
       children: [
-        { key: "storage-all", label: "全部寄存订单", href: "./admin-storage.html" },
-        { key: "storage-collection", label: "预约寄存订单", href: "./admin-storage.html?order_type=storage_collection" },
-        { key: "storage-return", label: "取寄存订单", href: "./admin-storage.html?order_type=storage_return" }
+        { key: "storage-box", label: "买箱订单", href: "./admin-storage.html?order_type=box_order" },
+        { key: "storage-collection", label: "取寄存订单", href: "./admin-storage.html?order_type=storage_collection" },
+        { key: "storage-return", label: "送寄存订单", href: "./admin-storage.html?order_type=storage_return" }
       ]
     }
   ];

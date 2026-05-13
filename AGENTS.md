@@ -39,6 +39,13 @@ Before making any change, Codex must explicitly report which rule files and stat
 7. Do not store temporary chat notes, one-off conclusions, or session logs in this file.
 8. Use `docs/current-status.md` as the cross-session handoff snapshot.
 
+## Fixed Release Order
+
+- GitHub must be updated before any Vercel deployment.
+- For production or preview releases, commit and push the intended changes to GitHub first, then run the relevant Vercel build/deploy command.
+- Do not deploy uncommitted local changes to Vercel unless the user explicitly overrides this rule for that single task.
+- After deployment, record both the GitHub commit and the Vercel deployment in `docs/current-status.md`.
+
 ## Modification Scope Control
 
 - Do not edit unrelated HTML, CSS, JS, API, SQL, or config files.

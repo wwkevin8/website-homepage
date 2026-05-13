@@ -58,6 +58,19 @@ const STORAGE_ORDER_LIST_COLUMNS = [
   "service_time",
   "service_time_slot",
   "service_label",
+  "parent_order_no",
+  "box_order_no",
+  "storage_pickup_order_no",
+  "box_delivery_date",
+  "box_delivery_time_slot",
+  "box_delivery_method",
+  "purchased_boxes",
+  "estimated_total_price",
+  "estimate_summary_json",
+  "storage_intake_date",
+  "storage_start_date",
+  "storage_end_date",
+  "expected_storage_end_date",
   "address_full",
   "room_or_building",
   "postcode",
@@ -77,10 +90,7 @@ const STORAGE_ORDER_DETAIL_COLUMNS = [
   "customer_form_json",
   "service_flags_json",
   "estimate_summary_json",
-  "calculator_snapshot_json",
-  "storage_start_date",
-  "storage_end_date",
-  "expected_storage_end_date"
+  "calculator_snapshot_json"
 ];
 
 function isPerfLogEnabled() {
@@ -198,6 +208,7 @@ function getStorageServiceDetailsFromJson(formJson) {
 function normalizeStorageAdminListItem(item = {}) {
   const formJson = isPlainObject(item.customer_form_json) ? item.customer_form_json : {};
   const serviceDetails = getStorageServiceDetailsFromJson(formJson);
+  const estimateSummary = isPlainObject(item.estimate_summary_json) ? item.estimate_summary_json : {};
   const roomOrBuilding = firstNonEmptyText(
     item.room_or_building,
     serviceDetails.roomOrBuilding,
@@ -222,7 +233,13 @@ function normalizeStorageAdminListItem(item = {}) {
   return {
     ...item,
     room_or_building: roomOrBuilding || item.room_or_building || null,
-    postcode: postcode || item.postcode || null
+    postcode: postcode || item.postcode || null,
+    box_delivery_date: firstNonEmptyText(item.box_delivery_date, serviceDetails.boxDeliveryDate, estimateSummary.boxDeliveryDate) || null,
+    box_delivery_time_slot: firstNonEmptyText(item.box_delivery_time_slot, serviceDetails.boxDeliveryTimeSlot) || null,
+    box_delivery_method: firstNonEmptyText(item.box_delivery_method, serviceDetails.boxDeliveryMethod, estimateSummary.boxDeliveryMethod) || null,
+    storage_intake_date: firstNonEmptyText(item.storage_intake_date, item.service_date, serviceDetails.serviceDate) || null,
+    storage_start_date: firstNonEmptyText(item.storage_start_date, item.service_date, serviceDetails.serviceDate, estimateSummary.startDate) || null,
+    storage_end_date: firstNonEmptyText(item.storage_end_date, item.expected_storage_end_date, serviceDetails.expectedStorageEndDate, estimateSummary.endDate) || null
   };
 }
 
@@ -801,7 +818,12 @@ async function handleStorageOrders(req, res, supabase) {
         "item_description",
         "notes",
         "final_readable_message",
+        "box_delivery_date",
+        "box_delivery_time_slot",
+        "box_delivery_method",
+        "storage_intake_date",
         "storage_start_date",
+        "storage_end_date",
         "expected_storage_end_date"
       ];
       const nullableColumns = new Set([
@@ -815,7 +837,12 @@ async function handleStorageOrders(req, res, supabase) {
         "item_description",
         "notes",
         "final_readable_message",
+        "box_delivery_date",
+        "box_delivery_time_slot",
+        "box_delivery_method",
+        "storage_intake_date",
         "storage_start_date",
+        "storage_end_date",
         "expected_storage_end_date"
       ]);
       const patch = {};

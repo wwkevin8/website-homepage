@@ -65,6 +65,32 @@
             <label class="field" data-storage-detail-type="return"><span>物品简单描述</span><input name="item_description"></label>
             <label class="field transport-field-span-2" data-storage-detail-type="collection"><span>箱型 / 物品信息</span><textarea name="box_type_summary" rows="4" readonly></textarea></label>
 
+            <div class="storage-detail-section-title transport-field-span-2" data-storage-detail-type="collection" data-storage-purchase-field>
+              <h2>买箱信息</h2>
+              <p>仅在用户有买箱需求时显示；买箱编号和送箱日期与取件/自送日期分开核对。</p>
+            </div>
+            <label class="field" data-storage-detail-type="collection" data-storage-purchase-field><span>买箱编号</span><input name="box_order_no" readonly></label>
+            <label class="field" data-storage-detail-type="collection" data-storage-purchase-field><span>箱型</span><textarea name="box_purchase_summary" rows="3" readonly></textarea></label>
+            <label class="field" data-storage-detail-type="collection" data-storage-purchase-field><span>购买数量</span><input name="box_purchase_quantity" readonly></label>
+            <label class="field" data-storage-detail-type="collection" data-storage-purchase-field><span>买箱费用</span><input name="box_purchase_fee" readonly></label>
+            <label class="field" data-storage-detail-type="collection" data-storage-purchase-field><span>送箱日期</span><input name="box_delivery_date" type="date"></label>
+            <label class="field" data-storage-detail-type="collection" data-storage-purchase-field><span>送箱时间段</span><input name="box_delivery_time_slot"></label>
+            <label class="field" data-storage-detail-type="collection" data-storage-purchase-field><span>送箱方式</span><input name="box_delivery_method"></label>
+            <label class="field transport-field-span-2" data-storage-detail-type="collection" data-storage-purchase-field><span>地址</span><textarea name="box_delivery_address" rows="2" readonly></textarea></label>
+            <label class="field transport-field-span-2" data-storage-detail-type="collection" data-storage-purchase-field><span>备注</span><textarea name="box_delivery_notes" rows="2" readonly></textarea></label>
+
+            <div class="storage-detail-section-title transport-field-span-2" data-storage-detail-type="collection">
+              <h2>寄存信息</h2>
+              <p>取件/自送日期、寄存周期、箱型数量和费用独立展示，避免与送箱日期混淆。</p>
+            </div>
+            <label class="field" data-storage-detail-type="collection"><span>取件/自送日期</span><input name="storage_intake_date" type="date"></label>
+            <label class="field" data-storage-detail-type="collection"><span>寄存开始日期</span><input name="storage_start_date" type="date"></label>
+            <label class="field" data-storage-detail-type="collection"><span>寄存结束日期</span><input name="storage_end_date" type="date"></label>
+            <label class="field" data-storage-detail-type="collection"><span>寄存天数</span><input name="storage_days" readonly></label>
+            <label class="field" data-storage-detail-type="collection"><span>寄存费用</span><input name="storage_fee" readonly></label>
+            <label class="field" data-storage-detail-type="collection"><span>取件方式</span><input name="storage_pickup_method" readonly></label>
+            <label class="field" data-storage-detail-type="collection"><span>送回方式</span><input name="storage_return_method" readonly></label>
+
             <div class="storage-detail-section-title transport-field-span-2">
               <h2>地址信息</h2>
               <p id="storageDetailAddressHint">取件地址为订单主要地址；房间、邮编和楼层服务信息可在这里核对。</p>
@@ -92,7 +118,7 @@
   </div>
 
   <script src="./admin-api.js?v=20260507-cache-bust-5"></script>
-  <script src="./admin-shell.js?v=20260506-cache-bust-19"></script>
-  <script src="./admin-pages.js?v=20260507-cache-bust-5"></script>
+  <script src="./admin-shell.js?v=20260512-storage-nav-1"></script>
+  <script src="./admin-pages.js?v=20260512-storage-nav-1"></script>
 </body>
 </html>

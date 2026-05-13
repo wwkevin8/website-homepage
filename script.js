@@ -222,7 +222,7 @@
     storageTitle: "左邻右里 | 寄存服务非会员价格",
     storageDescription: "左邻右里寄存服务非会员价格页，提供箱型尺寸、价格表、短期规则、配送说明与在线费用估算。",
     storageBookingTitle: "左邻右里 | 寄存服务预约",
-    storageBookingDescription: "寄存服务预约提交页，可提交预约寄存/入仓或取寄存/取回，并提交给客服确认。",
+    storageBookingDescription: "寄存服务预约提交页，可提交取寄存/入仓或送寄存/送回，并提交给客服确认。",
     storageHeroEyebrow: "Nottingham Storage",
     storageHeroTitle: "诺丁汉学生寄存服务",
     storageHeroHighlight: "透明价格 · 安全省心",
@@ -2078,6 +2078,16 @@ function getStorageDeliveryMethodLabel(value) {
   return value === "self" ? "自行到仓库取件" : "上门送件";
 }
 
+function getStorageBoxDeliveryMethodLabel(value) {
+  if (value === "home") {
+    return "送箱到地址";
+  }
+  if (value === "self") {
+    return "自行到仓库取箱";
+  }
+  return "楼下交接";
+}
+
 function getStorageServiceFlags(summary) {
   return {
     has_storage: Number(summary.totalBoxes || 0) > 0,
@@ -2112,14 +2122,27 @@ function getStorageServiceLabel(summary) {
 
 function buildStorageSummaryData(summary) {
   const totalValue = summary.total ?? summary.estimatedTotalPrice ?? null;
+  const purchaseQuantity = Number(summary.totalPurchaseBoxes || 0);
   const boxLines = (summary.items || [])
     .filter(item => item.storageQty > 0 || item.purchaseQty > 0)
     .map(item => `${item.label}: 寄存 ${item.storageQty} / 购买 ${item.purchaseQty}`);
-
-  return [
+  const rows = [
     ["服务类型", "非会员寄存预约"],
     ["箱型明细", boxLines.join("；") || "—"],
-    ["总箱数", String(summary.totalBoxes || 0)],
+    ["总箱数", String(summary.totalBoxes || 0)]
+  ];
+
+  if (purchaseQuantity > 0) {
+    rows.push(
+      ["买箱数量", `${purchaseQuantity} 个`],
+      ["买箱费用", summary.blocked ? "—" : formatMoney(summary.purchaseTotal || 0)],
+      ["送箱日期", summary.boxDeliveryDate || "—"],
+      ["送箱方式", getStorageBoxDeliveryMethodLabel(summary.boxDeliveryMethod)],
+      ["买箱编号", "提交后生成"]
+    );
+  }
+
+  rows.push(
     ["寄存天数", summary.days > 0 ? `${summary.days} 天` : "—"],
     ["开始日期", summary.startDate || "—"],
     ["结束日期", summary.endDate || "—"],
@@ -2136,7 +2159,8 @@ function buildStorageSummaryData(summary) {
     ["购箱费", summary.blocked ? "—" : formatMoney(summary.purchaseTotal || 0)],
     ["最低消费修正", summary.blocked ? "—" : formatMoney(summary.minimumAdjustment || 0)],
     ["预计总价", summary.blocked || totalValue === null ? "—" : formatMoney(totalValue || 0)]
-  ];
+  );
+  return rows;
 }
 
 function buildStorageReadableMessage(summary, customerForm) {
@@ -2250,8 +2274,8 @@ function initStorageIntroModal() {
   let previousFocus = null;
   const stepDetails = {
     rules: "先确认可寄存物品、保险、重量和预约规则，避免提交后还要反复补信息。",
-    calculator: "预约寄存请先填写箱型、数量、重量、日期和取送方式，系统会先给出参考价格。",
-    form: "估价完成后再登记姓名、联系方式、地址、预约日期和备注；取寄存可直接从右侧按钮进入登记。",
+    calculator: "取寄存请先填写箱型、数量、重量、日期和取送方式，系统会先给出参考价格。",
+    form: "估价完成后再登记姓名、联系方式、地址、预约日期和备注；送寄存可直接从右侧按钮进入登记。",
     support: "提交后会生成订单编号，客服会人工核对价格、时间和执行方式后再正式安排。"
   };
 
@@ -2390,19 +2414,19 @@ function normalizeStoragePageStaticCopy() {
     bookingIntro.textContent = "请选择预约类型";
   }
   if (bookingIntroText) {
-    bookingIntroText.innerHTML = "预约寄存 / 入仓：必须先完成左侧计算器，再登记预约。<br>取寄存 / 取回：不需要填写计算器，可直接登录后登记。";
+    bookingIntroText.innerHTML = "取寄存 / 入仓：必须先完成左侧计算器，再登记预约。<br>送寄存 / 送回：不需要填写计算器，可直接登录后登记。";
   }
   if (bookingInlineCta) {
     bookingInlineCta.hidden = true;
     bookingInlineCta.textContent = "";
   }
   if (bookingButton) {
-    setStorageBookingEntryCopy(bookingButton, "预约寄存 / 入仓", "先完成计算器，再登记预约");
+    setStorageBookingEntryCopy(bookingButton, "取寄存 / 入仓", "先完成计算器，再登记预约");
     bookingButton.classList.remove("is-disabled");
     bookingButton.removeAttribute("aria-disabled");
   }
   if (returnButton) {
-    setStorageBookingEntryCopy(returnButton, "取寄存 / 取回", "无需填写计算器，直接登记");
+    setStorageBookingEntryCopy(returnButton, "送寄存 / 送回", "无需填写计算器，直接登记");
     returnButton.classList.remove("is-disabled");
     returnButton.removeAttribute("aria-disabled");
   }
@@ -3538,6 +3562,7 @@ function initStorageBookingPage() {
   const copyBookingSummaryButton = document.querySelector("#copyBookingSummaryButton");
   const bookingPageHint = document.querySelector("#storageBookingPageHint");
   const collectionLockedSummary = document.querySelector("#collectionLockedSummary");
+  const boxDeliveryFields = document.querySelector("#boxDeliveryFields");
   const bookingHeroTitle = document.querySelector(".storage-booking-hero-copy h1");
   const summaryTitle = document.querySelector(".storage-summary-card .storage-summary-head strong");
   const summaryTip = document.querySelector(".storage-summary-card .storage-summary-tip");
@@ -3551,8 +3576,8 @@ function initStorageBookingPage() {
   const returnServiceDateInput = bookingForm.querySelector('[name="returnServiceDate"]');
   const returnDateHelp = bookingForm.querySelector("[data-return-date-help]");
   const serviceLabels = {
-    storage_collection: "预约寄存 / 入仓",
-    storage_return: "取寄存 / 取回"
+    storage_collection: "取寄存 / 入仓",
+    storage_return: "送寄存 / 送回"
   };
   const requestedOrderType = new URLSearchParams(window.location.search).get("service") || draft?.preferredOrderType || "";
   if (requestedOrderType === "box_delivery") {
@@ -3565,14 +3590,14 @@ function initStorageBookingPage() {
     const isReturnMode = activeOrderType === "storage_return";
 
     if (bookingHeroTitle) {
-      bookingHeroTitle.textContent = isReturnMode ? "取寄存登记表" : "寄存服务预约表";
+      bookingHeroTitle.textContent = isReturnMode ? "送寄存登记表" : "取寄存预约表";
     }
     if (summaryTitle) {
-      summaryTitle.textContent = isReturnMode ? "取寄存登记说明" : "估价摘要";
+      summaryTitle.textContent = isReturnMode ? "送寄存登记说明" : "估价摘要";
     }
     if (summaryTip) {
       summaryTip.textContent = isReturnMode
-        ? "取回已有寄存不需要计算器。请直接填写取回日期、送回地址和物品信息，客服会人工核验。"
+        ? "送回已有寄存不需要计算器。请直接填写送回日期、送回地址和物品信息，客服会人工核验。"
         : "如你从估价页进入，这里会保留上一页的价格结果，包含需要购买的箱子数量。";
     }
     if (copyBookingSummaryButton) {
@@ -3580,23 +3605,23 @@ function initStorageBookingPage() {
       copyBookingSummaryButton.disabled = isReturnMode;
     }
     if (sideActionTitle) {
-      sideActionTitle.textContent = isReturnMode ? "要预约新寄存？" : "返回估价页";
+      sideActionTitle.textContent = isReturnMode ? "要取寄存入仓？" : "返回估价页";
     }
     if (sideActionText) {
       sideActionText.textContent = isReturnMode
-        ? "只有预约新的寄存/入仓才需要先返回估价页填写计算器。"
+        ? "只有取寄存/入仓才需要先返回估价页填写计算器。"
         : "如需修改寄存价格、箱型数量或寄存周期，请返回上一页重新估价。";
     }
     if (sideActionLink) {
-      sideActionLink.textContent = isReturnMode ? "去计算器预约寄存" : "返回估价页修改";
+      sideActionLink.textContent = isReturnMode ? "去计算器取寄存" : "返回估价页修改";
       sideActionLink.setAttribute("href", "./storage#storage-calculator");
     }
     if (bookingFormIntroTitle) {
-      bookingFormIntroTitle.textContent = isReturnMode ? "取寄存信息填写" : "预约信息填写";
+      bookingFormIntroTitle.textContent = isReturnMode ? "送寄存信息填写" : "预约信息填写";
     }
     if (bookingFormIntroText) {
       bookingFormIntroText.textContent = isReturnMode
-        ? "请填写取回已有寄存所需的信息。无需估价，提交后客服会核验原寄存记录并联系确认。"
+        ? "请填写送回已有寄存所需的信息。无需估价，提交后客服会核验原寄存记录并联系确认。"
         : "请选择本次只要提交的一项服务。不同服务的字段互不干扰。";
     }
   }
@@ -3684,7 +3709,10 @@ function initStorageBookingPage() {
       purchaseItems,
       purchaseCounts: draft?.calculatorSnapshot?.purchaseCounts || {},
       purchaseTotal: Number(draft?.estimateSummary?.purchaseTotal || 0),
-      boxDeliveryDate: draft?.estimateSummary?.boxDeliveryDate || ""
+      boxDeliveryDate: draft?.estimateSummary?.boxDeliveryDate || "",
+      boxDeliveryTimeSlot: getFieldValue("boxDeliveryTimeSlot"),
+      boxDeliveryMethod: draft?.estimateSummary?.boxDeliveryMethod || "downstairs",
+      boxOrderNo: "提交后生成"
     };
   }
 
@@ -3709,13 +3737,24 @@ function initStorageBookingPage() {
     const pickupAccessLabel = summary.pickupMethod === "home"
       ? getStorageAccessLabel(summary.pickupAccessType)
       : "自行送至仓库";
+    const purchaseQuantity = Number(summary.totalPurchaseBoxes || 0);
     const rows = [
       ["寄存箱数", `${summary.totalBoxes || 0} 个`],
       ["取件 / 自送日期", summary.startDate || "—"],
+      ["取件 / 自送时间段", getFieldValue("collectionServiceTimeSlot") || "待选择"],
       ["预计寄存结束日期", summary.endDate || "—"],
       ["取件方式", getStoragePickupMethodLabel(summary.pickupMethod)],
       ["取寄存交接方式", pickupAccessLabel]
     ];
+    if (purchaseQuantity > 0) {
+      rows.push(
+        ["买箱数量", `${purchaseQuantity} 个`],
+        ["送箱日期", summary.boxDeliveryDate || "—"],
+        ["送箱时间段", getFieldValue("boxDeliveryTimeSlot") || "待选择"],
+        ["送箱方式", getStorageBoxDeliveryMethodLabel(summary.boxDeliveryMethod)],
+        ["买箱编号", "提交后生成"]
+      );
+    }
     collectionLockedSummary.innerHTML = rows.map(([label, value]) => `
       <div class="storage-locked-summary-item">
         <span>${label}</span>
@@ -3733,6 +3772,10 @@ function initStorageBookingPage() {
         ...purchaseDetails,
         serviceDate: getFieldValue("collectionServiceDate"),
         serviceTimeSlot: getFieldValue("collectionServiceTimeSlot"),
+        storageIntakeTimeSlot: getFieldValue("collectionServiceTimeSlot"),
+        boxDeliveryDate: purchaseDetails.boxDeliveryDate || getFieldValue("boxDeliveryDate"),
+        boxDeliveryTimeSlot: getFieldValue("boxDeliveryTimeSlot"),
+        boxDeliveryMethod: getFieldValue("boxDeliveryMethod") || purchaseDetails.boxDeliveryMethod,
         collectionAddress: getFieldValue("collectionAddress"),
         roomOrBuilding: getFieldValue("collectionRoomOrBuilding"),
         postcode: getFieldValue("collectionPostcode"),
@@ -3774,6 +3817,29 @@ function initStorageBookingPage() {
     const phone = phoneInput?.value.trim() || "";
     const boxName = bookingForm.querySelector('[name="boxContactName"]');
     const boxPhone = bookingForm.querySelector('[name="boxContactPhone"]');
+    const purchaseQuantity = Number(draft?.estimateSummary?.totalPurchaseBoxes || 0);
+    if (boxDeliveryFields) {
+      boxDeliveryFields.hidden = activeOrderType !== "storage_collection" || purchaseQuantity <= 0;
+      boxDeliveryFields.style.display = boxDeliveryFields.hidden ? "none" : "";
+      boxDeliveryFields.querySelectorAll("input, select, textarea").forEach(field => {
+        field.disabled = boxDeliveryFields.hidden;
+        if (field.name === "boxDeliveryDate" || field.name === "boxDeliveryTimeSlot" || field.name === "boxDeliveryMethod") {
+          field.required = !boxDeliveryFields.hidden;
+        }
+      });
+      const boxDate = boxDeliveryFields.querySelector('[name="boxDeliveryDate"]');
+      if (boxDate && draft?.estimateSummary?.boxDeliveryDate) {
+        boxDate.value = draft.estimateSummary.boxDeliveryDate;
+      }
+      const boxMethod = boxDeliveryFields.querySelector('[name="boxDeliveryMethod"]');
+      if (boxMethod && !boxMethod.value) {
+        boxMethod.value = draft?.estimateSummary?.boxDeliveryMethod || "downstairs";
+      }
+    }
+    const storageIntakeDatePreview = bookingForm.querySelector('[name="storageIntakeDatePreview"]');
+    if (storageIntakeDatePreview && draft?.estimateSummary?.startDate) {
+      storageIntakeDatePreview.value = draft.estimateSummary.startDate;
+    }
     if (boxName && !boxName.value && customerName) {
       boxName.value = customerName;
     }
@@ -3801,7 +3867,7 @@ function initStorageBookingPage() {
       return "请先阅读并同意下单须知。";
     }
     if (orderType === "storage_collection" && !draft?.estimateSummary) {
-      return "预约寄存 / 入仓需要先返回估价页完成计算器测算。";
+      return "取寄存 / 入仓需要先返回估价页完成计算器测算。";
     }
     if (!customerForm.customerName) {
       return "请填写姓名。";
@@ -3845,6 +3911,17 @@ function initStorageBookingPage() {
     if (missing) {
       return missing[1];
     }
+    if (orderType === "storage_collection" && Number(serviceDetails.purchaseQuantity || 0) > 0) {
+      if (!serviceDetails.boxDeliveryDate) {
+        return "请填写送箱日期。";
+      }
+      if (!serviceDetails.boxDeliveryTimeSlot) {
+        return "请选择送箱时间段。";
+      }
+      if (!serviceDetails.boxDeliveryMethod) {
+        return "请选择送箱方式。";
+      }
+    }
     if (orderType === "storage_return") {
       const returnDateValidationMessage = getStorageReturnDateValidationMessage(serviceDetails.serviceDate);
       if (returnDateValidationMessage) {
@@ -3859,25 +3936,28 @@ function initStorageBookingPage() {
       const purchaseLines = (details.purchaseItems || [])
         .map(item => `${item.label}：${item.quantity} 个${item.subtotal ? `，小计 ${formatMoney(item.subtotal)}` : ""}`);
       return [
-        "服务类型：预约寄存 / 入仓",
+        "服务类型：取寄存 / 入仓",
         `寄存箱数：${details.storageBoxCount}`,
         Number(details.purchaseQuantity || 0) > 0 ? `需购买箱子：${details.purchaseQuantity} 个` : "需购买箱子：无",
         ...purchaseLines,
         details.boxDeliveryDate ? `送箱日期：${details.boxDeliveryDate}` : "",
+        Number(details.purchaseQuantity || 0) > 0 ? `送箱时间段：${details.boxDeliveryTimeSlot || "—"}` : "",
+        Number(details.purchaseQuantity || 0) > 0 ? `送箱方式：${getStorageBoxDeliveryMethodLabel(details.boxDeliveryMethod)}` : "",
+        Number(details.purchaseQuantity || 0) > 0 ? `买箱编号：${details.boxOrderNo || "提交后生成"}` : "",
         `取件 / 自送日期：${details.serviceDate}`,
-        `时间段：${details.serviceTimeSlot}`,
+        `取件 / 自送时间段：${details.storageIntakeTimeSlot || details.serviceTimeSlot}`,
         `取件地址 / 自送说明：${details.collectionAddress}`,
         `房间 / 楼栋 / 公寓名：${details.roomOrBuilding}`,
         `邮编：${details.postcode}`,
         `取寄存交接方式：${draft?.estimateSummary?.pickupMethod === "home" ? getStorageAccessLabel(draft?.estimateSummary?.pickupAccessType) : "自行送至仓库"}`,
         `预计寄存结束日期：${details.expectedStorageEndDate}`,
-        "本次仅提交取件入仓预约，后续送回/取回请单独提交送回寄存预约或联系客服安排。",
+        "本次仅提交取寄存入仓预约，后续送回/取回请单独提交送寄存预约或联系客服安排。",
         details.notes ? `备注：${details.notes}` : ""
       ].filter(Boolean).join("\n");
     }
 
     return [
-      "服务类型：送回寄存 / 取回",
+      "服务类型：送寄存 / 送回",
       details.relatedOrderNo ? `原寄存订单号：${details.relatedOrderNo}` : "原寄存订单号：未填写",
       "寄存信息摘要：",
       `寄存人姓名：${details.storageCustomerName}`,
@@ -3925,9 +4005,12 @@ function initStorageBookingPage() {
       rows.push(
         ["寄存箱数", `${serviceDetails.storageBoxCount || 0} 个`],
         ["需购买箱子", purchaseText],
-        ["送箱日期", serviceDetails.boxDeliveryDate || "—"],
-        ["预约 / 取件日期", serviceDetails.serviceDate],
-        ["时间段", serviceDetails.serviceTimeSlot],
+        Number(serviceDetails.purchaseQuantity || 0) > 0 ? ["买箱编号", serviceDetails.boxOrderNo || "提交后生成"] : null,
+        Number(serviceDetails.purchaseQuantity || 0) > 0 ? ["送箱日期", serviceDetails.boxDeliveryDate || "—"] : null,
+        Number(serviceDetails.purchaseQuantity || 0) > 0 ? ["送箱时间段", serviceDetails.boxDeliveryTimeSlot || "—"] : null,
+        Number(serviceDetails.purchaseQuantity || 0) > 0 ? ["送箱方式", getStorageBoxDeliveryMethodLabel(serviceDetails.boxDeliveryMethod)] : null,
+        ["取件 / 自送日期", serviceDetails.serviceDate],
+        ["取件 / 自送时间段", serviceDetails.storageIntakeTimeSlot || serviceDetails.serviceTimeSlot],
         ["预计结束日期", serviceDetails.expectedStorageEndDate],
         ["地址 / 位置", serviceDetails.collectionAddress],
         ["房间 / 公寓", serviceDetails.roomOrBuilding],
@@ -3950,6 +4033,7 @@ function initStorageBookingPage() {
     }
 
     receiptSummary.innerHTML = rows
+      .filter(Boolean)
       .filter(([, value]) => value !== "" && value !== null && value !== undefined)
       .map(([label, value]) => `
         <div class="storage-receipt-row">
@@ -4038,21 +4122,21 @@ function initStorageBookingPage() {
     bookingSummary.innerHTML = `
       <div class="storage-summary-item">
         <strong>提示</strong>
-        <span>取寄存不用填写计算器。请直接填写下方取寄存表格，后台会人工核验并联系确认。</span>
+        <span>送寄存不用填写计算器。请直接填写下方送寄存表格，后台会人工核验并联系确认。</span>
       </div>
     `;
     if (bookingPageHint) {
-      bookingPageHint.textContent = "取寄存 / 取回不需要先填写计算器，登录后可直接填写表格并提交。";
+      bookingPageHint.textContent = "送寄存 / 送回不需要先填写计算器，登录后可直接填写表格并提交。";
     }
   } else if (!draft || !draft.estimateSummary) {
     bookingSummary.innerHTML = `
       <div class="storage-summary-item">
         <strong>提示</strong>
-        <span>当前没有估价摘要。预约寄存请先返回估价页完成测算；取寄存可直接登录后提交。</span>
+        <span>当前没有估价摘要。取寄存请先返回估价页完成测算；送寄存可直接登录后提交。</span>
       </div>
     `;
     if (bookingPageHint) {
-      bookingPageHint.textContent = "预约寄存需要先返回估价页完成测算；取寄存请从估价页右侧的取寄存入口进入。";
+      bookingPageHint.textContent = "取寄存需要先返回估价页完成测算；送寄存请从估价页右侧的送寄存入口进入。";
     }
   } else {
     bookingSummary.innerHTML = buildStorageSummaryData(draft.estimateSummary).map(([label, value]) => `
@@ -4126,6 +4210,9 @@ function initStorageBookingPage() {
     if (target instanceof HTMLElement && target.getAttribute("name") === "returnServiceDate") {
       syncReturnDateRules();
     }
+    if (target instanceof HTMLElement && ["boxDeliveryTimeSlot", "boxDeliveryMethod", "collectionServiceTimeSlot"].includes(target.getAttribute("name") || "")) {
+      renderCollectionLockedSummary(draft?.estimateSummary);
+    }
   });
 
   returnServiceDateInput?.addEventListener("input", syncReturnDateRules);
@@ -4155,7 +4242,7 @@ function initStorageBookingPage() {
     }
     const orderType = getSelectedOrderType();
     if (orderType === "storage_collection" && !draft?.estimateSummary) {
-      setMessage("预约寄存 / 入仓需要先返回估价页完成计算器测算。");
+      setMessage("取寄存 / 入仓需要先返回估价页完成计算器测算。");
       return;
     }
     if (bookingForm.dataset.profileComplete !== "true") {
@@ -4212,6 +4299,12 @@ function initStorageBookingPage() {
       submitSuccessTitle.textContent = result.data?.successTitle || "订单已提交，请联系客服确认";
       submitSuccessDescription.textContent = result.data?.successDescription || "系统已生成订单编号。此订单必须添加客服微信 Nottsngn，并由客服人工确认后才算正式安排；未添加客服确认的订单不算。";
       submitSuccessOrderNo.textContent = result.data?.orderNo || "--";
+      if (result.data?.boxOrderNo) {
+        serviceDetails.boxOrderNo = result.data.boxOrderNo;
+      }
+      if (result.data?.storagePickupOrderNo) {
+        serviceDetails.storagePickupOrderNo = result.data.storagePickupOrderNo;
+      }
       openStorageReceipt({
         orderNo: result.data?.orderNo || "--",
         description: result.data?.successDescription,

@@ -10,15 +10,15 @@
 
   const storageTypeLabels = {
     box_delivery: "买箱子订单",
-    storage_collection: "预约寄存订单",
-    storage_return: "取寄存订单",
+    storage_collection: "取寄存订单",
+    storage_return: "送寄存订单",
     storage: "寄存订单"
   };
 
   const storageTypeShortLabels = {
     box_delivery: "买箱",
-    storage_collection: "预约",
-    storage_return: "取回",
+    storage_collection: "取寄存",
+    storage_return: "送寄存",
     storage: "旧单"
   };
 
@@ -32,10 +32,10 @@
     if (originalOrderType === "box_delivery" || serviceFlags.box_delivery || serviceLabel.includes("买箱")) {
       return "box_delivery";
     }
-    if (originalOrderType === "storage_collection" || serviceFlags.storage_collection || serviceLabel.includes("送寄存") || serviceLabel.includes("入仓")) {
+    if (originalOrderType === "storage_collection" || serviceFlags.storage_collection || serviceLabel.includes("取寄存") || serviceLabel.includes("入仓")) {
       return "storage_collection";
     }
-    if (originalOrderType === "storage_return" || serviceFlags.storage_return || serviceLabel.includes("取回")) {
+    if (originalOrderType === "storage_return" || serviceFlags.storage_return || serviceLabel.includes("送寄存") || serviceLabel.includes("送回") || serviceLabel.includes("取回")) {
       return "storage_return";
     }
     return item.order_type || "storage";
@@ -93,6 +93,114 @@
       item.customer_form_json?.postCode,
       item.customer_form_json?.post_code
     ) || "--";
+  }
+
+  function storageEstimateSummary(item = {}) {
+    return item.estimate_summary_json || {};
+  }
+
+  function storagePurchasedBoxes(item = {}) {
+    if (Array.isArray(item.purchased_boxes) && item.purchased_boxes.length) {
+      return item.purchased_boxes;
+    }
+    const serviceDetails = getStorageFormDetails(item);
+    if (Array.isArray(serviceDetails.purchaseItems) && serviceDetails.purchaseItems.length) {
+      return serviceDetails.purchaseItems;
+    }
+    const summaryItems = Array.isArray(storageEstimateSummary(item).items) ? storageEstimateSummary(item).items : [];
+    return summaryItems
+      .filter(entry => Number(entry.purchaseQty || entry.purchase_quantity || 0) > 0)
+      .map(entry => ({
+        boxType: entry.boxType || entry.box_type,
+        label: entry.label,
+        quantity: entry.purchaseQty || entry.purchase_quantity,
+        subtotal: entry.purchase || entry.subtotal
+      }));
+  }
+
+  function storagePurchaseQuantity(item = {}) {
+    const boxes = storagePurchasedBoxes(item);
+    const total = boxes.reduce((sum, entry) => sum + Math.max(0, Number(entry.quantity || entry.purchaseQty || entry.purchase_quantity || 0)), 0);
+    if (total > 0) {
+      return total;
+    }
+    const serviceDetails = getStorageFormDetails(item);
+    return Number(serviceDetails.purchaseQuantity || storageEstimateSummary(item).totalPurchaseBoxes || 0);
+  }
+
+  function storageBoxOrderNo(item = {}) {
+    return storagePurchaseQuantity(item) > 0 ? (item.box_order_no || "提交后生成") : "--";
+  }
+
+  function storageBoxDeliveryDate(item = {}) {
+    const serviceDetails = getStorageFormDetails(item);
+    return firstStorageDetailValue(item.box_delivery_date, serviceDetails.boxDeliveryDate, storageEstimateSummary(item).boxDeliveryDate) || "--";
+  }
+
+  function storageBoxDeliveryTimeSlot(item = {}) {
+    const serviceDetails = getStorageFormDetails(item);
+    return firstStorageDetailValue(item.box_delivery_time_slot, serviceDetails.boxDeliveryTimeSlot) || "--";
+  }
+
+  function storageBoxDeliveryMethod(item = {}) {
+    const serviceDetails = getStorageFormDetails(item);
+    const raw = firstStorageDetailValue(item.box_delivery_method, serviceDetails.boxDeliveryMethod, storageEstimateSummary(item).boxDeliveryMethod);
+    return storageMethodLabel(raw, "楼下交接") || "--";
+  }
+
+  function storageBuyBoxStatusCell(item = {}) {
+    if (storagePurchaseQuantity(item) <= 0) {
+      return '<span class="admin-status-badge is-neutral" title="无买箱需求">否</span>';
+    }
+    const tooltip = [
+      `买箱编号：${storageBoxOrderNo(item)}`,
+      `送箱日期：${storageBoxDeliveryDate(item)}`
+    ].join("\n");
+    return `<span class="admin-status-badge is-success" title="${AdminShell.escapeHtml(tooltip)}">是</span>`;
+  }
+
+  function storageParentOrderNo(item = {}) {
+    return firstStorageDetailValue(item.parent_order_no, item.order_no) || "--";
+  }
+
+  function storageIntakeDate(item = {}) {
+    const serviceDetails = getStorageFormDetails(item);
+    return firstStorageDetailValue(item.storage_intake_date, item.service_date, serviceDetails.serviceDate, storageEstimateSummary(item).startDate) || "--";
+  }
+
+  function storageStartDate(item = {}) {
+    const serviceDetails = getStorageFormDetails(item);
+    return firstStorageDetailValue(item.storage_start_date, item.service_date, serviceDetails.serviceDate, storageEstimateSummary(item).startDate) || "--";
+  }
+
+  function storageEndDate(item = {}) {
+    const serviceDetails = getStorageFormDetails(item);
+    return firstStorageDetailValue(item.storage_end_date, item.expected_storage_end_date, serviceDetails.expectedStorageEndDate, storageEstimateSummary(item).endDate) || "--";
+  }
+
+  function storageIntakeDateCell(item = {}) {
+    const intakeDate = storageIntakeDate(item);
+    const endDate = storageEndDate(item);
+    if (!endDate || endDate === "--") {
+      return AdminShell.escapeHtml(intakeDate);
+    }
+    return `<span title="${AdminShell.escapeHtml(`寄存结束日期：${endDate}`)}">${AdminShell.escapeHtml(intakeDate)}</span>`;
+  }
+
+  function storageExpectedPrice(item = {}) {
+    const estimate = storageEstimateSummary(item);
+    const value = firstStorageDetailValue(
+      item.estimated_total_price,
+      item.estimatedTotalPrice,
+      estimate.estimated_total_price,
+      estimate.estimatedTotalPrice,
+      estimate.totalPrice,
+      estimate.finalTotal,
+      estimate.grandTotal,
+      estimate.total
+    );
+    const number = Number(value);
+    return Number.isFinite(number) && number > 0 ? formatStorageDetailMoney(number) : "--";
   }
 
   function storageInputValue(value) {
@@ -851,6 +959,60 @@
       return;
     }
 
+    if (activeOrderType === "box_order") {
+      table.innerHTML = `
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>提交时间</th>
+                <th>主订单编号</th>
+                <th>买箱编号</th>
+                <th>姓名</th>
+                <th>微信</th>
+                <th>电话</th>
+                <th>买箱数量</th>
+                <th>送箱日期</th>
+                <th>送箱时间段</th>
+                <th>送箱方式</th>
+                <th>公寓名</th>
+                <th>邮编</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${items.map(item => `
+                <tr>
+                  <td>${AdminShell.escapeHtml(formatDateTime(item.created_at))}</td>
+                  <td><strong>${AdminShell.escapeHtml(storageParentOrderNo(item))}</strong></td>
+                  <td><strong>${AdminShell.escapeHtml(storageBoxOrderNo(item))}</strong></td>
+                  <td>${AdminShell.escapeHtml(item.customer_name || "--")}</td>
+                  <td>${AdminShell.escapeHtml(item.wechat_id || "--")}</td>
+                  <td>${AdminShell.escapeHtml(item.phone || "--")}</td>
+                  <td>${AdminShell.escapeHtml(`${storagePurchaseQuantity(item) || 0} 个`)}</td>
+                  <td>${AdminShell.escapeHtml(storageBoxDeliveryDate(item))}</td>
+                  <td>${AdminShell.escapeHtml(storageBoxDeliveryTimeSlot(item))}</td>
+                  <td>${AdminShell.escapeHtml(storageBoxDeliveryMethod(item))}</td>
+                  <td>${AdminShell.escapeHtml(storageApartmentName(item))}</td>
+                  <td>${AdminShell.escapeHtml(storagePostcodeValue(item))}</td>
+                  <td>
+                    <div class="admin-table-actions">
+                      <a class="button button-secondary admin-table-action" href="${AdminShell.escapeHtml(buildStorageDetailUrl(item.id))}">查看详情</a>
+                      <button class="button button-text is-danger admin-table-action" type="button" data-storage-delete="${AdminShell.escapeHtml(item.id)}">删除</button>
+                    </div>
+                  </td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>
+      `;
+      if (pagination) {
+        renderPaginationControls(pagination, payload.pagination || {});
+      }
+      return;
+    }
+
     table.innerHTML = `
       <div class="admin-table-wrap">
         <table class="admin-table">
@@ -862,10 +1024,12 @@
               <th>姓名</th>
               <th>微信</th>
               <th>电话</th>
-              <th>服务日期</th>
+              <th>是否买箱</th>
+              <th>取件/自送日期</th>
               <th>时间段</th>
               <th>公寓名</th>
               <th>邮编</th>
+              <th>预期价格</th>
               <th>操作</th>
             </tr>
           </thead>
@@ -877,16 +1041,18 @@
                 ${showServiceTypeColumn ? `
                   <td>
                     ${AdminShell.escapeHtml(storageTypeShortLabels[resolveStorageOrderType(item)] || item.service_label || item.order_type || "--")}
-                    ${needsStorageReturnHistoryWarning(item) ? '<div class="admin-table-warning">此账号未找到可对应的预约寄存订单，请人工核验</div>' : ""}
+                    ${needsStorageReturnHistoryWarning(item) ? '<div class="admin-table-warning">此账号未找到可对应的取寄存订单，请人工核验</div>' : ""}
                   </td>
                 ` : ""}
                 <td>${AdminShell.escapeHtml(item.customer_name || "--")}</td>
                 <td>${AdminShell.escapeHtml(item.wechat_id || "--")}</td>
                 <td>${AdminShell.escapeHtml(item.phone || "--")}</td>
-                <td>${AdminShell.escapeHtml(item.service_date || "--")}</td>
+                <td>${storageBuyBoxStatusCell(item)}</td>
+                <td>${storageIntakeDateCell(item)}</td>
                 <td>${AdminShell.escapeHtml(storageServiceTime(item))}</td>
                 <td>${AdminShell.escapeHtml(storageApartmentName(item))}</td>
                 <td>${AdminShell.escapeHtml(storagePostcodeValue(item))}</td>
+                <td>${AdminShell.escapeHtml(storageExpectedPrice(item))}</td>
                 <td>
                   <div class="admin-table-actions">
                     <a class="button button-secondary admin-table-action" href="${AdminShell.escapeHtml(buildStorageDetailUrl(item.id))}">查看详情</a>
@@ -904,7 +1070,6 @@
       renderPaginationControls(pagination, payload.pagination || {});
     }
   }
-
   async function initStoragePage() {
     const root = document.querySelector("#adminStoragePage");
     if (!root) {
@@ -918,8 +1083,11 @@
     let latestItems = [];
 
     const urlParams = new URLSearchParams(window.location.search);
-    if (form?.order_type && urlParams.has("order_type")) {
-      form.order_type.value = urlParams.get("order_type") || "";
+    if (form?.order_type) {
+      const requestedOrderType = urlParams.get("order_type") || "storage_collection";
+      form.order_type.value = ["box_order", "storage_collection", "storage_return"].includes(requestedOrderType)
+        ? requestedOrderType
+        : "storage_collection";
     }
 
     async function render() {
@@ -1112,6 +1280,17 @@
     return item.item_description || "";
   }
 
+  function formatStoragePurchaseSummary(item = {}) {
+    return storagePurchasedBoxes(item)
+      .map(entry => {
+        const label = entry.label || (entry.boxType ? `${entry.boxType}号箱` : "箱型");
+        const quantity = entry.quantity || entry.purchaseQty || entry.purchase_quantity || 0;
+        const subtotal = entry.subtotal || entry.purchase || 0;
+        return `${label}：购买 ${quantity} 个${subtotal ? ` / ${formatStorageDetailMoney(subtotal)}` : ""}`;
+      })
+      .join("\n");
+  }
+
   function firstStorageDetailValue(...values) {
     for (const value of values) {
       if (value === null || value === undefined) {
@@ -1132,7 +1311,8 @@
       local: "诺丁汉当地寄存送还",
       other_city: "外地送还",
       campus: "校区交接",
-      courier: "快递 / 物流"
+      courier: "快递 / 物流",
+      downstairs: "楼下交接"
     };
     return labels[type] || fallback || type || "";
   }
@@ -1381,12 +1561,12 @@
       });
       if (serviceHint) {
         serviceHint.textContent = isReturnOrder
-          ? "取寄存订单只显示送回 / 自取相关信息，不使用预约寄存的开始日期、结束日期和预估租金字段。"
+          ? "送寄存订单只显示送回 / 自取相关信息，不使用取寄存的开始日期、结束日期和预估租金字段。"
           : "箱型明细会从用户提交时的估价记录自动读取。";
       }
       if (addressHint) {
         addressHint.textContent = isReturnOrder
-          ? "送回地址为本次取寄存订单的主要地址；房间、邮编和楼层服务信息可在这里核对。"
+          ? "送回地址为本次送寄存订单的主要地址；房间、邮编和楼层服务信息可在这里核对。"
           : "取件地址为订单主要地址；房间、邮编和楼层服务信息可在这里核对。";
       }
       if (addressLabel) {
@@ -1398,7 +1578,13 @@
       currentOrder = order;
       const resolvedOrderType = resolveStorageOrderType(order);
       const serviceDetails = getStorageFormDetails(order);
+      const estimate = storageEstimateSummary(order);
+      const purchaseQuantity = storagePurchaseQuantity(order);
+      const purchaseFields = Array.from(document.querySelectorAll("[data-storage-purchase-field]"));
       syncOrderTypeFields(resolvedOrderType);
+      purchaseFields.forEach(element => {
+        element.hidden = resolvedOrderType !== "storage_collection" || purchaseQuantity <= 0;
+      });
 
       setValue("order_no", order.order_no || "");
       setValue("public_user_id", order.public_user_id || "未绑定用户");
@@ -1409,6 +1595,22 @@
       setValue("wechat_id", order.wechat_id || "");
       setValue("service_time_slot", order.service_time_slot || (order.service_time === "evening" ? "晚上" : order.service_time === "daytime" ? "白天" : order.service_time || ""));
       setValue("service_date", order.service_date || serviceDetails.serviceDate || "");
+      setValue("box_order_no", storageBoxOrderNo(order));
+      setValue("box_purchase_summary", formatStoragePurchaseSummary(order));
+      setValue("box_purchase_quantity", purchaseQuantity > 0 ? `${purchaseQuantity} 个` : "");
+      setValue("box_purchase_fee", formatStorageDetailMoney(firstStorageDetailValue(serviceDetails.purchaseTotal, estimate.purchaseTotal)));
+      setValue("box_delivery_date", firstStorageDetailValue(order.box_delivery_date, serviceDetails.boxDeliveryDate, estimate.boxDeliveryDate));
+      setValue("box_delivery_time_slot", firstStorageDetailValue(order.box_delivery_time_slot, serviceDetails.boxDeliveryTimeSlot));
+      setValue("box_delivery_method", storageMethodLabel(firstStorageDetailValue(order.box_delivery_method, serviceDetails.boxDeliveryMethod, estimate.boxDeliveryMethod), "楼下交接"));
+      setValue("box_delivery_address", order.address_full || "");
+      setValue("box_delivery_notes", firstStorageDetailValue(order.notes, serviceDetails.notes));
+      setValue("storage_intake_date", storageIntakeDate(order) === "--" ? "" : storageIntakeDate(order));
+      setValue("storage_start_date", storageStartDate(order) === "--" ? "" : storageStartDate(order));
+      setValue("storage_end_date", storageEndDate(order) === "--" ? "" : storageEndDate(order));
+      setValue("storage_days", firstStorageDetailValue(estimate.days && `${estimate.days} 天`, serviceDetails.storageDays));
+      setValue("storage_fee", formatStorageDetailMoney(firstStorageDetailValue(estimate.discountedBase, estimate.storageTotal, serviceDetails.storageFee)));
+      setValue("storage_pickup_method", storageMethodLabel(firstStorageDetailValue(estimate.pickupMethod, serviceDetails.pickupMethod), firstStorageDetailValue(serviceDetails.pickupMethodLabel)));
+      setValue("storage_return_method", storageMethodLabel(firstStorageDetailValue(estimate.returnType, serviceDetails.returnType), firstStorageDetailValue(serviceDetails.returnTypeLabel)));
       setValue("related_order_no", order.related_order_no || serviceDetails.relatedOrderNo || "");
       setValue("estimated_box_count", firstStorageDetailValue(order.estimated_box_count, serviceDetails.itemCount));
       setValue("item_description", firstStorageDetailValue(order.item_description, serviceDetails.itemDescription));
@@ -1461,6 +1663,12 @@
           address_full: readText("address_full"),
           room_or_building: readText("room_or_building"),
           postcode: readText("postcode"),
+          box_delivery_date: readText("box_delivery_date"),
+          box_delivery_time_slot: readText("box_delivery_time_slot"),
+          box_delivery_method: readText("box_delivery_method"),
+          storage_intake_date: readText("storage_intake_date"),
+          storage_start_date: readText("storage_start_date"),
+          storage_end_date: readText("storage_end_date"),
           has_lift: readBoolean("has_lift"),
           needs_upstairs: readBoolean("needs_upstairs"),
           notes: readText("notes"),

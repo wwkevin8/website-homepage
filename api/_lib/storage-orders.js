@@ -39,6 +39,36 @@ function normalizeNumber(value, fallback = 0) {
   return parsed;
 }
 
+function normalizeStoragePurchaseItems(details, estimateSummary = {}) {
+  const detailItems = Array.isArray(details.purchaseItems) ? details.purchaseItems : [];
+  const summaryItems = Array.isArray(estimateSummary.items) ? estimateSummary.items : [];
+  const sourceItems = detailItems.length
+    ? detailItems
+    : summaryItems
+        .filter(item => normalizeInteger(item.purchaseQty ?? item.purchase_quantity, 0) > 0)
+        .map(item => ({
+          boxType: item.boxType ?? item.box_type,
+          label: item.label,
+          quantity: item.purchaseQty ?? item.purchase_quantity,
+          subtotal: item.purchase ?? item.subtotal
+        }));
+
+  return sourceItems
+    .map(item => {
+      const quantity = Math.max(0, normalizeInteger(item.quantity ?? item.purchaseQty ?? item.purchase_quantity, 0));
+      if (quantity <= 0) {
+        return null;
+      }
+      return {
+        boxType: normalizeString(item.boxType ?? item.box_type),
+        label: normalizeString(item.label) || (item.boxType ? `${item.boxType}号箱` : "箱型"),
+        quantity,
+        subtotal: normalizeNumber(item.subtotal ?? item.purchase, 0)
+      };
+    })
+    .filter(Boolean);
+}
+
 function isObject(value) {
   return value && typeof value === "object" && !Array.isArray(value);
 }
@@ -245,15 +275,23 @@ function mapBoxDeliveryPayload(body, details) {
 function mapStorageCollectionPayload(body, details) {
   const serviceDate = assertDateField("service_date", details.serviceDate);
   const expectedEndDate = assertDateField("expected_storage_end_date", details.expectedStorageEndDate);
+  const estimateSummary = isObject(body.estimateSummary) ? body.estimateSummary : {};
   const boxCount = Math.max(0, normalizeInteger(details.storageBoxCount, 0));
   if (boxCount <= 0) {
     throw new Error("storageBoxCount is required");
   }
+  const purchaseQuantity = Math.max(0, normalizeInteger(details.purchaseQuantity ?? estimateSummary.totalPurchaseBoxes, 0));
+  const purchasedBoxes = normalizeStoragePurchaseItems(details, estimateSummary);
+  const boxDeliveryDate = purchaseQuantity > 0
+    ? assertDateField("box_delivery_date", details.boxDeliveryDate || estimateSummary.boxDeliveryDate)
+    : "";
 
   const addressText = normalizeString(details.collectionAddress);
   const roomOrBuilding = normalizeString(details.roomOrBuilding);
   const postcode = normalizeString(details.postcode);
   const serviceTimeSlot = normalizeString(details.serviceTimeSlot);
+  const boxDeliveryTimeSlot = normalizeString(details.boxDeliveryTimeSlot);
+  const boxDeliveryMethod = normalizeString(details.boxDeliveryMethod || estimateSummary.boxDeliveryMethod || "downstairs");
   const hasLiftProvided = details.hasLift !== undefined && details.hasLift !== null && details.hasLift !== "";
   const needsUpstairsProvided = details.needsUpstairs !== undefined && details.needsUpstairs !== null && details.needsUpstairs !== "";
 
@@ -265,6 +303,12 @@ function mapStorageCollectionPayload(body, details) {
   ].find(([, value]) => !value);
   if (required) {
     throw new Error(`${required[0]} is required`);
+  }
+  if (purchaseQuantity > 0 && !boxDeliveryTimeSlot) {
+    throw new Error("boxDeliveryTimeSlot is required");
+  }
+  if (purchaseQuantity > 0 && !boxDeliveryMethod) {
+    throw new Error("boxDeliveryMethod is required");
   }
   if (!hasLiftProvided) {
     throw new Error("hasLift is required");
@@ -284,8 +328,16 @@ function mapStorageCollectionPayload(body, details) {
     postcode,
     addressKey: normalizeAddressKey(addressText, roomOrBuilding, postcode),
     estimatedBoxCount: boxCount,
+    purchaseQuantity,
+    purchaseTotal: normalizeNumber(details.purchaseTotal ?? estimateSummary.purchaseTotal, 0),
+    purchasedBoxes,
+    boxDeliveryDate: boxDeliveryDate || null,
+    boxDeliveryTimeSlot,
+    boxDeliveryMethod,
     storageStartDate: serviceDate,
+    storageIntakeDate: serviceDate,
     expectedStorageEndDate: expectedEndDate,
+    storageEndDate: expectedEndDate,
     hasLift: normalizeBoolean(details.hasLift),
     needsUpstairs: normalizeBoolean(details.needsUpstairs),
     notes: normalizeString(details.notes),
@@ -419,7 +471,16 @@ function mapStorageOrderPayload(body) {
     notification_status: "pending",
     notification_error: null,
     webhook_payload_json: null,
+    parent_order_no: null,
+    box_order_no: null,
+    storage_pickup_order_no: null,
+    box_delivery_date: mapped.boxDeliveryDate || null,
+    box_delivery_time_slot: mapped.boxDeliveryTimeSlot || null,
+    box_delivery_method: mapped.boxDeliveryMethod || null,
+    purchased_boxes: mapped.purchasedBoxes || [],
+    storage_intake_date: mapped.storageIntakeDate || null,
     storage_start_date: mapped.storageStartDate || null,
+    storage_end_date: mapped.storageEndDate || null,
     expected_storage_end_date: mapped.expectedStorageEndDate || null,
     related_order_no: mapped.relatedOrderNo || null,
     postcode: mapped.postcode,
@@ -482,6 +543,9 @@ function buildStorageOrderAdminFilters(query, queryParams = {}, options = {}) {
     const hasColumn = column => !supportedColumns || supportedColumns.has(column);
     const searchParts = [
       hasColumn("order_no") ? `order_no.ilike.%${safe}%` : "",
+      hasColumn("parent_order_no") ? `parent_order_no.ilike.%${safe}%` : "",
+      hasColumn("box_order_no") ? `box_order_no.ilike.%${safe}%` : "",
+      hasColumn("storage_pickup_order_no") ? `storage_pickup_order_no.ilike.%${safe}%` : "",
       hasColumn("customer_name") ? `customer_name.ilike.%${safe}%` : "",
       hasColumn("wechat_id") ? `wechat_id.ilike.%${safe}%` : "",
       hasColumn("phone") ? `phone.ilike.%${safe}%` : "",
@@ -505,7 +569,9 @@ function buildStorageOrderAdminFilters(query, queryParams = {}, options = {}) {
     query.eq("notification_status", notificationStatus);
   }
 
-  if (orderType === "storage_collection") {
+  if (orderType === "box_order") {
+    query.or("box_order_no.not.is.null,purchased_boxes.neq.[]");
+  } else if (orderType === "storage_collection") {
     query.or("order_type.eq.storage_collection,service_label.ilike.%预约寄存%,service_label.ilike.%送寄存%,service_label.ilike.%入仓%");
   } else if (orderType === "storage_return") {
     query.or("order_type.eq.storage_return,service_label.ilike.%取回%");

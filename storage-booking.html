@@ -7,11 +7,11 @@
   <link rel="icon" href="/favicon.png?v=20260509" type="image/png">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=20260509">
   <title>左邻右里 | 寄存服务预约</title>
-  <meta name="description" content="寄存服务预约提交页，可提交预约寄存/入仓或取寄存/取回，并提交给客服确认。">
+  <meta name="description" content="寄存服务预约提交页，可提交取寄存/入仓或送寄存/送回，并提交给客服确认。">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./styles.css?v=20260509-storage-receipt-mobile-2">
+  <link rel="stylesheet" href="./styles.css?v=20260512-storage-booking-groups-4">
 </head>
 <body class="storage-page storage-booking-page">
   <div class="topbar topbar-storage storage-service-topbar storage-booking-topbar">
@@ -79,7 +79,7 @@
             <div class="storage-summary-grid" id="storageBookingSummary">
               <div class="storage-summary-item">
                 <strong>提示</strong>
-                <span>当前没有估价摘要。预约寄存请先返回估价页完成测算；取寄存不用计算器，可直接登录后提交。</span>
+                <span>当前没有估价摘要。取寄存请先返回估价页完成测算；送寄存不用计算器，可直接登录后提交。</span>
               </div>
             </div>
           </div>
@@ -116,10 +116,10 @@
               </div>
               <div class="storage-notice-content" id="storageNoticeContent">
                 <ol class="storage-notice-list">
-                  <li>买箱需求会并入预约寄存订单；取寄存/取回请单独提交，便于客服确认执行。</li>
+                  <li>买箱需求会并入取寄存订单；送寄存/送回请单独提交，便于客服确认执行。</li>
                   <li>预约提交后只是进入待确认队列，需等待客服人工确认后才算正式安排。</li>
-                  <li>预约寄存/入仓只提交入仓预约，后续送回/取回请单独提交送回寄存预约或联系客服安排。</li>
-                  <li>如预约寄存中包含买箱，送箱默认楼下交接；如有特殊情况，请在备注中说明，客服会确认是否可安排。</li>
+                  <li>取寄存/入仓只提交入仓预约，后续送回/取回请单独提交送寄存预约或联系客服安排。</li>
+                  <li>如取寄存中包含买箱，送箱默认楼下交接；如有特殊情况，请在备注中说明，客服会确认是否可安排。</li>
                   <li>超尺寸、超重、无包装或需特殊看护的物品，请先联系客服确认。</li>
                 </ol>
               </div>
@@ -152,44 +152,81 @@
             </section>
 
             <section class="storage-form-section storage-service-section" data-storage-service-section="storage_collection" hidden>
-              <h4>预约寄存 / 入仓</h4>
-              <p class="storage-section-hint">下方估价信息已由计算器锁定，如需修改箱数、日期或上楼方式，请返回估价页重新测算。</p>
-              <div class="storage-locked-summary" id="collectionLockedSummary" aria-live="polite"></div>
+              <h4>取寄存 / 入仓</h4>
+              <p class="storage-section-hint">估价信息已在左侧摘要中保留，如需修改箱数、日期或上楼方式，请返回估价页重新测算。</p>
               <input name="collectionBoxCount" type="hidden">
               <input name="collectionServiceDate" type="hidden">
               <input name="collectionExpectedEndDate" type="hidden">
-              <div class="storage-form-grid">
-                <label>
-                  <span class="storage-field-label">时间段</span>
-                  <select name="collectionServiceTimeSlot" required>
-                    <option value="">请选择</option>
-                    <option value="10:00 - 13:00">白天 10:00 - 13:00</option>
-                    <option value="20:00 - 23:00">晚上 20:00 - 23:00</option>
-                    <option value="待客服确认">待客服确认</option>
-                  </select>
-                </label>
-                <label class="storage-field-span-2">
-                  <span class="storage-field-label">取件地址 / 自送说明</span>
-                  <textarea name="collectionAddress" rows="3" required></textarea>
-                </label>
-                <label>
-                  <span class="storage-field-label">房间 / 楼栋 / 公寓名</span>
-                  <input name="collectionRoomOrBuilding" type="text" required>
-                </label>
-                <label>
-                  <span class="storage-field-label">邮编</span>
-                  <input name="collectionPostcode" type="text" required>
-                </label>
-                <label class="storage-field-span-2">
-                  <span class="storage-field-label">备注</span>
-                  <textarea name="collectionNotes" rows="3"></textarea>
-                </label>
+              <div class="storage-form-subsection storage-box-delivery-fields" id="boxDeliveryFields" hidden>
+                <div class="storage-form-subsection-head">
+                  <strong>&#20080;&#31665; / &#36865;&#31665;&#20449;&#24687;</strong>
+                  <p>&#36865;&#31665;&#26102;&#38388;&#27573;&#21482;&#29992;&#20110;&#20080;&#31665;&#36865;&#31665;&#65292;&#19981;&#20250;&#24403;&#20316;&#21462;&#20214; / &#33258;&#36865;&#20837;&#20179;&#26102;&#38388;&#27573;&#12290;</p>
+                </div>
+                <div class="storage-form-grid">
+                  <label>
+                    <span class="storage-field-label">&#36865;&#31665;&#26085;&#26399;</span>
+                    <input name="boxDeliveryDate" type="date" readonly>
+                  </label>
+                  <label>
+                    <span class="storage-field-label">&#36865;&#31665;&#26102;&#38388;&#27573;</span>
+                    <select name="boxDeliveryTimeSlot">
+                      <option value="">&#35831;&#36873;&#25321;</option>
+                      <option value="10:00 - 13:00">&#30333;&#22825; 10:00 - 13:00</option>
+                      <option value="20:00 - 23:00">&#26202;&#19978; 20:00 - 23:00</option>
+                      <option value="customer_confirm">&#24453;&#23458;&#26381;&#30830;&#35748;</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span class="storage-field-label">&#36865;&#31665;&#26041;&#24335;</span>
+                    <select name="boxDeliveryMethod">
+                      <option value="downstairs">&#27004;&#19979;&#20132;&#25509;</option>
+                      <option value="self">&#33258;&#34892;&#21040;&#20179;&#24211;&#21462;&#31665;</option>
+                    </select>
+                  </label>
+                </div>
+              </div>
+              <div class="storage-form-subsection storage-intake-fields">
+                <div class="storage-form-subsection-head">
+                  <strong>&#23492;&#23384; / &#20837;&#20179;&#20449;&#24687;</strong>
+                  <p>&#36825;&#37324;&#21482;&#29992;&#20110;&#21462;&#20214; / &#33258;&#36865;&#20837;&#20179;&#65292;&#21644;&#19978;&#38754;&#30340;&#20080;&#31665;&#36865;&#31665;&#20998;&#24320;&#22788;&#29702;&#12290;</p>
+                </div>
+                <div class="storage-form-grid">
+                  <label>
+                    <span class="storage-field-label">&#23492;&#23384;&#26085;&#26399;</span>
+                    <input name="storageIntakeDatePreview" type="date" readonly>
+                  </label>
+                  <label>
+                    <span class="storage-field-label">&#21462;&#20214; / &#33258;&#36865;&#26102;&#38388;&#27573;</span>
+                    <select name="collectionServiceTimeSlot" required>
+                      <option value="">&#35831;&#36873;&#25321;</option>
+                      <option value="10:00 - 13:00">&#30333;&#22825; 10:00 - 13:00</option>
+                      <option value="20:00 - 23:00">&#26202;&#19978; 20:00 - 23:00</option>
+                      <option value="&#24453;&#23458;&#26381;&#30830;&#35748;">&#24453;&#23458;&#26381;&#30830;&#35748;</option>
+                    </select>
+                  </label>
+                  <label class="storage-field-span-2">
+                    <span class="storage-field-label">&#21462;&#20214;&#22320;&#22336; / &#33258;&#36865;&#35828;&#26126;</span>
+                    <textarea name="collectionAddress" rows="1" required></textarea>
+                  </label>
+                  <label>
+                    <span class="storage-field-label">&#25151;&#38388; / &#27004;&#26635; / &#20844;&#23507;&#21517;</span>
+                    <input name="collectionRoomOrBuilding" type="text" required>
+                  </label>
+                  <label>
+                    <span class="storage-field-label">&#37038;&#32534;</span>
+                    <input name="collectionPostcode" type="text" required>
+                  </label>
+                  <label class="storage-field-span-2">
+                    <span class="storage-field-label">&#22791;&#27880;</span>
+                    <textarea name="collectionNotes" rows="1"></textarea>
+                  </label>
+                </div>
               </div>
             </section>
 
             <section class="storage-form-section storage-service-section" id="storage-return-form" data-storage-service-section="storage_return" hidden>
-              <h4>取寄存 / 取回</h4>
-              <p class="storage-section-hint">请直接填写取寄存信息并提交，后台会人工核验并联系确认。</p>
+              <h4>送寄存 / 送回</h4>
+              <p class="storage-section-hint">请直接填写送寄存信息并提交，后台会人工核验并联系确认。</p>
               <div class="storage-form-grid">
                 <label>
                   <span class="storage-field-label">原寄存订单号（选填）</span>
@@ -319,6 +356,6 @@
   </main>
 
   <script src="./site-auth.js?v=20260505-cache-bust-1" defer></script>
-  <script src="./script.js?v=20260506-cache-bust-21" defer></script>
+  <script src="./script.js?v=20260512-storage-labels-1" defer></script>
 </body>
 </html>

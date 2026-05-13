@@ -30,6 +30,15 @@ const OPTIONAL_STORAGE_ORDER_COLUMNS = [
   "needs_upstairs",
   "item_description",
   "service_time_slot",
+  "parent_order_no",
+  "box_order_no",
+  "storage_pickup_order_no",
+  "box_delivery_date",
+  "box_delivery_time_slot",
+  "box_delivery_method",
+  "purchased_boxes",
+  "storage_intake_date",
+  "storage_end_date",
   "need_moving_help",
   "estimated_total_price",
   "estimate_summary_json",
@@ -207,6 +216,15 @@ function isStorageOrderTypeConstraintError(error) {
     );
 }
 
+function formatStorageSubOrderNo(prefix, orderIdentity) {
+  const businessDateCode = String(orderIdentity?.businessDate || "").replace(/-/g, "").slice(2);
+  const sequence = Number(orderIdentity?.sequence || 0);
+  if (!prefix || !businessDateCode || !sequence) {
+    return null;
+  }
+  return `${prefix}-${businessDateCode}-${String(sequence).padStart(4, "0")}`;
+}
+
 async function insertStorageOrderWithCompatibility(supabase, insertPayload, columnSupport) {
   let currentPayload = omitUnsupportedStorageOrderColumns({ ...insertPayload }, columnSupport);
   const removedColumns = [];
@@ -380,6 +398,15 @@ module.exports = async function handler(req, res) {
     }
 
     const orderIdentity = await allocateStorageServiceOrderNumber(supabase, payload.order_type);
+    if (payload.order_type === "storage_collection") {
+      payload.parent_order_no = orderIdentity.orderNo;
+      payload.storage_pickup_order_no = formatStorageSubOrderNo("ST-P", orderIdentity);
+      const purchasedBoxes = Array.isArray(payload.purchased_boxes) ? payload.purchased_boxes : [];
+      const purchasedQuantity = purchasedBoxes.reduce((sum, item) => sum + Math.max(0, Number(item?.quantity || 0)), 0);
+      if (purchasedQuantity > 0) {
+        payload.box_order_no = formatStorageSubOrderNo("ST-B", orderIdentity);
+      }
+    }
     const insertResult = await insertStorageOrderWithCompatibility(supabase, {
       ...payload,
       site_user_id: siteUser.id,
@@ -440,6 +467,9 @@ module.exports = async function handler(req, res) {
       data: {
         id: finalOrder.id,
         orderNo: finalOrder.order_no,
+        parentOrderNo: finalOrder.parent_order_no || payload.parent_order_no || null,
+        boxOrderNo: finalOrder.box_order_no || payload.box_order_no || null,
+        storagePickupOrderNo: finalOrder.storage_pickup_order_no || payload.storage_pickup_order_no || null,
         orderType: payload.order_type,
         notificationStatus: finalNotificationStatus,
         notificationError: finalOrder.notification_error || notificationPatch.notification_error || null,
