@@ -65,6 +65,9 @@
   let signupTicket = "";
   let resendCountdown = 0;
   let resendTimer = null;
+  let sendCooldownSeconds = 0;
+  let sendCooldownTimer = null;
+  let temporarilyBlocked = false;
 
   function t(key, fallback) {
     return i18n ? i18n.t(key, fallback) : fallback;
@@ -76,6 +79,23 @@
 
   function normalizeCode(value) {
     return String(value || "").replace(/\D/g, "").slice(0, 6);
+  }
+
+  function getDeviceId() {
+    try {
+      const storageKey = "ngnAuthDeviceId";
+      const existing = window.localStorage && window.localStorage.getItem(storageKey);
+      if (existing) {
+        return existing;
+      }
+      const generated = (window.crypto && window.crypto.randomUUID)
+        ? window.crypto.randomUUID()
+        : `device_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+      window.localStorage && window.localStorage.setItem(storageKey, generated);
+      return generated;
+    } catch (error) {
+      return "";
+    }
   }
 
   function setMessage(text, isError) {
@@ -101,6 +121,40 @@
       window.clearInterval(resendTimer);
       resendTimer = null;
     }
+  }
+
+  function clearSendCooldownTimer() {
+    if (sendCooldownTimer) {
+      window.clearInterval(sendCooldownTimer);
+      sendCooldownTimer = null;
+    }
+  }
+
+  function startSendCooldown(seconds, messageText) {
+    clearSendCooldownTimer();
+    sendCooldownSeconds = Math.max(1, Number(seconds || 60));
+    temporarilyBlocked = false;
+    captchaRequired = false;
+    resetTurnstile();
+    setMessage(messageText || `请求过于频繁，请 ${sendCooldownSeconds} 秒后再试。`, true);
+    syncPrimaryButton();
+    sendCooldownTimer = window.setInterval(() => {
+      sendCooldownSeconds -= 1;
+      if (sendCooldownSeconds <= 0) {
+        sendCooldownSeconds = 0;
+        clearSendCooldownTimer();
+        setMessage("", false);
+      }
+      syncPrimaryButton();
+    }, 1000);
+  }
+
+  function applyTemporaryBlock(messageText) {
+    temporarilyBlocked = true;
+    captchaRequired = false;
+    resetTurnstile();
+    setMessage(messageText || "请求次数过多，请稍后再试或联系客服。", true);
+    syncPrimaryButton();
   }
 
   function updateResendUi() {
@@ -168,7 +222,8 @@
 
   function syncPrimaryButton() {
     if (primaryButton) {
-      primaryButton.disabled = isBusy;
+      const isEmailCooldown = currentStep === STEP_EMAIL && sendCooldownSeconds > 0;
+      primaryButton.disabled = isBusy || temporarilyBlocked || isEmailCooldown;
 
       if (currentStep === STEP_PASSWORD) {
         primaryButton.textContent = isBusy
@@ -179,7 +234,9 @@
           ? t("verifyCodeBusy", "Verifying...")
           : t("verifyCodeIdle", "Verify email");
       } else {
-        primaryButton.textContent = isBusy
+        primaryButton.textContent = isEmailCooldown
+          ? `请 ${sendCooldownSeconds} 秒后重试`
+          : isBusy
           ? t("sendCodeBusy", "Sending code...")
           : t("sendCodeIdle", "Send verification code");
       }
@@ -326,13 +383,16 @@
       body: JSON.stringify(body || {})
     });
 
-    const payload = await response.json().catch(() => ({ data: null, error: { message: "Request failed" } }));
+    const payload = await response.json().catch(() => ({ data: null, error: { message: "请求失败，请稍后再试。" } }));
     if (!response.ok) {
-      const error = new Error((payload && payload.error && payload.error.message) || "Request failed");
+      const error = new Error((payload && payload.error && payload.error.message) || "请求失败，请稍后再试。");
       const details = payload && payload.error && payload.error.details;
       if (details && typeof details === "object") {
         error.details = details;
         error.needCaptcha = Boolean(details.needCaptcha);
+        error.cooldown = Boolean(details.cooldown);
+        error.temporarilyBlocked = Boolean(details.temporarilyBlocked);
+        error.retryAfter = Number(details.retryAfter || 0);
         error.errorCode = details.errorCode || "";
       }
       throw error;
@@ -399,8 +459,10 @@
     try {
       const data = await postJson("/api/auth/request-signup-code", {
         email,
+        deviceId: getDeviceId(),
         turnstileToken: captchaRequired ? token : ""
       });
+      temporarilyBlocked = false;
       captchaRequired = false;
       setStep(STEP_CODE);
       startResendCountdown(RESEND_SECONDS);
@@ -414,10 +476,14 @@
         false
       );
     } catch (error) {
-      if (error.needCaptcha) {
+      if (error.cooldown) {
+        startSendCooldown(error.retryAfter || 60, error.message);
+      } else if (error.temporarilyBlocked) {
+        applyTemporaryBlock(error.message);
+      } else if (error.needCaptcha) {
         await requireCaptcha(error.message);
       } else {
-        setMessage(error.message || t("requestCodeFailed", "Failed to send the verification code. Please try again."), true);
+        setMessage(error.message || t("requestCodeFailed", "发送验证码失败，请稍后再试。"), true);
       }
     } finally {
       isBusy = false;
