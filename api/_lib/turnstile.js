@@ -8,7 +8,7 @@ async function verifyTurnstileToken(token, remoteIp) {
   if (!responseToken) {
     return {
       success: false,
-      message: "Human verification is required"
+      message: "请先完成人机验证。"
     };
   }
 
@@ -33,20 +33,20 @@ async function verifyTurnstileToken(token, remoteIp) {
   if (!response.ok || !payload) {
     return {
       success: false,
-      message: "Unable to verify human check. Please try again."
+      message: "人机验证失败，请刷新页面或在浏览器中打开后重试。"
     };
   }
 
   if (!payload.success) {
     const codes = Array.isArray(payload["error-codes"]) ? payload["error-codes"] : [];
-    let message = "Human verification failed. Please try again.";
+    let message = "人机验证失败，请刷新页面或在浏览器中打开后重试。";
 
     if (codes.includes("missing-input-response") || codes.includes("invalid-input-response")) {
-      message = "Human verification is invalid or expired. Please try again.";
+      message = "人机验证无效或已过期，请重新验证。";
     } else if (codes.includes("timeout-or-duplicate")) {
-      message = "Human verification expired. Please complete it again.";
+      message = "人机验证已过期，请重新验证。";
     } else if (codes.includes("missing-input-secret") || codes.includes("invalid-input-secret")) {
-      message = "Turnstile server configuration is invalid.";
+      message = "人机验证服务配置异常，请稍后重试。";
     }
 
     return {

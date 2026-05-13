@@ -27,6 +27,8 @@
         </div>
       </div>
 
+      <p class="auth-browser-tip" data-wechat-register-tip hidden>如果页面验证失败，请点击右上角 … 选择在浏览器中打开。</p>
+
       <div class="auth-hero-panel">
         <p class="eyebrow" data-i18n="heroEyebrow">关于 NGN</p>
         <h1 data-i18n="heroTitle">先验证邮箱，再设置密码，完成你的 NGN 账号注册。</h1>
@@ -62,7 +64,7 @@
             >
           </label>
 
-          <div class="auth-turnstile-block" data-turnstile-block>
+          <div class="auth-turnstile-block" data-turnstile-block hidden>
             <span class="auth-turnstile-label" data-i18n="turnstileLabel">发送前请先手动完成人机校验</span>
             <div class="auth-turnstile-slot" data-turnstile-slot></div>
             <div class="auth-turnstile-actions">
@@ -278,7 +280,8 @@
         invalidPassword: "密码至少需要 8 位。",
         passwordMismatch: "两次输入的密码不一致。",
         humanRequired: "请先点击并完成人机校验。",
-        turnstileLoadFailed: "人机校验组件加载失败，请刷新后重试。",
+        turnstileLoadFailed: "人机验证加载失败。请刷新页面，或点击右上角选择在浏览器中打开。",
+        wechatBrowserTip: "如果页面验证失败，请点击右上角 … 选择在浏览器中打开。",
         authConfigFailed: "认证配置加载失败，请稍后再试。",
         requestCodeFailed: "验证码发送失败，请稍后重试。",
         verifyCodeFailed: "验证码错误或已过期。",
@@ -349,9 +352,10 @@
         contactHandleRequired: "Please enter your WeChat ID or WhatsApp.",
         invalidPassword: "Password must be at least 8 characters.",
         passwordMismatch: "Passwords do not match.",
-        humanRequired: "Please click and complete the human verification first.",
-        turnstileLoadFailed: "Human verification failed to load. Please refresh and try again.",
-        authConfigFailed: "Failed to load auth configuration. Please try again later.",
+        humanRequired: "请先点击并完成人机校验。",
+        turnstileLoadFailed: "人机验证加载失败。请刷新页面，或点击右上角选择在浏览器中打开。",
+        wechatBrowserTip: "如果页面验证失败，请点击右上角 … 选择在浏览器中打开。",
+        authConfigFailed: "认证配置加载失败，请稍后再试。",
         requestCodeFailed: "Failed to send the verification code. Please try again.",
         verifyCodeFailed: "The verification code is invalid or expired.",
         registerFailed: "Failed to create your account. Please try again.",
@@ -365,6 +369,6 @@
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
   <script src="./auth-i18n.js?v=20260505-cache-bust-1"></script>
   <script src="./site-auth.js?v=20260505-cache-bust-1"></script>
-  <script src="./register.js?v=20260505-cache-bust-1"></script>
+  <script src="./register.js?v=20260513-auth-log-fix"></script>
 </body>
 </html>

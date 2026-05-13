@@ -10279,9 +10279,24 @@ body.storage-receipt-open {
   gap: 18px;
 }
 
+.auth-browser-tip {
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid rgba(181, 71, 71, 0.2);
+  border-radius: 8px;
+  background: #fff7ed;
+  color: #8a3b12;
+  font-size: 0.96rem;
+  line-height: 1.6;
+}
+
 .auth-turnstile-block {
   display: grid;
   gap: 10px;
+}
+
+.auth-turnstile-block[hidden] {
+  display: none !important;
 }
 
 .auth-turnstile-label {

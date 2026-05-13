@@ -31,8 +31,8 @@ Last structure scan: 2026-05-08. Scope: documentation-only scan of current files
 | `transport-board.html` | Public transport board/carpool display | 前台 | `site-auth.js`, `transport-shared.js`, `transport-api.js`, `transport-public.js`, `styles.css` | `/api/public/transport-board`, `/api/public/transport-groups`, `/api/public/transport-join-preview`, `/api/public/transport-join-submit`, `/api/public/my-transport-requests` | Critical public privacy boundary. |
 | `storage.html` | Storage service public page/calculator | 前台 | `site-auth.js`, `script.js`, `styles.css` | Uses storage booking links; submission is on `storage-booking.html` | Public service page. |
 | `storage-booking.html` | Storage booking form | 用户前台 | `site-auth.js`, `script.js`, `styles.css` | `/api/public/storage-order-submit`, `/api/auth/session` | User-facing storage order flow. |
-| `login.html` | User login | 用户前台 | Cloudflare Turnstile script, `auth-i18n.js`, `site-auth.js`, `login.js`, `styles.css` | `/api/public/auth-config`, `/api/auth/login` | Uses Turnstile. |
-| `register.html` | User registration | 用户前台 | Cloudflare Turnstile script, `auth-i18n.js`, `site-auth.js`, `register.js`, `styles.css` | `/api/public/auth-config`, `/api/auth/request-signup-code`, `/api/auth/verify-signup-code`, `/api/auth/register` | Sends auth code email. |
+| `login.html` | User login | 用户前台 | Cloudflare Turnstile script, `auth-i18n.js`, `site-auth.js`, `login.js`, `styles.css` | `/api/public/auth-config`, `/api/auth/login` | Turnstile is hidden by default and shown only when `/api/auth/login` returns `needCaptcha=true`. |
+| `register.html` | User registration | 用户前台 | Cloudflare Turnstile script, `auth-i18n.js`, `site-auth.js`, `register.js`, `styles.css` | `/api/public/auth-config`, `/api/auth/request-signup-code`, `/api/auth/verify-signup-code`, `/api/auth/register` | Sends auth code email; Turnstile is shown only when the signup-code API returns `needCaptcha=true`. |
 | `reset-password.html` | Password reset | 用户前台 | Cloudflare Turnstile script, `auth-i18n.js`, `site-auth.js`, `reset-password.js`, `styles.css` | `/api/public/auth-config`, `/api/auth/request-password-reset`, `/api/auth/reset-password` | Sends password reset email. |
 | `profile.html` | User profile | 用户前台 | `site-auth.js`, `profile.js`, `styles.css` | `/api/auth/profile` | Requires logged-in user. |
 | `auth-callback.html` | Auth callback page | 用户前台/不确定 | inline script, `styles.css` | Supabase/provider callback behavior needs confirmation | No external JS detected in scan. |
@@ -87,8 +87,8 @@ Last structure scan: 2026-05-08. Scope: documentation-only scan of current files
 | `/api/auth/session` | `api/auth/[action].js` | GET | User session lookup | Cookie optional | No | `site_users` |
 | `/api/auth/logout` | `api/auth/[action].js` | POST | Clear user session | Cookie optional | No | None |
 | `/api/auth/profile` | `api/auth/[action].js` | GET, POST | Read/update current user profile | Yes | No | `site_users` |
-| `/api/auth/login` | `api/auth/[action].js` | POST | Password login with Turnstile | No | No | `site_users`, `user_login_events` |
-| `/api/auth/request-signup-code` | `api/auth/[action].js` | POST | Request signup code email | No | No | `site_users`, `email_login_codes` |
+| `/api/auth/login` | `api/auth/[action].js` | POST | Password login with email/IP risk checks and conditional Turnstile | No | No | `site_users`, `user_login_events`, `auth_risk_events` |
+| `/api/auth/request-signup-code` | `api/auth/[action].js` | POST | Request signup code email with email/IP rate checks and conditional Turnstile | No | No | `site_users`, `email_login_codes` |
 | `/api/auth/verify-signup-code` | `api/auth/[action].js` | POST | Verify signup code | No | No | `site_users`, `email_login_codes` |
 | `/api/auth/register` | `api/auth/[action].js` | POST | Create user account and session | No, uses signup ticket | No | `site_users`, `email_login_codes`, `user_login_events` |
 | `/api/auth/request-password-reset` | `api/auth/[action].js` | POST | Request reset email | No | No | `site_users`, `password_reset_tokens` |
@@ -142,6 +142,7 @@ Last structure scan: 2026-05-08. Scope: documentation-only scan of current files
 | `supabase/20260416_admin_transport_groups_indexes.sql` | Admin transport group indexes | Performance. |
 | `supabase/20260416_public_transport_groups_indexes.sql` | Public transport group indexes | Performance. |
 | `supabase/20260416_transport_sync_audit_logs.sql` | Creates transport sync audit logs | Used by cron/admin log page. |
+| `supabase/20260513_auth_risk_events.sql` | Creates auth risk log and login failure counter table | Required for login/signup-code conditional captcha counting and audit logs. |
 | `supabase/20260416_transport_sync_audit_logs_perf.sql` | Audit log performance changes | Performance. |
 | `supabase/20260503_storage_service_order_types.sql` | Adds/adjusts storage service order types | Storage collection/return flow. |
 | `supabase/migrations/20260506140108_user_public_id_storage_link.sql` | User public ID and storage linkage | User/storage identity linkage. |
@@ -159,6 +160,7 @@ Last structure scan: 2026-05-08. Scope: documentation-only scan of current files
 | `users` | General user/order listing table | `/api/admin/users`, dashboard, order system SQL | Yes | Relationship to `site_users` needs confirmation before changes. |
 | `email_login_codes` | Signup verification codes | `/api/auth/request-signup-code`, `/api/auth/verify-signup-code`, `/api/auth/register` | Yes | Contains code hashes and IP metadata. |
 | `user_login_events` | User login audit | `/api/auth/login`, registration/reset finalization, dashboard | Yes | Contains IP/user-agent. |
+| `auth_risk_events` | Auth risk log and failure counter | `/api/auth/login`, `/api/auth/request-signup-code` | Yes | Additive table from `supabase/20260513_auth_risk_events.sql`; stores email, IP, user-agent, action, success, captcha state, error code, and cleared login failures. |
 | `password_reset_tokens` | Password reset tokens | `/api/auth/request-password-reset`, `/api/auth/reset-password` | Yes | Contains token hashes and IP metadata. |
 | `admin_users` | Admin accounts/roles/status | `/api/admin/*`, admin session helpers, cron QA | Yes | `super_admin` protections apply. |
 | `admin_operation_logs` | Admin audit log | order/storage admin mutation helpers | Yes/Operational | Keep for accountability. |
@@ -290,7 +292,7 @@ Notification sub-statuses:
 | Vercel | Hosting, serverless APIs, cron | `vercel.json`, `api/`, deploy scripts | Vercel project env vars, `VERCEL_URL` optional in email URL building | Cron configured for daily flow test and sync digest. |
 | Resend | Transactional email | `auth-email.js`, `transport-order-submission-email.js`, `storage-order-notifier.js`, `transport-sync-audit-email.js` | `RESEND_API_KEY`, sender env vars | Some flows require Resend; production sender needs confirmation. |
 | SMTP/nodemailer | Email fallback/admin notifications | `storage-order-notifier.js`, `transport-sync-audit-email.js` | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`, `SMTP_SECURE` | Some email flows can fallback to SMTP. |
-| Cloudflare Turnstile | Bot protection | login/register/reset UI, `api/_lib/turnstile.js`, `auth-config.js` | `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` | Site key is public; secret is server-only. |
+| Cloudflare Turnstile | Bot protection | conditional login/register challenges, reset UI, `api/_lib/turnstile.js`, `auth-config.js` | `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` | Site key is public; secret is server-only. Login and registration code sending only require Turnstile after backend risk thresholds return `needCaptcha=true`. |
 | Google Fonts | Fonts | HTML `<link>` tags | None | External dependency; previous QA noted font request failures. |
 | Google/Auth provider | Possible OAuth callback | `google-auth.js`, `auth-callback.html` | Supabase/provider config, 需要确认 | Active use needs confirmation. |
 | Optional storage webhook | External webhook receiver | `api/_lib/storage-order-webhook.js` | `STORAGE_ORDER_WEBHOOK_URL`, `STORAGE_ORDER_WEBHOOK_SECRET` | Optional; production use needs confirmation. |

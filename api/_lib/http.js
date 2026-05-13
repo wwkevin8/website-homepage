@@ -16,16 +16,16 @@ function badRequest(res, message, details) {
   sendJson(res, 400, { data: null, error: { message, details: details || null } });
 }
 
-function unauthorized(res, message = "Unauthorized") {
-  sendJson(res, 401, { data: null, error: { message } });
+function unauthorized(res, message = "Unauthorized", details) {
+  sendJson(res, 401, { data: null, error: { message, details: details || null } });
 }
 
 function forbidden(res, message = "Forbidden") {
   sendJson(res, 403, { data: null, error: { message } });
 }
 
-function tooManyRequests(res, message = "Too many requests") {
-  sendJson(res, 429, { data: null, error: { message } });
+function tooManyRequests(res, message = "Too many requests", details) {
+  sendJson(res, 429, { data: null, error: { message, details: details || null } });
 }
 
 function methodNotAllowed(res, methods) {

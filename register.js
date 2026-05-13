@@ -1,3 +1,21 @@
+(function () {
+  const safeNoopLogger = function (eventName, payload) {
+    try {
+      if (window.console && typeof window.console.warn === "function") {
+        window.console.warn(`${eventName} logger is not configured`, payload || null);
+      }
+    } catch (error) {
+      // Logging must never block registration.
+    }
+  };
+
+  window.logSignupCodeRequest = window.logSignupCodeRequest || (payload => safeNoopLogger("logSignupCodeRequest", payload));
+  window.logSignupAttempt = window.logSignupAttempt || (payload => safeNoopLogger("logSignupAttempt", payload));
+  window.logCaptchaEvent = window.logCaptchaEvent || (payload => safeNoopLogger("logCaptchaEvent", payload));
+  window.logVerificationRequest = window.logVerificationRequest || (payload => safeNoopLogger("logVerificationRequest", payload));
+  window.logAccountEvent = window.logAccountEvent || (payload => safeNoopLogger("logAccountEvent", payload));
+})();
+
 (async function () {
   const root = document.querySelector("[data-register-page]");
   if (!root) {
@@ -15,6 +33,7 @@
   const passwordInput = document.querySelector("[data-register-password]");
   const confirmPasswordInput = document.querySelector("[data-register-confirm-password]");
   const primaryButton = document.querySelector("[data-primary-submit]");
+  const wechatTip = document.querySelector("[data-wechat-register-tip]");
   const verifyButton = document.querySelector("[data-turnstile-verify]");
   const verifyStatus = document.querySelector("[data-turnstile-status]");
   const stepLabel = document.querySelector("[data-auth-step-label]");
@@ -41,6 +60,8 @@
   let turnstileWidgetId = null;
   let turnstileToken = "";
   let turnstileBusy = false;
+  let captchaRequired = false;
+  let authConfig = null;
   let signupTicket = "";
   let resendCountdown = 0;
   let resendTimer = null;
@@ -165,7 +186,7 @@
     }
 
     if (verifyButton) {
-      verifyButton.disabled = isBusy || turnstileBusy || Boolean(turnstileToken) || currentStep !== STEP_EMAIL;
+      verifyButton.disabled = isBusy || turnstileBusy || Boolean(turnstileToken) || currentStep !== STEP_EMAIL || !captchaRequired;
       verifyButton.textContent = turnstileToken
         ? t("verifyHumanDone", "Human check completed")
         : turnstileBusy
@@ -184,7 +205,7 @@
       stepPassword.hidden = currentStep !== STEP_PASSWORD;
     }
     if (turnstileBlock) {
-      turnstileBlock.hidden = currentStep !== STEP_EMAIL;
+      turnstileBlock.hidden = currentStep !== STEP_EMAIL || !captchaRequired;
     }
     if (emailInput) {
       emailInput.readOnly = currentStep !== STEP_EMAIL;
@@ -212,7 +233,7 @@
     if (window.turnstile && turnstileWidgetId !== null) {
       window.turnstile.reset(turnstileWidgetId);
     }
-    setVerifyStatus(t("humanNotVerified", "Human verification has not been completed"), "");
+    setVerifyStatus(t("humanNotVerified", "尚未完成人机校验"), "");
     syncPrimaryButton();
   }
 
@@ -231,7 +252,7 @@
         }
         if (Date.now() - start > 10000) {
           window.clearInterval(timer);
-          reject(new Error(t("turnstileLoadFailed", "Human verification failed to load. Please refresh and try again.")));
+          reject(new Error(t("turnstileLoadFailed", "人机验证加载失败。请刷新页面，或点击右上角选择在浏览器中打开。")));
         }
       }, 100);
     });
@@ -250,29 +271,29 @@
       callback(token) {
         turnstileToken = String(token || "").trim();
         turnstileBusy = false;
-        setVerifyStatus(t("humanVerified", "Human verification completed. Continue to the next step."), "success");
+        setVerifyStatus(t("humanVerified", "人机验证已完成，请继续下一步。"), "success");
         syncPrimaryButton();
       },
       "error-callback"() {
         turnstileToken = "";
         turnstileBusy = false;
-        setVerifyStatus(t("turnstileLoadFailed", "Human verification failed to load. Please refresh and try again."), "error");
+        setVerifyStatus(t("turnstileLoadFailed", "人机验证加载失败。请刷新页面，或点击右上角选择在浏览器中打开。"), "error");
         syncPrimaryButton();
       },
       "expired-callback"() {
         turnstileToken = "";
         turnstileBusy = false;
-        setVerifyStatus(t("humanNotVerified", "Human verification has not been completed"), "");
+        setVerifyStatus(t("humanNotVerified", "尚未完成人机校验"), "");
         syncPrimaryButton();
       },
       "timeout-callback"() {
         turnstileToken = "";
         turnstileBusy = false;
-        setVerifyStatus(t("humanNotVerified", "Human verification has not been completed"), "");
+        setVerifyStatus(t("humanNotVerified", "尚未完成人机校验"), "");
         syncPrimaryButton();
       }
     });
-    setVerifyStatus(t("humanNotVerified", "Human verification has not been completed"), "");
+    setVerifyStatus(t("humanNotVerified", "尚未完成人机校验"), "");
     syncPrimaryButton();
   }
 
@@ -284,11 +305,11 @@
 
     const payload = await response.json().catch(() => ({
       data: null,
-      error: { message: t("authConfigFailed", "Failed to load auth configuration. Please try again later.") }
+      error: { message: t("authConfigFailed", "认证配置加载失败，请稍后再试。") }
     }));
 
     if (!response.ok || !payload.data) {
-      throw new Error((payload.error && payload.error.message) || t("authConfigFailed", "Failed to load auth configuration. Please try again later."));
+      throw new Error((payload.error && payload.error.message) || t("authConfigFailed", "认证配置加载失败，请稍后再试。"));
     }
 
     return payload.data;
@@ -307,20 +328,52 @@
 
     const payload = await response.json().catch(() => ({ data: null, error: { message: "Request failed" } }));
     if (!response.ok) {
-      throw new Error((payload && payload.error && payload.error.message) || "Request failed");
+      const error = new Error((payload && payload.error && payload.error.message) || "Request failed");
+      const details = payload && payload.error && payload.error.details;
+      if (details && typeof details === "object") {
+        error.details = details;
+        error.needCaptcha = Boolean(details.needCaptcha);
+        error.errorCode = details.errorCode || "";
+      }
+      throw error;
     }
 
     return payload.data;
   }
 
   function startHumanVerification() {
-    if (!window.turnstile || turnstileWidgetId === null || turnstileToken || currentStep !== STEP_EMAIL) {
+    if (!captchaRequired || !window.turnstile || turnstileWidgetId === null || turnstileToken || currentStep !== STEP_EMAIL) {
       return;
     }
     turnstileBusy = true;
     setVerifyStatus("", "");
     syncPrimaryButton();
     window.turnstile.execute(turnstileWidgetId);
+  }
+
+  async function requireCaptcha(messageText) {
+    captchaRequired = true;
+    turnstileToken = "";
+    turnstileBusy = false;
+    if (window.turnstile && turnstileWidgetId !== null) {
+      window.turnstile.reset(turnstileWidgetId);
+    }
+    setStep(STEP_EMAIL);
+    setMessage(messageText || t("humanRequired", "请先点击并完成人机校验。"), true);
+
+    try {
+      if (!authConfig) {
+        authConfig = await loadAuthConfig();
+      }
+      if (!authConfig.turnstileSiteKey) {
+        throw new Error(t("turnstileLoadFailed", "人机验证加载失败。请刷新页面，或点击右上角选择在浏览器中打开。"));
+      }
+      await ensureTurnstileRendered(authConfig.turnstileSiteKey);
+    } catch (error) {
+      turnstileBusy = false;
+      setVerifyStatus(error.message || t("turnstileLoadFailed", "人机验证加载失败。请刷新页面，或点击右上角选择在浏览器中打开。"), "error");
+      syncPrimaryButton();
+    }
   }
 
   async function sendCode(actionType) {
@@ -332,8 +385,8 @@
     }
 
     const token = getTurnstileToken();
-    if (!token) {
-      setMessage(t("humanRequired", "Please click and complete the human verification first."), true);
+    if (captchaRequired && !token) {
+      setMessage(t("humanRequired", "请先点击并完成人机校验。"), true);
       return;
     }
 
@@ -346,8 +399,9 @@
     try {
       const data = await postJson("/api/auth/request-signup-code", {
         email,
-        turnstileToken: token
+        turnstileToken: captchaRequired ? token : ""
       });
+      captchaRequired = false;
       setStep(STEP_CODE);
       startResendCountdown(RESEND_SECONDS);
       if (codeInput) {
@@ -360,11 +414,19 @@
         false
       );
     } catch (error) {
-      setMessage(error.message || t("requestCodeFailed", "Failed to send the verification code. Please try again."), true);
+      if (error.needCaptcha) {
+        await requireCaptcha(error.message);
+      } else {
+        setMessage(error.message || t("requestCodeFailed", "Failed to send the verification code. Please try again."), true);
+      }
     } finally {
       isBusy = false;
       primaryAction = currentStep === STEP_EMAIL ? "send" : "verify";
-      resetTurnstile();
+      if (captchaRequired) {
+        turnstileBusy = false;
+      } else {
+        resetTurnstile();
+      }
       syncPrimaryButton();
       updateResendUi();
     }
@@ -493,13 +555,17 @@
 
   window.addEventListener("auth-lang-change", () => {
     if (!turnstileToken && !turnstileBusy && currentStep === STEP_EMAIL) {
-      setVerifyStatus(t("humanNotVerified", "Human verification has not been completed"), "");
+      setVerifyStatus(t("humanNotVerified", "尚未完成人机校验"), "");
     }
     setStep(currentStep);
     updateContactHandleCopy();
   });
 
   try {
+    if (wechatTip && /MicroMessenger/i.test(window.navigator.userAgent || "")) {
+      wechatTip.hidden = false;
+    }
+
     if (window.SiteAuth) {
       const session = await window.SiteAuth.getSession();
       if (session.authenticated) {
@@ -508,11 +574,6 @@
       }
     }
 
-    const authConfig = await loadAuthConfig();
-    if (!authConfig.turnstileSiteKey) {
-      throw new Error(t("turnstileLoadFailed", "Human verification failed to load. Please refresh and try again."));
-    }
-    await ensureTurnstileRendered(authConfig.turnstileSiteKey);
     updateContactHandleCopy();
     setStep(STEP_EMAIL);
 
@@ -540,7 +601,7 @@
     });
     contactMethodInput && contactMethodInput.addEventListener("change", updateContactHandleCopy);
   } catch (error) {
-    setMessage(error.message || t("authConfigFailed", "Failed to load auth configuration. Please try again later."), true);
+    setMessage(error.message || t("authConfigFailed", "认证配置加载失败，请稍后再试。"), true);
     isBusy = true;
     syncPrimaryButton();
   }

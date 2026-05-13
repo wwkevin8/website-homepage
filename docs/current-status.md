@@ -8,35 +8,41 @@
 ## Last Updated Task
 
 - Date: 2026-05-13
-- Scope: lock GitHub-before-Vercel release rule and sync latest production changes
+- Scope: fix signup-code backend `supabase is not defined` error
 
 ## Latest Completed Work
 
-- Read `E:\webside\AGENTS.md`, `E:\webside\docs\current-status.md`, and the GitHub publish skill before making changes.
-- Added a fixed release-order rule to `E:\webside\AGENTS.md`: GitHub must be updated before any Vercel deployment unless the user explicitly overrides it for a single task.
-- Synced the already-deployed storage/admin changes back to GitHub on branch `codex/full-sync`.
-- GitHub commit `b598f05` (`Fix storage box order admin flow`) contains the storage buy-box/admin/API/database migration updates plus the fixed GitHub-before-Vercel release rule.
-- Current production deployment remains `dpl_7S4wWFxKU1PRSxJbNYSwmF7MU95r`, aliased to `https://ngn.best`.
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before making changes.
+- Searched the full project for `logSignupCodeRequest`, `logLoginRequest`, `logSignupAttempt`, `logCaptchaEvent`, `logVerificationRequest`, and `logAccountEvent`.
+- Added safe no-op frontend logger fallbacks:
+  - `register.js`: `logSignupCodeRequest`, `logSignupAttempt`, `logCaptchaEvent`, `logVerificationRequest`, `logAccountEvent`.
+  - `login.js`: `logLoginRequest`, `logCaptchaEvent`, `logAccountEvent`.
+- Logger fallbacks only call `console.warn` inside a guarded `try/catch`; they never throw and cannot block registration or login.
+- Updated auth page script query strings so browsers stop using stale cached files:
+  - `register.html` now loads `register.js?v=20260513-auth-log-fix`.
+  - `login.html` now loads `login.js?v=20260513-auth-log-fix`.
+- Fixed `.auth-turnstile-block[hidden]` CSS so the Turnstile block is truly hidden on first login/register load. The previous `.auth-turnstile-block { display: grid; }` rule overrode the browser default hidden behavior.
+- Fixed `/api/auth/request-signup-code` by initializing the Supabase admin client before signup-code logging, duplicate-email checks, and rate-limit checks.
+- Hardened `recordAuthRiskEvent` so logging is skipped with `console.warn` if the Supabase client is unavailable; auth risk logging must not block registration/login flows.
 
 ## Current Project State
 
-- Storage collection orders display publicly/admin-side as `取寄存订单`; storage return orders display as `送寄存订单`. Underlying `order_type` values remain unchanged.
-- Admin storage sidebar currently shows `买箱订单`, `取寄存订单`, and `送寄存订单`; the old `全部寄存订单` entry is intentionally hidden.
-- General admin storage lists are compact:
-  - `订单编号` remains the main visible order number.
-  - `是否买箱` replaces separate buy-box number/date columns; hover shows buy-box number and box delivery date.
-  - `取件/自送日期` replaces duplicate intake/start-date columns; hover shows storage end date when available.
-  - `预期价格` is shown from stored estimate data when the order has it.
-- Buy-box order list still has its dedicated operational columns for delivery tasks.
-- Booking form separates `买箱 / 送箱信息` from `寄存 / 入仓信息`, with separate delivery time slot and intake time slot.
+- Registration code sending remains email -> backend rate check -> send code by default; Turnstile is only required after signup-code thresholds return `needCaptcha=true`.
+- Login flow remains email/password -> backend risk check -> credential check -> signed user session cookie.
+- Login and register pages now visually hide the full Turnstile block by default, show it only after `needCaptcha=true`, and keep primary buttons disabled only while submitting.
+- Signup-code requests should no longer surface `supabase is not defined` to the registration page.
+- `supabase/20260513_auth_risk_events.sql` exists for persistent auth risk logs and login failure counting.
+- Password-reset Turnstile behavior was intentionally left unchanged, except shared Turnstile server error messages are Chinese.
+- Storage/admin state is unchanged from the prior handoff.
 
 ## Open Issues Or Risks
 
-- Older storage orders created before estimate totals were saved may still show `--` for `预期价格`; that is expected unless historical data is backfilled.
-- No post-login browser check was performed in this deployment task, so the admin table should be visually spot-checked in the logged-in backend.
-- `gh` is not installed on this machine, so no GitHub PR was created; the branch itself was pushed successfully with plain Git.
+- `supabase/20260513_auth_risk_events.sql` must be applied in Supabase for persistent login failure counts and auth risk logs to work fully. The application logs insert failures without blocking users if the table is missing.
+- The "multiple different emails from one IP" login threshold is implemented as 5 distinct emails within 10 minutes because the user requested an abnormal threshold but did not specify a number.
+- `gh` is not installed on this machine, so GitHub PR creation still requires either installing `gh` or using the GitHub web UI.
 
 ## Recommended Next Steps
 
-- Refresh the live admin storage list and confirm the `预期价格` column appears for orders with saved estimate totals.
-- If operators need prices for old rows that never saved estimate totals, do a separate historical backfill review rather than guessing totals in the list UI.
+- Deploy with the updated auth CSS/JS so affected browsers fetch the fixed auth pages.
+- After deployment, hard-refresh or reopen the registration page in WeChat and confirm `logSignupCodeRequest is not defined` is gone.
+- Apply `supabase/20260513_auth_risk_events.sql` in Supabase before or alongside deploying the full auth risk logging change.

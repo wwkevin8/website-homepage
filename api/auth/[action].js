@@ -25,8 +25,17 @@ const AUTH_CODE_TTL_MINUTES = 10;
 const AUTH_CODE_TTL_MS = AUTH_CODE_TTL_MINUTES * 60 * 1000;
 const AUTH_CODE_REQUEST_COOLDOWN_SECONDS = 60;
 const AUTH_CODE_HOURLY_LIMIT = 5;
+const AUTH_CODE_DAILY_LIMIT = 10;
 const AUTH_CODE_IP_WINDOW_MINUTES = 10;
 const AUTH_CODE_IP_MAX_REQUESTS = 5;
+const SIGNUP_CODE_IP_HOURLY_LIMIT = 10;
+const SIGNUP_CODE_IP_DAILY_LIMIT = 30;
+const LOGIN_EMAIL_FAILURE_LIMIT = 3;
+const LOGIN_EMAIL_FAILURE_WINDOW_MINUTES = 10;
+const LOGIN_IP_TEN_MINUTE_LIMIT = 20;
+const LOGIN_IP_HOURLY_LIMIT = 30;
+const LOGIN_IP_DISTINCT_EMAIL_LIMIT = 5;
+const LOGIN_IP_DISTINCT_EMAIL_WINDOW_MINUTES = 10;
 const AUTH_CODE_MAX_ATTEMPTS = 5;
 const SIGNUP_TICKET_TTL_MINUTES = 20;
 const PASSWORD_RESET_TOKEN_TTL_MINUTES = 60;
@@ -450,6 +459,302 @@ async function enforceIpRateLimit({ supabase, table, ip, windowMinutes, maxReque
   return null;
 }
 
+function getRequestUserAgent(req) {
+  return typeof req.headers["user-agent"] === "string" ? req.headers["user-agent"] : "";
+}
+
+function logAuthRiskEventToConsole({ email, ip, userAgent, action, success, needCaptcha, captchaSuccess, errorCode, createdAt }) {
+  console.info("auth_risk_event", {
+    email,
+    ip: ip || null,
+    userAgent: userAgent || null,
+    action,
+    success: Boolean(success),
+    needCaptcha: Boolean(needCaptcha),
+    captchaSuccess: Boolean(captchaSuccess),
+    errorCode: errorCode || null,
+    createdAt
+  });
+}
+
+function createCaptchaRequiredError(code, message) {
+  const error = new Error(message || "当前请求需要完成人机验证。");
+  error.code = code || "captcha_required";
+  error.needCaptcha = true;
+  return error;
+}
+
+async function recordAuthRiskEvent(supabase, { email, ip, userAgent, action, success, needCaptcha, captchaSuccess, errorCode, createdAt }) {
+  const event = {
+    email: email || null,
+    ip: ip || null,
+    user_agent: userAgent || null,
+    action,
+    success: Boolean(success),
+    need_captcha: Boolean(needCaptcha),
+    captcha_success: Boolean(captchaSuccess),
+    error_code: errorCode || null,
+    created_at: createdAt || new Date().toISOString()
+  };
+
+  logAuthRiskEventToConsole({
+    email: event.email,
+    ip: event.ip,
+    userAgent: event.user_agent,
+    action: event.action,
+    success: event.success,
+    needCaptcha: event.need_captcha,
+    captchaSuccess: event.captcha_success,
+    errorCode: event.error_code,
+    createdAt: event.created_at
+  });
+
+  if (!supabase || typeof supabase.from !== "function") {
+    console.warn("auth_risk_event_insert_skipped", {
+      action,
+      errorCode,
+      message: "Supabase client is unavailable"
+    });
+    return;
+  }
+
+  const { error } = await supabase.from("auth_risk_events").insert(event);
+  if (error) {
+    console.warn("auth_risk_event_insert_failed", {
+      action,
+      errorCode,
+      message: error.message
+    });
+  }
+}
+
+async function clearLoginFailureCount(supabase, email) {
+  if (!email) {
+    return;
+  }
+
+  const { error } = await supabase
+    .from("auth_risk_events")
+    .update({ cleared_at: new Date().toISOString() })
+    .eq("email", email)
+    .eq("action", "login")
+    .eq("success", false)
+    .is("cleared_at", null);
+
+  if (error) {
+    console.warn("auth_login_failure_clear_failed", {
+      email,
+      message: error.message
+    });
+  }
+}
+
+async function countCodeRequestsSince({ supabase, field, value, thresholdIso }) {
+  if (!value) {
+    return 0;
+  }
+
+  const { count, error } = await supabase
+    .from("email_login_codes")
+    .select("id", { count: "exact", head: true })
+    .eq(field, value)
+    .eq("purpose", SIGNUP_CODE_PURPOSE)
+    .gte("created_at", thresholdIso);
+
+  if (error) {
+    throw error;
+  }
+
+  return Number(count || 0);
+}
+
+async function checkSignupCodeCaptchaRequirement({ supabase, email, ip }) {
+  const now = Date.now();
+  const cooldownThreshold = new Date(now - AUTH_CODE_REQUEST_COOLDOWN_SECONDS * 1000).toISOString();
+  const hourThreshold = new Date(now - 60 * 60 * 1000).toISOString();
+  const dayThreshold = new Date(now - 24 * 60 * 60 * 1000).toISOString();
+
+  const recentEmailCount = await countCodeRequestsSince({
+    supabase,
+    field: "email",
+    value: email,
+    thresholdIso: cooldownThreshold
+  });
+  if (recentEmailCount >= 1) {
+    throw createCaptchaRequiredError(
+      "email_cooldown",
+      `该邮箱 ${AUTH_CODE_REQUEST_COOLDOWN_SECONDS} 秒内已请求过验证码，请完成人机验证后继续。`
+    );
+  }
+
+  const hourlyEmailCount = await countCodeRequestsSince({
+    supabase,
+    field: "email",
+    value: email,
+    thresholdIso: hourThreshold
+  });
+  if (hourlyEmailCount >= AUTH_CODE_HOURLY_LIMIT) {
+    throw createCaptchaRequiredError(
+      "email_hourly_limit",
+      "该邮箱 1 小时内验证码请求次数较多，请完成人机验证后继续。"
+    );
+  }
+
+  const dailyEmailCount = await countCodeRequestsSince({
+    supabase,
+    field: "email",
+    value: email,
+    thresholdIso: dayThreshold
+  });
+  if (dailyEmailCount >= AUTH_CODE_DAILY_LIMIT) {
+    throw createCaptchaRequiredError(
+      "email_daily_limit",
+      "该邮箱 24 小时内验证码请求次数较多，请完成人机验证后继续。"
+    );
+  }
+
+  const hourlyIpCount = await countCodeRequestsSince({
+    supabase,
+    field: "request_ip",
+    value: ip,
+    thresholdIso: hourThreshold
+  });
+  if (hourlyIpCount >= SIGNUP_CODE_IP_HOURLY_LIMIT) {
+    throw createCaptchaRequiredError(
+      "ip_hourly_limit",
+      "当前网络 1 小时内验证码请求次数较多，请完成人机验证后继续。"
+    );
+  }
+
+  const dailyIpCount = await countCodeRequestsSince({
+    supabase,
+    field: "request_ip",
+    value: ip,
+    thresholdIso: dayThreshold
+  });
+  if (dailyIpCount >= SIGNUP_CODE_IP_DAILY_LIMIT) {
+    throw createCaptchaRequiredError(
+      "ip_daily_limit",
+      "当前网络 24 小时内验证码请求次数较多，请完成人机验证后继续。"
+    );
+  }
+}
+
+async function countAuthRiskEventsSince({ supabase, action, field, value, thresholdIso, filters }) {
+  if (!value) {
+    return 0;
+  }
+
+  let query = supabase
+    .from("auth_risk_events")
+    .select("id", { count: "exact", head: true })
+    .eq("action", action)
+    .eq(field, value)
+    .gte("created_at", thresholdIso);
+
+  if (typeof filters === "function") {
+    query = filters(query);
+  }
+
+  const { count, error } = await query;
+  if (error) {
+    console.warn("auth_risk_count_failed", {
+      action,
+      field,
+      message: error.message
+    });
+    return 0;
+  }
+
+  return Number(count || 0);
+}
+
+async function countDistinctLoginEmailsForIp({ supabase, ip, thresholdIso }) {
+  if (!ip) {
+    return 0;
+  }
+
+  const { data, error } = await supabase
+    .from("auth_risk_events")
+    .select("email")
+    .eq("action", "login")
+    .eq("ip", ip)
+    .gte("created_at", thresholdIso)
+    .limit(100);
+
+  if (error) {
+    console.warn("auth_risk_distinct_email_count_failed", {
+      ip,
+      message: error.message
+    });
+    return 0;
+  }
+
+  return new Set((data || []).map(row => normalizeEmail(row.email)).filter(Boolean)).size;
+}
+
+async function checkLoginCaptchaRequirement({ supabase, email, ip }) {
+  const now = Date.now();
+  const tenMinuteThreshold = new Date(now - 10 * 60 * 1000).toISOString();
+  const emailFailureThreshold = new Date(now - LOGIN_EMAIL_FAILURE_WINDOW_MINUTES * 60 * 1000).toISOString();
+  const hourThreshold = new Date(now - 60 * 60 * 1000).toISOString();
+
+  const emailFailureCount = await countAuthRiskEventsSince({
+    supabase,
+    action: "login",
+    field: "email",
+    value: email,
+    thresholdIso: emailFailureThreshold,
+    filters: query => query.eq("success", false).is("cleared_at", null)
+  });
+  if (emailFailureCount >= LOGIN_EMAIL_FAILURE_LIMIT) {
+    throw createCaptchaRequiredError(
+      "login_email_failures",
+      "该邮箱登录失败次数较多，请完成人机验证后继续。"
+    );
+  }
+
+  const ipTenMinuteCount = await countAuthRiskEventsSince({
+    supabase,
+    action: "login",
+    field: "ip",
+    value: ip,
+    thresholdIso: tenMinuteThreshold
+  });
+  if (ipTenMinuteCount >= LOGIN_IP_TEN_MINUTE_LIMIT) {
+    throw createCaptchaRequiredError(
+      "login_ip_10m_limit",
+      "当前网络登录请求过于频繁，请完成人机验证后继续。"
+    );
+  }
+
+  const ipHourlyCount = await countAuthRiskEventsSince({
+    supabase,
+    action: "login",
+    field: "ip",
+    value: ip,
+    thresholdIso: hourThreshold
+  });
+  if (ipHourlyCount >= LOGIN_IP_HOURLY_LIMIT) {
+    throw createCaptchaRequiredError(
+      "login_ip_hourly_limit",
+      "当前网络 1 小时内登录请求过于频繁，请完成人机验证后继续。"
+    );
+  }
+
+  const distinctEmailCount = await countDistinctLoginEmailsForIp({
+    supabase,
+    ip,
+    thresholdIso: new Date(now - LOGIN_IP_DISTINCT_EMAIL_WINDOW_MINUTES * 60 * 1000).toISOString()
+  });
+  if (distinctEmailCount >= LOGIN_IP_DISTINCT_EMAIL_LIMIT) {
+    throw createCaptchaRequiredError(
+      "login_ip_distinct_email_limit",
+      "当前网络尝试登录多个邮箱，请完成人机验证后继续。"
+    );
+  }
+}
+
 module.exports = async function handler(req, res) {
   const { action } = req.query || {};
 
@@ -552,45 +857,169 @@ module.exports = async function handler(req, res) {
       const email = normalizeEmail(body.email);
       const password = normalizePassword(body.password);
       const turnstileToken = String(body.turnstileToken || "").trim();
+      const requestIp = getRequestIp(req);
+      const userAgent = getRequestUserAgent(req);
+      let needCaptcha = false;
+      let captchaSuccess = false;
+      const supabase = getSupabaseAdmin();
 
       if (!email || !isValidEmail(email)) {
-        badRequest(res, "A valid email address is required");
+        await recordAuthRiskEvent(supabase, {
+          email,
+          ip: requestIp,
+          userAgent,
+          action: "login",
+          success: false,
+          needCaptcha,
+          captchaSuccess,
+          errorCode: "invalid_email"
+        });
+        badRequest(res, "请输入有效的邮箱地址。");
         return;
       }
 
       if (!password) {
-        badRequest(res, "Password is required");
+        await recordAuthRiskEvent(supabase, {
+          email,
+          ip: requestIp,
+          userAgent,
+          action: "login",
+          success: false,
+          needCaptcha,
+          captchaSuccess,
+          errorCode: "password_required"
+        });
+        badRequest(res, "请输入密码。");
         return;
       }
 
-      const requestIp = getRequestIp(req);
-      const turnstileResult = await verifyTurnstileToken(turnstileToken, requestIp);
-      if (!turnstileResult.success) {
-        badRequest(res, turnstileResult.message || "Human verification failed. Please try again.");
-        return;
+      try {
+        await checkLoginCaptchaRequirement({
+          supabase,
+          email,
+          ip: requestIp
+        });
+      } catch (error) {
+        if (!error.needCaptcha) {
+          throw error;
+        }
+
+        needCaptcha = true;
+        if (!turnstileToken) {
+          await recordAuthRiskEvent(supabase, {
+            email,
+            ip: requestIp,
+            userAgent,
+            action: "login",
+            success: false,
+            needCaptcha,
+            captchaSuccess,
+            errorCode: error.code || "captcha_required"
+          });
+          tooManyRequests(res, error.message || "当前登录需要完成人机验证。", {
+            needCaptcha: true,
+            errorCode: error.code || "captcha_required"
+          });
+          return;
+        }
+
+        const turnstileResult = await verifyTurnstileToken(turnstileToken, requestIp);
+        captchaSuccess = Boolean(turnstileResult.success);
+        if (!turnstileResult.success) {
+          await recordAuthRiskEvent(supabase, {
+            email,
+            ip: requestIp,
+            userAgent,
+            action: "login",
+            success: false,
+            needCaptcha,
+            captchaSuccess,
+            errorCode: "captcha_failed"
+          });
+          badRequest(res, "人机验证失败，请刷新页面或在浏览器中打开后重试。", {
+            needCaptcha: true,
+            errorCode: "captcha_failed"
+          });
+          return;
+        }
       }
 
-      const supabase = getSupabaseAdmin();
       const user = await findSiteUserByEmail(supabase, email);
       if (!user) {
-        unauthorized(res, "Invalid email or password");
+        await recordAuthRiskEvent(supabase, {
+          email,
+          ip: requestIp,
+          userAgent,
+          action: "login",
+          success: false,
+          needCaptcha,
+          captchaSuccess,
+          errorCode: "invalid_credentials"
+        });
+        unauthorized(res, "邮箱或密码错误。", {
+          needCaptcha: false,
+          errorCode: "invalid_credentials"
+        });
         return;
       }
 
       if (!user.password_hash) {
-        unauthorized(res, "This account needs to set a password first. Please use Forgot password.");
+        await recordAuthRiskEvent(supabase, {
+          email,
+          ip: requestIp,
+          userAgent,
+          action: "login",
+          success: false,
+          needCaptcha,
+          captchaSuccess,
+          errorCode: "password_not_set"
+        });
+        unauthorized(res, "该账号还未设置密码，请使用忘记密码流程先设置密码。");
         return;
       }
 
       if (!verifyPassword(password, user.password_hash)) {
-        unauthorized(res, "Invalid email or password");
+        await recordAuthRiskEvent(supabase, {
+          email,
+          ip: requestIp,
+          userAgent,
+          action: "login",
+          success: false,
+          needCaptcha,
+          captchaSuccess,
+          errorCode: "invalid_credentials"
+        });
+        const failedAfterThisAttempt = await countAuthRiskEventsSince({
+          supabase,
+          action: "login",
+          field: "email",
+          value: email,
+          thresholdIso: new Date(Date.now() - LOGIN_EMAIL_FAILURE_WINDOW_MINUTES * 60 * 1000).toISOString(),
+          filters: query => query.eq("success", false).is("cleared_at", null)
+        });
+        unauthorized(res, "邮箱或密码错误。", {
+          needCaptcha: failedAfterThisAttempt >= LOGIN_EMAIL_FAILURE_LIMIT,
+          errorCode: "invalid_credentials"
+        });
         return;
       }
 
       if (!user.email_verified_at) {
-        unauthorized(res, "Please complete email verification during registration before signing in.");
+        await recordAuthRiskEvent(supabase, {
+          email,
+          ip: requestIp,
+          userAgent,
+          action: "login",
+          success: false,
+          needCaptcha,
+          captchaSuccess,
+          errorCode: "email_unverified"
+        });
+        unauthorized(res, "请先完成注册邮箱验证后再登录。");
         return;
       }
+
+      await clearLoginFailureCount(supabase, email);
 
       const updatedUser = await finalizeUserLogin({
         supabase,
@@ -600,8 +1029,20 @@ module.exports = async function handler(req, res) {
         res
       });
 
+      await recordAuthRiskEvent(supabase, {
+        email,
+        ip: requestIp,
+        userAgent,
+        action: "login",
+        success: true,
+        needCaptcha,
+        captchaSuccess,
+        errorCode: null
+      });
+
       ok(res, {
         authenticated: true,
+        needCaptcha: false,
         user: updatedUser
       });
       return;
@@ -616,50 +1057,92 @@ module.exports = async function handler(req, res) {
       const body = await parseJsonBody(req);
       const email = normalizeEmail(body.email);
       const turnstileToken = String(body.turnstileToken || "").trim();
+      const requestIp = getRequestIp(req);
+      const userAgent = getRequestUserAgent(req);
+      let needCaptcha = false;
+      let captchaSuccess = false;
+      const supabase = getSupabaseAdmin();
 
       if (!email || !isValidEmail(email)) {
-        badRequest(res, "A valid email address is required");
+        badRequest(res, "请输入有效的邮箱地址。");
+        await recordAuthRiskEvent(supabase, {
+          email,
+          ip: requestIp,
+          userAgent,
+          action: "signup_code",
+          success: false,
+          needCaptcha,
+          captchaSuccess,
+          errorCode: "invalid_email"
+        });
         return;
       }
 
-      const supabase = getSupabaseAdmin();
       const existingUser = await findSiteUserByEmail(supabase, email);
       if (existingUser) {
-        badRequest(res, "This email is already registered. Please sign in or reset your password.");
+        badRequest(res, "该邮箱已注册，请直接登录或重置密码。");
+        await recordAuthRiskEvent(supabase, {
+          email,
+          ip: requestIp,
+          userAgent,
+          action: "signup_code",
+          success: false,
+          needCaptcha,
+          captchaSuccess,
+          errorCode: "email_registered"
+        });
         return;
       }
 
-      const requestIp = getRequestIp(req);
-      const turnstileResult = await verifyTurnstileToken(turnstileToken, requestIp);
-      if (!turnstileResult.success) {
-        badRequest(res, turnstileResult.message || "Human verification failed. Please try again.");
-        return;
-      }
+      try {
+        await checkSignupCodeCaptchaRequirement({
+          supabase,
+          email,
+          ip: requestIp
+        });
+      } catch (error) {
+        if (!error.needCaptcha) {
+          throw error;
+        }
 
-      const emailRateMessage = await enforceEmailRateLimit({
-        supabase,
-        table: "email_login_codes",
-        email,
-        cooldownSeconds: AUTH_CODE_REQUEST_COOLDOWN_SECONDS,
-        hourlyLimit: AUTH_CODE_HOURLY_LIMIT,
-        extraFilters: query => query.eq("purpose", SIGNUP_CODE_PURPOSE)
-      });
-      if (emailRateMessage) {
-        tooManyRequests(res, emailRateMessage);
-        return;
-      }
+        needCaptcha = true;
+        if (!turnstileToken) {
+          tooManyRequests(res, error.message || "当前请求需要完成人机验证。", {
+            needCaptcha: true,
+            errorCode: error.code || "captcha_required"
+          });
+          await recordAuthRiskEvent(supabase, {
+            email,
+            ip: requestIp,
+            userAgent,
+            action: "signup_code",
+            success: false,
+            needCaptcha,
+            captchaSuccess,
+            errorCode: error.code || "captcha_required"
+          });
+          return;
+        }
 
-      const ipRateMessage = await enforceIpRateLimit({
-        supabase,
-        table: "email_login_codes",
-        ip: requestIp,
-        windowMinutes: AUTH_CODE_IP_WINDOW_MINUTES,
-        maxRequests: AUTH_CODE_IP_MAX_REQUESTS,
-        extraFilters: query => query.eq("purpose", SIGNUP_CODE_PURPOSE)
-      });
-      if (ipRateMessage) {
-        tooManyRequests(res, ipRateMessage);
-        return;
+        const turnstileResult = await verifyTurnstileToken(turnstileToken, requestIp);
+        captchaSuccess = Boolean(turnstileResult.success);
+        if (!turnstileResult.success) {
+          badRequest(res, "人机验证失败，请刷新页面或在浏览器中打开后重试。", {
+            needCaptcha: true,
+            errorCode: "captcha_failed"
+          });
+          await recordAuthRiskEvent(supabase, {
+            email,
+            ip: requestIp,
+            userAgent,
+            action: "signup_code",
+            success: false,
+            needCaptcha,
+            captchaSuccess,
+            errorCode: "captcha_failed"
+          });
+          return;
+        }
       }
 
       const code = createLoginCode();
@@ -688,11 +1171,33 @@ module.exports = async function handler(req, res) {
         });
       } catch (error) {
         await supabase.from("email_login_codes").delete().eq("id", insertedCode.id);
+        await recordAuthRiskEvent(supabase, {
+          email,
+          ip: requestIp,
+          userAgent,
+          action: "signup_code",
+          success: false,
+          needCaptcha,
+          captchaSuccess,
+          errorCode: "email_send_failed"
+        });
         throw error;
       }
 
+      await recordAuthRiskEvent(supabase, {
+        email,
+        ip: requestIp,
+        userAgent,
+        action: "signup_code",
+        success: true,
+        needCaptcha,
+        captchaSuccess,
+        errorCode: null
+      });
+
       ok(res, {
         sent: true,
+        needCaptcha: false,
         maskedEmail: maskEmail(email),
         expiresInMinutes: AUTH_CODE_TTL_MINUTES
       });
@@ -894,7 +1399,7 @@ module.exports = async function handler(req, res) {
       const requestIp = getRequestIp(req);
       const turnstileResult = await verifyTurnstileToken(turnstileToken, requestIp);
       if (!turnstileResult.success) {
-        badRequest(res, turnstileResult.message || "Human verification failed. Please try again.");
+        badRequest(res, turnstileResult.message || "人机验证失败，请刷新页面或在浏览器中打开后重试。");
         return;
       }
 

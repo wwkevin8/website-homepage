@@ -1,3 +1,19 @@
+(function () {
+  const safeNoopLogger = function (eventName, payload) {
+    try {
+      if (window.console && typeof window.console.warn === "function") {
+        window.console.warn(`${eventName} logger is not configured`, payload || null);
+      }
+    } catch (error) {
+      // Logging must never block login.
+    }
+  };
+
+  window.logLoginRequest = window.logLoginRequest || (payload => safeNoopLogger("logLoginRequest", payload));
+  window.logCaptchaEvent = window.logCaptchaEvent || (payload => safeNoopLogger("logCaptchaEvent", payload));
+  window.logAccountEvent = window.logAccountEvent || (payload => safeNoopLogger("logAccountEvent", payload));
+})();
+
 (async function () {
   const root = document.querySelector("[data-login-page]");
   if (!root) {
@@ -7,9 +23,11 @@
   const emailInput = document.querySelector("[data-login-email]");
   const passwordInput = document.querySelector("[data-login-password]");
   const submitButton = document.querySelector("[data-login-submit]");
+  const wechatTip = document.querySelector("[data-wechat-auth-tip]");
   const verifyButton = document.querySelector("[data-turnstile-verify]");
   const verifyStatus = document.querySelector("[data-turnstile-status]");
   const turnstileSlot = document.querySelector("[data-turnstile-slot]");
+  const turnstileBlock = document.querySelector("[data-turnstile-block]");
   const message = document.querySelector("#loginMessage");
   const returnTo = window.SiteAuth
     ? window.SiteAuth.toAbsolutePath(new URLSearchParams(window.location.search).get("return_to") || "/service-center.html")
@@ -19,6 +37,8 @@
   let turnstileWidgetId = null;
   let turnstileToken = "";
   let turnstileBusy = false;
+  let needCaptcha = false;
+  let authConfig = null;
 
   function t(key, fallback) {
     return i18n ? i18n.t(key, fallback) : fallback;
@@ -51,16 +71,20 @@
       submitButton.disabled = isBusy;
       submitButton.textContent = isBusy
         ? t("loginBusy", "Signing in...")
-        : t("loginIdle", "Sign in");
+        : t("loginIdle", "登录");
     }
 
     if (verifyButton) {
-      verifyButton.disabled = isBusy || turnstileBusy || Boolean(turnstileToken);
+      verifyButton.disabled = isBusy || turnstileBusy || Boolean(turnstileToken) || !needCaptcha;
       verifyButton.textContent = turnstileToken
         ? t("verifyHumanDone", "Human check completed")
         : turnstileBusy
           ? t("verifyHumanBusy", "Verifying...")
           : t("verifyHumanIdle", "Click to verify you are human");
+    }
+
+    if (turnstileBlock) {
+      turnstileBlock.hidden = !needCaptcha;
     }
   }
 
@@ -77,7 +101,14 @@
 
     const payload = await response.json().catch(() => ({ data: null, error: { message: "Request failed" } }));
     if (!response.ok) {
-      throw new Error((payload && payload.error && payload.error.message) || "Request failed");
+      const error = new Error((payload && payload.error && payload.error.message) || "请求失败，请稍后重试。");
+      const details = payload && payload.error && payload.error.details;
+      if (details && typeof details === "object") {
+        error.details = details;
+        error.needCaptcha = Boolean(details.needCaptcha);
+        error.errorCode = details.errorCode || "";
+      }
+      throw error;
     }
 
     return payload.data;
@@ -98,7 +129,7 @@
         }
         if (Date.now() - start > 10000) {
           window.clearInterval(timer);
-          reject(new Error(t("turnstileLoadFailed", "Human verification failed to load. Please refresh and try again.")));
+          reject(new Error(t("turnstileLoadFailed", "人机验证加载失败。如果你正在微信里打开，请点击右上角 … 选择在浏览器中打开，或稍后重试。")));
         }
       }, 100);
     });
@@ -112,7 +143,7 @@
     if (window.turnstile && turnstileWidgetId !== null) {
       window.turnstile.reset(turnstileWidgetId);
     }
-    setVerifyStatus(t("humanNotVerified", "Human verification has not been completed"), "");
+    setVerifyStatus(t("humanNotVerified", "尚未完成人机校验"), "");
     syncButton();
   }
 
@@ -128,30 +159,30 @@
       callback(token) {
         turnstileToken = String(token || "").trim();
         turnstileBusy = false;
-        setVerifyStatus(t("humanVerified", "Human verification completed. You can now sign in."), "success");
+        setVerifyStatus(t("humanVerified", "人机验证已完成，请再次点击登录。"), "success");
         syncButton();
       },
       "error-callback"() {
         turnstileToken = "";
         turnstileBusy = false;
-        setVerifyStatus(t("turnstileLoadFailed", "Human verification failed to load. Please refresh and try again."), "error");
+        setVerifyStatus(t("turnstileLoadFailed", "人机验证加载失败。如果你正在微信里打开，请点击右上角 … 选择在浏览器中打开，或稍后重试。"), "error");
         syncButton();
       },
       "expired-callback"() {
         turnstileToken = "";
         turnstileBusy = false;
-        setVerifyStatus(t("humanNotVerified", "Human verification has not been completed"), "");
+        setVerifyStatus(t("humanNotVerified", "尚未完成人机校验"), "");
         syncButton();
       },
       "timeout-callback"() {
         turnstileToken = "";
         turnstileBusy = false;
-        setVerifyStatus(t("humanNotVerified", "Human verification has not been completed"), "");
+        setVerifyStatus(t("humanNotVerified", "尚未完成人机校验"), "");
         syncButton();
       }
     });
 
-    setVerifyStatus(t("humanNotVerified", "Human verification has not been completed"), "");
+    setVerifyStatus(t("humanNotVerified", "尚未完成人机校验"), "");
     syncButton();
   }
 
@@ -164,24 +195,49 @@
     });
     const payload = await response.json().catch(() => ({
       data: null,
-      error: { message: t("authConfigFailed", "Failed to load auth configuration. Please try again later.") }
+      error: { message: t("authConfigFailed", "认证配置加载失败，请稍后再试。") }
     }));
 
     if (!response.ok || !payload.data) {
-      throw new Error((payload.error && payload.error.message) || t("authConfigFailed", "Failed to load auth configuration. Please try again later."));
+      throw new Error((payload.error && payload.error.message) || t("authConfigFailed", "认证配置加载失败，请稍后再试。"));
     }
 
     return payload.data;
   }
 
   function startHumanVerification() {
-    if (!window.turnstile || turnstileWidgetId === null || turnstileToken) {
+    if (!needCaptcha || !window.turnstile || turnstileWidgetId === null || turnstileToken) {
       return;
     }
     turnstileBusy = true;
     setVerifyStatus("", "");
     syncButton();
     window.turnstile.execute(turnstileWidgetId);
+  }
+
+  async function requireCaptcha(messageText) {
+    needCaptcha = true;
+    turnstileToken = "";
+    turnstileBusy = false;
+    if (window.turnstile && turnstileWidgetId !== null) {
+      window.turnstile.reset(turnstileWidgetId);
+    }
+    setMessage(messageText || t("humanRequired", "请先点击并完成人机校验。"), true);
+    syncButton();
+
+    try {
+      if (!authConfig) {
+        authConfig = await loadAuthConfig();
+      }
+      if (!authConfig.turnstileSiteKey) {
+        throw new Error(t("turnstileLoadFailed", "人机验证加载失败。如果你正在微信里打开，请点击右上角 … 选择在浏览器中打开，或稍后重试。"));
+      }
+      await ensureTurnstileRendered(authConfig.turnstileSiteKey);
+    } catch (error) {
+      turnstileBusy = false;
+      setVerifyStatus(error.message || t("turnstileLoadFailed", "人机验证加载失败。如果你正在微信里打开，请点击右上角 … 选择在浏览器中打开，或稍后重试。"), "error");
+      syncButton();
+    }
   }
 
   async function submitLogin() {
@@ -200,8 +256,8 @@
       return;
     }
 
-    if (!turnstileToken) {
-      setMessage(t("humanRequired", "Please click and complete the human verification first."), true);
+    if (needCaptcha && !turnstileToken) {
+      setMessage(t("humanRequired", "请先点击并完成人机校验。"), true);
       return;
     }
 
@@ -210,25 +266,42 @@
     setMessage("", false);
 
     try {
-      await postJson("/api/auth/login", { email, password, turnstileToken: turnstileToken });
+      await postJson("/api/auth/login", {
+        email,
+        password,
+        turnstileToken: needCaptcha ? turnstileToken : ""
+      });
+      needCaptcha = false;
       window.location.replace(returnTo);
     } catch (error) {
-      setMessage(error.message || t("loginFailed", "Invalid email or password."), true);
+      if (error.needCaptcha) {
+        await requireCaptcha(error.message);
+      } else {
+        setMessage(error.message || t("loginFailed", "邮箱或密码错误。"), true);
+      }
     } finally {
       isBusy = false;
-      resetTurnstile();
+      if (needCaptcha) {
+        turnstileBusy = false;
+      } else {
+        resetTurnstile();
+      }
       syncButton();
     }
   }
 
   window.addEventListener("auth-lang-change", () => {
-    if (!turnstileToken && !turnstileBusy) {
-      setVerifyStatus(t("humanNotVerified", "Human verification has not been completed"), "");
+    if (!turnstileToken && !turnstileBusy && needCaptcha) {
+      setVerifyStatus(t("humanNotVerified", "尚未完成人机校验"), "");
     }
     syncButton();
   });
 
   try {
+    if (wechatTip && /MicroMessenger/i.test(window.navigator.userAgent || "")) {
+      wechatTip.hidden = false;
+    }
+
     if (window.SiteAuth) {
       const session = await window.SiteAuth.getSession();
       if (session.authenticated) {
@@ -237,14 +310,9 @@
       }
     }
 
-    const authConfig = await loadAuthConfig();
-    if (!authConfig.turnstileSiteKey) {
-      throw new Error(t("turnstileLoadFailed", "Human verification failed to load. Please refresh and try again."));
-    }
-    await ensureTurnstileRendered(authConfig.turnstileSiteKey);
   } catch (error) {
-    setMessage(error.message || t("authConfigFailed", "Failed to load auth configuration. Please try again later."), true);
-    isBusy = true;
+    setMessage(error.message || t("authConfigFailed", "认证配置加载失败，请稍后再试。"), true);
+    isBusy = false;
     syncButton();
     return;
   }
