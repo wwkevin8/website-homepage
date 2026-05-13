@@ -147,12 +147,29 @@
 
   function getBenefitLabel(type) {
     if (type === "storage") {
-      return "会员寄存权益";
+      return "寄存权益";
     }
     if (type === "pickup") {
-      return "会员接机权益";
+      return "接机权益";
     }
     return type || "--";
+  }
+
+  function formatMoney(value) {
+    if (value === null || value === undefined || value === "") {
+      return "--";
+    }
+    const number = Number(value);
+    return Number.isFinite(number) ? `GBP ${number.toFixed(2)}` : String(value);
+  }
+
+  function detailRow(label, value) {
+    return `
+      <div>
+        <strong>${escapeHtml(value || "--")}</strong>
+        <span>${escapeHtml(label)}</span>
+      </div>
+    `;
   }
 
   function renderMembershipState(state) {
@@ -162,56 +179,97 @@
       return;
     }
 
-    const entitlement = state?.entitlement || null;
     const claim = state?.claim || null;
 
-    if (!state?.isMember || !entitlement) {
+    if (!state?.isMember) {
       statusNode.textContent = "非会员";
       statusNode.className = "profile-membership-status is-muted";
       bodyNode.innerHTML = `
-        <p>当前不是 NGN 会员，如已通过 NGN 订房请联系客服开通会员权益。</p>
-        <p class="field-help">会员资格第一版由后台人工开通，登录账号本身不等于会员资格。</p>
+        <p>您当前还不是 2026-27 NGN 会员。</p>
+        <p>如您已通过 NGN 完成订房，请联系客服为您开通会员权益。</p>
       `;
       return;
     }
 
-    if (claim) {
-      statusNode.textContent = claim.status || "已选择";
-      statusNode.className = "profile-membership-status is-active";
-      bodyNode.innerHTML = `
-        <div class="profile-membership-summary">
-          <div>
-            <strong>${escapeHtml(getBenefitLabel(claim.benefit_type))}</strong>
-            <span>已选择项目</span>
-          </div>
-          <div>
-            <strong>${escapeHtml(claim.status || "--")}</strong>
-            <span>当前状态</span>
-          </div>
-          <div>
-            <strong>${escapeHtml(claim.linked_order_no || "--")}</strong>
-            <span>绑定订单号</span>
-          </div>
-        </div>
-        <p class="field-help">权益选择后不能自行取消或更换。如需处理，请联系客服。</p>
-      `;
-      return;
-    }
-
-    statusNode.textContent = "会员未选择";
+    statusNode.textContent = "2026-27 NGN 会员";
     statusNode.className = "profile-membership-status is-active";
+
+    if (!claim) {
+      bodyNode.innerHTML = `
+        <p>您是 2026-27 NGN 会员。</p>
+        <p>请选择一个会员权益。</p>
+        <div class="profile-membership-benefits">
+          <button class="profile-membership-benefit" type="button" data-membership-benefit="storage">
+            <strong>寄存权益 storage</strong>
+            <span>最多抵扣 5 个标准箱基础寄存费用，最终金额由后台确认。</span>
+          </button>
+          <button class="profile-membership-benefit" type="button" data-membership-benefit="pickup">
+            <strong>接机权益 pickup</strong>
+            <span>仅适用于 pickup，系统会在提交订单时由服务端识别会员优惠。</span>
+          </button>
+        </div>
+        <p class="field-help">每位会员只能选择一个主要权益。选择后不能自行更换，如需修改请联系客服。</p>
+        <p class="field-help">搬家、大礼包、返现等其他权益请联系客服处理。</p>
+      `;
+      return;
+    }
+
+    if (claim.status === "cancelled") {
+      statusNode.textContent = "权益已作废";
+      bodyNode.innerHTML = "<p>权益已作废，请联系客服。</p>";
+      return;
+    }
+
+    if (claim.status === "selected" && claim.benefit_type === "storage") {
+      bodyNode.innerHTML = `
+        <p>您已选择：寄存权益</p>
+        <p>当前状态：已选择，尚未绑定订单。</p>
+        <p>请前往寄存页面提交订单，系统会自动识别您的会员权益。</p>
+        <a class="button button-primary" href="./storage.html">前往寄存服务</a>
+      `;
+      return;
+    }
+
+    if (claim.status === "selected" && claim.benefit_type === "pickup") {
+      bodyNode.innerHTML = `
+        <p>您已选择：接机权益</p>
+        <p>当前状态：已选择，尚未绑定订单。</p>
+        <p>请前往接机页面提交订单，系统会自动识别您的会员权益。</p>
+        <a class="button button-primary" href="./pickup-form.html">前往接机服务</a>
+      `;
+      return;
+    }
+
+    if (claim.status === "reserved") {
+      statusNode.textContent = "权益已绑定订单";
+      bodyNode.innerHTML = `
+        <p>当前状态：已绑定订单 / 待服务完成</p>
+        <div class="profile-membership-summary">
+          ${detailRow("绑定订单号", claim.linked_order_no)}
+          ${detailRow("会员抵扣", formatMoney(claim.membership_discount_amount))}
+          ${detailRow("额外费用", formatMoney(claim.extra_charge_amount))}
+          ${detailRow("最终价格", formatMoney(claim.final_price))}
+        </div>
+      `;
+      return;
+    }
+
+    if (claim.status === "used") {
+      statusNode.textContent = "权益已使用";
+      bodyNode.innerHTML = `
+        <p>权益已使用 / 已完成</p>
+        <div class="profile-membership-summary">
+          ${detailRow("已使用权益", getBenefitLabel(claim.benefit_type))}
+          ${detailRow("绑定订单号", claim.linked_order_no)}
+        </div>
+      `;
+      return;
+    }
+
     bodyNode.innerHTML = `
-      <div class="profile-membership-benefits">
-        <button class="profile-membership-benefit" type="button" data-membership-benefit="storage">
-          <strong>会员寄存权益</strong>
-          <span>最多抵扣 5 个标准箱基础寄存费用，额外费用由后台确认。</span>
-        </button>
-        <button class="profile-membership-benefit" type="button" data-membership-benefit="pickup">
-          <strong>会员接机权益</strong>
-          <span>仅适用于 pickup，不适用于 dropoff；具体抵扣由服务端判断。</span>
-        </button>
-      </div>
-      <p class="field-help">其他权益请联系客服处理。选择后会锁定，不能自行更换。</p>
+      <p>您已选择：${escapeHtml(getBenefitLabel(claim.benefit_type))}</p>
+      <p>当前状态：${escapeHtml(claim.status || "--")}</p>
+      <p class="field-help">权益选择后不能自行取消或更换。如需处理，请联系客服。</p>
     `;
   }
 
@@ -268,7 +326,11 @@
         return;
       }
       const benefitType = button.getAttribute("data-membership-benefit");
-      if (!benefitType) {
+      if (benefitType !== "storage" && benefitType !== "pickup") {
+        return;
+      }
+      const confirmed = window.confirm("每位会员只能选择一个主要权益。选择后不能自行更换，如需修改请联系客服。是否确认选择？");
+      if (!confirmed) {
         return;
       }
       const membershipMessage = document.querySelector("#profileMembershipMessage");

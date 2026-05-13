@@ -23,6 +23,28 @@
     return path;
   }
 
+  async function renderPickupMembershipHint() {
+    const hint = $("#pickupMembershipHint");
+    if (!hint) {
+      return;
+    }
+    try {
+      const response = await fetch(resolveApiUrl("/api/public/membership/me"), {
+        credentials: "include",
+        headers: {
+          Accept: "application/json"
+        }
+      });
+      if (!response.ok) {
+        return;
+      }
+      const payload = await response.json();
+      const claim = payload?.data?.claim || null;
+      const shouldShow = claim?.benefit_type === "pickup" && ["selected", "reserved"].includes(claim.status);
+      hint.hidden = !shouldShow;
+    } catch (error) {}
+  }
+
   function getCheckedValue(form, name) {
     return form.querySelector(`input[name="${name}"]:checked`)?.value || "";
   }
@@ -478,6 +500,8 @@
   }
 
   document.addEventListener("DOMContentLoaded", function () {
+    renderPickupMembershipHint();
+
     const form = $("#carpoolBookingForm");
     const summaryBox = $("#carpoolSummaryBox");
     const summaryModalElements = ensureSummaryModalElements();

@@ -12,6 +12,19 @@
 
 ## Latest Completed Work
 
+- Read `E:\webside\AGENTS.md`, `E:\webside\docs\current-status.md`, and the browser skill before continuing the local membership frontend work.
+- Refined first-stage membership frontend locally, without deployment and without pushing `main`:
+  - `admin-memberships.html` / `admin-memberships.js` now expose a客服用会员管理 page in the existing admin shell;
+  - admin user search covers name, email, phone, WeChat, and public user id, and displays user id, name, email, phone, WeChat, and created time;
+  - admin membership list displays user name/email/phone, membership cycle, entitlement status, benefit type, claim status, linked order number, membership discount amount, extra charge amount, final price, created time, and updated time;
+  - claim operation buttons are status-aware for mark-used, cancel, and reset, with audit log details still visible per record;
+  - `profile.html` / `profile.js` now render the requested NGN membership states for non-member, unclaimed member, selected storage/pickup, reserved, used, and cancelled claim responses;
+  - user benefit selection now uses a confirmation dialog and posts only `{ "benefit_type": "storage" }` or `{ "benefit_type": "pickup" }`;
+  - `storage.html`, `storage-booking.html`, and `pickup-form.html` show read-only membership hints when the logged-in user has a matching selected/reserved claim, without frontend price calculation or free-order copy;
+  - `/api/admin/memberships/users` search now includes `site_users.wechat_id` and returns `created_at` when available.
+- Updated `docs/PROJECT_MAP.md` for the membership admin page, profile module, and storage/pickup membership hints.
+- No Vercel deployment was run and no branch was pushed.
+
 - Read `E:\webside\AGENTS.md`, `E:\webside\docs\current-status.md`, and the Supabase skill before database/API verification.
 - Applied and verified `supabase/20260513_membership_entitlements.sql` on Supabase project `ngn-transport` (`brmsymzkmdnxzhrcaghw`).
 - Confirmed the migration is safe to run from Supabase SQL Editor:
@@ -34,7 +47,6 @@
   - dropoff rejected from member pickup benefit;
   - Heathrow/Gatwick September free core scenario;
   - other pickup fallback discount of GBP 100.
-- Page-level user center and admin UI changes were intentionally not implemented in this verification stage.
 - Created local feature branch `codex/membership-v1` and committed the verified backend foundation locally:
   - commit `bbf3494` (`Add membership entitlement backend foundation`);
   - no push was performed and no Vercel deployment was run.
@@ -125,12 +137,12 @@
 ## Current Project State
 
 - The NGN membership entitlement system backend foundation is implemented locally and its database migration has been applied to Supabase project `ngn-transport` (`brmsymzkmdnxzhrcaghw`).
-- Membership API handlers have been verified by direct local invocation against Supabase; the backend code has not yet been committed, pushed, or deployed to Vercel.
+- Membership API handlers have been verified by direct local invocation against Supabase; membership backend, admin UI, user-center UI, and current frontend refinements are local to `codex/membership-v1` and have not been pushed or deployed.
 - Membership remains independent from `site_users.is_member`; it is represented through separate entitlement tables, server-side helper logic, admin APIs, and user-safe public APIs.
 - Current membership cycle is centralized in `api/_lib/membership.js` via `CURRENT_MEMBERSHIP_CYCLE`, defaulting to `2026-27`.
 - Website-supported member choices are limited to storage and pickup; other PDF benefits are manual/admin-note records only.
 - Pickup member benefit logic only applies to `service_type=pickup`; Heathrow/Gatwick in September is treated as the free core case, while other pickup cases get a service-side fallback discount/pending-admin-confirmation breakdown.
-- User center and first-stage admin membership page are implemented locally but not deployed.
+- User center, first-stage admin membership page, and storage/pickup membership hint UI are implemented locally but not deployed.
 - Registration flow remains email -> backend rate check -> send code -> verify code -> profile/password -> automatic login.
 - Login flow remains email/password -> backend risk check -> credential check -> signed user session cookie.
 - Login and register pages visually hide the full Turnstile block by default and show it only after `needCaptcha=true`; cooldown and temporary-block states do not show Turnstile.
@@ -188,6 +200,11 @@
   - duplicate pickup selection was rejected by the API;
   - QA rows were cleaned afterward.
 - `npm run build:prod` passed after the admin/user-center/detail-page changes.
+- Current-turn membership frontend verification passed:
+  - `node --check` passed for `admin-memberships.js`, `profile.js`, `pickup-form.js`, `script.js`, and `api/admin/[...action].js`;
+  - local pages returned HTTP 200 on `http://localhost:5173` for `admin-memberships.html`, `profile.html`, `storage.html`, `storage-booking.html`, and `pickup-form.html`;
+  - browser test with mocked logged-in API responses verified non-member profile state, member storage/pickup choices, confirmation-based storage selection payload, reserved claim discount fields, used claim display, admin member list fields, and user search with WeChat;
+  - browser test with mocked membership responses verified storage hints on `storage.html` and `storage-booking.html`, and pickup hint on `pickup-form.html`.
 
 ## Previous Verification
 

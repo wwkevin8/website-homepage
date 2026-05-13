@@ -38,7 +38,7 @@
       return "--";
     }
     const number = Number(value);
-    return Number.isFinite(number) ? `£${number.toFixed(2)}` : String(value);
+    return Number.isFinite(number) ? `GBP ${number.toFixed(2)}` : String(value);
   }
 
   function benefitLabel(type) {
@@ -47,7 +47,8 @@
       pickup: "会员接机权益",
       moving: "线下搬家权益",
       welcome_pack: "线下大礼包",
-      cashback: "线下返现"
+      cashback: "线下返现",
+      manual: "后台手动记录"
     };
     return labels[type] || type || "--";
   }
@@ -96,7 +97,7 @@
       container.innerHTML = `
         <div class="admin-empty-state">
           <h2>没有找到用户</h2>
-          <p>请换一个 User ID、邮箱、昵称或手机号再试。</p>
+          <p>请换一个姓名、邮箱、手机号或微信再试。</p>
         </div>
       `;
       return;
@@ -106,22 +107,27 @@
         <table class="admin-table">
           <thead>
             <tr>
-              <th>User ID</th>
+              <th>user_id</th>
+              <th>姓名</th>
               <th>邮箱</th>
-              <th>昵称</th>
               <th>手机号</th>
-              <th>Site User ID</th>
+              <th>微信</th>
+              <th>创建时间</th>
               <th>操作</th>
             </tr>
           </thead>
           <tbody>
             ${users.map(user => `
               <tr>
-                <td><strong>${escapeHtml(user.public_user_id || "--")}</strong></td>
-                <td>${escapeHtml(user.email || "--")}</td>
+                <td>
+                  <strong>${escapeHtml(user.public_user_id || "--")}</strong>
+                  <div class="admin-table-subtle"><code>${escapeHtml(user.id || "--")}</code></div>
+                </td>
                 <td>${escapeHtml(user.nickname || "--")}</td>
+                <td>${escapeHtml(user.email || "--")}</td>
                 <td>${escapeHtml(user.phone || "--")}</td>
-                <td><code>${escapeHtml(user.id || "--")}</code></td>
+                <td>${escapeHtml(user.wechat_id || "--")}</td>
+                <td>${escapeHtml(formatDateTime(user.created_at))}</td>
                 <td>
                   <button class="button button-secondary admin-table-action" type="button" data-membership-pick-user="${escapeHtml(user.id)}">选择开通</button>
                 </td>
@@ -163,14 +169,20 @@
     `;
   }
 
-  function renderClaimSummary(claim) {
-    if (!claim) {
-      return '<span class="admin-table-subtle">未选择权益</span>';
+  function claimActions(claim) {
+    if (!claim || !claim.id) {
+      return '<span class="admin-table-subtle">暂无 claim 操作</span>';
     }
+    const status = String(claim.status || "");
+    const canMarkUsed = ["selected", "reserved", "manual"].includes(status);
+    const canCancel = ["selected", "reserved", "manual"].includes(status);
+    const canReset = ["selected", "reserved", "used", "manual"].includes(status);
     return `
-      <div><strong>${escapeHtml(benefitLabel(claim.benefit_type))}</strong></div>
-      <div>${statusBadge(claim.status)}</div>
-      <div class="admin-table-subtle">订单号：${escapeHtml(claim.linked_order_no || "--")}</div>
+      <div class="admin-inline-actions">
+        <button class="button button-secondary admin-table-action" type="button" data-membership-action="mark-used" data-claim-id="${escapeHtml(claim.id)}" ${canMarkUsed ? "" : "disabled"}>mark used</button>
+        <button class="button button-secondary admin-table-action" type="button" data-membership-action="cancel" data-claim-id="${escapeHtml(claim.id)}" ${canCancel ? "" : "disabled"}>cancel</button>
+        <button class="button button-secondary admin-table-action" type="button" data-membership-action="reset" data-claim-id="${escapeHtml(claim.id)}" ${canReset ? "" : "disabled"}>reset</button>
+      </div>
     `;
   }
 
@@ -200,11 +212,19 @@
         <table class="admin-table">
           <thead>
             <tr>
-              <th>用户</th>
-              <th>Entitlement</th>
-              <th>Claim</th>
-              <th>订单绑定</th>
-              <th>金额</th>
+              <th>用户姓名</th>
+              <th>邮箱</th>
+              <th>手机号</th>
+              <th>membership_cycle</th>
+              <th>entitlement status</th>
+              <th>benefit_type</th>
+              <th>claim status</th>
+              <th>linked_order_no</th>
+              <th>membership_discount_amount</th>
+              <th>extra_charge_amount</th>
+              <th>final_price</th>
+              <th>created_at</th>
+              <th>updated_at</th>
               <th>操作</th>
             </tr>
           </thead>
@@ -212,50 +232,37 @@
             ${items.map(item => {
               const user = item.user || {};
               const claim = item.claim || null;
+              const createdAt = claim?.created_at || item.created_at;
+              const updatedAt = claim?.updated_at || item.updated_at;
               return `
                 <tr>
                   <td>
-                    <strong>${escapeHtml(user.public_user_id || "--")}</strong>
-                    <div class="admin-table-subtle">${escapeHtml(user.email || "--")}</div>
-                    <div class="admin-table-subtle">${escapeHtml(user.nickname || user.phone || "")}</div>
+                    <strong>${escapeHtml(user.nickname || user.public_user_id || "--")}</strong>
+                    <div class="admin-table-subtle"><code>${escapeHtml(item.site_user_id || "--")}</code></div>
                   </td>
-                  <td>
-                    <div>${statusBadge(item.status)}</div>
-                    <div class="admin-table-subtle">周期：${escapeHtml(item.membership_cycle || "--")}</div>
-                    <div class="admin-table-subtle">开通：${escapeHtml(formatDateTime(item.granted_at))}</div>
-                    <div class="admin-table-subtle">Entitlement ID：<code>${escapeHtml(item.id)}</code></div>
-                  </td>
-                  <td>
-                    ${renderClaimSummary(claim)}
-                    ${claim ? `<div class="admin-table-subtle">Claim ID：<code>${escapeHtml(claim.id)}</code></div>` : ""}
-                  </td>
-                  <td>
-                    <div>${escapeHtml(claim?.linked_order_table || "--")}</div>
-                    <div class="admin-table-subtle">${escapeHtml(claim?.linked_order_no || "--")}</div>
-                  </td>
-                  <td>
-                    <div>抵扣：${escapeHtml(formatMoney(claim?.membership_discount_amount))}</div>
-                    <div>额外：${escapeHtml(formatMoney(claim?.extra_charge_amount))}</div>
-                    <div>最终：${escapeHtml(formatMoney(claim?.final_price))}</div>
-                  </td>
-                  <td>
-                    <div class="admin-inline-actions">
-                      <button class="button button-secondary admin-table-action" type="button" data-membership-action="mark-used" data-claim-id="${escapeHtml(claim?.id || "")}" ${claim ? "" : "disabled"}>mark used</button>
-                      <button class="button button-secondary admin-table-action" type="button" data-membership-action="cancel" data-claim-id="${escapeHtml(claim?.id || "")}" ${claim ? "" : "disabled"}>cancel</button>
-                      <button class="button button-secondary admin-table-action" type="button" data-membership-action="reset" data-claim-id="${escapeHtml(claim?.id || "")}" ${claim ? "" : "disabled"}>reset</button>
-                    </div>
-                  </td>
+                  <td>${escapeHtml(user.email || "--")}</td>
+                  <td>${escapeHtml(user.phone || "--")}</td>
+                  <td>${escapeHtml(item.membership_cycle || "--")}</td>
+                  <td>${statusBadge(item.status)}</td>
+                  <td>${escapeHtml(benefitLabel(claim?.benefit_type))}</td>
+                  <td>${claim ? statusBadge(claim.status) : "--"}</td>
+                  <td>${escapeHtml(claim?.linked_order_no || "--")}</td>
+                  <td>${escapeHtml(formatMoney(claim?.membership_discount_amount))}</td>
+                  <td>${escapeHtml(formatMoney(claim?.extra_charge_amount))}</td>
+                  <td>${escapeHtml(formatMoney(claim?.final_price))}</td>
+                  <td>${escapeHtml(formatDateTime(createdAt))}</td>
+                  <td>${escapeHtml(formatDateTime(updatedAt))}</td>
+                  <td>${claimActions(claim)}</td>
                 </tr>
                 <tr>
-                  <td colspan="6">
+                  <td colspan="14">
                     <details>
-                      <summary>Audit log / 抵扣明细</summary>
+                      <summary>查看 audit log</summary>
                       <div class="admin-detail-section">
-                        <h3>Audit log</h3>
                         ${renderAuditLogs(item.audit_logs || [])}
                       </div>
                       <div class="admin-detail-section">
-                        <h3>Discount breakdown</h3>
+                        <h3>抵扣明细</h3>
                         <pre class="admin-detail-pre">${escapeHtml(JSON.stringify(claim?.discount_breakdown_json || {}, null, 2))}</pre>
                       </div>
                     </details>

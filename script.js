@@ -2251,6 +2251,28 @@ function getStorageLocalModeMessage() {
   return "当前是直接打开本地文件（file://），预约接口无法提交。请先运行 `npm run dev`，再通过 http://localhost:3000/storage 打开页面后提交。";
 }
 
+async function renderStorageMembershipHint() {
+  const hint = document.querySelector("#storageMembershipHint");
+  if (!hint) {
+    return;
+  }
+  try {
+    const response = await fetch("/api/public/membership/me", {
+      credentials: "include",
+      headers: {
+        Accept: "application/json"
+      }
+    });
+    if (!response.ok) {
+      return;
+    }
+    const payload = await response.json();
+    const claim = payload?.data?.claim || null;
+    const shouldShow = claim?.benefit_type === "storage" && ["selected", "reserved"].includes(claim.status);
+    hint.hidden = !shouldShow;
+  } catch (error) {}
+}
+
 function initStorageIntroModal() {
   const modal = document.querySelector("#storageIntroModal");
   const dialog = modal?.querySelector(".storage-intro-dialog");
@@ -3537,6 +3559,8 @@ function initStorageBookingPage() {
   if (!bookingForm || !bookingSummary || document.querySelector("#storageCalculator")) {
     return;
   }
+
+  renderStorageMembershipHint();
 
   const draft = loadStorageBookingDraft();
   const bookingFormMessage = document.querySelector("#storageBookingFormMessage");
@@ -6497,6 +6521,7 @@ function applyLanguage(lang) {
   initStorageIntroModal();
   initStorageCalculator(lang);
   initStorageBookingPage();
+  renderStorageMembershipHint();
   initPickupQuoteForm(lang);
   initPickupBoard(lang);
   initPickupBoardAdmin(lang);

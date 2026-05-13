@@ -326,8 +326,8 @@ function buildStorageAdminPatch(body) {
 }
 
 async function querySiteUsersWithFallback(supabase, { search = "", ids = [] } = {}) {
-  let selectedColumns = ["id", "public_user_id", "email", "phone", "nickname"];
-  let searchColumns = ["public_user_id", "email", "phone", "nickname"];
+  let selectedColumns = ["id", "public_user_id", "email", "phone", "nickname", "wechat_id", "created_at"];
+  let searchColumns = ["public_user_id", "email", "phone", "nickname", "wechat_id"];
   const safeSearch = String(search || "").replace(/,/g, " ").trim();
 
   for (let attempt = 0; attempt < 10; attempt += 1) {

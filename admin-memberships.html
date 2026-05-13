@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./styles.css?v=20260513-membership-1">
+  <link rel="stylesheet" href="./styles.css?v=20260513-membership-2">
 </head>
 <body
   data-admin-shell
@@ -29,15 +29,7 @@
             <form class="admin-toolbar admin-toolbar-inline" id="adminMembershipSearchForm">
               <label class="field">
                 <span>搜索用户</span>
-                <input type="text" name="search" placeholder="User ID / 邮箱 / 昵称 / 手机号">
-              </label>
-              <label class="field">
-                <span>每页</span>
-                <select name="page_size">
-                  <option value="10">10</option>
-                  <option value="20" selected>20</option>
-                  <option value="50">50</option>
-                </select>
+                <input type="text" name="search" placeholder="姓名 / 邮箱 / 手机号 / 微信">
               </label>
               <div class="admin-inline-actions">
                 <button class="button button-primary" type="submit">搜索用户</button>
@@ -54,16 +46,16 @@
                 <input type="text" name="site_user_id" placeholder="从上方搜索结果选择用户" required>
               </label>
               <label class="field">
-                <span>会员周期</span>
+                <span>membership_cycle</span>
                 <input type="text" name="membership_cycle" value="2026-27" required>
               </label>
               <label class="field admin-field-span-2">
-                <span>备注</span>
+                <span>notes</span>
                 <textarea name="notes" rows="2" placeholder="例如：后台人工开通 2026-27 会员"></textarea>
               </label>
               <p class="transport-form-message admin-field-span-2" id="adminMembershipGrantMessage"></p>
               <div class="admin-inline-actions admin-field-span-2">
-                <button class="button button-primary" type="submit">手动开通会员</button>
+                <button class="button button-primary" type="submit">开通会员</button>
               </div>
             </form>
           </section>
@@ -72,10 +64,10 @@
             <form class="admin-toolbar admin-toolbar-inline" id="adminMembershipFilters">
               <label class="field">
                 <span>会员搜索</span>
-                <input type="text" name="search" placeholder="User ID / 邮箱 / 昵称 / 手机号">
+                <input type="text" name="search" placeholder="姓名 / 邮箱 / 手机号 / 微信">
               </label>
               <label class="field">
-                <span>会员周期</span>
+                <span>membership_cycle</span>
                 <input type="text" name="cycle" value="2026-27">
               </label>
               <label class="field">
@@ -120,8 +112,8 @@
     </div>
   </div>
 
-  <script src="./admin-api.js?v=20260513-membership-1"></script>
-  <script src="./admin-shell.js?v=20260513-membership-1"></script>
-  <script src="./admin-memberships.js?v=20260513-membership-1"></script>
+  <script src="./admin-api.js?v=20260513-membership-2"></script>
+  <script src="./admin-shell.js?v=20260513-membership-2"></script>
+  <script src="./admin-memberships.js?v=20260513-membership-2"></script>
 </body>
 </html>
