@@ -14,8 +14,9 @@
 
 - Read `E:\webside\AGENTS.md`, `E:\webside\docs\current-status.md`, and the GitHub publish skill before making changes.
 - Added a fixed release-order rule to `E:\webside\AGENTS.md`: GitHub must be updated before any Vercel deployment unless the user explicitly overrides it for a single task.
+- Synced the already-deployed storage/admin changes back to GitHub on branch `codex/full-sync`.
+- GitHub commit `b598f05` (`Fix storage box order admin flow`) contains the storage buy-box/admin/API/database migration updates plus the fixed GitHub-before-Vercel release rule.
 - Current production deployment remains `dpl_7S4wWFxKU1PRSxJbNYSwmF7MU95r`, aliased to `https://ngn.best`.
-- The latest storage/admin changes are being synced back to GitHub so the repository catches up with the already-deployed production state.
 
 ## Current Project State
 
@@ -33,6 +34,7 @@
 
 - Older storage orders created before estimate totals were saved may still show `--` for `预期价格`; that is expected unless historical data is backfilled.
 - No post-login browser check was performed in this deployment task, so the admin table should be visually spot-checked in the logged-in backend.
+- `gh` is not installed on this machine, so no GitHub PR was created; the branch itself was pushed successfully with plain Git.
 
 ## Recommended Next Steps
 
