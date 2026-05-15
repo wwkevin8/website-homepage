@@ -8,9 +8,28 @@
 ## Last Updated Task
 
 - Date: 2026-05-15
-- Scope: set mobile membership title/body exact font sizes
+- Scope: production deploy membership v1 branch
 
 ## Latest Completed Work
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before the production deployment.
+- Prepared a release commit on `codex/membership-v1` and pushed it to GitHub:
+  - commit: `3740aba699a047315f089d4b3f499154db5cfa24` (`Prepare membership v1 production release`);
+  - branch pushed: `origin/codex/membership-v1`.
+- Built and deployed from a clean temporary worktree at the exact release commit, so two unrelated local hero-image deletion records in the main workspace were not included.
+- Vercel production deployment:
+  - deployment id: `dpl_AYgkQqrHVU8VKzDf3n21gxSjLmMt`;
+  - production URL: `https://webside-i5boafcjl-wwkevin8s-projects.vercel.app`;
+  - production alias: `https://ngn.best`;
+  - inspector: `https://vercel.com/wwkevin8s-projects/webside/AYgkQqrHVU8VKzDf3n21gxSjLmMt`.
+- Verification:
+  - JS syntax checks passed for changed membership/admin/auth/public handler files and `scripts/safe-vercel-build.js`;
+  - `git diff --cached --check` passed before commit;
+  - `npm run build:prod` passed in the main workspace;
+  - `npm run build:prod` passed again in the clean deployment worktree;
+  - `npm run deploy:prod` completed successfully and aliased the deployment to `https://ngn.best`.
+- Remaining local-only workspace state:
+  - `img/hero-consultation-generated.jpg` and `img/hero-consultation-horde.png` are still deleted in the main working tree but were intentionally not committed or deployed.
 
 - Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before setting exact mobile membership typography sizes.
 - Updated `styles.css`:
