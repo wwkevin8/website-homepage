@@ -30,6 +30,18 @@
   - `node --check` passed for changed public/admin membership JS and API files;
   - `git diff --check` passed for the hotfix files;
   - `npm run build:prod` passed through `scripts/safe-vercel-build.js`.
+- Release:
+  - commit: `a0d3e7929718d4f68e7f3c0a5e74eede6d603114` (`Fix membership API routing in production`);
+  - branch pushed: `origin/codex/membership-v1`;
+  - deployed from clean temporary worktree at that commit;
+  - deployment id: `dpl_FLDZQPorrdYCx1azzn7WHfejeHXt`;
+  - production URL: `https://webside-ltp9m59am-wwkevin8s-projects.vercel.app`;
+  - production alias: `https://ngn.best`;
+  - inspector: `https://vercel.com/wwkevin8s-projects/webside/FLDZQPorrdYCx1azzn7WHfejeHXt`.
+- Production verification after deploy:
+  - `https://ngn.best/api/public/membership-me` returns `401` for unauthenticated requests, confirming the route now reaches the API instead of returning Vercel `404`;
+  - `https://ngn.best/api/admin/users?search=NGN-U-000004` returns `401` for unauthenticated requests, confirming the route exists and remains admin-protected;
+  - `https://ngn.best/service-center.html?fresh=api-hotfix` returns `200` and references `service-center.js?v=20260515-membership-api-hotfix-1`.
 - Remaining local-only workspace state:
   - `img/hero-consultation-generated.jpg` and `img/hero-consultation-horde.png` are still deleted in the main working tree but are unrelated and will not be staged, committed, or deployed as part of this hotfix.
 
