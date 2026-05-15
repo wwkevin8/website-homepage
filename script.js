@@ -2257,7 +2257,7 @@ async function renderStorageMembershipHint() {
     return;
   }
   try {
-    const response = await fetch("/api/public/membership/me", {
+    const response = await fetch("/api/public/membership-me", {
       credentials: "include",
       headers: {
         Accept: "application/json"

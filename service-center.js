@@ -108,7 +108,7 @@
   }
 
   async function fetchMembershipState() {
-    const response = await fetch(resolveUrl("/api/public/membership/me"), {
+    const response = await fetch(resolveUrl("/api/public/membership-me"), {
       credentials: "include",
       headers: { Accept: "application/json" }
     });
@@ -120,7 +120,7 @@
   }
 
   async function selectMembershipBenefit(benefitType) {
-    const response = await fetch(resolveUrl("/api/public/membership/benefit-selection"), {
+    const response = await fetch(resolveUrl("/api/public/membership-benefit-selection"), {
       method: "POST",
       credentials: "include",
       headers: {
@@ -137,7 +137,7 @@
   }
 
   async function redeemMembershipCode(code, memberBirthday = "") {
-    const response = await fetch(resolveUrl("/api/public/membership/redeem-code"), {
+    const response = await fetch(resolveUrl("/api/public/membership-redeem-code"), {
       method: "POST",
       credentials: "include",
       headers: {

@@ -8,9 +8,30 @@
 ## Last Updated Task
 
 - Date: 2026-05-15
-- Scope: production deploy membership v1 branch
+- Scope: hotfix production membership API routing
 
 ## Latest Completed Work
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before diagnosing the production membership loading/search issue.
+- Diagnosed production 404s for multi-segment Vercel API routes:
+  - public membership card was still calling `/api/public/membership/me`;
+  - admin user search was calling `/api/admin/memberships/users`;
+  - production Vercel serves the existing one-segment API dispatch paths reliably, while these two-level paths returned `NOT_FOUND`.
+- Updated public membership API routing:
+  - added one-segment public aliases `/api/public/membership-me`, `/api/public/membership-benefit-selection`, and `/api/public/membership-redeem-code`;
+  - updated `service-center.js`, `profile.js`, `pickup-form.js`, and `script.js` to call the one-segment routes;
+  - bumped related script cache versions in `service-center.html`, `profile.html`, `pickup-form.html`, `storage.html`, and `storage-booking.html`.
+- Updated admin membership frontend/API routing:
+  - admin member search now uses `/api/admin/users`;
+  - membership claim actions now post to `/api/admin/membership-claims` with an action body;
+  - membership entitlement/code delete actions now use one-segment endpoints with query ids;
+  - admin API handlers accept those query/body ids and actions while keeping existing behavior compatible.
+- Verification:
+  - `node --check` passed for changed public/admin membership JS and API files;
+  - `git diff --check` passed for the hotfix files;
+  - `npm run build:prod` passed through `scripts/safe-vercel-build.js`.
+- Remaining local-only workspace state:
+  - `img/hero-consultation-generated.jpg` and `img/hero-consultation-horde.png` are still deleted in the main working tree but are unrelated and will not be staged, committed, or deployed as part of this hotfix.
 
 - Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before the production deployment.
 - Prepared a release commit on `codex/membership-v1` and pushed it to GitHub:

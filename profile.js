@@ -73,7 +73,7 @@
   }
 
   async function fetchMembership() {
-    const response = await fetch("/api/public/membership/me", {
+    const response = await fetch("/api/public/membership-me", {
       credentials: "include",
       headers: {
         Accept: "application/json"
@@ -83,7 +83,7 @@
   }
 
   async function selectMembershipBenefit(benefitType) {
-    const response = await fetch("/api/public/membership/benefit-selection", {
+    const response = await fetch("/api/public/membership-benefit-selection", {
       method: "POST",
       credentials: "include",
       headers: {

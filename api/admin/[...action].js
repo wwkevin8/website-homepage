@@ -1872,9 +1872,10 @@ async function handleMemberships(req, res, supabase, subAction = "") {
     return;
   }
 
-  if (subAction && req.method === "DELETE") {
+  const entitlementActionId = subAction || String(req.query?.id || req.query?.entitlement_id || "").trim();
+  if (entitlementActionId && req.method === "DELETE") {
     try {
-      ok(res, await deleteMembershipEntitlement(supabase, subAction, adminUser.id));
+      ok(res, await deleteMembershipEntitlement(supabase, entitlementActionId, adminUser.id));
     } catch (error) {
       badRequest(res, error.message);
     }
@@ -2085,7 +2086,9 @@ async function handleMembershipClaimAction(req, res, supabase, claimId, subActio
     return;
   }
   const body = await parseJsonBody(req);
-  if (!claimId) {
+  const actionClaimId = claimId || String(body.claim_id || body.claimId || req.query?.id || req.query?.claim_id || "").trim();
+  const action = subAction || String(body.action || body.claim_action || req.query?.action || req.query?.claim_action || "").trim();
+  if (!actionClaimId) {
     try {
       ok(res, { claim: await createManualClaim(supabase, body, adminUser.id) });
     } catch (error) {
@@ -2093,16 +2096,16 @@ async function handleMembershipClaimAction(req, res, supabase, claimId, subActio
     }
     return;
   }
-  if (subAction === "mark-used") {
-    ok(res, { claim: await markClaimUsed(supabase, claimId, adminUser.id) });
+  if (action === "mark-used") {
+    ok(res, { claim: await markClaimUsed(supabase, actionClaimId, adminUser.id) });
     return;
   }
-  if (subAction === "cancel") {
-    ok(res, { claim: await cancelOrResetClaim(supabase, claimId, adminUser.id, { reason: body.reason || body.note }) });
+  if (action === "cancel") {
+    ok(res, { claim: await cancelOrResetClaim(supabase, actionClaimId, adminUser.id, { reason: body.reason || body.note }) });
     return;
   }
-  if (subAction === "reset") {
-    ok(res, { claim: await cancelOrResetClaim(supabase, claimId, adminUser.id, { reset: true, reason: body.reason || body.note }) });
+  if (action === "reset") {
+    ok(res, { claim: await cancelOrResetClaim(supabase, actionClaimId, adminUser.id, { reset: true, reason: body.reason || body.note }) });
     return;
   }
   methodNotAllowed(res, ["POST"]);
@@ -2114,12 +2117,15 @@ async function handleMembershipCodes(req, res, supabase, codeId = "", subAction 
     return;
   }
 
-  if (!codeId && req.method === "GET") {
+  const actionCodeId = codeId || String(req.query?.id || req.query?.code_id || "").trim();
+  const action = subAction || String(req.query?.action || req.query?.code_action || "").trim();
+
+  if (!actionCodeId && req.method === "GET") {
     ok(res, await listMembershipActivationCodes(supabase, req.query || {}));
     return;
   }
 
-  if (!codeId && req.method === "POST") {
+  if (!actionCodeId && req.method === "POST") {
     const body = await parseJsonBody(req);
     try {
       const result = await createMembershipActivationCode(supabase, {
@@ -2137,7 +2143,7 @@ async function handleMembershipCodes(req, res, supabase, codeId = "", subAction 
     return;
   }
 
-  if (codeId && subAction === "revoke") {
+  if (actionCodeId && action === "revoke") {
     if (req.method !== "POST") {
       methodNotAllowed(res, ["POST"]);
       return;
@@ -2145,7 +2151,7 @@ async function handleMembershipCodes(req, res, supabase, codeId = "", subAction 
     const body = await parseJsonBody(req);
     try {
       ok(res, {
-        activationCode: await revokeMembershipActivationCode(supabase, codeId, adminUser.id, body.reason || body.note || "")
+        activationCode: await revokeMembershipActivationCode(supabase, actionCodeId, adminUser.id, body.reason || body.note || "")
       });
     } catch (error) {
       badRequest(res, error.message);
@@ -2153,9 +2159,9 @@ async function handleMembershipCodes(req, res, supabase, codeId = "", subAction 
     return;
   }
 
-  if (codeId && !subAction && req.method === "DELETE") {
+  if (actionCodeId && !action && req.method === "DELETE") {
     try {
-      ok(res, await deleteMembershipActivationCode(supabase, codeId, adminUser.id));
+      ok(res, await deleteMembershipActivationCode(supabase, actionCodeId, adminUser.id));
     } catch (error) {
       badRequest(res, error.message);
     }

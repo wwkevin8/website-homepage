@@ -142,7 +142,7 @@
       return request(`/api/admin/memberships${buildQuery(filters)}`);
     },
     searchMembershipUsers(filters) {
-      return request(`/api/admin/memberships/users${buildQuery(filters)}`);
+      return request(`/api/admin/users${buildQuery(filters)}`);
     },
     grantMembership(payload) {
       return request("/api/admin/memberships", {
@@ -151,25 +151,25 @@
       });
     },
     markMembershipClaimUsed(id, payload = {}) {
-      return request(`/api/admin/membership-claims/${encodeURIComponent(id)}/mark-used`, {
+      return request("/api/admin/membership-claims", {
         method: "POST",
-        body: JSON.stringify(payload)
+        body: JSON.stringify({ ...payload, claim_id: id, action: "mark-used" })
       });
     },
     cancelMembershipClaim(id, payload = {}) {
-      return request(`/api/admin/membership-claims/${encodeURIComponent(id)}/cancel`, {
+      return request("/api/admin/membership-claims", {
         method: "POST",
-        body: JSON.stringify(payload)
+        body: JSON.stringify({ ...payload, claim_id: id, action: "cancel" })
       });
     },
     resetMembershipClaim(id, payload = {}) {
-      return request(`/api/admin/membership-claims/${encodeURIComponent(id)}/reset`, {
+      return request("/api/admin/membership-claims", {
         method: "POST",
-        body: JSON.stringify(payload)
+        body: JSON.stringify({ ...payload, claim_id: id, action: "reset" })
       });
     },
     deleteMembership(id) {
-      return request(`/api/admin/memberships/${encodeURIComponent(id)}`, {
+      return request(`/api/admin/memberships${buildQuery({ id })}`, {
         method: "DELETE"
       });
     },
@@ -189,7 +189,7 @@
       });
     },
     deleteMembershipCode(id) {
-      return request(`/api/admin/membership-codes/${encodeURIComponent(id)}`, {
+      return request(`/api/admin/membership-codes${buildQuery({ id })}`, {
         method: "DELETE"
       });
     },

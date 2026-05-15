@@ -29,7 +29,7 @@
       return;
     }
     try {
-      const response = await fetch(resolveApiUrl("/api/public/membership/me"), {
+      const response = await fetch(resolveApiUrl("/api/public/membership-me"), {
         credentials: "include",
         headers: {
           Accept: "application/json"

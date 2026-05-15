@@ -14,8 +14,11 @@ const { badRequest } = require("../_lib/http");
 
 const HANDLERS = {
   "auth-config": authConfigHandler,
+  "membership-me": membershipMeHandler,
   "membership/me": membershipMeHandler,
+  "membership-benefit-selection": membershipBenefitSelectionHandler,
   "membership/benefit-selection": membershipBenefitSelectionHandler,
+  "membership-redeem-code": membershipRedeemCodeHandler,
   "membership/redeem-code": membershipRedeemCodeHandler,
   "my-storage-orders": myStorageOrdersHandler,
   "my-transport-requests": myTransportRequestsHandler,
