@@ -1,6 +1,6 @@
 const { getSupabaseAdmin } = require("../api/_lib/supabase");
 const { getAuthenticatedUser } = require("../api/_lib/user-auth");
-const { getCurrentMembershipCycle, getActiveEntitlement, getActiveClaim } = require("../api/_lib/membership");
+const { getCurrentMembershipCycle, getActiveEntitlement, getActiveClaim, PUBLIC_BENEFIT_TYPES } = require("../api/_lib/membership");
 const { methodNotAllowed, ok, serverError, unauthorized } = require("../api/_lib/http");
 
 module.exports = async function handler(req, res) {
@@ -28,8 +28,8 @@ module.exports = async function handler(req, res) {
       isMember: Boolean(entitlement),
       entitlement,
       claim,
-      availableBenefits: claim ? [] : ["storage", "pickup"],
-      serviceHandledBenefits: ["moving", "welcome_pack", "cashback"]
+      availableBenefits: claim ? [] : PUBLIC_BENEFIT_TYPES,
+      serviceHandledBenefits: ["cashback"]
     });
   } catch (error) {
     serverError(res, error);

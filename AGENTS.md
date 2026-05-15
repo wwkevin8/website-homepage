@@ -65,6 +65,15 @@ Before making any change, Codex must explicitly report which rule files and stat
 - Be careful with generated files in `output/` and historical artifacts in `work-log/`; they are not the canonical source of truth.
 - Do not use paid, proprietary, subscription-only, or unclear-license fonts. Use free commercial-use fonts or safe system font stacks only.
 
+## Static Asset And Build Output Safety
+
+- Treat `.vercel/output/` as disposable generated output, never as a canonical source for images, videos, or other static assets.
+- Do not edit, optimize, sync, partially copy, or recover assets from `.vercel/output/static/img/` unless explicitly verifying a build artifact.
+- Be aware that Vercel build output may hardlink `.vercel/output/static/img/...` entries to source files under `img/...`; truncating or modifying the output entry can corrupt the source asset.
+- Before Vercel builds, asset recovery, or static-output inspection, prefer deleting `.vercel/output/` first so stale hardlinks cannot affect source assets.
+- When restoring images or videos, restore from Git, a known backup, or the real `img/` source path, not from `.vercel/output/`.
+- If image thumbnails show gray/black blocks again, first check for exact chunk-sized files such as `65,536` or `131,072` bytes and verify hardlinks with `fsutil hardlink list`.
+
 ## Database Modification Rules
 
 - Database changes belong in `supabase/` as SQL or migration files.

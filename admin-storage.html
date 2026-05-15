@@ -27,29 +27,37 @@
         <section class="admin-page" id="adminStoragePage">
           <section class="admin-panel">
             <form class="admin-toolbar admin-toolbar-inline" id="adminStorageFilters">
+              <input type="hidden" name="order_type" value="storage_collection">
               <label class="field">
                 <span>搜索</span>
                 <input type="text" name="search" placeholder="User ID / 订单编号 / 姓名 / 邮箱 / 电话">
               </label>
               <label class="field">
-                <span>服务类型</span>
-                <select name="order_type">
-                  <option value="box_order">买箱订单</option>
-                  <option value="storage_collection" selected>取寄存订单</option>
-                  <option value="storage_return">送寄存订单</option>
+                <span>单据范围</span>
+                <select name="date_scope">
+                  <option value="active" selected>有效单</option>
+                  <option value="expired">过期单</option>
+                  <option value="all">全部</option>
                 </select>
               </label>
               <label class="field">
-                <span>订单状态</span>
-                <select name="status">
-                  <option value="">全部</option>
-                  <option value="pending_confirmation">待人工确认</option>
-                  <option value="confirmed">已确认</option>
-                  <option value="cancelled">已取消</option>
+                <span>开始日期</span>
+                <input type="date" name="date_start">
+              </label>
+              <label class="field">
+                <span>结束日期</span>
+                <input type="date" name="date_end">
+              </label>
+              <label class="field">
+                <span>排序方式</span>
+                <select name="sort">
+                  <option value="service_date_asc" selected>服务日期最近到最远</option>
+                  <option value="created_at_desc">提交时间最近到最远</option>
                 </select>
               </label>
               <div class="admin-inline-actions">
                 <button class="button button-primary" type="submit">查询</button>
+                <button class="button button-secondary" type="button" id="adminStorageExportButton">导出Excel</button>
               </div>
             </form>
           </section>

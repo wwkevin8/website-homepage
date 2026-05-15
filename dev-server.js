@@ -87,6 +87,7 @@ function toApiModulePath(urlPathname) {
     urlPathname.startsWith("/api/admin/users") ||
     urlPathname.startsWith("/api/admin/memberships") ||
     urlPathname.startsWith("/api/admin/membership-claims") ||
+    urlPathname.startsWith("/api/admin/membership-codes") ||
     urlPathname.startsWith("/api/admin/storage-orders") ||
     urlPathname.startsWith("/api/admin/orders")
   ) {

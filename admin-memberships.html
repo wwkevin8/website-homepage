@@ -41,17 +41,14 @@
 
           <section class="admin-panel">
             <form class="admin-form-grid" id="adminMembershipGrantForm">
+              <input type="hidden" name="site_user_id" required>
               <label class="field">
-                <span>Site User ID</span>
-                <input type="text" name="site_user_id" placeholder="从上方搜索结果选择用户" required>
+                <span>已选择用户</span>
+                <input type="text" name="selected_user_label" placeholder="请先从上方搜索结果选择用户" readonly>
               </label>
               <label class="field">
-                <span>membership_cycle</span>
+                <span>会员周期</span>
                 <input type="text" name="membership_cycle" value="2026-27" required>
-              </label>
-              <label class="field admin-field-span-2">
-                <span>notes</span>
-                <textarea name="notes" rows="2" placeholder="例如：后台人工开通 2026-27 会员"></textarea>
               </label>
               <p class="transport-form-message admin-field-span-2" id="adminMembershipGrantMessage"></p>
               <div class="admin-inline-actions admin-field-span-2">
@@ -61,43 +58,64 @@
           </section>
 
           <section class="admin-panel">
+            <div class="admin-panel-head">
+              <div>
+                <h2>一次性会员激活码</h2>
+                <p>用于减少人工开通会员。激活码只能使用一次，明文只在生成后显示一次。</p>
+              </div>
+              <form class="admin-panel-head-actions" id="adminMembershipCodeSearchForm">
+                <label class="field">
+                  <span>搜索激活码</span>
+                  <input type="text" name="search" placeholder="输入激活码前缀">
+                </label>
+                <button class="button button-primary" type="submit">搜索</button>
+                <button class="button button-secondary" type="reset">重置</button>
+              </form>
+            </div>
+            <form class="admin-form-grid" id="adminMembershipCodeForm">
+              <input type="hidden" name="membership_cycle" value="2026-27">
+              <p class="admin-table-subtle admin-field-span-2">会员周期：<strong>2026-27</strong></p>
+              <p class="transport-form-message admin-field-span-2" id="adminMembershipCodeMessage"></p>
+              <div class="admin-field-span-2" id="adminMembershipGeneratedCode" hidden></div>
+              <div class="admin-inline-actions admin-field-span-2">
+                <button class="button button-primary" type="submit">生成 2026-27 会员激活码</button>
+                <button class="button button-secondary" type="button" id="adminMembershipCodesRefresh">刷新激活码列表</button>
+              </div>
+            </form>
+            <div id="adminMembershipCodesTable"></div>
+          </section>
+
+          <section class="admin-panel">
             <form class="admin-toolbar admin-toolbar-inline" id="adminMembershipFilters">
               <label class="field">
                 <span>会员搜索</span>
                 <input type="text" name="search" placeholder="姓名 / 邮箱 / 手机号 / 微信">
               </label>
               <label class="field">
-                <span>membership_cycle</span>
+                <span>会员周期</span>
                 <input type="text" name="cycle" value="2026-27">
               </label>
               <label class="field">
-                <span>Entitlement</span>
+                <span>会员状态</span>
                 <select name="status">
                   <option value="">全部</option>
-                  <option value="active">active</option>
-                  <option value="revoked">revoked</option>
-                  <option value="expired">expired</option>
-                </select>
-              </label>
-              <label class="field">
-                <span>Claim 状态</span>
-                <select name="claim_status">
-                  <option value="">全部</option>
-                  <option value="selected">selected</option>
-                  <option value="reserved">reserved</option>
-                  <option value="used">used</option>
-                  <option value="manual">manual</option>
-                  <option value="cancelled">cancelled</option>
+                  <option value="unused">有效 / 未使用</option>
+                  <option value="selected">已选择</option>
+                  <option value="reserved">已绑定订单</option>
+                  <option value="used">已使用</option>
+                  <option value="manual">人工记录</option>
+                  <option value="cancelled">已作废</option>
+                  <option value="expired">已过期</option>
                 </select>
               </label>
               <label class="field">
                 <span>权益类型</span>
                 <select name="benefit_type">
                   <option value="">全部</option>
-                  <option value="storage">storage</option>
-                  <option value="pickup">pickup</option>
-                  <option value="moving">moving</option>
-                  <option value="welcome_pack">welcome_pack</option>
+                  <option value="storage">寄存</option>
+                  <option value="pickup">接机</option>
+                  <option value="moving">搬家</option>
+                  <option value="welcome_pack">新生大礼包</option>
                 </select>
               </label>
               <div class="admin-inline-actions">

@@ -19,7 +19,7 @@ create table if not exists public.membership_entitlements (
   status text not null default 'active'
     check (status in ('active', 'revoked', 'expired')),
   grant_source text not null default 'admin'
-    check (grant_source in ('admin')),
+    check (grant_source in ('admin', 'activation_code')),
   granted_by_admin_id uuid references public.admin_users(id) on delete set null,
   granted_at timestamptz not null default now(),
   valid_from date,

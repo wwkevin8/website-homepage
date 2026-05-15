@@ -14,6 +14,11 @@
       "source": "/storage.html",
       "destination": "/storage",
       "permanent": true
+    },
+    {
+      "source": "/moving.html",
+      "destination": "/moving",
+      "permanent": true
     }
   ],
   "rewrites": [
@@ -24,6 +29,10 @@
     {
       "source": "/storage",
       "destination": "/storage.html"
+    },
+    {
+      "source": "/moving",
+      "destination": "/moving.html"
     }
   ],
   "headers": [

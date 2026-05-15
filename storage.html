@@ -277,6 +277,7 @@
           <div class="pickup-nav-dropdown-menu" id="storageOtherServicesMenu" hidden>
             <a class="pickup-nav-dropdown-item" href="./">订房主页</a>
             <a class="pickup-nav-dropdown-item" href="./pickup">接机服务</a>
+            <a class="pickup-nav-dropdown-item" href="./moving">搬家服务</a>
           </div>
         </div>
         <a href="#storage-calculator">价格</a>
@@ -311,6 +312,13 @@
           <span class="storage-mobile-menu-copy">
             <strong>接送机服务</strong>
             <small>机场接送与拼车安排</small>
+          </span>
+        </a>
+        <a class="storage-mobile-menu-card" href="./moving" data-menu-icon="pickup" data-storage-menu-link>
+          <span class="storage-mobile-menu-icon" aria-hidden="true"></span>
+          <span class="storage-mobile-menu-copy">
+            <strong>搬家服务</strong>
+            <small>本地与跨城市搬家安排</small>
           </span>
         </a>
         <a class="storage-mobile-menu-card" href="#storage-calculator" data-menu-icon="price" data-storage-menu-link>
@@ -383,7 +391,7 @@
         <a class="button button-primary storage-intro-cta storage-intro-cta-primary" id="storageIntroCalculatorButton" href="#storage-calculator">
           <span class="storage-intro-cta-icon" data-cta-icon="estimate" aria-hidden="true"></span>
           <span class="storage-intro-cta-copy">
-            <strong>开始估价预约</strong>
+            <strong>开始估价预约（送寄存）</strong>
             <small>填箱数和日期，生成参考费用</small>
           </span>
           <span class="storage-intro-cta-arrow" aria-hidden="true"></span>
@@ -391,8 +399,8 @@
         <a class="button button-secondary storage-intro-cta storage-intro-cta-secondary" id="storageIntroReturnButton" href="./storage-booking.html?service=storage_return#storage-return-form">
           <span class="storage-intro-cta-icon" data-cta-icon="return" aria-hidden="true"></span>
           <span class="storage-intro-cta-copy">
-            <strong>送寄存登记</strong>
-            <small>已有寄存物品，登记送回/自取</small>
+            <strong>取寄存登记</strong>
+            <small>已有寄存物品，登记取回/自取</small>
           </span>
           <span class="storage-intro-cta-arrow" aria-hidden="true"></span>
         </a>
@@ -644,7 +652,7 @@
 
     <section class="storage-section calculator-section" id="storage-calculator">
       <div class="section-heading">
-        <h2 data-i18n="storageCalcTitle">非会员价格计算器</h2>
+        <h2 data-i18n="storageCalcTitle">寄存价格计算器</h2>
       </div>
 
       <div class="calculator-layout">
@@ -673,7 +681,7 @@
                     <input id="boxCount1" class="box-order-input" data-box-count="1" type="number" min="0" step="1" value="0" inputmode="numeric">
                   </label>
                   <label class="mini-field">
-                    <span data-i18n="calcPurchaseQty">购买数量</span>
+                    <span data-i18n="calcPurchaseQty">购买箱子纸皮数量</span>
                     <input id="boxPurchase1" class="box-order-input" data-box-purchase="1" type="number" min="0" step="1" value="0" inputmode="numeric">
                   </label>
                   <label class="mini-field">
@@ -699,9 +707,9 @@
             <p class="field-help" data-i18n="calcStartDateHelp">计算器可先用任意日期估算；进入预约表格时，开始日期必须大于当天日期。</p>
           </label>
           <label class="field">
-            <span data-i18n="calcEndDate">结束日期</span>
+            <span data-i18n="calcEndDate">预期结束日期</span>
             <input id="endDate" type="date">
-            <p class="field-help" data-i18n="calcEndDateHelp">结束日期用于计算寄存天数；进入预约后客服会再确认实际返还安排。</p>
+            <p class="field-help" data-i18n="calcEndDateHelp">预期结束日期用于计算寄存天数；进入预约后客服会再确认实际返还安排。</p>
           </label>
           <label class="field" id="boxDeliveryDateField">
             <span data-i18n="calcBoxDeliveryDate">送箱日期</span>
@@ -820,7 +828,7 @@
             <p class="result-breakdown-empty" id="resultBreakdownEmpty" data-i18n="resultBreakdownEmpty">填写箱型数量后会在这里显示各箱型寄存费与购箱费明细。</p>
             <div class="result-breakdown-list" id="resultBreakdown"></div>
           </div>
-          <p class="result-note" id="resultNote" data-i18n="calcNoteDefault">选择开始日期、结束日期、取件方式、送还方式和送件方式后即可自动看到寄存天数、折扣、费用项和超重说明。</p>
+          <p class="result-note" id="resultNote" data-i18n="calcNoteDefault">选择开始日期、预期结束日期、取件方式、送还方式和送件方式后即可自动看到寄存天数、折扣、费用项和超重说明。</p>
           <div class="calculator-note-card" id="resultOtherCityCard" hidden>
             <strong data-i18n="resultOtherCityTitle">英国其他城市转运说明</strong>
             <p id="resultOtherCityText" data-i18n="resultOtherCityText">外地转运费用未自动计入预计总价。通常使用皇家邮局或 DPD，一般 2 个工作日送达；建议优先使用 1 / 2 / 3 号箱，10kg 内 £10，10–30kg £15，特殊物品需联系客服确认。</p>
@@ -1148,7 +1156,7 @@
     (function () {
       const storageFieldLabels = [
         { selector: "[data-box-count]", i18nKey: "calcStorageQty", fallback: "寄存数量" },
-        { selector: "[data-box-purchase]", i18nKey: "calcPurchaseQty", fallback: "购买数量" },
+        { selector: "[data-box-purchase]", i18nKey: "calcPurchaseQty", fallback: "购买箱子纸皮数量" },
         { selector: "[data-box-weight]", i18nKey: "calcMaximumWeight", fallback: "最大重量（kg/箱）" }
       ];
       const miniFields = document.querySelectorAll(".box-order-grid .mini-field");

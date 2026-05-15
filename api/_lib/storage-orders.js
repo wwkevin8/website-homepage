@@ -4,11 +4,11 @@ const STORAGE_ORDER_TYPES = {
     orderNoPrefix: "ST-B"
   },
   storage_collection: {
-    label: "预约寄存 / 入仓",
+    label: "取寄存订单",
     orderNoPrefix: "ST-C"
   },
   storage_return: {
-    label: "取寄存 / 取回",
+    label: "送寄存订单",
     orderNoPrefix: "ST-R"
   }
 };
@@ -87,6 +87,11 @@ function assertDateField(fieldName, value) {
     throw new Error(`${fieldName} is required`);
   }
   return text;
+}
+
+function normalizeOptionalDateFilter(value) {
+  const text = normalizeString(value);
+  return /^\d{4}-\d{2}-\d{2}$/.test(text) ? text : "";
 }
 
 function getUkDateTimeParts(now = new Date()) {
@@ -533,6 +538,10 @@ function buildStorageOrderAdminFilters(query, queryParams = {}, options = {}) {
   const search = normalizeString(queryParams.search);
   const status = normalizeString(queryParams.status);
   const notificationStatus = normalizeString(queryParams.notification_status);
+  const dateScope = normalizeString(queryParams.date_scope || queryParams.date_status || "active");
+  const dateStart = normalizeOptionalDateFilter(queryParams.date_start || queryParams.start_date);
+  const dateEnd = normalizeOptionalDateFilter(queryParams.date_end || queryParams.end_date);
+  const today = getUkTodayInputValue();
   const orderType = normalizeString(queryParams.order_type) === "box_delivery"
     ? ""
     : normalizeString(queryParams.order_type);
@@ -569,10 +578,24 @@ function buildStorageOrderAdminFilters(query, queryParams = {}, options = {}) {
     query.eq("notification_status", notificationStatus);
   }
 
+  if (dateScope === "expired") {
+    query.lt("service_date", today);
+  } else if (dateScope !== "all") {
+    query.gte("service_date", today);
+  }
+
+  if (dateStart) {
+    query.gte("service_date", dateStart);
+  }
+
+  if (dateEnd) {
+    query.lte("service_date", dateEnd);
+  }
+
   if (orderType === "box_order") {
     query.or("box_order_no.not.is.null,purchased_boxes.neq.[]");
   } else if (orderType === "storage_collection") {
-    query.or("order_type.eq.storage_collection,service_label.ilike.%预约寄存%,service_label.ilike.%送寄存%,service_label.ilike.%入仓%");
+    query.or("order_type.eq.storage_collection,service_label.ilike.%预约寄存%,service_label.ilike.%取寄存%,service_label.ilike.%入仓%");
   } else if (orderType === "storage_return") {
     query.or("order_type.eq.storage_return,service_label.ilike.%取回%");
   } else if (orderType === "storage") {

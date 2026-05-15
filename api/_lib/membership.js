@@ -1,7 +1,12 @@
+﻿const crypto = require("crypto");
+
 const BENEFIT_TYPES = ["storage", "pickup", "moving", "welcome_pack", "cashback"];
 const PUBLIC_BENEFIT_TYPES = ["storage", "pickup", "moving", "welcome_pack"];
 const LIVE_CLAIM_STATUSES = ["selected", "reserved", "used", "manual"];
 const ORDER_LINK_TABLES = ["storage_orders", "transport_requests", "manual"];
+const ACTIVATION_CODE_STATUSES = ["active", "redeemed", "revoked", "expired"];
+const ACTIVATION_CODE_PUBLIC_SELECT = "id, code_prefix, membership_cycle, status, bound_email, bound_phone, booking_reference, notes, generated_by_admin_id, redeemed_by_user_id, redeemed_at, expires_at, created_at, updated_at";
+const ACTIVATION_CODE_PUBLIC_SELECT_WITH_BIRTHDAY = "id, code_prefix, membership_cycle, status, bound_email, bound_phone, booking_reference, notes, member_birthday, generated_by_admin_id, redeemed_by_user_id, redeemed_at, expires_at, created_at, updated_at";
 
 const MEMBERSHIP_CONFIG = {
   defaultCycle: "2026-27",
@@ -19,6 +24,24 @@ const MEMBERSHIP_CONFIG = {
 
 function normalizeText(value) {
   return String(value || "").trim();
+}
+
+function normalizeEmail(value) {
+  return normalizeText(value).toLowerCase();
+}
+
+function isMissingMemberBirthdayColumnError(error) {
+  if (!error) {
+    return false;
+  }
+  const message = [
+    error.message,
+    error.details,
+    error.hint
+  ].filter(Boolean).join(" ").toLowerCase();
+  return error.code === "42703"
+    || error.code === "PGRST204"
+    || (message.includes("member_birthday") && (message.includes("does not exist") || message.includes("schema cache")));
 }
 
 function normalizeMoney(value, fallback = 0) {
@@ -67,6 +90,91 @@ function assertMembershipCycle(cycle) {
     throw new Error("Invalid membership cycle");
   }
   return normalized;
+}
+
+function normalizeActivationCode(code) {
+  return normalizeText(code).toUpperCase().replace(/\s+/g, "");
+}
+
+function normalizeMemberBirthday(value) {
+  const raw = normalizeText(value);
+  if (!raw) {
+    const error = new Error("请输入会员生日（月日）");
+    error.code = "MEMBERSHIP_BIRTHDAY_REQUIRED";
+    throw error;
+  }
+  const match = raw.match(/^(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/);
+  if (!match) {
+    const error = new Error("会员生日请使用 MM-DD 格式，例如 08-21");
+    error.code = "MEMBERSHIP_BIRTHDAY_INVALID";
+    throw error;
+  }
+  const month = Number(match[1]);
+  const day = Number(match[2]);
+  const maxDaysByMonth = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  if (day > maxDaysByMonth[month - 1]) {
+    const error = new Error("会员生日日期无效");
+    error.code = "MEMBERSHIP_BIRTHDAY_INVALID";
+    throw error;
+  }
+  return `${match[1]}-${match[2]}`;
+}
+
+function hashActivationCode(code) {
+  const normalized = normalizeActivationCode(code);
+  const secret = normalizeText(process.env.MEMBERSHIP_CODE_HASH_SECRET);
+  return crypto
+    .createHash("sha256")
+    .update(`${secret}:${normalized}`)
+    .digest("hex");
+}
+
+function generateActivationCode(cycle = getCurrentMembershipCycle()) {
+  const membershipCycle = assertMembershipCycle(cycle);
+  const random = crypto
+    .randomBytes(6)
+    .toString("base64url")
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "")
+    .slice(0, 8);
+  const grouped = random.match(/.{1,4}/g).join("-");
+  return `NGN-${membershipCycle.slice(0, 4)}-${grouped}`;
+}
+
+function activationCodePublicFields(row) {
+  if (!row) {
+    return null;
+  }
+  const {
+    code_hash: _codeHash,
+    ...safeRow
+  } = row;
+  return safeRow;
+}
+
+function adminDisplayFields(row) {
+  if (!row) {
+    return null;
+  }
+  return {
+    id: row.id,
+    name: row.name || "",
+    username: row.username || "",
+    email: row.email || ""
+  };
+}
+
+function siteUserDisplayFields(row) {
+  if (!row) {
+    return null;
+  }
+  return {
+    id: row.id,
+    name: row.nickname || row.name || "",
+    email: row.email || "",
+    phone: row.phone || "",
+    public_user_id: row.public_user_id || ""
+  };
 }
 
 async function getActiveEntitlement(supabase, userId, cycle = getCurrentMembershipCycle()) {
@@ -458,7 +566,7 @@ async function markClaimUsed(supabase, claimId, adminUserId) {
       updated_by_admin_id: adminUserId || null
     })
     .eq("id", claimId)
-    .in("status", ["selected", "reserved"])
+    .in("status", ["selected", "reserved", "manual"])
     .select("*")
     .maybeSingle();
   if (error) {
@@ -588,6 +696,55 @@ async function createManualClaim(supabase, payload = {}, adminUserId) {
   return data;
 }
 
+async function deleteMembershipEntitlement(supabase, entitlementId, adminUserId) {
+  const id = normalizeText(entitlementId);
+  if (!id) {
+    throw new Error("entitlement_id is required");
+  }
+
+  const { data: before, error: beforeError } = await supabase
+    .from("membership_entitlements")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+  if (beforeError) {
+    throw beforeError;
+  }
+  if (!before) {
+    throw new Error("Membership entitlement not found");
+  }
+
+  const { data: claims, error: claimsError } = await supabase
+    .from("membership_benefit_claims")
+    .select("*")
+    .eq("entitlement_id", id);
+  if (claimsError) {
+    throw claimsError;
+  }
+
+  const { error } = await supabase
+    .from("membership_entitlements")
+    .delete()
+    .eq("id", id);
+  if (error) {
+    throw error;
+  }
+
+  await logMembershipAudit(supabase, {
+    admin_user_id: adminUserId || null,
+    site_user_id: before.site_user_id,
+    action: "membership_entitlement_deleted",
+    before_data: before,
+    metadata: {
+      entitlement_id: before.id,
+      membership_cycle: before.membership_cycle,
+      deleted_claims: claims || []
+    }
+  });
+
+  return { deleted: true, id };
+}
+
 async function logMembershipAudit(supabase, payload) {
   const { error } = await supabase
     .from("membership_audit_logs")
@@ -616,7 +773,7 @@ async function grantMembershipEntitlement(supabase, payload = {}, adminUserId) {
     site_user_id: siteUserId,
     membership_cycle: membershipCycle,
     status: "active",
-    grant_source: "admin",
+    grant_source: normalizeText(payload.grant_source) || "admin",
     granted_by_admin_id: adminUserId || null,
     valid_from: payload.valid_from || null,
     valid_until: payload.valid_until || null,
@@ -643,8 +800,403 @@ async function grantMembershipEntitlement(supabase, payload = {}, adminUserId) {
   return data;
 }
 
+async function createMembershipActivationCode(supabase, payload = {}, adminUserId) {
+  const membershipCycle = assertMembershipCycle(payload.membership_cycle || getCurrentMembershipCycle());
+  const expiresAt = normalizeText(payload.expires_at) || null;
+  const boundEmail = normalizeEmail(payload.bound_email) || null;
+  const generatedByAdminId = adminUserId || null;
+  let lastError = null;
+
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const code = normalizeActivationCode(generateActivationCode(membershipCycle));
+    const row = {
+      code_hash: hashActivationCode(code),
+      code_prefix: code.slice(0, 12),
+      membership_cycle: membershipCycle,
+      status: "active",
+      bound_email: boundEmail,
+      bound_phone: normalizeText(payload.bound_phone) || null,
+      booking_reference: normalizeText(payload.booking_reference) || null,
+      notes: normalizeText(payload.notes) || null,
+      generated_by_admin_id: generatedByAdminId,
+      expires_at: expiresAt
+    };
+
+    const { data, error } = await supabase
+      .from("membership_activation_codes")
+      .insert(row)
+      .select(ACTIVATION_CODE_PUBLIC_SELECT)
+      .single();
+
+    if (!error) {
+      await logMembershipAudit(supabase, {
+        admin_user_id: generatedByAdminId,
+        action: "membership_activation_code_created",
+        after_data: data,
+        metadata: {
+          code_prefix: data.code_prefix,
+          membership_cycle: data.membership_cycle,
+          bound_email: data.bound_email || null,
+          booking_reference: data.booking_reference || null
+        }
+      });
+      return { code, activationCode: data };
+    }
+
+    lastError = error;
+    if (error.code !== "23505") {
+      throw error;
+    }
+  }
+
+  throw lastError || new Error("Failed to generate membership activation code");
+}
+
+async function listMembershipActivationCodes(supabase, filters = {}) {
+  const page = Math.max(1, Number(filters.page || 1));
+  const pageSize = Math.min(Math.max(1, Number(filters.page_size || 50)), 100);
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+  const cycle = normalizeText(filters.membership_cycle || filters.cycle);
+  const status = normalizeText(filters.status);
+  const search = normalizeText(filters.search).replace(/,/g, " ");
+  const codePrefixSearch = search ? search.slice(0, 12) : "";
+
+  let query = supabase
+    .from("membership_activation_codes")
+    .select(ACTIVATION_CODE_PUBLIC_SELECT, { count: "exact" })
+    .order("created_at", { ascending: false });
+
+  if (cycle) {
+    query = query.eq("membership_cycle", cycle);
+  }
+  if (status) {
+    query = query.eq("status", status);
+  }
+  if (search) {
+    query = query.or([
+      `code_prefix.ilike.%${codePrefixSearch}%`,
+      `bound_email.ilike.%${search}%`,
+      `bound_phone.ilike.%${search}%`,
+      `booking_reference.ilike.%${search}%`
+    ].join(","));
+  }
+
+  const { data, error, count } = await query.range(from, to);
+  if (error) {
+    throw error;
+  }
+  const adminIds = Array.from(new Set((data || [])
+    .map(row => row.generated_by_admin_id)
+    .filter(Boolean)
+    .map(String)));
+  const redeemedUserIds = Array.from(new Set((data || [])
+    .map(row => row.redeemed_by_user_id)
+    .filter(Boolean)
+    .map(String)));
+  let adminById = new Map();
+  if (adminIds.length) {
+    const { data: admins, error: adminError } = await supabase
+      .from("admin_users")
+      .select("id, name, username, email")
+      .in("id", adminIds);
+    if (adminError) {
+      throw adminError;
+    }
+    adminById = new Map((admins || []).map(admin => [String(admin.id), adminDisplayFields(admin)]));
+  }
+  let redeemedUserById = new Map();
+  if (redeemedUserIds.length) {
+    const { data: redeemedUsers, error: redeemedUserError } = await supabase
+      .from("site_users")
+      .select("id, public_user_id, email, phone, nickname")
+      .in("id", redeemedUserIds);
+    if (redeemedUserError) {
+      throw redeemedUserError;
+    }
+    redeemedUserById = new Map((redeemedUsers || []).map(user => [String(user.id), siteUserDisplayFields(user)]));
+  }
+
+  return {
+    items: (data || []).map(row => ({
+      ...activationCodePublicFields(row),
+      generated_by_admin: adminById.get(String(row.generated_by_admin_id || "")) || null,
+      redeemed_by_user: redeemedUserById.get(String(row.redeemed_by_user_id || "")) || null
+    })),
+    pagination: {
+      page,
+      page_size: pageSize,
+      total: count || 0,
+      total_pages: count ? Math.ceil(count / pageSize) : 0
+    }
+  };
+}
+
+async function revokeMembershipActivationCode(supabase, codeId, adminUserId, reason = "") {
+  const id = normalizeText(codeId);
+  if (!id) {
+    throw new Error("activation code id is required");
+  }
+
+  const { data: before, error: beforeError } = await supabase
+    .from("membership_activation_codes")
+    .select(ACTIVATION_CODE_PUBLIC_SELECT)
+    .eq("id", id)
+    .maybeSingle();
+  if (beforeError) {
+    throw beforeError;
+  }
+  if (!before) {
+    throw new Error("Membership activation code not found");
+  }
+
+  const { data, error } = await supabase
+    .from("membership_activation_codes")
+    .update({ status: "revoked", notes: normalizeText(reason) || before.notes || null })
+    .eq("id", id)
+    .eq("status", "active")
+    .select(ACTIVATION_CODE_PUBLIC_SELECT)
+    .maybeSingle();
+  if (error) {
+    throw error;
+  }
+  if (!data) {
+    const revokeError = new Error("Membership activation code cannot be revoked from its current status");
+    revokeError.code = "MEMBERSHIP_CODE_NOT_ACTIVE";
+    throw revokeError;
+  }
+
+  await logMembershipAudit(supabase, {
+    admin_user_id: adminUserId || null,
+    action: "membership_activation_code_revoked",
+    before_data: before,
+    after_data: data,
+    metadata: {
+      reason: normalizeText(reason) || null,
+      code_prefix: data.code_prefix
+    }
+  });
+  return activationCodePublicFields(data);
+}
+
+async function deleteMembershipActivationCode(supabase, codeId, adminUserId) {
+  const id = normalizeText(codeId);
+  if (!id) {
+    throw new Error("activation code id is required");
+  }
+
+  const { data: before, error: beforeError } = await supabase
+    .from("membership_activation_codes")
+    .select(ACTIVATION_CODE_PUBLIC_SELECT)
+    .eq("id", id)
+    .maybeSingle();
+  if (beforeError) {
+    throw beforeError;
+  }
+  if (!before) {
+    throw new Error("Membership activation code not found");
+  }
+  if (before.status === "redeemed" || before.redeemed_by_user_id) {
+    const deleteError = new Error("Membership activation code has already been redeemed and cannot be deleted");
+    deleteError.code = "MEMBERSHIP_CODE_REDEEMED";
+    throw deleteError;
+  }
+
+  const { error } = await supabase
+    .from("membership_activation_codes")
+    .delete()
+    .eq("id", id);
+  if (error) {
+    throw error;
+  }
+
+  await logMembershipAudit(supabase, {
+    admin_user_id: adminUserId || null,
+    action: "membership_activation_code_deleted",
+    before_data: before,
+    metadata: {
+      code_prefix: before.code_prefix,
+      membership_cycle: before.membership_cycle
+    }
+  });
+
+  return { deleted: true, id, code_prefix: before.code_prefix };
+}
+
+async function redeemMembershipActivationCode(supabase, rawCode, siteUser, options = {}) {
+  const code = normalizeActivationCode(rawCode);
+  if (!code) {
+    const error = new Error("请输入会员激活码");
+    error.code = "MEMBERSHIP_CODE_REQUIRED";
+    throw error;
+  }
+
+  const codeHash = hashActivationCode(code);
+  const { data: activationCode, error } = await supabase
+    .from("membership_activation_codes")
+    .select("*")
+    .eq("code_hash", codeHash)
+    .maybeSingle();
+  if (error) {
+    throw error;
+  }
+  if (!activationCode) {
+    const invalid = new Error("无效会员激活码");
+    invalid.code = "MEMBERSHIP_CODE_INVALID";
+    throw invalid;
+  }
+
+  if (!ACTIVATION_CODE_STATUSES.includes(activationCode.status)) {
+    const invalidStatus = new Error("会员激活码状态无效");
+    invalidStatus.code = "MEMBERSHIP_CODE_INVALID_STATUS";
+    throw invalidStatus;
+  }
+  if (activationCode.status === "redeemed") {
+    const redeemed = new Error("会员激活码已使用");
+    redeemed.code = "MEMBERSHIP_CODE_REDEEMED";
+    throw redeemed;
+  }
+  if (activationCode.status === "revoked") {
+    const revoked = new Error("会员激活码已作废");
+    revoked.code = "MEMBERSHIP_CODE_REVOKED";
+    throw revoked;
+  }
+  const expiresAt = activationCode.expires_at ? new Date(activationCode.expires_at) : null;
+  if (activationCode.status === "expired" || (expiresAt && Number.isFinite(expiresAt.getTime()) && expiresAt.getTime() <= Date.now())) {
+    if (activationCode.status === "active") {
+      await supabase
+        .from("membership_activation_codes")
+        .update({ status: "expired" })
+        .eq("id", activationCode.id)
+        .eq("status", "active");
+    }
+    const expired = new Error("会员激活码已过期");
+    expired.code = "MEMBERSHIP_CODE_EXPIRED";
+    throw expired;
+  }
+
+  const userEmail = normalizeEmail(siteUser?.email);
+  if (activationCode.bound_email && normalizeEmail(activationCode.bound_email) !== userEmail) {
+    const mismatch = new Error("当前登录邮箱与会员激活码绑定邮箱不匹配");
+    mismatch.code = "MEMBERSHIP_CODE_EMAIL_MISMATCH";
+    throw mismatch;
+  }
+
+  const membershipCycle = assertMembershipCycle(activationCode.membership_cycle);
+  const existingEntitlement = await getActiveEntitlement(supabase, siteUser.id, membershipCycle);
+  if (existingEntitlement) {
+    return {
+      status: "already_member",
+      activationCode: activationCodePublicFields(activationCode),
+      entitlement: existingEntitlement
+    };
+  }
+
+  const redeemedAt = new Date().toISOString();
+  const memberBirthday = normalizeMemberBirthday(options.member_birthday);
+  let claimedCodeResult = await supabase
+    .from("membership_activation_codes")
+    .update({
+      status: "redeemed",
+      redeemed_by_user_id: siteUser.id,
+      redeemed_at: redeemedAt,
+      member_birthday: memberBirthday
+    })
+    .eq("id", activationCode.id)
+    .eq("status", "active")
+    .is("redeemed_by_user_id", null)
+    .select(ACTIVATION_CODE_PUBLIC_SELECT_WITH_BIRTHDAY)
+    .maybeSingle();
+
+  if (claimedCodeResult.error && isMissingMemberBirthdayColumnError(claimedCodeResult.error)) {
+    claimedCodeResult = await supabase
+      .from("membership_activation_codes")
+      .update({
+        status: "redeemed",
+        redeemed_by_user_id: siteUser.id,
+        redeemed_at: redeemedAt
+      })
+      .eq("id", activationCode.id)
+      .eq("status", "active")
+      .is("redeemed_by_user_id", null)
+      .select(ACTIVATION_CODE_PUBLIC_SELECT)
+      .maybeSingle();
+  }
+
+  const { data: claimedCode, error: claimError } = claimedCodeResult;
+  if (claimError) {
+    throw claimError;
+  }
+  if (!claimedCode) {
+    const conflict = new Error("会员激活码已使用");
+    conflict.code = "MEMBERSHIP_CODE_REDEEMED";
+    throw conflict;
+  }
+
+  let entitlement;
+  try {
+    entitlement = await grantMembershipEntitlement(supabase, {
+      site_user_id: siteUser.id,
+      membership_cycle: membershipCycle,
+      grant_source: "activation_code",
+      notes: activationCode.notes || null,
+      metadata: {
+        activation_code_id: activationCode.id,
+        code_prefix: activationCode.code_prefix,
+        member_birthday: memberBirthday,
+        booking_reference: activationCode.booking_reference || null
+      }
+    }, null);
+  } catch (grantError) {
+    const rollbackResult = await supabase
+      .from("membership_activation_codes")
+      .update({
+        status: "active",
+        redeemed_by_user_id: null,
+        redeemed_at: null,
+        member_birthday: null
+      })
+      .eq("id", activationCode.id)
+      .eq("status", "redeemed")
+      .eq("redeemed_by_user_id", siteUser.id);
+    if (rollbackResult.error && isMissingMemberBirthdayColumnError(rollbackResult.error)) {
+      await supabase
+        .from("membership_activation_codes")
+        .update({
+          status: "active",
+          redeemed_by_user_id: null,
+          redeemed_at: null
+        })
+        .eq("id", activationCode.id)
+        .eq("status", "redeemed")
+        .eq("redeemed_by_user_id", siteUser.id);
+    }
+    throw grantError;
+  }
+
+  await logMembershipAudit(supabase, {
+    site_user_id: siteUser.id,
+    entitlement_id: entitlement.id,
+    action: "membership_activation_code_redeemed",
+    after_data: claimedCode,
+    metadata: {
+      activation_code_id: activationCode.id,
+      code_prefix: activationCode.code_prefix,
+      member_birthday: memberBirthday,
+      membership_cycle: membershipCycle
+    }
+  });
+
+  return {
+    status: "redeemed",
+    activationCode: activationCodePublicFields(claimedCode),
+    entitlement
+  };
+}
+
 module.exports = {
   BENEFIT_TYPES,
+  PUBLIC_BENEFIT_TYPES,
   LIVE_CLAIM_STATUSES,
   MEMBERSHIP_CONFIG,
   getCurrentMembershipCycle,
@@ -656,7 +1208,13 @@ module.exports = {
   markClaimUsed,
   cancelOrResetClaim,
   createManualClaim,
+  deleteMembershipEntitlement,
   grantMembershipEntitlement,
+  createMembershipActivationCode,
+  deleteMembershipActivationCode,
+  listMembershipActivationCodes,
+  revokeMembershipActivationCode,
+  redeemMembershipActivationCode,
   logMembershipAudit,
   normalizeMoney,
   assertMembershipCycle

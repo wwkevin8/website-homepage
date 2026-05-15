@@ -285,7 +285,7 @@
     box4Note: "适合中小件短期寄存",
     box5Note: "适合日用品与小件物品",
     box6Note: "适合非常小件寄存",
-    storageCalcTitle: "非会员价格计算器",
+    storageCalcTitle: "寄存价格计算器",
     storageCalcIntro: "输入各箱型数量、日期、取件方式和送还方式后，系统会分别计算寄存费、购箱费、折扣和附加费用。",
     calcToolTitle: "快速估算寄存费用",
     calcToolIntro: "先填箱子数量，再选寄存周期和取送方式，右侧会实时整理参考费用。",
@@ -297,7 +297,7 @@
     calcBoxCounts: "各箱型数量",
     calcBoxTypeLabel: "箱型",
     calcStorageQty: "寄存数量",
-    calcPurchaseQty: "购买数量",
+    calcPurchaseQty: "购买箱子纸皮数量",
     calcMaximumWeight: "最大重量（kg/箱）",
     calcBoxTypeIntro: "如果所有箱子尺寸和重量差不多，只需要填写一种箱型；如果不同箱子重量差异较大，请分开添加箱型。",
     calcAddBoxTypePrompt: "添加具体箱型",
@@ -314,8 +314,8 @@
     calcBox6: "6 号箱",
     calcStartDate: "开始日期",
     calcStartDateHelp: "计算器可先用任意日期估算；进入预约表格时，开始日期必须大于当天日期。",
-    calcEndDate: "结束日期",
-    calcEndDateHelp: "结束日期用于计算寄存天数；进入预约后客服会再确认实际返还安排。",
+    calcEndDate: "预期结束日期",
+    calcEndDateHelp: "预期结束日期用于计算寄存天数；进入预约后客服会再确认实际返还安排。",
     calcBoxDeliveryDate: "送箱日期",
     calcBoxDeliveryDateHelp: "有购买箱子时填写送箱日期；进入预约表格时，送箱日期必须大于当天日期，并早于寄存开始日期。",
     calcPickupMethod: "取件方式",
@@ -357,7 +357,7 @@
     resultBreakdownEmpty: "填写各箱型寄存数量后会在这里显示寄存与购箱明细。",
     resultBreakdownEmptyInvalid: "当前未填写有效箱型数量，暂无订单明细。",
     resultBreakdownStorageQty: "寄存数量",
-    resultBreakdownPurchaseQty: "购买数量",
+    resultBreakdownPurchaseQty: "购买箱子纸皮数量",
     resultBreakdownWeight: "最大重量",
     resultBreakdownWeightStatus: "重量状态",
     resultBreakdownStorage: "寄存费",
@@ -371,8 +371,8 @@
     resultOtherCityText: "外地转运费用未自动计入预计总价。通常使用皇家邮局或 DPD，一般 2 个工作日送达；建议优先使用 1 / 2 / 3 号箱，10kg 内 £10，10–30kg £15，特殊物品需联系客服确认。",
     resultOtherCityTextScotland: "外地转运费用未自动计入预计总价。通常使用皇家邮局或 DPD，一般 2 个工作日送达；建议优先使用 1 / 2 / 3 号箱，10kg 内 £10，10–30kg £15，苏格兰地区另加 £5，特殊物品需联系客服确认。",
     calcBlockedTotal: "不可计算",
-    calcNoteDefault: "选择开始日期、结束日期、取件方式、送还方式和送件方式后即可自动看到寄存天数、折扣、费用项和超重说明。",
-    calcNoteDateMissing: "请先选择有效的开始日期和结束日期。",
+    calcNoteDefault: "选择开始日期、预期结束日期、取件方式、送还方式和送件方式后即可自动看到寄存天数、折扣、费用项和超重说明。",
+    calcNoteDateMissing: "请先选择有效的开始日期和预期结束日期。",
     calcNoteBoxDeliveryDateRequired: "有购箱数量时，必须填写送箱日期。",
     calcNotePickupMethodRequired: "请先选择取件方式。",
     calcNotePickupAccessRequired: "上门取件时，请先选择取寄存交接方式。",
@@ -2145,7 +2145,7 @@ function buildStorageSummaryData(summary) {
   rows.push(
     ["寄存天数", summary.days > 0 ? `${summary.days} 天` : "—"],
     ["开始日期", summary.startDate || "—"],
-    ["结束日期", summary.endDate || "—"],
+    ["预期结束日期", summary.endDate || "—"],
     ["取件方式", getStoragePickupMethodLabel(summary.pickupMethod)],
     ["取寄存交接方式", summary.pickupMethod === "home" ? getStorageAccessLabel(summary.pickupAccessType) : "—"],
     ["送还方式", getStorageReturnTypeLabel(summary.returnType)],
@@ -2186,7 +2186,7 @@ function buildStorageReadableMessage(summary, customerForm) {
     "",
     "寄存日期：",
     `开始日期：${summary.startDate || "—"}`,
-    `结束日期：${summary.endDate || "—"}`,
+    `预期结束日期：${summary.endDate || "—"}`,
     `寄存天数：${summary.days > 0 ? `${summary.days}天` : "—"}`,
     "",
     "服务方式：",
@@ -3199,6 +3199,7 @@ function initStorageCalculator(activeLang) {
     }
     resultNote.textContent = noteMessages.join(" ");
     resultNote.classList.toggle("result-note-visible", uncalculated && noteMessages.length > 0);
+    resultNote.classList.toggle("result-note-alert", estimate.blocked && noteMessages.length > 0);
     renderBreakdown(estimate.items, currentLang, noBoxes ? "resultBreakdownEmptyInvalid" : "resultBreakdownEmpty");
 
     if (resultPickupRow) {
@@ -3382,7 +3383,7 @@ function initStorageCalculator(activeLang) {
     if (preferredOrderType === "storage_collection") {
       draft = getValidStorageEstimateDraft(preferredOrderType);
       if (!draft) {
-        const message = "请先填写有效箱数、开始日期和结束日期后再继续。";
+        const message = "请先填写有效箱数、开始日期和预期结束日期后再继续。";
         setBookingFormMessage(message);
         window.alert(message);
         return;

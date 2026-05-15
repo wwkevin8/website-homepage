@@ -39,6 +39,9 @@
   let turnstileBusy = false;
   let needCaptcha = false;
   let authConfig = null;
+  let temporarilyBlocked = false;
+  let blockCountdown = 0;
+  let blockTimer = null;
 
   function t(key, fallback) {
     return i18n ? i18n.t(key, fallback) : fallback;
@@ -46,6 +49,23 @@
 
   function normalizeEmail(value) {
     return String(value || "").trim().toLowerCase();
+  }
+
+  function getDeviceId() {
+    try {
+      const storageKey = "ngnAuthDeviceId";
+      const existing = window.localStorage && window.localStorage.getItem(storageKey);
+      if (existing) {
+        return existing;
+      }
+      const generated = (window.crypto && window.crypto.randomUUID)
+        ? window.crypto.randomUUID()
+        : `device_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+      window.localStorage && window.localStorage.setItem(storageKey, generated);
+      return generated;
+    } catch (error) {
+      return "";
+    }
   }
 
   function setMessage(text, isError) {
@@ -66,10 +86,41 @@
     verifyStatus.classList.toggle("is-error", state === "error");
   }
 
+  function clearBlockTimer() {
+    if (blockTimer) {
+      window.clearInterval(blockTimer);
+      blockTimer = null;
+    }
+  }
+
+  function applyTemporaryBlock(messageText, retryAfter) {
+    temporarilyBlocked = true;
+    needCaptcha = false;
+    resetTurnstile();
+    blockCountdown = Math.max(0, Number(retryAfter || 0));
+    setMessage(messageText || "登录请求过于频繁，请稍后再试。", true);
+    clearBlockTimer();
+    if (blockCountdown > 0) {
+      blockTimer = window.setInterval(() => {
+        blockCountdown -= 1;
+        if (blockCountdown <= 0) {
+          blockCountdown = 0;
+          temporarilyBlocked = false;
+          clearBlockTimer();
+          setMessage("", false);
+        }
+        syncButton();
+      }, 1000);
+    }
+    syncButton();
+  }
+
   function syncButton() {
     if (submitButton) {
-      submitButton.disabled = isBusy;
-      submitButton.textContent = isBusy
+      submitButton.disabled = isBusy || temporarilyBlocked;
+      submitButton.textContent = temporarilyBlocked && blockCountdown > 0
+        ? `请 ${blockCountdown} 秒后重试`
+        : isBusy
         ? t("loginBusy", "Signing in...")
         : t("loginIdle", "登录");
     }
@@ -99,13 +150,16 @@
       body: JSON.stringify(body || {})
     });
 
-    const payload = await response.json().catch(() => ({ data: null, error: { message: "Request failed" } }));
+    const payload = await response.json().catch(() => ({ data: null, error: { message: "请求失败，请稍后再试。" } }));
     if (!response.ok) {
       const error = new Error((payload && payload.error && payload.error.message) || "请求失败，请稍后重试。");
       const details = payload && payload.error && payload.error.details;
       if (details && typeof details === "object") {
         error.details = details;
         error.needCaptcha = Boolean(details.needCaptcha);
+        error.cooldown = Boolean(details.cooldown);
+        error.temporarilyBlocked = Boolean(details.temporarilyBlocked);
+        error.retryAfter = Number(details.retryAfter || 0);
         error.errorCode = details.errorCode || "";
       }
       throw error;
@@ -245,13 +299,13 @@
     const password = String((passwordInput && passwordInput.value) || "");
 
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setMessage(t("invalidEmail", "Please enter a valid email address."), true);
+      setMessage(t("invalidEmail", "请输入有效的邮箱地址。"), true);
       emailInput && emailInput.focus();
       return;
     }
 
     if (!password) {
-      setMessage(t("passwordRequired", "Please enter your password."), true);
+      setMessage(t("passwordRequired", "请输入密码。"), true);
       passwordInput && passwordInput.focus();
       return;
     }
@@ -269,13 +323,23 @@
       await postJson("/api/auth/login", {
         email,
         password,
+        deviceId: getDeviceId(),
         turnstileToken: needCaptcha ? turnstileToken : ""
       });
+      temporarilyBlocked = false;
       needCaptcha = false;
       window.location.replace(returnTo);
     } catch (error) {
+      if (error.temporarilyBlocked) {
+        applyTemporaryBlock(error.message, error.retryAfter);
+        return;
+      }
+      if (error.errorCode === "invalid_credentials" && !error.needCaptcha) {
+        setMessage("邮箱或密码不正确，请检查后重试", true);
+        return;
+      }
       if (error.needCaptcha) {
-        await requireCaptcha(error.message);
+        await requireCaptcha(error.errorCode === "invalid_credentials" ? "邮箱或密码不正确，请检查后重试" : error.message);
       } else {
         setMessage(error.message || t("loginFailed", "邮箱或密码错误。"), true);
       }

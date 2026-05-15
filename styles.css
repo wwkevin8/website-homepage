@@ -793,6 +793,26 @@ img {
   flex: 1;
 }
 
+.admin-panel-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.admin-panel-head-actions {
+  display: flex;
+  align-items: end;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.admin-panel-head-actions .field {
+  min-width: 220px;
+}
+
 .admin-toolbar-split {
   justify-content: space-between;
 }
@@ -886,6 +906,14 @@ img {
   margin: 0;
   max-width: 640px;
   color: #6b778c;
+}
+
+.admin-empty-state .admin-membership-generated-code {
+  margin: 0;
+  color: #d92d20;
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
 }
 
 .admin-loading {
@@ -1075,6 +1103,8 @@ img {
   justify-items: end;
   gap: 10px;
   pointer-events: none;
+  touch-action: none;
+  user-select: none;
 }
 
 .admin-pet-bubble {
@@ -1140,219 +1170,56 @@ img {
 .admin-pet-dog {
   position: relative;
   width: 122px;
-  height: 128px;
+  height: 132px;
   border: 0;
-  background: transparent url("./img/admin-pet-dog.png") center / contain no-repeat;
+  background: transparent;
   padding: 0;
-  cursor: pointer;
+  cursor: grab;
   pointer-events: auto;
   animation: admin-pet-float 3.8s ease-in-out infinite;
   filter: drop-shadow(0 10px 16px rgba(16, 38, 68, 0.08));
   overflow: visible;
+  touch-action: none;
 }
 
-.admin-pet-dog > span {
-  opacity: 0;
+.admin-pet-dog:active,
+.admin-pet.is-dragging .admin-pet-dog {
+  cursor: grabbing;
+}
+
+.admin-pet-sprite {
+  --admin-pet-row: 0%;
+  position: absolute;
+  inset: 0;
+  display: block;
+  background-image: url("./img/admin-pet-fleta.webp");
+  background-repeat: no-repeat;
+  background-size: 800% 900%;
+  background-position: 0 var(--admin-pet-row);
+  image-rendering: pixelated;
   pointer-events: none;
+  animation: admin-pet-sprite-idle 60s steps(7) infinite;
+  transform-origin: 50% 70%;
 }
 
-.admin-pet-face,
-.admin-pet-body {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
+.admin-pet.is-waving .admin-pet-sprite {
+  --admin-pet-row: 12.5%;
+  animation-duration: 60s;
 }
 
-.admin-pet-face {
-  top: 10px;
-  width: 84px;
-  height: 66px;
-  border-radius: 44% 44% 48% 48%;
-  background: #ffffff;
-  border: 3px solid #202020;
-  border-bottom-width: 2px;
-  box-shadow: none;
-  z-index: 2;
+.admin-pet.is-happy .admin-pet-sprite {
+  --admin-pet-row: 25%;
+  animation-duration: 60s;
 }
 
-.admin-pet-body {
-  top: 52px;
-  width: 86px;
-  height: 62px;
-  border-radius: 42% 42% 46% 46%;
-  background: #ffffff;
-  border: 3px solid #202020;
-  box-shadow: none;
+.admin-pet.is-alert .admin-pet-sprite {
+  --admin-pet-row: 37.5%;
+  animation-duration: 60s;
 }
 
-.admin-pet-ear,
-.admin-pet-tail,
-.admin-pet-paw,
-.admin-pet-belly,
-.admin-pet-cheek,
-.admin-pet-eye,
-.admin-pet-nose,
-.admin-pet-mouth {
-  position: absolute;
-}
-
-.admin-pet-ear {
-  top: 8px;
-  width: 20px;
-  height: 28px;
-  background: #eea64f;
-  border: 3px solid #202020;
-  border-radius: 14px 14px 12px 12px;
-  z-index: 1;
-}
-
-.admin-pet-ear-left {
-  left: 18px;
-  transform: rotate(-18deg);
-}
-
-.admin-pet-ear-right {
-  right: 18px;
-  transform: rotate(18deg);
-}
-
-.admin-pet-eye {
-  top: 27px;
-  width: 6px;
-  height: 6px;
-  border-radius: 999px;
-  background: #202020;
-  animation: admin-pet-blink 4.8s infinite;
-}
-
-.admin-pet-eye-left {
-  left: 22px;
-}
-
-.admin-pet-eye-right {
-  right: 22px;
-}
-
-.admin-pet-nose {
-  top: 36px;
-  left: 50%;
-  width: 10px;
-  height: 8px;
-  border-radius: 50% 50% 65% 65%;
-  background: #202020;
-  transform: translateX(-50%);
-}
-
-.admin-pet-mouth {
-  top: 44px;
-  left: 50%;
-  width: 22px;
-  height: 12px;
-  border-bottom: 3px solid #202020;
-  border-radius: 0 0 16px 16px;
-  transform: translateX(-50%);
-}
-
-.admin-pet-cheek {
-  top: 16px;
-  width: 24px;
-  height: 34px;
-  border-radius: 999px;
-  background: #eea64f;
-}
-
-.admin-pet-cheek-left {
-  left: 6px;
-}
-
-.admin-pet-cheek-right {
-  right: 6px;
-}
-
-.admin-pet-belly {
-  left: 50%;
-  bottom: 10px;
-  width: 34px;
-  height: 24px;
-  border: 2px solid #202020;
-  border-top: 0;
-  border-radius: 0 0 20px 20px;
-  background: transparent;
-  transform: translateX(-50%);
-}
-
-.admin-pet-paw {
-  bottom: -4px;
-  width: 16px;
-  height: 22px;
-  border-radius: 46%;
-  background: #ffffff;
-  border: 3px solid #202020;
-}
-
-.admin-pet-paw-left {
-  left: 16px;
-}
-
-.admin-pet-paw-right {
-  right: 16px;
-}
-
-.admin-pet-tail {
-  left: -8px;
-  top: 66px;
-  width: 28px;
-  height: 46px;
-  border: 3px solid #202020;
-  border-right: 0;
-  border-radius: 22px 0 0 22px;
-  background: #ffffff;
-  transform-origin: 22px 30px;
-  animation: admin-pet-tail 1.8s ease-in-out infinite;
-}
-
-.admin-pet-tail::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  bottom: 8px;
-  width: 16px;
-  height: 20px;
-  border-radius: 14px 0 0 14px;
-  background: #eea64f;
-}
-
-.admin-pet-face::before,
-.admin-pet-face::after {
-  content: "";
-  position: absolute;
-  top: 44px;
-  width: 12px;
-  height: 1px;
-  background: #202020;
-  box-shadow:
-    0 -4px 0 #202020,
-    0 4px 0 #202020;
-  opacity: 0.8;
-}
-
-.admin-pet-face::before {
-  left: -3px;
-  transform: rotate(4deg);
-}
-
-.admin-pet-face::after {
-  right: -3px;
-  transform: rotate(-4deg);
-}
-
-.admin-pet.is-waving .admin-pet-tail,
-.admin-pet.is-curious .admin-pet-tail {
-  animation-duration: 0.65s;
-}
-
-.admin-pet.is-curious .admin-pet-dog {
-  transform: translateY(-2px) scale(1.03);
+.admin-pet.is-curious .admin-pet-sprite {
+  --admin-pet-row: 50%;
+  transform: scale(1.03);
 }
 
 @keyframes admin-pet-float {
@@ -1364,21 +1231,12 @@ img {
   }
 }
 
-@keyframes admin-pet-tail {
-  0%, 100% {
-    transform: rotate(16deg);
+@keyframes admin-pet-sprite-idle {
+  from {
+    background-position: 0 var(--admin-pet-row);
   }
-  50% {
-    transform: rotate(-12deg);
-  }
-}
-
-@keyframes admin-pet-blink {
-  0%, 44%, 48%, 100% {
-    transform: scaleY(1);
-  }
-  46% {
-    transform: scaleY(0.15);
+  to {
+    background-position: 100% var(--admin-pet-row);
   }
 }
 
@@ -1649,10 +1507,48 @@ body[data-admin-shell] .button-secondary,
   background: #f9fbff;
 }
 
+.admin-table tbody tr.admin-storage-member-order-row,
+.admin-table tbody tr.admin-storage-member-order-row:hover {
+  background: #fff7d6;
+}
+
+.admin-table tbody tr.admin-storage-member-order-row td {
+  border-top-color: rgba(217, 119, 6, 0.2);
+  border-bottom-color: rgba(217, 119, 6, 0.2);
+}
+
+.admin-table tbody tr.admin-storage-member-order-row td:first-child {
+  box-shadow: inset 4px 0 0 #f59e0b;
+}
+
 .admin-table-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+}
+
+.admin-storage-address-cell {
+  display: grid;
+  gap: 4px;
+  min-width: 260px;
+  max-width: 460px;
+  white-space: normal;
+}
+
+.admin-storage-address-cell strong {
+  color: #102644;
+  font-weight: 700;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.admin-storage-address-cell span {
+  color: #64748b;
+  font-size: 0.86rem;
+  font-weight: 600;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 
 .admin-status-badge {
@@ -7331,6 +7227,13 @@ body.storage-receipt-open {
   line-height: 1.75;
 }
 
+.result-note.result-note-alert {
+  color: #c81e1e;
+  font-size: 1.08rem;
+  font-weight: 800;
+  line-height: 1.65;
+}
+
 .calculator-note-card {
   margin-top: 18px;
   padding: 16px 18px;
@@ -11249,6 +11152,59 @@ body.storage-receipt-open {
   padding: 20px 22px;
 }
 
+.service-center-membership-card {
+  position: relative;
+  overflow: hidden;
+  padding: 24px 26px 26px;
+  border: 1px solid transparent;
+  border-color: rgba(124, 111, 255, 0.14);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(248, 251, 255, 0.94)) padding-box,
+    linear-gradient(120deg, #f9c5d1, #fce7a9, #c8f7dc, #cde7ff, #eadcff) border-box;
+  box-shadow: 0 22px 52px rgba(53, 69, 118, 0.12);
+}
+
+.service-center-membership-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 6px;
+  background: linear-gradient(90deg, #f9b8ca, #ffe39c, #bdf5d0, #bfe2ff, #ddc8ff);
+  opacity: 0.95;
+}
+
+.service-center-membership-card::after {
+  content: "";
+  position: absolute;
+  top: 18px;
+  right: 22px;
+  width: 168px;
+  height: 86px;
+  border: 1px solid rgba(31, 79, 179, 0.08);
+  border-radius: 18px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.72), rgba(238, 244, 255, 0.38)),
+    repeating-linear-gradient(135deg, rgba(31, 79, 179, 0.07) 0 1px, transparent 1px 10px);
+  transform: rotate(2deg);
+  pointer-events: none;
+}
+
+.service-center-membership-card > * {
+  position: relative;
+}
+
+.service-center-membership-card .profile-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 2px 0 0;
+}
+
+.service-center-membership-card #serviceCenterMembershipBody {
+  padding: 0;
+}
+
 .profile-membership-card {
   display: grid;
   gap: 14px;
@@ -11272,8 +11228,8 @@ body.storage-receipt-open {
   min-height: 30px;
   padding: 6px 12px;
   border-radius: 999px;
-  background: #e8f5ef;
-  color: #196347;
+  background: linear-gradient(135deg, #e8f5ef, #eef6ff);
+  color: #154b78;
   font-size: 0.82rem;
   font-weight: 800;
   white-space: nowrap;
@@ -11294,6 +11250,298 @@ body.storage-receipt-open {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
+}
+
+.profile-membership-actions,
+.profile-membership-code-form {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  margin-top: 14px;
+}
+
+.profile-membership-code-form .field {
+  min-width: min(100%, 280px);
+}
+
+.profile-membership-actions [data-membership-show-code],
+.profile-membership-code-form button[type="submit"] {
+  position: relative;
+  min-height: 48px;
+  padding-inline: 22px;
+  border: 0;
+  background:
+    linear-gradient(135deg, #1f4fb3 0%, #315ed0 52%, #6857d8 100%);
+  box-shadow: 0 16px 32px rgba(31, 79, 179, 0.26);
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.profile-membership-actions [data-membership-show-code]::after,
+.profile-membership-code-form button[type="submit"]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 0%, rgba(255, 255, 255, 0.28) 42%, transparent 70%);
+  transform: translateX(-110%);
+  transition: transform 0.42s ease;
+  z-index: -1;
+}
+
+.profile-membership-actions [data-membership-show-code]:hover::after,
+.profile-membership-actions [data-membership-show-code]:focus-visible::after,
+.profile-membership-code-form button[type="submit"]:hover::after,
+.profile-membership-code-form button[type="submit"]:focus-visible::after {
+  transform: translateX(110%);
+}
+
+.profile-membership-code-form {
+  width: 100%;
+  align-items: flex-start;
+  padding: 16px;
+  border: 1px solid rgba(31, 79, 179, 0.1);
+  border-radius: 18px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(244, 249, 255, 0.86));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.profile-membership-code-form .field span {
+  color: #0f2d62;
+  font-weight: 800;
+}
+
+.profile-membership-code-form input {
+  border-color: rgba(31, 79, 179, 0.14);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 8px 20px rgba(31, 79, 179, 0.06);
+}
+
+.profile-membership-code-form input:focus {
+  border-color: rgba(31, 79, 179, 0.42);
+  box-shadow: 0 0 0 4px rgba(31, 79, 179, 0.12);
+}
+
+.profile-membership-details {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.profile-membership-details > div {
+  padding: 12px 14px;
+  border: 1px solid rgba(124, 111, 255, 0.11);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: none;
+}
+
+.profile-membership-details dt {
+  margin: 0 0 4px;
+  color: #607086;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.profile-membership-details dd {
+  margin: 0;
+  color: #102844;
+  font-size: 1.03rem;
+  font-weight: 800;
+}
+
+.profile-membership-pass {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: flex-start;
+  margin-top: 14px;
+  padding: 16px;
+  border: 1px solid rgba(124, 111, 255, 0.14);
+  border-left: 4px solid #f2b3c6;
+  border-radius: 16px;
+  background:
+    linear-gradient(135deg, rgba(255, 244, 248, 0.88), rgba(255, 251, 229, 0.72) 33%, rgba(236, 255, 246, 0.72) 64%, rgba(238, 244, 255, 0.86));
+  box-shadow: none;
+}
+
+.profile-membership-pass-main {
+  display: grid;
+  gap: 8px;
+}
+
+.profile-membership-pass-kicker {
+  width: fit-content;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  color: #26549f;
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.profile-membership-pass h3 {
+  margin: 0;
+  color: #0f2442;
+  font-size: 1.25rem;
+  line-height: 1.25;
+}
+
+.profile-membership-pass p {
+  max-width: 62ch;
+  margin: 0;
+  color: #40546f;
+  line-height: 1.65;
+}
+
+.profile-membership-pass-side {
+  display: grid;
+  justify-items: end;
+  gap: 12px;
+}
+
+.profile-membership-pass-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  padding: 6px 11px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.76);
+  color: #22613f;
+  font-size: 0.82rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.profile-membership-pass-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.profile-membership-pass-details {
+  grid-column: 1 / -1;
+}
+
+.service-center-membership-card .profile-status-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.76);
+  color: #22613f;
+  font-size: 0.82rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+@media (max-width: 720px) {
+  .service-center-membership-section {
+    padding-top: 28px;
+  }
+
+  .service-center-membership-card {
+    padding: 18px 18px 20px;
+    border-radius: 18px;
+    box-shadow: 0 16px 34px rgba(53, 69, 118, 0.1);
+  }
+
+  .service-center-membership-card::before {
+    height: 4px;
+  }
+
+  .service-center-membership-card::after {
+    top: 16px;
+    right: 16px;
+    width: 150px;
+    height: 66px;
+    border-radius: 16px;
+  }
+
+  .service-center-membership-card .profile-card-head {
+    display: grid;
+    padding: 0;
+    gap: 10px;
+  }
+
+  .service-center-membership-card #serviceCenterMembershipBody {
+    padding: 0;
+  }
+
+  .service-center-membership-card .eyebrow {
+    font-size: 0.76rem;
+    letter-spacing: 0.14em;
+  }
+
+  .profile-membership-header h2 {
+    margin-top: 2px;
+    font-size: clamp(1.05rem, 5vw, 1.38rem);
+    line-height: 1.18;
+  }
+
+  .profile-membership-status {
+    min-height: 28px;
+    padding: 5px 10px;
+    font-size: 0.78rem;
+    justify-self: start;
+  }
+
+  .profile-membership-body p {
+    font-size: 0.78rem;
+    line-height: 1.38;
+  }
+
+  .profile-membership-actions {
+    margin-top: 12px;
+  }
+
+  .profile-membership-actions [data-membership-show-code],
+  .profile-membership-code-form button[type="submit"] {
+    min-height: 40px;
+    padding-inline: 18px;
+    font-size: 0.8rem;
+    box-shadow: 0 12px 24px rgba(31, 79, 179, 0.22);
+  }
+
+  .profile-membership-code-form {
+    gap: 10px;
+    padding: 12px;
+    border-radius: 16px;
+  }
+
+  .profile-membership-code-form .field span {
+    font-size: 0.72rem;
+  }
+
+  .profile-membership-code-form input {
+    min-height: 38px;
+    font-size: 0.78rem;
+  }
+
+  .profile-membership-pass,
+  .profile-membership-details {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-membership-pass {
+    padding: 16px;
+  }
+
+  .profile-membership-pass-side {
+    justify-items: start;
+  }
+
+  .profile-membership-pass-actions,
+  .profile-membership-pass-actions .button,
+  .profile-membership-actions .button,
+  .profile-membership-code-form .field,
+  .profile-membership-code-form button[type="submit"] {
+    width: 100%;
+  }
 }
 
 .profile-membership-benefit {
@@ -11349,6 +11597,89 @@ body.storage-receipt-open {
   border: 1px solid rgba(24, 55, 109, 0.08);
   border-radius: 14px;
   background: #fff;
+}
+
+.membership-storage-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+
+.membership-storage-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(8, 22, 48, 0.46);
+  backdrop-filter: blur(8px);
+}
+
+.membership-storage-modal-card {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 560px);
+  padding: 28px;
+  border: 1px solid rgba(34, 82, 175, 0.16);
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: 0 28px 70px rgba(9, 27, 60, 0.28);
+}
+
+.membership-storage-modal-card h2 {
+  margin: 6px 0 16px;
+  color: #102844;
+  font-size: 1.45rem;
+  line-height: 1.25;
+}
+
+.membership-storage-modal-copy {
+  display: grid;
+  gap: 10px;
+}
+
+.membership-storage-modal-copy p {
+  margin: 0;
+  color: #41536b;
+  line-height: 1.65;
+}
+
+.membership-storage-modal-copy p:nth-child(2) {
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #eef5ff;
+  color: #163b85;
+  font-weight: 800;
+}
+
+.membership-storage-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 22px;
+  flex-wrap: wrap;
+}
+
+.membership-storage-modal-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(24, 55, 109, 0.12);
+  border-radius: 50%;
+  background: #f7f9fd;
+  color: #284362;
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.membership-storage-modal-close:hover,
+.membership-storage-modal-close:focus-visible {
+  border-color: rgba(31, 79, 179, 0.34);
+  outline: none;
+  color: #1f4fb3;
 }
 
 .profile-field-grid {
@@ -21955,6 +22286,12 @@ body.storage-receipt-open {
     display: block;
   }
 
+  .storage-calculator-result .result-note.result-note-alert {
+    color: #c81e1e;
+    font-size: 0.86rem;
+    font-weight: 800;
+  }
+
   .storage-calculator-result .calculator-note-card strong,
   .storage-inline-form-head strong {
     font-size: 0.76rem;
@@ -23527,5 +23864,77 @@ body.storage-receipt-open {
   .topbar-home ~ .page-shell .conversion-hero .hero-banner,
   .topbar-home ~ .page-shell .conversion-hero .hero-content {
     min-height: min(360px, calc(100dvh - 96px));
+  }
+}
+
+/* Final mobile override for the service-center membership card. */
+@media (max-width: 860px) {
+  .service-center-membership-section {
+    padding-top: 24px;
+  }
+
+  .service-center-membership-card.profile-card {
+    padding: 16px 16px 18px;
+    border-radius: 18px;
+  }
+
+  .service-center-membership-card::after {
+    width: 132px;
+    height: 56px;
+    top: 16px;
+    right: 16px;
+    border-radius: 14px;
+  }
+
+  .service-center-membership-card .eyebrow {
+    font-size: 0.6rem;
+    letter-spacing: 0.12em;
+  }
+
+  .service-center-membership-card .profile-membership-header h2 {
+    margin-top: 4px;
+    font-size: 13px;
+    line-height: 1.15;
+  }
+
+  .service-center-membership-card .profile-membership-status,
+  .service-center-membership-card .profile-status-pill {
+    min-height: 22px;
+    padding: 3px 9px;
+    font-size: 0.66rem;
+  }
+
+  .service-center-membership-card .profile-membership-body p {
+    font-size: 9px;
+    line-height: 1.42;
+  }
+
+  .service-center-membership-card .profile-membership-actions {
+    margin-top: 12px;
+  }
+
+  .service-center-membership-card .profile-membership-actions [data-membership-show-code],
+  .service-center-membership-card .profile-membership-code-form button[type="submit"] {
+    min-height: 36px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    font-size: 0.74rem;
+  }
+
+  .service-center-membership-card .profile-membership-code-form {
+    gap: 10px;
+    padding: 12px;
+    border-radius: 16px;
+  }
+
+  .service-center-membership-card .profile-membership-code-form .field span {
+    font-size: 0.62rem;
+  }
+
+  .service-center-membership-card .profile-membership-code-form input {
+    min-height: 34px;
+    padding: 8px 12px;
+    border-radius: 12px;
+    font-size: 0.68rem;
   }
 }

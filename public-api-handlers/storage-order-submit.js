@@ -84,10 +84,10 @@ function omitUnsupportedStorageOrderColumns(payload, columnSupport = {}) {
 
 function getStorageDuplicateLimitLabel(orderType) {
   if (orderType === "storage_collection") {
-    return "预约寄存订单";
+    return "取寄存订单";
   }
   if (orderType === "storage_return") {
-    return "取寄存订单";
+    return "送寄存订单";
   }
   return "寄存服务订单";
 }

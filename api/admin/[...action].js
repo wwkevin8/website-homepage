@@ -41,11 +41,16 @@ const {
 } = require("../_lib/orders");
 const {
   cancelOrResetClaim,
+  createMembershipActivationCode,
   createManualClaim,
+  deleteMembershipActivationCode,
+  deleteMembershipEntitlement,
   getCurrentMembershipCycle,
   grantMembershipEntitlement,
+  listMembershipActivationCodes,
   logMembershipAudit,
-  markClaimUsed
+  markClaimUsed,
+  revokeMembershipActivationCode
 } = require("../_lib/membership");
 
 let cachedStorageOrderAdminColumns = null;
@@ -254,6 +259,220 @@ function normalizeStorageAdminListItem(item = {}) {
     storage_start_date: firstNonEmptyText(item.storage_start_date, item.service_date, serviceDetails.serviceDate, estimateSummary.startDate) || null,
     storage_end_date: firstNonEmptyText(item.storage_end_date, item.expected_storage_end_date, serviceDetails.expectedStorageEndDate, estimateSummary.endDate) || null
   };
+}
+
+function formatAdminCsvDateTime(value) {
+  if (!value) {
+    return "";
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/London",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false
+  }).formatToParts(date);
+  const values = Object.fromEntries(parts.map(part => [part.type, part.value]));
+  return values.year && values.month && values.day && values.hour && values.minute
+    ? `${values.year}-${values.month}-${values.day} ${values.hour}:${values.minute}`
+    : "";
+}
+
+function formatAdminCsvExcelText(value) {
+  const text = value === null || value === undefined ? "" : String(value);
+  return text ? `="${text}"` : "";
+}
+
+function getStorageExportServiceLabel(item = {}) {
+  const orderType = String(item.order_type || "").trim();
+  if (orderType === "box_delivery") {
+    return "买箱订单";
+  }
+  if (orderType === "storage_collection") {
+    return "取寄存订单";
+  }
+  if (orderType === "storage_return") {
+    return "送寄存订单";
+  }
+  return item.service_label || orderType || "寄存订单";
+}
+
+function storageExportPurchaseQuantity(item = {}) {
+  const boxes = Array.isArray(item.purchased_boxes) ? item.purchased_boxes : [];
+  const total = boxes.reduce((sum, entry) => {
+    const quantity = Number(entry?.quantity || entry?.purchaseQty || entry?.purchase_quantity || 0);
+    return sum + (Number.isFinite(quantity) ? Math.max(0, quantity) : 0);
+  }, 0);
+  if (total > 0) {
+    return total;
+  }
+  const serviceDetails = getStorageServiceDetailsFromJson(isPlainObject(item.customer_form_json) ? item.customer_form_json : {});
+  const estimateSummary = isPlainObject(item.estimate_summary_json) ? item.estimate_summary_json : {};
+  const fallback = Number(serviceDetails.purchaseQuantity || estimateSummary.totalPurchaseBoxes || 0);
+  return Number.isFinite(fallback) ? Math.max(0, fallback) : 0;
+}
+
+function formatAdminCsvMoney(value) {
+  const number = Number(value);
+  return Number.isFinite(number) && number > 0 ? `£${number.toFixed(2)}` : "";
+}
+
+function escapeExcelHtml(value) {
+  const text = value === null || value === undefined ? "" : String(value);
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function normalizeExcelCellText(value) {
+  const text = value === null || value === undefined ? "" : String(value);
+  const formulaTextMatch = text.match(/^="([\s\S]*)"$/);
+  return formulaTextMatch ? formulaTextMatch[1] : text;
+}
+
+function rowsToExcelHtml(rows, columns) {
+  const header = columns
+    .map(column => `<th>${escapeExcelHtml(column)}</th>`)
+    .join("");
+  const body = rows
+    .map(row => {
+      const rowClass = row.__highlight ? ' class="member-row"' : "";
+      const cells = columns
+        .map(column => `<td>${escapeExcelHtml(normalizeExcelCellText(row[column]))}</td>`)
+        .join("");
+      return `<tr${rowClass}>${cells}</tr>`;
+    })
+    .join("");
+
+  return `<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    table { border-collapse: collapse; font-family: Arial, sans-serif; font-size: 12px; }
+    th { background: #f3f4f6; font-weight: 700; }
+    th, td { border: 1px solid #d9dde5; padding: 6px 8px; mso-number-format: "\\@"; vertical-align: top; }
+    tr.member-row td { background: #fff7d6; }
+  </style>
+</head>
+<body>
+  <table>
+    <thead><tr>${header}</tr></thead>
+    <tbody>${body}</tbody>
+  </table>
+</body>
+</html>`;
+}
+
+function buildStorageExportRows(items = []) {
+  return items.map(item => {
+    const formJson = isPlainObject(item.customer_form_json) ? item.customer_form_json : {};
+    const serviceDetails = getStorageServiceDetailsFromJson(formJson);
+    const address = firstNonEmptyText(
+      item.address_full,
+      serviceDetails.collectionAddress,
+      serviceDetails.serviceAddress,
+      serviceDetails.returnAddress,
+      serviceDetails.addressFull,
+      serviceDetails.address_full
+    );
+    return {
+      __highlight: Boolean(item.membership_benefit_claim_id),
+      "提交时间": formatAdminCsvExcelText(formatAdminCsvDateTime(item.created_at)),
+      "订单编号": item.order_no || "",
+      "主订单编号": item.parent_order_no || "",
+      "买箱编号": item.box_order_no || "",
+      "服务类型": getStorageExportServiceLabel(item),
+      "姓名": item.customer_name || "",
+      "微信": item.wechat_id || "",
+      "电话": formatAdminCsvExcelText(item.phone || ""),
+      "服务日期": formatAdminCsvExcelText(item.service_date || ""),
+      "时间段": item.service_time_slot || item.service_time || "",
+      "购买箱子纸皮数量": storageExportPurchaseQuantity(item) || "",
+      "送箱日期": formatAdminCsvExcelText(item.box_delivery_date || ""),
+      "寄存开始日期": formatAdminCsvExcelText(item.storage_start_date || item.storage_intake_date || ""),
+      "寄存结束日期": formatAdminCsvExcelText(item.storage_end_date || item.expected_storage_end_date || ""),
+      "地址": address || "",
+      "房间 / 公寓": item.room_or_building || "",
+      "邮编": item.postcode || "",
+      "预期价格": formatAdminCsvMoney(item.estimated_total_price),
+      "会员减免": formatAdminCsvMoney(item.membership_discount_amount),
+      "额外加收": formatAdminCsvMoney(item.extra_charge_amount),
+      "最终价格": formatAdminCsvMoney(item.final_price),
+      "状态": item.status || ""
+    };
+  });
+}
+
+function buildStorageExportColumns(orderType) {
+  const normalizedOrderType = String(orderType || "").trim();
+  const baseColumns = [
+    "提交时间",
+    "订单编号",
+    "服务类型",
+    "姓名",
+    "微信",
+    "电话",
+    "服务日期",
+    "时间段",
+    "购买箱子纸皮数量",
+    "送箱日期",
+    "寄存开始日期",
+    "寄存结束日期",
+    "地址",
+    "邮编",
+    "预期价格"
+  ];
+
+  if (normalizedOrderType === "storage_collection" || normalizedOrderType === "storage_return") {
+    return baseColumns;
+  }
+
+  return [
+    "提交时间",
+    "订单编号",
+    "主订单编号",
+    "买箱编号",
+    "服务类型",
+    "姓名",
+    "微信",
+    "电话",
+    "服务日期",
+    "时间段",
+    "购买箱子纸皮数量",
+    "送箱日期",
+    "寄存开始日期",
+    "寄存结束日期",
+    "地址",
+    "房间 / 公寓",
+    "邮编",
+    "预期价格",
+    "会员减免",
+    "额外加收",
+    "最终价格",
+    "状态"
+  ];
+}
+
+function buildStorageExportFilename(queryParams = {}) {
+  const now = new Date();
+  const stamp = [
+    now.getUTCFullYear(),
+    String(now.getUTCMonth() + 1).padStart(2, "0"),
+    String(now.getUTCDate()).padStart(2, "0"),
+    String(now.getUTCHours()).padStart(2, "0"),
+    String(now.getUTCMinutes()).padStart(2, "0")
+  ].join("");
+  const orderType = String(queryParams.order_type || "storage").replace(/[^a-z0-9_-]+/gi, "");
+  return `storage-orders-${orderType || "all"}-${stamp}.xls`;
 }
 
 function normalizeOptionalNumber(value) {
@@ -994,6 +1213,7 @@ async function handleStorageOrders(req, res, supabase) {
   const queryParams = req.query || {};
   const page = parsePositiveInteger(queryParams.page, 1);
   const pageSize = 10;
+  const sort = String(queryParams.sort || "").trim();
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
   const searchStartedAt = nowMs();
@@ -1015,8 +1235,15 @@ async function handleStorageOrders(req, res, supabase) {
   for (let attempt = 0; attempt < 40; attempt += 1) {
     let query = supabase
       .from("storage_orders")
-      .select(selectedColumns.join(", "), { count: "exact" })
-      .order("created_at", { ascending: false });
+      .select(selectedColumns.join(", "), { count: "exact" });
+
+    if (sort === "created_at_desc") {
+      query = query.order("created_at", { ascending: false });
+    } else {
+      query = query
+        .order("service_date", { ascending: true, nullsFirst: false })
+        .order("created_at", { ascending: false });
+    }
 
     buildStorageOrderAdminFilters(query, queryParams, {
       matchingSiteUserIds,
@@ -1084,6 +1311,67 @@ async function handleStorageOrders(req, res, supabase) {
       total_pages: count ? Math.ceil(count / pageSize) : 0
     }
   });
+}
+
+async function handleStorageOrdersExport(req, res, supabase) {
+  if (req.method !== "GET") {
+    methodNotAllowed(res, ["GET"]);
+    return;
+  }
+
+  const adminUser = await requireAdminUser(req, res, supabase);
+  if (!adminUser) {
+    return;
+  }
+
+  const queryParams = req.query || {};
+  const sort = String(queryParams.sort || "").trim();
+  const searchStartedAt = nowMs();
+  const matchingSiteUserIds = await findStorageSearchSiteUserIds(supabase, queryParams.search);
+  const searchMs = nowMs() - searchStartedAt;
+  const selectColumns = [...STORAGE_ORDER_DETAIL_COLUMNS];
+
+  let query = supabase
+    .from("storage_orders")
+    .select(selectColumns.join(", "))
+    .limit(5000);
+
+  if (sort === "created_at_desc") {
+    query = query.order("created_at", { ascending: false });
+  } else {
+    query = query
+      .order("service_date", { ascending: true, nullsFirst: false })
+      .order("created_at", { ascending: false });
+  }
+
+  buildStorageOrderAdminFilters(query, queryParams, {
+    matchingSiteUserIds,
+    supportedColumns: new Set(selectColumns)
+  });
+
+  const queryStartedAt = nowMs();
+  const { data, error } = await query;
+  if (error) {
+    throw error;
+  }
+
+  const items = (await enrichStorageOrdersWithPublicUserIds(supabase, data || []))
+    .map(normalizeStorageAdminListItem);
+  const rows = buildStorageExportRows(items);
+  const columns = buildStorageExportColumns(queryParams.order_type);
+  const excelHtml = rowsToExcelHtml(rows, columns);
+
+  logPerf("storage.export", {
+    admin: adminUser.id,
+    rows: rows.length,
+    searchMs,
+    queryMs: nowMs() - queryStartedAt
+  });
+
+  res.statusCode = 200;
+  res.setHeader("Content-Type", "application/vnd.ms-excel; charset=utf-8");
+  res.setHeader("Content-Disposition", `attachment; filename="${buildStorageExportFilename(queryParams)}"`);
+  res.end(Buffer.from(`\ufeff${excelHtml}`, "utf8"));
 }
 
 async function handleUsers(req, res, supabase) {
@@ -1584,6 +1872,15 @@ async function handleMemberships(req, res, supabase, subAction = "") {
     return;
   }
 
+  if (subAction && req.method === "DELETE") {
+    try {
+      ok(res, await deleteMembershipEntitlement(supabase, subAction, adminUser.id));
+    } catch (error) {
+      badRequest(res, error.message);
+    }
+    return;
+  }
+
   if (req.method === "POST") {
     const body = await parseJsonBody(req);
     try {
@@ -1614,6 +1911,7 @@ async function handleMemberships(req, res, supabase, subAction = "") {
   const status = String(queryParams.status || "").trim();
   const benefitType = String(queryParams.benefit_type || "").trim();
   const claimStatus = String(queryParams.claim_status || "").trim();
+  const displayStatus = String(queryParams.display_status || "").trim();
   const search = String(queryParams.search || "").trim();
   const matchingUserIds = search ? await findStorageSearchSiteUserIds(supabase, search) : [];
 
@@ -1703,20 +2001,70 @@ async function handleMemberships(req, res, supabase, subAction = "") {
     }
     auditLogsByEntitlement.get(key).push(log);
   });
+  const activationCodeIds = Array.from(new Set(entitlements
+    .map(entitlement => entitlement.metadata?.activation_code_id)
+    .filter(Boolean)
+    .map(String)));
+  let activationCodeById = new Map();
+  if (activationCodeIds.length) {
+    const { data: activationCodes, error: activationCodeError } = await supabase
+      .from("membership_activation_codes")
+      .select("id, generated_by_admin_id")
+      .in("id", activationCodeIds);
+    if (activationCodeError) {
+      throw activationCodeError;
+    }
+    activationCodeById = new Map((activationCodes || []).map(code => [String(code.id), code]));
+  }
+  const adminIds = Array.from(new Set(entitlements
+    .flatMap(entitlement => {
+      const activationCodeId = entitlement.metadata?.activation_code_id;
+      const activationCode = activationCodeId ? activationCodeById.get(String(activationCodeId)) : null;
+      return [
+        entitlement.granted_by_admin_id,
+        activationCode?.generated_by_admin_id
+      ];
+    })
+    .filter(Boolean)
+    .map(String)));
+  let adminById = new Map();
+  if (adminIds.length) {
+    const { data: admins, error: adminError } = await supabase
+      .from("admin_users")
+      .select("id, name, username, email")
+      .in("id", adminIds);
+    if (adminError) {
+      throw adminError;
+    }
+    adminById = new Map((admins || []).map(admin => [String(admin.id), admin]));
+  }
 
   ok(res, {
     items: entitlements
-      .map(entitlement => ({
-        ...entitlement,
-        user: userById.get(String(entitlement.site_user_id)) || null,
-        claim: claimByEntitlement.get(entitlement.id) || null,
-        audit_logs: auditLogsByEntitlement.get(String(entitlement.id)) || []
-      }))
+      .map(entitlement => {
+        const activationCodeId = entitlement.metadata?.activation_code_id;
+        const activationCode = activationCodeId ? activationCodeById.get(String(activationCodeId)) : null;
+        const advisorId = activationCode?.generated_by_admin_id || entitlement.granted_by_admin_id || null;
+        return {
+          ...entitlement,
+          user: userById.get(String(entitlement.site_user_id)) || null,
+          claim: claimByEntitlement.get(entitlement.id) || null,
+          advisor: advisorId ? adminById.get(String(advisorId)) || null : null,
+          member_birthday: entitlement.metadata?.member_birthday || null,
+          audit_logs: auditLogsByEntitlement.get(String(entitlement.id)) || []
+        };
+      })
       .filter(item => {
         if (!benefitType && !claimStatus) {
           return true;
         }
         return Boolean(item.claim);
+      })
+      .filter(item => {
+        if (displayStatus === "unused") {
+          return item.status === "active" && !item.claim;
+        }
+        return true;
       }),
     pagination: {
       page,
@@ -1760,6 +2108,63 @@ async function handleMembershipClaimAction(req, res, supabase, claimId, subActio
   methodNotAllowed(res, ["POST"]);
 }
 
+async function handleMembershipCodes(req, res, supabase, codeId = "", subAction = "") {
+  const adminUser = await requireAdminUser(req, res, supabase);
+  if (!adminUser) {
+    return;
+  }
+
+  if (!codeId && req.method === "GET") {
+    ok(res, await listMembershipActivationCodes(supabase, req.query || {}));
+    return;
+  }
+
+  if (!codeId && req.method === "POST") {
+    const body = await parseJsonBody(req);
+    try {
+      const result = await createMembershipActivationCode(supabase, {
+        membership_cycle: body.membership_cycle || getCurrentMembershipCycle(),
+        bound_email: body.bound_email || null,
+        bound_phone: body.bound_phone || null,
+        booking_reference: body.booking_reference || null,
+        notes: body.notes || null,
+        expires_at: body.expires_at || null
+      }, adminUser.id);
+      created(res, result);
+    } catch (error) {
+      badRequest(res, error.message);
+    }
+    return;
+  }
+
+  if (codeId && subAction === "revoke") {
+    if (req.method !== "POST") {
+      methodNotAllowed(res, ["POST"]);
+      return;
+    }
+    const body = await parseJsonBody(req);
+    try {
+      ok(res, {
+        activationCode: await revokeMembershipActivationCode(supabase, codeId, adminUser.id, body.reason || body.note || "")
+      });
+    } catch (error) {
+      badRequest(res, error.message);
+    }
+    return;
+  }
+
+  if (codeId && !subAction && req.method === "DELETE") {
+    try {
+      ok(res, await deleteMembershipActivationCode(supabase, codeId, adminUser.id));
+    } catch (error) {
+      badRequest(res, error.message);
+    }
+    return;
+  }
+
+  methodNotAllowed(res, ["GET", "POST", "DELETE"]);
+}
+
 module.exports = async function handler(req, res) {
   try {
     const supabase = getSupabaseAdmin();
@@ -1788,6 +2193,10 @@ module.exports = async function handler(req, res) {
     }
     if (head === "users") {
       await handleUsers(req, res, supabase);
+      return;
+    }
+    if (head === "storage-orders-export") {
+      await handleStorageOrdersExport(req, res, supabase);
       return;
     }
     if (head === "storage-orders") {
@@ -1820,6 +2229,10 @@ module.exports = async function handler(req, res) {
     }
     if (head === "membership-claims") {
       await handleMembershipClaimAction(req, res, supabase, second || "", third || "");
+      return;
+    }
+    if (head === "membership-codes") {
+      await handleMembershipCodes(req, res, supabase, second || "", third || "");
       return;
     }
 

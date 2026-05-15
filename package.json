@@ -9,8 +9,8 @@
     "dev:vercel": "npx --yes vercel@53.1.0 dev",
     "qa:playwright:smoke": "node scripts/playwright-smoke.js",
     "qa:playwright:transport-flow": "node scripts/playwright-transport-flow.js",
-    "build:preview": "npx --yes vercel@53.1.0 build",
-    "build:prod": "npx --yes vercel@53.1.0 build --prod",
+    "build:preview": "node scripts/safe-vercel-build.js",
+    "build:prod": "node scripts/safe-vercel-build.js --prod",
     "deploy:preview": "npx --yes vercel@53.1.0 deploy",
     "deploy:prod": "npx --yes vercel@53.1.0 deploy --prod"
   },

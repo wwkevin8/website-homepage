@@ -168,6 +168,31 @@
         body: JSON.stringify(payload)
       });
     },
+    deleteMembership(id) {
+      return request(`/api/admin/memberships/${encodeURIComponent(id)}`, {
+        method: "DELETE"
+      });
+    },
+    createMembershipClaim(payload = {}) {
+      return request("/api/admin/membership-claims", {
+        method: "POST",
+        body: JSON.stringify(payload)
+      });
+    },
+    listMembershipCodes(filters) {
+      return request(`/api/admin/membership-codes${buildQuery(filters)}`);
+    },
+    createMembershipCode(payload) {
+      return request("/api/admin/membership-codes", {
+        method: "POST",
+        body: JSON.stringify(payload)
+      });
+    },
+    deleteMembershipCode(id) {
+      return request(`/api/admin/membership-codes/${encodeURIComponent(id)}`, {
+        method: "DELETE"
+      });
+    },
     listManagers(filters) {
       return request(`/api/admin/managers${buildQuery(filters)}`);
     },

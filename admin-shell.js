@@ -498,10 +498,128 @@
         <button class="admin-pet-tip" type="button" data-admin-pet-tip="如果这里报错了，我会先提醒你看哪一块。">看报错提醒</button>
         <button class="admin-pet-tip" type="button" data-admin-pet-tip="改完拼车组之后，记得刷新核对一遍成员和价格。">核对拼车组</button>
       </div>
-      <button class="admin-pet-dog" type="button" aria-label="后台小助手" data-admin-pet-button></button>
+      <button class="admin-pet-dog" type="button" aria-label="后台小助手，可拖动" data-admin-pet-button>
+        <span class="admin-pet-sprite" aria-hidden="true"></span>
+      </button>
     `;
     document.body.appendChild(widget);
     return widget;
+  }
+
+  function clampAdminPetPosition(position) {
+    const margin = 12;
+    const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
+    const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+    const width = position.width || 140;
+    const height = position.height || 190;
+    const maxLeft = Math.max(margin, viewportWidth - width - margin);
+    const maxTop = Math.max(margin, viewportHeight - height - margin);
+
+    return {
+      left: Math.min(Math.max(position.left, margin), maxLeft),
+      top: Math.min(Math.max(position.top, margin), maxTop)
+    };
+  }
+
+  function applyAdminPetPosition(widget, position) {
+    const next = clampAdminPetPosition({
+      left: position.left,
+      top: position.top,
+      width: widget.offsetWidth,
+      height: widget.offsetHeight
+    });
+
+    widget.style.left = `${next.left}px`;
+    widget.style.top = `${next.top}px`;
+    widget.style.right = "auto";
+    widget.style.bottom = "auto";
+    widget.dataset.adminPetMoved = "true";
+    return next;
+  }
+
+  function restoreAdminPetPosition(widget) {
+    try {
+      const saved = JSON.parse(window.localStorage.getItem("adminPetPosition") || "null");
+      if (!saved || typeof saved.left !== "number" || typeof saved.top !== "number") {
+        return;
+      }
+      window.requestAnimationFrame(() => applyAdminPetPosition(widget, saved));
+    } catch (error) {
+      window.localStorage.removeItem("adminPetPosition");
+    }
+  }
+
+  function bindAdminPetDrag(widget, button) {
+    if (button.dataset.adminPetDragBound === "true") {
+      return;
+    }
+    button.dataset.adminPetDragBound = "true";
+
+    let dragState = null;
+
+    const finishDrag = event => {
+      if (!dragState || event.pointerId !== dragState.pointerId) {
+        return;
+      }
+      button.releasePointerCapture?.(event.pointerId);
+      widget.classList.remove("is-dragging");
+      if (dragState.moved) {
+        button.dataset.adminPetSuppressClick = "true";
+        window.setTimeout(() => {
+          delete button.dataset.adminPetSuppressClick;
+        }, 180);
+      }
+      dragState = null;
+    };
+
+    button.addEventListener("pointerdown", event => {
+      if (event.button !== undefined && event.button !== 0) {
+        return;
+      }
+      const rect = widget.getBoundingClientRect();
+      dragState = {
+        pointerId: event.pointerId,
+        startClientX: event.clientX,
+        startClientY: event.clientY,
+        startLeft: rect.left,
+        startTop: rect.top,
+        moved: false
+      };
+      button.setPointerCapture?.(event.pointerId);
+    });
+
+    button.addEventListener("pointermove", event => {
+      if (!dragState || event.pointerId !== dragState.pointerId) {
+        return;
+      }
+      const deltaX = event.clientX - dragState.startClientX;
+      const deltaY = event.clientY - dragState.startClientY;
+      if (!dragState.moved && Math.hypot(deltaX, deltaY) < 6) {
+        return;
+      }
+      dragState.moved = true;
+      widget.classList.add("is-dragging");
+      event.preventDefault();
+      const next = applyAdminPetPosition(widget, {
+        left: dragState.startLeft + deltaX,
+        top: dragState.startTop + deltaY
+      });
+      window.localStorage.setItem("adminPetPosition", JSON.stringify(next));
+    });
+
+    button.addEventListener("pointerup", finishDrag);
+    button.addEventListener("pointercancel", finishDrag);
+    window.addEventListener("resize", () => {
+      if (widget.dataset.adminPetMoved !== "true") {
+        return;
+      }
+      const rect = widget.getBoundingClientRect();
+      const next = applyAdminPetPosition(widget, {
+        left: rect.left,
+        top: rect.top
+      });
+      window.localStorage.setItem("adminPetPosition", JSON.stringify(next));
+    });
   }
 
   function bindAdminPet(meta) {
@@ -563,9 +681,14 @@
     button.dataset.adminPetBound = "true";
     tips.hidden = true;
     widget.classList.remove("is-open");
+    restoreAdminPetPosition(widget);
+    bindAdminPetDrag(widget, button);
     showBubble(meta?.title ? `${meta.title}这页我帮你盯着。` : idleLines[0], "happy");
 
     button.addEventListener("click", () => {
+      if (button.dataset.adminPetSuppressClick === "true") {
+        return;
+      }
       const line = randomFrom([...encouragementLines, ...logicLines]);
       widget.classList.add("is-waving");
       showBubble(line, "happy");

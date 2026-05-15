@@ -54,42 +54,18 @@
             <label class="field"><span>电话</span><input name="phone" readonly></label>
             <label class="field"><span>微信号 / 联系方式</span><input name="wechat_id" readonly></label>
 
-            <div class="storage-detail-section-title transport-field-span-2">
-              <h2>服务信息</h2>
-              <p id="storageDetailServiceHint">箱型明细会从用户提交时的估价记录自动读取。</p>
-            </div>
-            <label class="field"><span>时间段</span><input name="service_time_slot"></label>
-            <label class="field" data-storage-detail-type="return"><span>送回 / 自取日期</span><input name="service_date" type="date"></label>
-            <label class="field" data-storage-detail-type="return"><span>原寄存订单号</span><input name="related_order_no"></label>
-            <label class="field" data-storage-detail-type="return"><span>寄存物品数量</span><input name="estimated_box_count" type="number" min="0" step="1"></label>
-            <label class="field" data-storage-detail-type="return"><span>物品简单描述</span><input name="item_description"></label>
-            <label class="field transport-field-span-2" data-storage-detail-type="collection"><span>箱型 / 物品信息</span><textarea name="box_type_summary" rows="4" readonly></textarea></label>
-
-            <div class="storage-detail-section-title transport-field-span-2" data-storage-detail-type="collection" data-storage-purchase-field>
-              <h2>买箱信息</h2>
-              <p>仅在用户有买箱需求时显示；买箱编号和送箱日期与取件/自送日期分开核对。</p>
-            </div>
-            <label class="field" data-storage-detail-type="collection" data-storage-purchase-field><span>买箱编号</span><input name="box_order_no" readonly></label>
-            <label class="field" data-storage-detail-type="collection" data-storage-purchase-field><span>箱型</span><textarea name="box_purchase_summary" rows="3" readonly></textarea></label>
-            <label class="field" data-storage-detail-type="collection" data-storage-purchase-field><span>购买数量</span><input name="box_purchase_quantity" readonly></label>
-            <label class="field" data-storage-detail-type="collection" data-storage-purchase-field><span>买箱费用</span><input name="box_purchase_fee" readonly></label>
-            <label class="field" data-storage-detail-type="collection" data-storage-purchase-field><span>送箱日期</span><input name="box_delivery_date" type="date"></label>
-            <label class="field" data-storage-detail-type="collection" data-storage-purchase-field><span>送箱时间段</span><input name="box_delivery_time_slot"></label>
-            <label class="field" data-storage-detail-type="collection" data-storage-purchase-field><span>送箱方式</span><input name="box_delivery_method"></label>
-            <label class="field transport-field-span-2" data-storage-detail-type="collection" data-storage-purchase-field><span>地址</span><textarea name="box_delivery_address" rows="2" readonly></textarea></label>
-            <label class="field transport-field-span-2" data-storage-detail-type="collection" data-storage-purchase-field><span>备注</span><textarea name="box_delivery_notes" rows="2" readonly></textarea></label>
-
             <div class="storage-detail-section-title transport-field-span-2" data-storage-detail-type="collection">
               <h2>寄存信息</h2>
-              <p>取件/自送日期、寄存周期、箱型数量和费用独立展示，避免与送箱日期混淆。</p>
+              <p>取件/自送日期、寄存周期、箱型数量和费用集中展示，避免上下信息重复。</p>
             </div>
+            <label class="field" data-storage-detail-type="collection"><span>时间段</span><input name="service_time_slot"></label>
             <label class="field" data-storage-detail-type="collection"><span>取件/自送日期</span><input name="storage_intake_date" type="date"></label>
-            <label class="field" data-storage-detail-type="collection"><span>寄存开始日期</span><input name="storage_start_date" type="date"></label>
             <label class="field" data-storage-detail-type="collection"><span>寄存结束日期</span><input name="storage_end_date" type="date"></label>
             <label class="field" data-storage-detail-type="collection"><span>寄存天数</span><input name="storage_days" readonly></label>
             <label class="field" data-storage-detail-type="collection"><span>寄存费用</span><input name="storage_fee" readonly></label>
             <label class="field" data-storage-detail-type="collection"><span>取件方式</span><input name="storage_pickup_method" readonly></label>
             <label class="field" data-storage-detail-type="collection"><span>送回方式</span><input name="storage_return_method" readonly></label>
+            <label class="field transport-field-span-2" data-storage-detail-type="collection"><span>箱型 / 物品信息</span><textarea name="box_type_summary" rows="4" readonly></textarea></label>
 
             <div class="storage-detail-section-title transport-field-span-2">
               <h2>地址信息</h2>
@@ -103,19 +79,16 @@
 
             <div class="storage-detail-section-title transport-field-span-2">
               <h2>会员抵扣信息</h2>
-              <p>只读展示会员权益绑定与服务端计算结果，实际核销请在会员权益后台处理。</p>
+              <p>只显示客服核对需要的会员减免结果，实际核销请在会员权益后台处理。</p>
             </div>
-            <label class="field transport-field-span-2"><span>membership_benefit_claim_id</span><input name="membership_benefit_claim_id" readonly></label>
-            <label class="field"><span>membership_discount_amount</span><input name="membership_discount_amount" readonly></label>
-            <label class="field"><span>extra_charge_amount</span><input name="extra_charge_amount" readonly></label>
-            <label class="field"><span>final_price</span><input name="final_price" readonly></label>
-            <label class="field transport-field-span-2"><span>membership_discount_breakdown_json</span><textarea name="membership_discount_breakdown_json" rows="6" readonly></textarea></label>
+            <label class="field"><span>是否使用会员权益</span><input name="membership_status" readonly></label>
+            <label class="field"><span>会员减免金额</span><input name="membership_discount_amount" readonly></label>
 
             <div class="storage-detail-section-title transport-field-span-2">
               <h2>备注信息</h2>
               <p>用户备注和寄存信息摘要用于客服核对订单内容。</p>
             </div>
-            <label class="field transport-field-span-2"><span>用户备注</span><textarea name="notes" rows="1"></textarea></label>
+            <label class="field transport-field-span-2"><span>用户备注</span><input name="notes"></label>
             <label class="field transport-field-span-2"><span>寄存信息摘要</span><textarea name="final_readable_message" rows="8"></textarea></label>
 
             <div class="transport-card-actions transport-field-span-2">

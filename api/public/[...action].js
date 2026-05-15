@@ -1,6 +1,7 @@
 const authConfigHandler = require("../../public-api-handlers/auth-config");
 const membershipBenefitSelectionHandler = require("../../public-api-handlers/membership-benefit-selection");
 const membershipMeHandler = require("../../public-api-handlers/membership-me");
+const membershipRedeemCodeHandler = require("../../public-api-handlers/membership-redeem-code");
 const myStorageOrdersHandler = require("../../public-api-handlers/my-storage-orders");
 const myTransportRequestsHandler = require("../../public-api-handlers/my-transport-requests");
 const storageOrderSubmitHandler = require("../../public-api-handlers/storage-order-submit");
@@ -15,6 +16,7 @@ const HANDLERS = {
   "auth-config": authConfigHandler,
   "membership/me": membershipMeHandler,
   "membership/benefit-selection": membershipBenefitSelectionHandler,
+  "membership/redeem-code": membershipRedeemCodeHandler,
   "my-storage-orders": myStorageOrdersHandler,
   "my-transport-requests": myTransportRequestsHandler,
   "storage-order-submit": storageOrderSubmitHandler,

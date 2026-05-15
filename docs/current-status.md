@@ -7,10 +7,991 @@
 
 ## Last Updated Task
 
-- Date: 2026-05-13
-- Scope: implement NGN membership admin and user-center UI locally
+- Date: 2026-05-15
+- Scope: set mobile membership title/body exact font sizes
 
 ## Latest Completed Work
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before setting exact mobile membership typography sizes.
+- Updated `styles.css`:
+  - set the mobile service-center membership title to exactly `13px`;
+  - set the mobile membership body copy to exactly `9px`.
+- Updated `service-center.html`:
+  - bumped the `styles.css` cache-busting version to `20260515-membership-mobile-font-5`.
+- Verification:
+  - `git diff --check -- styles.css service-center.html` passed;
+  - local `service-center.html` now points to the refreshed stylesheet version.
+- No JS, API, database schema, admin page, email, deployment, commit, push, or Vercel deployment was performed.
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before reducing mobile membership module font sizes.
+- Updated `styles.css` only:
+  - reduced the mobile membership title size;
+  - reduced body copy, primary action button, form label, and input font sizes under `max-width: 720px`;
+  - kept desktop styles and membership behavior unchanged.
+- Verification:
+  - `git diff --check -- styles.css` passed;
+  - `npm run build:prod` passed through `scripts/safe-vercel-build.js`, and `.vercel/output` was removed afterward.
+- No JS, API, database schema, admin page, email, deployment, commit, or push was performed.
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before compacting the mobile membership module.
+- Updated `styles.css` only:
+  - reduced the mobile top spacing for the service-center membership section;
+  - tightened the membership card padding, radius, shadow, decorative corner card, title size, status pill, body copy, action buttons, and activation-code form spacing under `max-width: 720px`;
+  - desktop membership styling remains unchanged.
+- Verification:
+  - `git diff --check -- styles.css` passed;
+  - `npm run build:prod` passed through `scripts/safe-vercel-build.js`, and `.vercel/output` was removed afterward.
+- No JS, API, database schema, admin page, email, deployment, commit, or push was performed.
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before removing the highlighted membership summary strip.
+- Updated `service-center.js`:
+  - removed the three visible highlight boxes above the membership-code button in the non-member membership module.
+- Updated `styles.css`:
+  - removed the now-unused `.profile-membership-highlights` styles and mobile override.
+- Verification:
+  - `node --check service-center.js` passed;
+  - confirmed `profile-membership-highlights`, `4 选 1`, and `后台登记` no longer appear in `service-center.js` or `styles.css`;
+  - `git diff --check -- service-center.js styles.css` passed.
+- No API, database schema, admin page, email, deployment, commit, or push was performed.
+
+- Read `E:\webside\AGENTS.md`, `E:\webside\docs\current-status.md`, and `C:\Users\75262\.agents\skills\ui-ux-pro-max\SKILL.md` before polishing the service-center membership entitlement module.
+- Updated `service-center.js`:
+  - removed the visible `联系客服` button from the non-member membership-code area;
+  - added a compact three-item membership highlight strip above the code entry action.
+- Updated `styles.css`:
+  - enriched the membership module with a light rainbow top accent, subtle card texture, stronger shadow, and clearer status pill;
+  - improved the `输入会员码` and `兑换会员权益` buttons with stronger gradient treatment and hover shine;
+  - upgraded the activation-code form with a soft panel, clearer field labels, focus ring, and mobile full-width controls.
+- Verification:
+  - `node --check service-center.js` passed;
+  - `git diff --check -- service-center.js styles.css` passed;
+  - `npm run build:prod` passed through `scripts/safe-vercel-build.js`, and `.vercel/output` was removed afterward;
+  - local `http://localhost:5173/service-center.html` returned HTTP 200; unauthenticated browser verification could not render the logged-in membership module, so final visual acceptance should be checked in the user's logged-in browser session.
+- No API, database schema, admin page, email, deployment, commit, or push was performed.
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before reverting the attempted richer service-center membership UI.
+- User preferred the previous membership entitlement UI over the in-progress richer interactive version.
+- Updated `service-center.js`:
+  - removed the newly added preview-card data model and preview-panel interaction from the interrupted UI experiment;
+  - removed the extra capture-phase submit handler that was added only for that experiment;
+  - restored the module to rely on the pre-existing membership render/submit/select handlers.
+- Verification:
+  - confirmed the experiment markers `MEMBERSHIP_BENEFIT_VIEW`, `renderMembershipValueCards`, `data-membership-preview`, `stopImmediatePropagation`, and `membershipStatusText` no longer appear in `service-center.js`;
+  - `node --check service-center.js` passed.
+- No CSS, API, database schema, email, deployment, commit, or push was performed.
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before repairing another gray-block/static-asset truncation recurrence.
+- Removed local generated `E:\webside\.vercel\output` after verifying the resolved path, so stale Vercel hardlinks no longer point back at source assets.
+- Restored 25 truncated static resources under `img/` from the current Git version by exporting them to a temporary restore directory first, then copying them back to source paths:
+  - affected resources had exact truncation sizes such as `0`, `65,536`, or `131,072` bytes;
+  - restored resources included activity videos, pickup videos, UNO map images, Nottingham square images, storage-pricing images, student-accommodation screenshots, and the Nottingham-square image copy.
+- Updated `package.json`:
+  - `build:preview` now runs `node scripts/safe-vercel-build.js`;
+  - `build:prod` now runs `node scripts/safe-vercel-build.js --prod`.
+- Added `scripts/safe-vercel-build.js`:
+  - deletes `.vercel/output` before running Vercel build;
+  - runs `npx --yes vercel@53.1.0 build` with the passed target arguments;
+  - deletes `.vercel/output` again in a `finally` block after the build succeeds or fails, preventing hardlinked build output from remaining in the workspace.
+- Verification:
+  - confirmed `E:\webside\.vercel\output` no longer exists after cleanup;
+  - confirmed `img/` has zero files with exact `0`, `65,536`, or `131,072` byte truncation sizes;
+  - decoded restored PNG/JPG assets with `System.Drawing.Image.FromFile()` and confirmed dimensions and restored file sizes;
+  - `node --check scripts/safe-vercel-build.js` passed;
+  - `git diff --check` passed for `package.json`, `scripts/safe-vercel-build.js`, `AGENTS.md`, and `docs/current-status.md`;
+  - `npm run build:prod` passed and `.vercel/output` was automatically removed afterward.
+- Remaining unrelated workspace state:
+  - `img/hero-consultation-generated.jpg` and `img/hero-consultation-horde.png` are still deleted from earlier local state;
+  - `img/admin-pet-fleta.webp` remains untracked.
+- No public page, admin page, API, database schema, email, deployment, commit, or push was performed.
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before fixing the admin membership activation-code load error.
+- Diagnosed the admin error `column membership_activation_codes.member_birthday does not exist` as a schema/code timing mismatch:
+  - the frontend and API had started using membership birthday month/day;
+  - the Supabase table in the current environment had not yet applied `supabase/20260515_membership_activation_code_birthday.sql`.
+- Updated `api/_lib/membership.js`:
+  - activation-code create/list/revoke/delete queries no longer require `membership_activation_codes.member_birthday`;
+  - redemption still accepts fixed `MM-DD` birthday input;
+  - if the database column is missing during redemption, the code retries safely without writing that column and stores the birthday on the created membership entitlement metadata.
+- Updated `api/admin/[...action].js`:
+  - membership list no longer selects `member_birthday` from `membership_activation_codes`;
+  - admin membership display reads the birthday from entitlement metadata instead.
+- Verification:
+  - `node --check api/_lib/membership.js` passed;
+  - `node --check api/admin/[...action].js` passed;
+  - `node --check admin-memberships.js` passed;
+  - `node --check service-center.js` passed;
+  - `node --check public-api-handlers/membership-redeem-code.js` passed;
+  - `git diff --check` passed for the touched membership files;
+  - `npm run build:prod` passed.
+- Required database follow-up remains:
+  - run `supabase/20260515_membership_activation_code_birthday.sql` once in Supabase when ready so the activation-code record itself can also store `member_birthday`;
+  - until then, the admin page should load and redeemed-member birthdays are available from entitlement metadata.
+- No deployment, commit, or push to `main` was performed.
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` after the Fleta admin assistant pet disappeared.
+- Diagnosed the issue as a truncated local static asset:
+  - `admin-shell.js` still binds `bindAdminPet(meta)`;
+  - `styles.css` still references `img/admin-pet-fleta.webp`;
+  - `img/admin-pet-fleta.webp` had been truncated to exactly `65,536` bytes;
+  - the complete source package file at `C:\Users\75262\.codex\pets\fleta\spritesheet.webp` was still `546,474` bytes.
+- Restored `img/admin-pet-fleta.webp` from the complete Fleta package spritesheet.
+- Removed local generated `.vercel/output/` after confirming `img/admin-pet-fleta.webp` was hardlinked to `.vercel/output/static/img/admin-pet-fleta.webp`; this breaks the hardlink and reduces recurrence risk.
+- Verification:
+  - `fsutil hardlink list img/admin-pet-fleta.webp` now reports only the source `img/` path;
+  - `node --check admin-shell.js` passed;
+  - local `http://localhost:5173/admin-dashboard.html` returned HTTP 200;
+  - local browser check confirmed `#adminPetWidget` exists, `.admin-pet-sprite` is visible, `admin-pet-fleta.webp` is loaded, and animation duration remains `60s`;
+  - direct local asset request for `/img/admin-pet-fleta.webp` returned HTTP 200 and `546,474` bytes.
+- No public page, API, database schema, email, deployment, commit, or push was performed.
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before fixing membership birthday format.
+- Updated `service-center.js`:
+  - activation-code birthday input now requires fixed `MM-DD` format, e.g. `08-21`;
+  - added frontend `pattern`, `maxlength`, numeric input hint, and title copy.
+- Updated `public-api-handlers/membership-redeem-code.js` and `api/_lib/membership.js`:
+  - added server-side birthday normalization/validation for `MM-DD`;
+  - invalid or missing birthday returns a clear Chinese error;
+  - valid birthday is saved as `member_birthday` on redeemed activation-code records and audit metadata.
+- Updated `api/admin/[...action].js` and `admin-memberships.js`:
+  - membership list loads `member_birthday` from the activation code linked to the entitlement;
+  - restored the `会员生日信息` column after `所属顾问`.
+- Updated `supabase/20260515_membership_activation_code_birthday.sql` and `docs/PROJECT_MAP.md`:
+  - documented the fixed `MM-DD` storage format.
+- Verification:
+  - `node --check service-center.js` passed;
+  - `node --check public-api-handlers/membership-redeem-code.js` passed;
+  - `node --check api/_lib/membership.js` passed;
+  - `node --check api/admin/[...action].js` passed;
+  - `node --check admin-memberships.js` passed;
+  - `git diff --check` passed for changed membership files;
+  - `npm run build:prod` passed.
+- Required database follow-up before saving/displaying birthdays:
+  - run `supabase/20260515_membership_activation_code_birthday.sql` once in Supabase SQL Editor.
+- No deployment and no push to `main` was performed.
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before adding long-term prevention rules for recurring image truncation.
+- Updated `E:\webside\AGENTS.md`:
+  - added `Static Asset And Build Output Safety`;
+  - records that `.vercel/output/` is disposable generated output, not a canonical asset source;
+  - warns that `.vercel/output/static/img/...` may be hardlinked to source files under `img/...`;
+  - instructs future tasks not to edit, optimize, sync, partially copy, or restore assets from `.vercel/output/static/img/`;
+  - recommends deleting `.vercel/output/` before Vercel builds, asset recovery, or static-output inspection;
+  - records the quick recurrence check for exact chunk-sized files such as `65,536` or `131,072` bytes and `fsutil hardlink list`.
+- Verification:
+  - confirmed the new long-term safety section exists in `E:\webside\AGENTS.md`;
+  - this was a documentation-only change.
+- No public page, admin page, API, database schema, email, deployment, commit, or push was performed.
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before fixing the admin membership activation-code error.
+- Updated `api/_lib/membership.js`:
+  - removed the unused activation-code birthday field from create/list/redeem queries and updates so the admin page no longer asks Supabase for a missing column.
+- Updated `api/admin/[...action].js`:
+  - removed the same missing birthday field from membership-list activation-code lookup.
+- Updated `admin-memberships.js`:
+  - removed the unused member birthday column from the membership list.
+- Verification:
+  - confirmed `member_birthday` and `member_birth_date` no longer appear in `api/_lib/membership.js`, `api/admin/[...action].js`, or `admin-memberships.js`;
+  - `node --check api/_lib/membership.js` passed;
+  - `node --check api/admin/[...action].js` passed;
+  - `node --check admin-memberships.js` passed;
+  - `npm run build:prod` passed.
+- No public page, database schema, email, deployment, or push to `main` was performed.
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before investigating gray blocks in local image thumbnails.
+- Diagnosed the affected `img/` assets as truncated local files:
+  - several image files were exactly `65,536` bytes and decoded with premature end-of-data behavior, causing Windows Explorer and image decoders to fill missing lower portions with gray or black blocks;
+  - the issue was file-content corruption/truncation, not a frontend layout or CSS overlay.
+- Restored complete copies from the local static output backup for:
+  - `img/Firo.jpg`;
+  - `img/Kevin.jpg`;
+  - `img/kim.jpg`;
+  - `img/jituelaoshi.jpg`;
+  - `img/pickup-hero-figma.png`;
+  - `img/pickup-service-qr.jpg`;
+  - `img/admin-pet-dog.png`.
+- Verification:
+  - confirmed restored file sizes match the complete backup copies instead of the previous `65,536` byte truncation;
+  - decoded the restored images with `System.Drawing.Image.FromFile()` and confirmed dimensions load successfully;
+  - confirmed `git diff --name-status` no longer reports changes for the restored tracked image assets.
+- Follow-up note:
+  - `img/admin-pet-fleta.webp` was later restored from `C:\Users\75262\.codex\pets\fleta\spritesheet.webp` and is now `546,474` bytes.
+- No public page, admin page, API, database schema, email, deployment, commit, or push was performed.
+
+- Follow-up diagnosis for why the gray-block image corruption recurred:
+  - `.vercel/output/static/img/...` files are hardlinked to the matching source files under `img/...`;
+  - `fsutil hardlink list` confirmed the source image and Vercel output image can be two directory entries pointing at the same underlying file;
+  - if a build-output cleanup, packaging, sync, or failed copy process opens the `.vercel/output/static/img/...` entry and truncates it, the source `img/...` file is truncated too;
+  - many affected static assets were rewritten at `2026-05-15 02:01:49-02:01:52` to exact chunk sizes such as `0`, `65,536`, or `131,072` bytes, which points to an interrupted/broken batch file-copy or deployment-output process rather than normal image editing.
+- Recommended prevention:
+  - remove `.vercel/output` before builds when static assets have changed or before copying/inspecting build output;
+  - do not edit, optimize, sync, or partially copy files inside `.vercel/output/static/img`;
+  - treat `.vercel/output` as disposable generated output because its static files may be hardlinks to source assets.
+
+- Read `E:\webside\AGENTS.md`, `E:\webside\docs\current-status.md`, and the Supabase skill guidance before adding member birthday month/day capture to activation-code redemption.
+- Added `supabase/20260515_membership_activation_code_birthday.sql`:
+  - adds `membership_activation_codes.member_birthday text`;
+  - stores only the user-entered birthday month/day text for later service reminders;
+  - no eligibility or age validation is performed.
+- Updated `service-center.js`:
+  - the frontend activation-code form now asks for `会员生日（月日）`;
+  - redemption submits `{ code, member_birthday }`.
+- Updated `public-api-handlers/membership-redeem-code.js` and `api/_lib/membership.js`:
+  - public redeem-code API passes the birthday text to the membership helper;
+  - successful redemption saves it on the redeemed activation-code record and audit metadata;
+  - failed entitlement creation restores the code to active and clears the birthday field.
+- Updated `api/admin/[...action].js` and `admin-memberships.js`:
+  - admin membership list loads the birthday text from the activation code linked in entitlement metadata;
+  - added `会员生日信息` column immediately after `所属顾问`.
+- Updated `docs/PROJECT_MAP.md` for the new migration and redeem-code behavior.
+- Verification:
+  - `node --check service-center.js` passed;
+  - `node --check public-api-handlers/membership-redeem-code.js` passed;
+  - `node --check api/_lib/membership.js` passed;
+  - `node --check api/admin/[...action].js` passed;
+  - `node --check admin-memberships.js` passed;
+  - `git diff --check` passed for the changed membership files;
+  - `npm run build:prod` passed.
+- Required database follow-up before this works against Supabase:
+  - run `supabase/20260515_membership_activation_code_birthday.sql` once in Supabase SQL Editor.
+- No deployment and no push to `main` was performed.
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before refining the admin membership benefits page.
+- Updated `admin-memberships.html`:
+  - added a top-right activation-code search form in the one-time activation-code panel;
+  - updated membership status filter options to match the statuses shown in the list;
+  - shortened benefit-type filter labels to `寄存`, `接机`, `搬家`, and `新生大礼包`.
+- Updated `admin-memberships.js`:
+  - activation-code list now loads only the latest 3 rows by default;
+  - activation-code search and reset reload the 3-row list;
+  - membership list now requests 10 rows per page;
+  - membership status filtering now maps display statuses to entitlement or claim filters;
+  - benefit-type display labels now use `寄存`, `接机`, `搬家`, and `新生大礼包`.
+- Updated `api/_lib/membership.js`:
+  - activation-code search can match a full pasted code by searching its stored prefix.
+- Updated `api/admin/[...action].js`:
+  - added a display-status filter case for `有效 / 未使用` so it excludes rows that already have a claim.
+- Updated `styles.css`:
+  - added layout styling for the activation-code panel header search form.
+- Verification:
+  - `node --check admin-memberships.js` passed;
+  - `node --check api/_lib/membership.js` passed;
+  - `node --check api/admin/[...action].js` passed;
+  - `git diff --check` passed for the touched files;
+  - `npm run build:prod` passed.
+- No public page, database schema, email, deployment, or push to `main` was performed.
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before removing the duplicated date field from the admin storage order detail page.
+- Updated `admin-storage-detail.html`:
+  - removed the `寄存开始日期` field from the collection-order storage detail section;
+  - kept `取件/自送日期`, `寄存结束日期`, days, fee, methods, and box/item information visible.
+- Updated `admin-pages.js`:
+  - removed the now-unused `storageStartDate()` helper;
+  - stopped populating and submitting `storage_start_date` from the detail form.
+- Verification:
+  - `node --check admin-pages.js` passed;
+  - confirmed `storage_start_date`, `storageStartDate`, and `寄存开始日期` no longer appear in `admin-storage-detail.html` or `admin-pages.js`.
+  - `npm run build:prod` passed.
+- No public page, API behavior, database schema, email, deployment, or push to `main` was performed.
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before updating the admin membership benefits page.
+- Updated `admin-memberships.js`:
+  - the membership list now shows the claim status first when a user already has a benefit claim, so a used benefit displays as `已使用` instead of the entitlement's base `有效 / 未使用` state;
+  - removed the visible `标记已使用` and `作废权益` buttons from membership row actions;
+  - kept benefit detail, audit log, registration/re-registration, and delete actions unchanged.
+- Verification:
+  - `node --check admin-memberships.js` passed;
+  - confirmed the removed action buttons no longer render in `admin-memberships.js` or `admin-memberships.html`;
+  - `npm run build:prod` passed.
+- No public page, API behavior, database schema, email, deployment, or push to `main` was performed.
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before simplifying the admin storage order detail page.
+- Updated `admin-storage-detail.html`:
+  - removed the `额外收费` and `客户还需支付` fields from the membership deduction section;
+  - changed `用户备注` from a tall textarea to a single-line input.
+- Updated `admin-pages.js`:
+  - stopped populating the removed extra-charge and final-price fields.
+- Verification:
+  - `node --check admin-pages.js` passed;
+  - confirmed the deleted field labels and field names no longer render on `admin-storage-detail.html`;
+  - `npm run build:prod` passed.
+- No public page, API behavior, database schema, email, deployment, or push to `main` was performed.
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before removing duplicated fields from the admin storage order detail page.
+- Updated `admin-storage-detail.html`:
+  - removed the red-boxed duplicate block from the detail form;
+  - removed return-only fields that duplicated the lower storage/detail summary area;
+  - removed the separate buy-box detail block from this page.
+- Updated `admin-pages.js`:
+  - stopped populating removed fields;
+  - stopped saving removed return/buy-box fields from the detail form so existing data is not accidentally cleared.
+- Verification:
+  - `node --check admin-pages.js` passed;
+  - confirmed the removed form field names no longer render in `admin-storage-detail.html`;
+  - `npm run build:prod` passed.
+- No public page, API behavior, database schema, email, deployment, or push to `main` was performed.
+
+- Read `E:\webside\AGENTS.md`, `E:\webside\docs\current-status.md`, and `C:\Users\75262\.agents\skills\ui-ux-pro-max\SKILL.md` before applying the pastel rainbow treatment to the user-center membership card.
+- Updated `styles.css`:
+  - changed the personal-center NGN membership card to use a very light rainbow border;
+  - changed the current-benefit panel to a soft pastel rainbow background while keeping the same text and fields;
+  - kept the useful display fields unchanged: selected benefit, status, linked order, and server-provided waived amount.
+- Verification:
+  - `git diff --check -- styles.css` passed;
+  - first `npm run build:prod` hit a local `.vercel/output` file-permission issue on `storage-hero.mp4`;
+  - cleared the local generated `.vercel/output` directory and reran `npm run build:prod`, which passed.
+- No API, database, admin page, order calculation, deployment, or push to `main` was performed.
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before correcting the ST-C storage order display name.
+- Updated display labels only, without changing order type logic or order number prefixes:
+  - `service-center.js` now shows `storage_collection` / `ST-C` as `取寄存订单`;
+  - `service-center.js` now shows `storage_return` / `ST-R` as `送寄存订单`;
+  - `api/_lib/storage-orders.js` uses `取寄存订单` for `storage_collection` and `送寄存订单` for `storage_return`;
+  - `public-api-handlers/storage-order-submit.js` duplicate-order messages use the corrected names.
+- Verification:
+  - `node --check service-center.js` passed;
+  - `node --check api/_lib/storage-orders.js` passed;
+  - `node --check public-api-handlers/storage-order-submit.js` passed;
+  - `npm run build:prod` passed.
+- No database schema, order numbering, membership logic, deployment, or push to `main` was performed.
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before merging duplicate-looking sections on the admin storage order detail page.
+- Updated `admin-storage-detail.html`:
+  - removed the standalone `服务信息` section from collection-order display;
+  - collection orders now show `时间段`, storage dates, storage days, fee, methods, and `箱型 / 物品信息` together under `寄存信息`;
+  - return orders keep a separate `寄存信息` block for `时间段`, `送回 / 自取日期`, original order number, and item count.
+- Updated `admin-pages.js`:
+  - populates both collection and return time fields from the same saved service time;
+  - saves the correct time field depending on whether the order is `取寄存` or `送寄存`;
+  - updated helper copy so the page no longer describes the duplicated service/storage split.
+- Verification:
+  - `node --check admin-pages.js` passed;
+  - `npm run build:prod` passed.
+- No public page, API behavior, database schema, email, deployment, or push to `main` was performed.
+
+- Read `E:\webside\AGENTS.md`, `E:\webside\docs\current-status.md`, and `C:\Users\75262\.agents\skills\ui-ux-pro-max\SKILL.md` before simplifying the user-center membership card UI after visual feedback.
+- Updated `service-center.js`:
+  - changed the membership state label from `会员权益凭证` to the simpler `当前权益`.
+- Updated `styles.css`:
+  - removed the heavy gradient/shadow treatment from the user-center membership card;
+  - changed the membership state display to a cleaner white card with a light-blue information strip;
+  - kept the useful fields only: selected benefit, status, linked order, and server-provided waived amount.
+- Verification:
+  - `node --check service-center.js` passed;
+  - `npm run build:prod` passed.
+- No API, database, admin page, order calculation, deployment, or push to `main` was performed.
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before adding yellow member-row highlighting to the storage Excel export.
+- Updated `api/admin/[...action].js`:
+  - changed the storage export response from plain CSV to Excel-compatible `.xls` HTML so row colors can be preserved;
+  - rows with `membership_benefit_claim_id` now export with the same light yellow background used in the admin storage list;
+  - kept the existing filtered export behavior and the type-specific collection/return export columns.
+- Verification:
+  - `node --check api/admin/[...action].js` passed;
+  - `npm run build:prod` passed.
+- No public page, visible admin UI, database schema, email, deployment, or push to `main` was performed.
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before simplifying the storage collection/return Excel export columns.
+- Updated `api/admin/[...action].js`:
+  - added type-specific storage export columns;
+  - when exporting `取寄存订单` or `送寄存订单`, the CSV now omits `主订单编号`, `买箱编号`, `房间 / 公寓`, `会员减免`, `额外加收`, `最终价格`, and `状态`;
+  - buy-box or untyped exports keep the fuller export columns.
+- Verification:
+  - `node --check api/admin/[...action].js` passed;
+  - `npm run build:prod` passed.
+- No public page, visible admin UI, database schema, email, deployment, or push to `main` was performed.
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before simplifying the admin storage order detail page.
+- Updated `admin-storage-detail.html`:
+  - removed the `物品简单描述` field from the return-order service section;
+  - simplified `会员抵扣信息` to Chinese customer-service fields only: `是否使用会员权益`, `会员减免金额`, `额外收费`, and `客户还需支付`;
+  - removed raw `membership_benefit_claim_id` and `membership_discount_breakdown_json` from the visible detail page.
+- Updated `admin-pages.js`:
+  - stopped populating and submitting `item_description` from the detail form so saving the page does not accidentally overwrite old data;
+  - removed the raw membership JSON formatter that is no longer used;
+  - membership status now displays as `已使用会员权益` or `未使用会员权益`.
+- Verification:
+  - `node --check admin-pages.js` passed;
+  - confirmed the removed labels/technical JSON fields no longer render on `admin-storage-detail.html`;
+  - `npm run build:prod` passed.
+- No public page, API behavior, database schema, email, deployment, or push to `main` was performed.
+
+- Read `E:\webside\AGENTS.md`, `E:\webside\docs\current-status.md`, and `C:\Users\75262\.agents\skills\ui-ux-pro-max\SKILL.md` before improving the user-center membership card UI.
+- Updated `service-center.js`:
+  - added a reusable membership pass renderer for selected, reserved, used, cancelled, and in-progress membership states;
+  - selected storage/pickup now display as a clear member benefit pass with the main action on the right;
+  - reserved/used states keep only user-facing details: `关联订单` and server-provided `免去金额`.
+- Updated `styles.css`:
+  - redesigned the user-center NGN membership module with a cleaner membership-pass layout, stronger visual hierarchy, soft status badge, and clearer detail tiles;
+  - added responsive rules so the pass and detail cards stack cleanly on smaller screens.
+- Verification:
+  - `node --check service-center.js` passed;
+  - `npm run build:prod` passed.
+- No API, database, admin page, order calculation, deployment, or push to `main` was performed.
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before adding the admin storage export button.
+- Updated `admin-storage.html`:
+  - added a top toolbar `导出Excel` button next to `查询`.
+- Updated `admin-pages.js`:
+  - the export button builds `/api/admin/storage-orders-export` with the current search, service type, active/expired scope, date range, and sort filters.
+- Updated `api/admin/[...action].js`:
+  - added an admin-authenticated `storage-orders-export` endpoint;
+  - exports the current filtered storage order list as a UTF-8 BOM CSV file that Excel can open directly;
+  - includes order numbers, service type, customer contact, service date/time, purchase quantity, storage dates, address/postcode, price fields, and status;
+  - export is capped at 5000 rows.
+- Verification:
+  - `node --check admin-pages.js` passed;
+  - `node --check api/admin/[...action].js` passed;
+  - `npm run build:prod` passed.
+- No public page, database schema, email, deployment, or push to `main` was performed.
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before adding the active/expired filter to the admin storage list.
+- Updated `admin-storage.html`:
+  - added a `单据范围` filter with `有效单`, `过期单`, and `全部`;
+  - default selection is `有效单`.
+- Updated `admin-pages.js`:
+  - storage admin list requests now send `date_scope`, defaulting to `active`.
+- Updated `api/_lib/storage-orders.js`:
+  - `active` filters `service_date` to today and future dates, using the UK date;
+  - `expired` filters `service_date` to dates before today;
+  - `all` leaves the active/expired date scope unrestricted while still respecting manual start/end date filters.
+- Verification:
+  - `node --check admin-pages.js` passed;
+  - `node --check api/_lib/storage-orders.js` passed;
+  - `node --check api/admin/[...action].js` passed;
+  - `npm run build:prod` passed.
+- No public page, database schema, email, deployment, or push to `main` was performed.
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before adding the waived amount to the user-center membership bound-order display.
+- Updated `service-center.js`:
+  - reserved/used membership details now show `免去金额` when the server-provided `membership_discount_amount` is greater than 0;
+  - `关联订单` remains visible when available;
+  - `extra_charge_amount` and `final_price` remain hidden from the personal-center card.
+- Verification:
+  - `node --check service-center.js` passed;
+  - confirmed the card uses the Chinese label `免去金额` and no longer renders extra/final price fields;
+  - `npm run build:prod` passed.
+- No API, database, admin page, order calculation, deployment, or push to `main` was performed.
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before simplifying the user-center membership bound-order display.
+- Updated `service-center.js`:
+  - removed visible English field labels from the reserved/used membership state;
+  - no longer shows `membership_discount_amount`, `extra_charge_amount`, or `final_price` in the personal-center membership card;
+  - reserved state now says the benefit is bound to an order and waiting for service completion;
+  - used state now says the benefit has been used/completed;
+  - the details area only shows the user-facing `关联订单` number when available.
+- Verification:
+  - `node --check service-center.js` passed;
+  - confirmed the personal-center membership details no longer render those English field names;
+  - `npm run build:prod` passed.
+- No API, database, admin page, order logic, deployment, or push to `main` was performed.
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before updating admin storage list filters and sorting.
+- Updated `admin-storage.html`:
+  - removed the visible `服务类型` and `订单状态` filters from the storage admin toolbar;
+  - kept service type as a hidden field driven by the left-side menu links for `买箱订单`, `取寄存订单`, and `送寄存订单`;
+  - added `开始日期`, `结束日期`, and `排序方式` controls.
+- Updated `admin-pages.js`:
+  - storage list requests now send `date_start`, `date_end`, and `sort` to the admin API;
+  - default sort is `service_date_asc`.
+- Updated `api/_lib/storage-orders.js` and `api/admin/[...action].js`:
+  - admin storage list supports service-date range filtering;
+  - default list order is service date from nearest to farthest, with same-day rows sorted by newest submission;
+  - optional `created_at_desc` keeps submission time newest-first when selected.
+- Verification:
+  - `node --check admin-pages.js` passed;
+  - `node --check api/_lib/storage-orders.js` passed;
+  - `node --check api/admin/[...action].js` passed;
+  - `npm run build:prod` passed.
+- No public page, database schema, email, deployment, or push to `main` was performed.
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before changing the member storage service order highlight color.
+- Updated `styles.css`:
+  - changed `admin-storage-member-order-row` from light blue to light yellow;
+  - changed the left accent line from blue to yellow;
+  - the underlying condition remains unchanged: rows are highlighted only when `membership_benefit_claim_id` is present.
+- Verification:
+  - confirmed the storage member row CSS now uses yellow values `#fff7d6` and `#f59e0b`;
+  - `npm run build:prod` passed.
+- No API, database, public page, membership discount logic, deployment, or push to `main` was performed.
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before marking member storage service orders in the admin list.
+- Updated `admin-pages.js`:
+  - added `storageMembershipRowClass()`;
+  - storage rows with `membership_benefit_claim_id` now receive `admin-storage-member-order-row`;
+  - the same row marker applies to the buy-box order list and the storage collection/return list because both render from `storage_orders`.
+- Updated `styles.css`:
+  - member-linked storage service rows now use a light blue background;
+  - the first cell has a blue left accent line so customer service can spot member-used orders without reading extra columns.
+- Verification:
+  - `node --check admin-pages.js` passed;
+  - confirmed the row class is applied in both storage admin table render paths;
+  - `npm run build:prod` passed.
+- No API, database, public page, membership discount logic, deployment, or push to `main` was performed.
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before renaming the storage calculator end date label.
+- Updated the public storage calculator end-date wording from `结束日期` to `预期结束日期` in:
+  - `storage.html` static calculator label, help text, and default note;
+  - `script.js` dynamic calculator translations, blocked-note text, summary row label, and readable booking message;
+  - `script-homepage-brand.js`, `script-homepage-brand-v2.js`, and `script-homepage-backup.js` matching translation and summary entries.
+- Verification:
+  - `node --check script.js` passed;
+  - `node --check script-homepage-brand.js` passed;
+  - `node --check script-homepage-brand-v2.js` passed;
+  - `node --check script-homepage-backup.js` passed;
+  - confirmed the affected calculator Chinese labels and messages now use `预期结束日期`.
+- No admin page, API, database, email, deployment, or push to `main` was performed.
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before renaming the storage calculator purchase quantity label.
+- Updated the public storage calculator label from `购买数量` to `购买箱子纸皮数量` in:
+  - `storage.html` static calculator markup and fallback copy;
+  - `script.js` dynamic calculator translations and order-breakdown label;
+  - `script-homepage-brand.js`, `script-homepage-brand-v2.js`, and `script-homepage-backup.js` matching translation entries.
+- Verification:
+  - `node --check script.js` passed;
+  - `node --check script-homepage-brand.js` passed;
+  - `node --check script-homepage-brand-v2.js` passed;
+  - `node --check script-homepage-backup.js` passed;
+  - confirmed the updated files now use `购买箱子纸皮数量` for the calculator purchase-quantity label and no longer use the old exact display label in those key entries.
+- No admin page, API, database, email, deployment, or push to `main` was performed.
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before updating the storage intro modal CTA copy.
+- Updated `storage.html`:
+  - changed the left modal CTA from `开始估价预约` to `开始估价预约（送寄存）`;
+  - changed the right modal CTA from `送寄存登记` to `取寄存登记`;
+  - adjusted the right CTA helper text to `已有寄存物品，登记取回/自取`.
+- Verification:
+  - confirmed `storage.html` contains `开始估价预约（送寄存）`, `取寄存登记`, and `登记取回/自取`.
+- No admin page, API, database, email, deployment, or push to `main` was performed.
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before fixing incomplete admin storage address display.
+- Updated `admin-pages.js`:
+  - added `storageAddressValue()` so the admin storage list uses `address_full` first, matching the complete address available on the detail page;
+  - changed the merged column header from `公寓 / 邮编` to `地址 / 邮编`;
+  - the list now shows the full address on the first line, optional `房间 / 公寓：...` on the next line, and postcode underneath.
+- Updated `styles.css`:
+  - widened the admin storage address cell so complete addresses can wrap naturally in the list.
+- Verification:
+  - `node --check admin-pages.js` passed;
+  - confirmed the admin storage list uses `storageAddressValue()` and `地址 / 邮编`.
+- No public page, database, email, deployment, or push to `main` was performed.
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before updating the storage membership intro modal copy.
+- Updated `service-center.js`:
+  - changed the modal wording from `后台已经为您登记` to `客服已经为您登记`;
+  - added that the selected storage benefit includes `免费送 5 个纸箱`;
+  - removed `买箱` from the extra-charge examples in this modal;
+  - changed the final confirmation wording from backend confirmation to customer-service confirmation.
+- Verification:
+  - `node --check service-center.js` passed;
+  - confirmed the modal copy now contains `免费送 5 个纸箱` and no longer contains the old `后台已经` / `买箱、` wording;
+  - `npm run build:prod` passed.
+- No API, database, admin page, email, deployment, or push to `main` was performed.
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before merging the admin storage apartment and postcode columns.
+- Updated the admin storage order list in `admin-pages.js`:
+  - combined the separate `公寓名` and `邮编` columns into one `公寓 / 邮编` column for box orders and storage collection/return orders;
+  - added a shared `storageApartmentPostcodeCell()` renderer so apartment name and postcode display together.
+- Updated `styles.css`:
+  - added `admin-storage-address-cell` styling so apartment names wrap normally and show in full instead of being visually cramped;
+  - postcode now appears underneath the apartment name in the same cell.
+- Verification:
+  - `node --check admin-pages.js` passed;
+  - confirmed the admin storage list now uses `公寓 / 邮编` and no longer renders separate `公寓名` / `邮编` table headers in `admin-pages.js`.
+- No public page, API, database, email, deployment, or push to `main` was performed.
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before adding the user-center storage membership intro modal.
+- Updated `service-center.js`:
+  - the selected-storage membership button now has a dedicated `data-membership-storage-intro` hook;
+  - clicking `前往寄存服务` first opens a modal instead of immediately navigating;
+  - the modal explains that the storage page may still show ordinary estimated pricing, while the user already has NGN membership storage entitlement recorded;
+  - it states the four-choice storage benefit covers 5-10 month basic storage service for up to 5 standard boxes, with extra items such as more boxes, box purchase, overweight, special moving, or out-of-city return still subject to backend confirmation;
+  - users can either cancel or continue to the storage service page.
+- Updated `styles.css` with scoped modal layout, backdrop, close button, and mobile-friendly action wrapping.
+- Verification:
+  - `node --check service-center.js` passed;
+  - confirmed modal hook/copy/classes exist in `service-center.js` and `styles.css`;
+  - `npm run build:prod` passed.
+- No API, database, admin page, email, deployment, or push to `main` was performed.
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before emphasizing the storage calculator blocking reason.
+- Updated the public storage calculator result note:
+  - `script.js` now adds a `result-note-alert` class when the calculator is blocked and has a reason explaining why it cannot calculate or proceed;
+  - `styles.css` now shows that blocked reason in larger, bold red text on desktop and mobile.
+- Verification:
+  - `node --check script.js` passed;
+  - confirmed `result-note-alert` is applied from `script.js` and styled in `styles.css`.
+- No admin page, API, database, email, deployment, or push to `main` was performed.
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before renaming the storage calculator heading.
+- Updated the public storage calculator heading from `非会员价格计算器` to `寄存价格计算器` in `storage.html` and the matching frontend translation entries.
+- Verification:
+  - confirmed the related files now contain `寄存价格计算器` and no longer contain `非会员价格计算器`;
+  - `node --check script.js` passed;
+  - `node --check script-homepage-brand.js` passed;
+  - `node --check script-homepage-brand-v2.js` passed;
+  - `node --check script-homepage-backup.js` passed.
+- No admin page, API, database, email, deployment, or push to `main` was performed.
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before hiding activation-code redeemed-user UUIDs.
+- Updated `api/_lib/membership.js` and `admin-memberships.js`:
+  - activation-code list responses now enrich `redeemed_by_user_id` with safe admin-visible `site_users` display fields: name, email, phone, and public user id;
+  - the admin activation-code table now shows `姓名 / 邮箱`, or another available user display field, instead of raw UUID;
+  - if the user row cannot be loaded, the table falls back to `已兑换` rather than exposing the UUID.
+- Verification:
+  - `node --check api/_lib/membership.js` passed;
+  - `node --check admin-memberships.js` passed;
+  - `npm run build:prod` passed.
+- No database schema change, public page change, deployment, or push to `main` was performed.
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before applying the Supabase constraint fix.
+- Used the Supabase plugin on project `ngn-transport` (`brmsymzkmdnxzhrcaghw`) to apply migration `membership_entitlement_grant_source_activation_code`:
+  - dropped/recreated `membership_entitlements_grant_source_check`;
+  - the live database now allows `grant_source` values `admin` and `activation_code`;
+  - sent `notify pgrst, 'reload schema'`.
+- Verified through Supabase SQL that the constraint definition is now:
+  - `CHECK ((grant_source = ANY (ARRAY['admin'::text, 'activation_code'::text])))`.
+- Restored `api/_lib/membership.js` to write `grant_source: "activation_code"` for activation-code redemption now that the database supports it.
+- Verification:
+  - `node --check api/_lib/membership.js` passed.
+- No deployment and no push to `main` was performed.
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before removing the unused activation-code advanced option.
+- Updated `admin-memberships.html` and `admin-memberships.js`:
+  - removed the `高级选项：绑定邮箱，可选` block from the one-time membership activation-code area;
+  - generation now submits only the fixed membership cycle, without a `bound_email` field;
+  - the activation-code list no longer shows the always-empty `绑定邮箱` column.
+- Verification:
+  - confirmed `admin-memberships.html` / `admin-memberships.js` no longer contain `高级选项`, `绑定邮箱`, or `bound_email`;
+  - `node --check admin-memberships.js` passed;
+  - `npm run build:prod` passed.
+- No database, API, public page, deployment, or push to `main` was performed.
+
+- Read `E:\webside\AGENTS.md`, `E:\webside\docs\current-status.md`, and the Supabase skill guidance before fixing the activation-code redemption failure.
+- Diagnosed the user-facing error `membership_entitlements_grant_source_check` as a database constraint mismatch:
+  - the public redeem-code helper grants membership with `grant_source = activation_code`;
+  - the original `membership_entitlements` table constraint only allowed `admin`.
+- Updated membership SQL:
+  - `supabase/20260513_membership_entitlements.sql` now allows `grant_source in ('admin', 'activation_code')` for fresh installs;
+  - added `supabase/20260515_membership_entitlement_grant_source_activation_code.sql` for already-created databases. This migration drops/recreates the check constraint and sends `notify pgrst, 'reload schema'`.
+- Updated `api/_lib/membership.js` redemption safety:
+  - if an activation code is conditionally marked redeemed but membership entitlement creation fails, the helper now restores that code back to `active` for the same user before returning the error;
+  - this prevents future failed grant attempts from consuming a valid one-time code.
+- Updated `docs/PROJECT_MAP.md` to include the new constraint-fix migration.
+- Verification:
+  - checked the new SQL migration contents;
+  - `node --check api/_lib/membership.js` passed;
+  - `npm run build:prod` passed;
+  - confirmed `api/_lib/membership.js` redemption still writes `activation_code`, so applying the migration resolves the shown redeem failure.
+- Required follow-up:
+  - run `supabase/20260515_membership_entitlement_grant_source_activation_code.sql` once in Supabase SQL Editor for the currently tested database, then retry the same activation code flow.
+- No frontend, API route, order flow, deployment, or push to `main` was performed.
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before fixing the generated activation-code color.
+- Updated `styles.css`:
+  - increased selector specificity to `.admin-empty-state .admin-membership-generated-code` so the activation code is no longer overridden by the generic `.admin-empty-state p` color rule;
+  - generated membership activation codes should now render red as intended.
+- Verification:
+  - `node --check admin-memberships.js` passed;
+  - `npm run build:prod` passed.
+- No API, database, public page, deployment, or push to `main` was performed.
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before highlighting the generated membership activation code.
+- Updated `admin-memberships.js` and `styles.css`:
+  - the generated one-time membership activation code now uses a dedicated `admin-membership-generated-code` class;
+  - the code is displayed in red with heavier weight and slight spacing so customer service can see and copy it immediately.
+- Verification:
+  - `node --check admin-memberships.js` passed;
+  - `npm run build:prod` passed.
+- No API, database, public page, deployment, or push to `main` was performed.
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before shortening the membership activation-code format.
+- Updated `api/_lib/membership.js`:
+  - new activation codes now use the medium grouped format `NGN-2026-XXXX-XXXX`;
+  - random visible characters are 8 total, split into two 4-character groups for easier customer-service sharing.
+- Updated `service-center.js` placeholder text to `NGN-2026-XXXX-XXXX`.
+- Updated `docs/PROJECT_MAP.md` to document the medium grouped activation-code format.
+- Verification:
+  - `node --check api/_lib/membership.js` passed;
+  - `node --check service-center.js` passed;
+  - `npm run build:prod` passed.
+- No database schema change, deployment, or push to `main` was performed.
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before making membership activation codes longer.
+- Updated `api/_lib/membership.js`:
+  - new activation codes now use a longer grouped format like `NGN-2026-XXXX-XXXX-XXXX-XXXX`;
+  - random entropy was increased from 6 random bytes / 8 visible characters to 12 random bytes / 16 visible characters;
+  - existing generated codes remain redeemable because redemption still hashes the submitted normalized code.
+- Updated `service-center.js` placeholder text to match the longer activation-code format.
+- Updated `docs/PROJECT_MAP.md` to document the grouped activation-code format.
+- Verification:
+  - `node --check api/_lib/membership.js` passed;
+  - `node --check service-center.js` passed;
+  - `npm run build:prod` passed.
+- No database schema change, deployment, or push to `main` was performed.
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before adjusting admin membership re-register and delete actions.
+- Updated membership admin actions:
+  - `admin-memberships.js` re-register prompt now offers only four choices: `接机权益`, `寄存权益`, `搬家权益`, and `新生大礼包`;
+  - `返现/人工备注` is no longer offered in the admin re-register prompt;
+  - membership rows now include a right-side `删除` button;
+  - the delete confirmation explains that deleting the membership removes the current-cycle membership qualification and its registered benefit records.
+- Updated membership delete API:
+  - `admin-api.js`, `api/admin/[...action].js`, and `api/_lib/membership.js` now support deleting a membership entitlement through `DELETE /api/admin/memberships/:id`;
+  - deletion writes a `membership_entitlement_deleted` audit entry with the deleted entitlement and linked claim snapshot;
+  - linked benefit claims are removed by the existing entitlement cascade; existing order claim links are protected by `on delete set null`.
+- Updated `docs/PROJECT_MAP.md` for the membership delete endpoint and audit behavior.
+- Verification:
+  - `node --check` passed for `admin-memberships.js`, `admin-api.js`, `api/_lib/membership.js`, and `api/admin/[...action].js`;
+  - `npm run build:prod` passed.
+- No database schema change, public page change, deployment, or push to `main` was performed.
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before adding the admin membership advisor column.
+- Updated `api/admin/[...action].js` and `admin-memberships.js`:
+  - membership list rows now include an `所属顾问` column;
+  - when membership came from an activation code, the column shows the admin/customer-service account that generated the activation code;
+  - when membership was manually granted, it falls back to the admin/customer-service account that opened the membership;
+  - displayed advisor text uses admin name, then username, then email, and does not expose raw UUIDs.
+- Verification:
+  - `node --check admin-memberships.js` passed;
+  - `node --check api/admin/[...action].js` passed;
+  - `npm run build:prod` passed.
+- No database schema change, public page change, deployment, or push to `main` was performed.
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before localizing the admin membership audit log display.
+- Updated `admin-memberships.js`:
+  - operation log action codes now show Chinese operator labels, such as `开通会员`, `登记权益`, `标记已使用`, `作废权益`, `重置权益`, `绑定订单`, `生成激活码`, `删除激活码`, and `兑换激活码`;
+  - removed the visible `管理员ID` UUID column from operation logs;
+  - kept `备注` because it contains customer-service reasons or notes when entered.
+- Verification:
+  - `node --check admin-memberships.js` passed;
+  - `npm run build:prod` passed.
+- No database, API, public page, deployment, or push to `main` was performed.
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before simplifying the activation-code admin workflow.
+- Updated activation-code admin display and API:
+  - `admin-memberships.js` now replaces the visible activation-code `状态` column with `创建管理员`;
+  - creating-admin display prefers admin name, then username, then email, and avoids showing raw admin UUIDs when the admin row is missing;
+  - activation-code action is now `删除` instead of `作废`;
+  - `admin-api.js`, `api/admin/[...action].js`, and `api/_lib/membership.js` now support `DELETE /api/admin/membership-codes/:id` for unredeemed codes;
+  - redeemed codes cannot be deleted so already-used membership source records remain traceable;
+  - delete actions are still written to `membership_audit_logs`.
+- Updated `docs/PROJECT_MAP.md` for the activation-code delete endpoint and admin page behavior.
+- Verification:
+  - `node --check` passed for `admin-memberships.js`, `admin-api.js`, `api/_lib/membership.js`, and `api/admin/[...action].js`;
+  - `npm run build:prod` passed.
+- No database schema change, public page change, deployment, or push to `main` was performed.
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` after the backend assistant pet stopped displaying.
+- Fixed the admin assistant widget binding in `admin-shell.js`:
+  - replaced the temporary `document.getElementById("adminPetWidget")?.remove()` call with `bindAdminPet(meta)`;
+  - preserved the Fleta spritesheet, draggable behavior, and 60-second slow animation.
+- Verification:
+  - `node --check admin-shell.js` passed;
+  - local `http://localhost:5173/admin-dashboard.html` returned HTTP 200;
+  - local browser check confirmed `#adminPetWidget` exists, `.admin-pet-sprite` is visible, `admin-pet-fleta.webp` is loaded, and animation duration remains `60s`.
+- No API, database, email, deployment, public page, GitHub push, or Vercel deploy was performed.
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before simplifying the admin membership list.
+- Updated `admin-memberships.html` and `admin-memberships.js`:
+  - removed the visible `权益状态` filter from the admin membership toolbar;
+  - removed the `权益状态` column from the main membership list;
+  - kept internal claim status handling for deciding which operation buttons should be available;
+  - membership list requests now no longer filter by claim status from the page UI.
+- Verification:
+  - `node --check admin-memberships.js` passed;
+  - `npm run build:prod` passed.
+- No database, API, public page, deployment, or push to `main` was performed.
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before hiding internal user IDs from the admin membership page.
+- Updated `admin-memberships.html` and `admin-memberships.js`:
+  - the manual grant form now keeps `site_user_id` as a hidden field instead of a visible user ID input;
+  - operators see a read-only `已选择用户` field after choosing a search result;
+  - the user search results table no longer shows a `用户ID` column or UUID-style internal ID values;
+  - selecting a user still stores the hidden ID for the existing grant-member API call.
+- Verification:
+  - checked remaining `site_user_id` references are hidden/submission-only, not visible list text;
+  - `node --check admin-memberships.js` passed;
+  - `npm run build:prod` passed.
+- No database, API, public page, deployment, or push to `main` was performed.
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before removing the admin membership grant notes field.
+- Updated `admin-memberships.html` and `admin-memberships.js`:
+  - removed the `开通备注（可选）` textarea from the manual membership grant form;
+  - membership grant requests now send an empty notes value and no longer depend on a visible notes field.
+- Verification:
+  - confirmed `admin-memberships.html` / `admin-memberships.js` no longer contain the removed notes field references;
+  - `node --check admin-memberships.js` passed;
+  - `npm run build:prod` passed.
+- No database, API, public page, deployment, or push to `main` was performed.
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before simplifying the admin membership detail display.
+- Updated `admin-memberships.js`:
+  - removed internal UUID display from user search results and the main membership list;
+  - removed visible `<code>` styling from the membership admin page output;
+  - simplified `权益详情` so it only shows `会员抵扣` plus create/update timestamps;
+  - removed `额外费用`, `最终价格`, and raw JSON `抵扣明细` from the admin membership detail panel;
+  - kept cancelled-claim warnings and historical linked order display so customer service can still understand old records.
+- Verification:
+  - checked that `admin-memberships.html` / `admin-memberships.js` no longer contain visible `<code>` tags or the removed detail labels;
+  - `node --check admin-memberships.js` passed;
+  - `npm run build:prod` passed.
+- No database, API, public page, deployment, or push to `main` was performed.
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before refining the admin membership page.
+- Updated `admin-memberships.html`:
+  - the manual grant notes field is now labeled `开通备注（可选）`, uses a compact two-line textarea, and has the placeholder `例如：通过 NGN 订房，2026-27 会员`;
+  - activation-code copy now says `激活码` consistently, including `刷新激活码列表` and one-time display wording.
+- Updated `admin-memberships.js`:
+  - member-list details are no longer opened from the left side of the table;
+  - right-side operations now control `权益详情` and `操作记录`;
+  - operation labels now use `登记权益`, `重新登记权益`, `标记已使用`, and `作废权益`;
+  - no-claim rows show only `登记权益`;
+  - selected/reserved/manual rows show `权益详情`, `操作记录`, `标记已使用`, and `作废权益`;
+  - used rows show only `权益详情` and `操作记录`;
+  - cancelled rows show `权益详情`, `操作记录`, and `重新登记权益`;
+  - cancelled detail panels explicitly state `该权益已作废，不再占用当前会员权益。` and show `历史关联订单：xxx` when applicable;
+  - reset API calls now require the confirmation `确认要重置该会员权益吗？当前权益将被标记为已作废，用户可重新选择权益。`.
+- Verification:
+  - `node --check admin-memberships.js` passed;
+  - `npm run build:prod` passed;
+  - local browser check opened `admin-memberships.html` through the local static server and confirmed the admin auth gate redirected unauthenticated access to `admin-login.html`; authenticated table interaction still needs a logged-in admin session for visual acceptance.
+- No deployment and no push to `main` were performed.
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before changing the backend assistant pet animation to about one minute per loop.
+- Updated `styles.css` so the Fleta admin assistant sprite animation is very slow:
+  - idle loop is now `60s`;
+  - waving, happy, and alert state loops are now also `60s`.
+- Verification:
+  - local browser style check confirmed the Fleta sprite still loads and the active animation duration is `60s` with `steps(7)`.
+- No API, database, email, deployment, public page, GitHub push, or Vercel deploy was performed.
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before slowing the backend assistant pet animation.
+- Tuned the Fleta admin assistant CSS in `styles.css` so the spritesheet animation is less visually busy:
+  - default idle loop changed from `1.1s` to `2.6s`;
+  - waving changed from `0.8s` to `1.8s`;
+  - happy changed from `0.82s` to `2s`;
+  - alert changed from `0.95s` to `2.2s`.
+- Verification:
+  - local browser style check confirmed the Fleta sprite still loads and the active happy animation duration is now `2s` with `steps(7)`.
+- No API, database, email, deployment, public page, GitHub push, or Vercel deploy was performed.
+
+- Read `E:\webside\AGENTS.md`, `E:\webside\docs\current-status.md`, and `C:\Users\75262\.codex\skills\hatch-pet\SKILL.md` before replacing the backend assistant pet.
+- Downloaded and unpacked the requested Fleta Codex pet package from `https://codex-pets.net/api/pets/fleta/download?v=1778539800355` into `C:\Users\75262\.codex\pets\fleta`.
+- Added `img/admin-pet-fleta.webp` from the Fleta `spritesheet.webp` package asset.
+- Replaced the old static backend dog image in `admin-shell.js` / `styles.css` with a Fleta spritesheet animation:
+  - idle, happy, alert, waving, and curious states now switch animation rows through CSS;
+  - the existing admin assistant message bubble and page/error messages are preserved.
+- Made the backend assistant pet draggable with mouse/pointer input:
+  - drag position is clamped inside the viewport;
+  - the last dragged position is saved in `localStorage` under `adminPetPosition`;
+  - window resize reclamps the pet so it stays visible.
+- Verification:
+  - `node --check admin-shell.js` passed;
+  - local browser verification at `http://localhost:5173/admin-dashboard.html` confirmed the widget renders, uses `admin-pet-fleta.webp`, animates with the spritesheet CSS, can be dragged, and saves a position.
+- No API, database, email, deployment, public page, GitHub push, or Vercel deploy was performed.
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before simplifying the activation-code admin UI.
+- Simplified the `admin-memberships.html` one-time membership activation-code area:
+  - membership cycle is fixed to hidden/read-only `2026-27`;
+  - main action is now `生成 2026-27 会员激活码`;
+  - `bound_email` remains only inside a collapsed advanced option with explanatory copy;
+  - removed activation-code form fields for phone binding, booking reference, expiry time, and notes;
+  - code list now shows only prefix, cycle, status, bound email, redeemed user, redeemed time, created time, and revoke operation.
+- Updated `admin-memberships.js` so code generation sends only `membership_cycle` and optional `bound_email`; the backend/database still keep one-time-use, redeemed/revoked status, hashed code storage, and one-time plaintext display rules.
+- Verification:
+  - `node --check admin-memberships.js` passed;
+  - mocked browser verification confirmed the activation-code form has one hidden cycle field, no removed fields, one collapsed advanced section, and the simplified table headers.
+- No deployment and no push to `main` were performed.
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` after the admin membership list showed rows with no available operation.
+- Clarified the admin membership list behavior:
+  - active entitlements without a claim have no claim object to mark-used/cancel/reset;
+  - cancelled claims are terminal old claims, so the previous reset/cancel/mark-used controls are intentionally unavailable.
+- Added a minimal admin operation path for customer service:
+  - `admin-api.js` now exposes `createMembershipClaim()`;
+  - `admin-memberships.js` now shows `记录权益 claim` for rows with no live claim, including no-claim rows and cancelled-claim rows;
+  - the prompt records benefit type (`storage`, `pickup`, `moving`, `welcome_pack`, or `cashback`), status (`selected`, `manual`, `used`, or `reserved`), and an optional admin note through the existing admin `POST /api/admin/membership-claims` endpoint.
+- Verification:
+  - `node --check` passed for `admin-api.js` and `admin-memberships.js`;
+  - mocked browser verification confirmed no-claim and cancelled rows both render the new `manual-claim` action.
+- No deployment and no push to `main` were performed.
+
+- Read `E:\webside\AGENTS.md`, `E:\webside\docs\current-status.md`, and the Supabase skill after the admin page reported missing activation-code table errors.
+- Diagnosed the admin page error `Could not find the table 'public.membership_activation_codes' in the schema cache` as a database migration gap, not a frontend button issue.
+- Applied the `membership_activation_codes` migration to Supabase project `ngn-transport` (`brmsymzkmdnxzhrcaghw`) with `notify pgrst, 'reload schema'`.
+- Verified:
+  - `public.membership_activation_codes` now exists;
+  - `anon`, `authenticated`, and `public` have no direct grants on the table;
+  - service-role helper listing works through Supabase/PostgREST;
+  - a QA activation code could be created, listed, revoked, and then fully cleaned up, including audit rows.
+- Tightened admin claim actions:
+  - cancelled claims no longer render misleading disabled mark-used/cancel/reset buttons;
+  - `manual` claims can now be marked used server-side, matching the admin UI intent.
+- `node --check` passed for `api/_lib/membership.js` and `admin-memberships.js`.
+- No deployment and no push to `main` were performed.
+
+- Read `E:\webside\AGENTS.md`, `E:\webside\docs\current-status.md`, the Supabase skill, and the browser skill before this task.
+- Added the NGN membership module to the personal-center homepage (`service-center.html` / `service-center.js`), placed between the user info card and pickup/storage appointment cards:
+  - non-members see 2026-27 NGN booking-member copy, an “输入会员码” entry, and a contact customer service entry;
+  - unclaimed members see four choices: `storage`, `pickup`, `moving`, and `welcome_pack`;
+  - storage/pickup selected states link to the relevant service page;
+  - moving/welcome_pack selected states show customer-service handling copy only;
+  - reserved/used states show linked order number and server-provided membership price fields;
+  - the frontend does not calculate `final_price`, does not show free-order wording, and does not let users cancel or change benefits.
+- Added one-time membership activation-code support locally:
+  - new additive SQL migration `supabase/20260514_membership_activation_codes.sql`;
+  - new service-role-only table `membership_activation_codes` with hashed code storage, prefix, cycle, status, optional email/phone/reference binding, redemption fields, expiry, and `updated_at` trigger;
+  - `api/_lib/membership.js` now generates activation codes, hashes codes, lists/revokes codes, redeems codes, handles already-member responses, conditionally marks active codes as redeemed, grants membership entitlements, and writes membership audit logs;
+  - new public API `POST /api/public/membership/redeem-code`;
+  - new admin APIs `GET/POST /api/admin/membership-codes` and `POST /api/admin/membership-codes/:id/revoke`;
+  - local dev server routing was updated for `/api/admin/membership-codes*`.
+- Expanded `admin-memberships.html` / `admin-memberships.js` so operators can generate one-time membership codes, see generated plaintext once, list code prefix/cycle/status/binding/redemption/expiry fields, and revoke active codes.
+- Updated `admin-api.js`, `public-api-handlers/membership-me.js`, and public/admin aggregate routers for the activation-code flow.
+- Local verification completed:
+  - `node --check` passed for `api/_lib/membership.js`, `public-api-handlers/membership-redeem-code.js`, `api/public/[...action].js`, `api/admin/[...action].js`, `admin-api.js`, `admin-memberships.js`, and `service-center.js`;
+  - local HTTP checks returned 200 for `service-center.html` and `admin-memberships.html`;
+  - unauthenticated `POST /api/public/membership/redeem-code` returns 401 as expected;
+  - mocked browser checks verified homepage unclaimed-member state renders all four benefit cards and no forbidden free/auto wording;
+  - mocked browser checks verified the admin membership page renders the activation-code form and revoke action.
+- No deployment and no push to `main` were performed.
+
+- Read `E:\webside\AGENTS.md`, `E:\webside\docs\current-status.md`, the frontend skill, and the browser skill before designing the public moving service page.
+- Added and then simplified a new public moving service page:
+  - `moving.html` now presents NGN Nottingham student moving service information, inquiry checklist, local moving price guide, cross-city/furniture rules, packing/waiting/parking notes, and plain phone/WeChat contact text;
+  - `moving.css` provides a restrained responsive display layout for the static page;
+  - the page uses existing local box imagery and has no scripts, no login state, no mobile-menu script, no buttons, no form, no online price calculator, no order flow, no database table, no API, no payment flow, and no admin flow.
+- Added public entry points to the moving page from:
+  - `index.html`;
+  - `pickup.html`;
+  - `storage.html`.
+- Updated `vercel.json` so `/moving` rewrites to `moving.html` and `/moving.html` redirects to `/moving`.
+- No GitHub push, commit, preview deployment, or production deployment was performed.
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before final local acceptance confirmation.
+- Confirmed the four-choice NGN membership flow remains local-only on `codex/membership-v1`; no deployment and no push were performed.
+- Final acceptance confirmation for the profile membership module:
+  - unselected members see four cards: `storage`, `pickup`, `moving`, and `welcome_pack`;
+  - selecting `moving` creates a `selected` claim with no linked order number, removes all other selectable benefit buttons, and shows waiting-for-customer-service arrangement copy with no online booking or auto-order wording;
+  - selecting or returning a `welcome_pack` claim shows waiting-for-customer-service confirmation and领取/送达 copy with no auto-fulfillment wording;
+  - `moving` and `welcome_pack` used states show completed usage.
+- Final acceptance confirmation for admin membership management:
+  - `moving` and `welcome_pack` benefit types render in the member list/filter flow;
+  - selected claims expose the existing `mark used`, `cancel`, `reset`, and `查看 audit log` controls;
+  - audit log rows remain displayed under each membership record.
+- Final acceptance confirmation for selection boundaries:
+  - public selection allows `storage`, `pickup`, `moving`, and `welcome_pack`;
+  - public selection still rejects `cashback`, which remains admin/manual-note only;
+  - moving/welcome_pack do not create or require `moving_orders`, `welcome_pack_claims`, inventory, pricing, or delivery systems.
+- Confirmed storage/pickup boundaries remain unchanged:
+  - storage benefit logic is still isolated to storage claims and storage order submission;
+  - pickup benefit logic is still isolated to `service_type=pickup`;
+  - `dropoff` returns the membership helper reason `dropoff_not_allowed` and does not use pickup membership entitlement;
+  - non-member storage/pickup behavior remains the existing no-membership path.
+- Confirmed forbidden page copy does not appear in membership-related pages/scripts/APIs:
+  - `本单免费`;
+  - `自动免费`;
+  - `自动安排搬家`;
+  - `自动发放礼包`.
 
 - Read `E:\webside\AGENTS.md`, `E:\webside\docs\current-status.md`, and the Supabase skill before expanding the public membership benefit selection.
 - Checked the Supabase changelog before the API helper change; no relevant breaking change was found for this server-side claim-selection adjustment.
@@ -149,11 +1130,13 @@
 
 ## Current Project State
 
+- Admin pages render the right-bottom Fleta assistant pet widget again; it remains draggable, remembered per browser, and uses a 60-second CSS frame animation.
 - The NGN membership entitlement system backend foundation is implemented locally and its database migration has been applied to Supabase project `ngn-transport` (`brmsymzkmdnxzhrcaghw`).
 - Membership API handlers have been verified by direct local invocation against Supabase; membership backend, admin UI, user-center UI, and current frontend refinements are local to `codex/membership-v1` and have not been pushed or deployed.
 - Membership remains independent from `site_users.is_member`; it is represented through separate entitlement tables, server-side helper logic, admin APIs, and user-safe public APIs.
 - Current membership cycle is centralized in `api/_lib/membership.js` via `CURRENT_MEMBERSHIP_CYCLE`, defaulting to `2026-27`.
 - Website-supported member choices now include storage, pickup, moving, and welcome_pack. Moving and welcome_pack are selected claims only and remain offline customer-service flows with no online order or inventory system.
+- A standalone public moving service page now exists locally at `moving.html`, with extensionless `/moving` routing configured in `vercel.json`; it is a static display page only.
 - Pickup member benefit logic only applies to `service_type=pickup`; Heathrow/Gatwick in September is treated as the free core case, while other pickup cases get a service-side fallback discount/pending-admin-confirmation breakdown.
 - User center, first-stage admin membership page, and storage/pickup membership hint UI are implemented locally but not deployed.
 - Registration flow remains email -> backend rate check -> send code -> verify code -> profile/password -> automatic login.
@@ -165,6 +1148,21 @@
 
 ## Verification Performed
 
+- Admin assistant pet verification passed:
+  - `node --check admin-shell.js` passed;
+  - local browser verification confirmed the Fleta spritesheet loads, the widget is visible, dragging changes its position, and `adminPetPosition` is saved in `localStorage`.
+- Admin assistant animation-speed verification passed:
+  - local browser style check confirmed the Fleta sprite still loads and the active animation duration is `60s` with `steps(7)`.
+- Admin assistant restore verification passed:
+  - `node --check admin-shell.js` passed;
+  - local browser check confirmed the widget exists, the sprite is visible, the Fleta asset is loaded, and the animation duration remains `60s`.
+- Moving page verification passed:
+  - local `http://localhost:5173/moving` returned HTTP 200;
+  - `vercel.json` parsed successfully after adding `/moving` routing;
+  - browser inspection confirmed the page title, main heading, public navigation, and moving content render;
+  - responsive Playwright checks passed at desktop `1280x720` and mobile `390x844`, with no console/page errors;
+  - simplified-page verification confirmed `moving.html` has zero `<script>` tags and zero `<button>` elements;
+  - `npm run build:prod` passed.
 - `node --check` passed for:
   - `api/_lib/membership.js`
   - `api/public/[...action].js`
@@ -183,103 +1181,4 @@
 - API verification run `QA-MEM-mp46jcs3` passed:
   - admin grant, membership/me, storage selection, duplicate pickup rejection, non-member storage unaffected, member storage claim binding, claim reserved, admin mark-used, pickup LHR September core scenario, pickup fallback GBP 100, and dropoff no membership use.
 - QA cleanup verification confirmed zero leftover QA users, admins, entitlements, claims, audit logs, storage orders, transport requests, or transport groups; totals returned to 5 `storage_orders` and 9 `transport_requests`.
-- Supabase security advisor no longer reports `set_updated_at()` search-path warning. Remaining membership-related security INFO entries are expected `RLS Enabled No Policy` notices for service-role-only membership tables with direct grants revoked.
-- Supabase performance advisor no longer reports unindexed membership foreign keys. It still reports expected new unused membership indexes immediately after creation plus unrelated pre-existing duplicate/unused index notices on non-membership tables.
-- `node --check` passed for:
-  - `admin-memberships.js`
-  - `admin-api.js`
-  - `admin-shell.js`
-  - `api/admin/[...action].js`
-  - `profile.js`
-  - `transport-admin.js`
-  - `admin-pages.js`
-  - `dev-server.js`
-- Admin membership API smoke test passed using direct handler invocation:
-  - search membership users;
-  - manual grant;
-  - list membership with claim;
-  - mark-used;
-  - reset;
-  - audit log returned expected actions.
-- Browser verification against local dev server `http://localhost:5175` passed for `admin-memberships.html`:
-  - admin shell loaded;
-  - `会员权益` navigation highlighted;
-  - user search empty state and membership list empty state rendered;
-  - no bad responses or console/page errors.
-- Browser verification against local dev server `http://localhost:5175` passed for `profile.html` membership module:
-  - non-member state rendered;
-  - member storage/pickup choices rendered;
-  - storage selection succeeded;
-  - duplicate pickup selection was rejected by the API;
-  - QA rows were cleaned afterward.
-- `npm run build:prod` passed after the admin/user-center/detail-page changes.
-- Current-turn membership frontend verification passed:
-  - `node --check` passed for `admin-memberships.js`, `profile.js`, `pickup-form.js`, `script.js`, and `api/admin/[...action].js`;
-  - local pages returned HTTP 200 on `http://localhost:5173` for `admin-memberships.html`, `profile.html`, `storage.html`, `storage-booking.html`, and `pickup-form.html`;
-  - browser test with mocked logged-in API responses verified non-member profile state, member storage/pickup choices, confirmation-based storage selection payload, reserved claim discount fields, used claim display, admin member list fields, and user search with WeChat;
-  - browser test with mocked membership responses verified storage hints on `storage.html` and `storage-booking.html`, and pickup hint on `pickup-form.html`.
-- Four-choice membership verification passed:
-  - `node --check` passed for `profile.js`, `api/_lib/membership.js`, `public-api-handlers/membership-benefit-selection.js`, and `admin-memberships.js`;
-  - direct helper test confirmed `storage`, `pickup`, `moving`, and `welcome_pack` can create `selected` claims, while `cashback` remains rejected from public selection;
-  - browser test with mocked logged-in API responses confirmed the profile page renders four benefit cards, posts `{ benefit_type: "moving" }`, hides all other choices after selection, shows moving customer-service copy, shows welcome_pack customer-service copy, and shows moving used/completed state.
-
-## Previous Verification
-
-- `node --check` passed for:
-  - `api/auth/[action].js`
-  - `login.js`
-  - `register.js`
-- `npm run build:prod` passed.
-- `npm run deploy:prod` completed with Vercel status `READY`.
-- `vercel inspect webside-dloin0vi7-wwkevin8s-projects.vercel.app` confirmed production target and aliases for `ngn.best` and `www.ngn.best`.
-- `https://ngn.best/login.html` returned HTTP 200.
-- `https://ngn.best/register.html` returned HTTP 200.
-- Supabase verification confirmed:
-  - `public.auth_risk_events.device_id` exists;
-  - `idx_auth_risk_events_device_action_created_at` exists;
-  - migration history includes `20260513142332 auth_risk_events_device_id`.
-
-## Previous Release Verification
-
-- `node --check` passed for:
-  - `api/auth/[action].js`
-  - `api/_lib/http.js`
-  - `api/_lib/turnstile.js`
-  - `login.js`
-  - `register.js`
-- `npm run build:prod` passed.
-- Vercel production deploy completed with status `Ready`.
-- `https://ngn.best/register.html` returned HTTP 200.
-- `https://ngn.best/login.html` returned HTTP 200.
-- `vercel inspect` confirmed the deployment is production and aliased to `ngn.best`.
-- `vercel logs` did not return a usable error summary before the local command timeout because the CLI entered a live log stream.
-- Supabase verification confirmed:
-  - `public.auth_risk_events` exists;
-  - RLS is enabled and forced;
-  - required indexes exist;
-  - `public`, `anon`, and `authenticated` have no direct table grants;
-  - migration history includes `20260513140539 auth_risk_events`.
-
-## Open Issues Or Risks
-
-- Membership cycle format is `YYYY-YY`, for example `2026-27`; current-cycle resolution now lives in `api/_lib/membership.js`.
-- Storage/pickup discount calculation is centralized in `api/_lib/membership.js`, but production pricing should still be validated against the actual calculator fields before release.
-- The PDF text layer did not expose searchable Heathrow/Gatwick/September lines in local extraction; current pickup rules are based on the explicit business rules supplied in the user request.
-- Supabase JS cannot wrap existing multi-step storage/pickup order creation plus claim binding in a single cross-table transaction. The implementation uses conditional claim binding (`status in selected/reserved` and `linked_order_id is null`) plus cleanup on bind conflict; a future RPC could make the full order-create/bind path fully atomic.
-- Membership code is not pushed or deployed yet; GitHub must be updated before any Vercel deployment.
-- Working tree still contains unrelated pre-existing auth risk files/changes (`api/auth/[action].js`, `login.js`, `register.js`, and `supabase/20260513_auth_risk_events_device_id.sql`) that were not part of the membership UI work and should be handled separately.
-- `gh` is not installed on this machine, so GitHub PR creation still requires either installing `gh` or using the GitHub web UI.
-
-## Recommended Next Steps
-
-- Run one final end-to-end QA pass before any push or deployment.
-- Push the feature branch only when ready; do not push `main` or deploy production until the complete membership product flow is accepted.
-- Confirm exact pricing inputs for storage base-box allowance, buy-box fees, overweight fees, stairs fees, out-of-city return fees, pickup base fare, extra passengers/luggage, waiting fees, and special service fees before production release.
-- In WeChat and a normal browser, verify:
-  - first login does not show Turnstile;
-  - first registration code request does not show Turnstile;
-  - same-email registration code repeat within 60 seconds shows cooldown only;
-  - backend `needCaptcha=true` shows Turnstile;
-  - backend `temporarilyBlocked=true` disables the submit button with Chinese copy;
-  - no `supabase is not defined` or `logSignupCodeRequest is not defined` message appears.
-- Monitor Vercel function logs after real user traffic for `auth_risk_event_insert_failed` or auth endpoint errors.
+- Supabase security advisor no longer reports `set_updated_at()` search-path warning. Remaining membership-related security INFO entries are ex
