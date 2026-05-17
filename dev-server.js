@@ -270,6 +270,14 @@ function resolveStaticPath(urlPathname) {
     return fullPath;
   }
 
+  const normalizedRelative = relativePath.replace(/\\/g, "/");
+  if ((normalizedRelative === "/admin-vue" || normalizedRelative.startsWith("/admin-vue/")) && !path.extname(fullPath)) {
+    const adminVueIndex = path.join(ROOT, "admin-vue", "index.html");
+    if (fs.existsSync(adminVueIndex) && fs.statSync(adminVueIndex).isFile()) {
+      return adminVueIndex;
+    }
+  }
+
   if (!path.extname(fullPath)) {
     const htmlPath = `${fullPath}.html`;
     if (fs.existsSync(htmlPath) && fs.statSync(htmlPath).isFile()) {
