@@ -8,9 +8,27 @@
 ## Last Updated Task
 
 - Date: 2026-05-17
-- Scope: Community Noticeboard phase 5.5 frontend comment loop
+- Scope: Community Noticeboard phase 6 admin community management
 
 ## Latest Completed Work
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before implementing Community Noticeboard phase 6.
+- Implemented Community Noticeboard phase 6 admin management:
+  - added `api/_lib/admin-community.js` with admin-only community post listing/detail, comment listing, report lookup, image deletion, post/comment moderation, and user posting-ban helpers;
+  - added admin API dispatch for `/api/admin/community-posts`, `/api/admin/community-comments`, `/api/admin/community-images`, and `/api/admin/community-users`;
+  - added `AdminApi` frontend methods for the community admin endpoints;
+  - added `admin-community.html` and `admin-community.js` for listing/filtering posts, viewing contacts/images/reports/user risk, hiding/deleting/restoring/pinning posts, changing expiry, deleting images, moderating comments, and banning/unbanning posting users;
+  - added the Community Management sidebar entry in `admin-shell.js`;
+  - updated local `dev-server.js` so the new admin community API routes work in local helper mode;
+  - updated `docs/PROJECT_MAP.md` for the new admin page, routes, and admin community table usage.
+- Phase 6 verification:
+  - `node --check` passed for `api/_lib/admin-community.js`, `api/admin/[...action].js`, `admin-api.js`, `admin-shell.js`, `admin-community.js`, and `dev-server.js`;
+  - local helper verification on port `3144` confirmed `admin-community.html` returns `200`, and unauthenticated `GET/PATCH` admin community API requests return `401`;
+  - no deployment, push, or phase 6 commit was performed.
+- Existing unrelated dirty changes remain present and were not reverted:
+  - admin-manager route/root-manager edits in `admin-api.js`, `admin-managers.html`, `admin-pages.js`, `api/_lib/admin-managers.js`, and `api/admin/[...action].js`;
+  - deleted `img/hero-consultation-generated.jpg` and `img/hero-consultation-horde.png`.
+- Recommended next step: run an authenticated browser/API verification with an admin account, then prepare a separate phase 6 commit that carefully includes only community admin changes plus any intentionally retained overlapping admin route file changes.
 
 - Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before implementing Community Noticeboard phase 5.5.
 - Implemented Community Noticeboard phase 5.5 only:

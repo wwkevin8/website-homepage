@@ -52,6 +52,16 @@ const {
   markClaimUsed,
   revokeMembershipActivationCode
 } = require("../_lib/membership");
+const {
+  banCommunityUser,
+  deleteCommunityImage,
+  getCommunityPostDetail,
+  listCommentReports,
+  listCommunityComments,
+  listCommunityPosts,
+  updateCommunityComment,
+  updateCommunityPost
+} = require("../_lib/admin-community");
 
 let cachedStorageOrderAdminColumns = null;
 let cachedStorageOrderDetailColumns = null;
@@ -2171,6 +2181,99 @@ async function handleMembershipCodes(req, res, supabase, codeId = "", subAction 
   methodNotAllowed(res, ["GET", "POST", "DELETE"]);
 }
 
+async function handleCommunityPosts(req, res, supabase) {
+  const adminUser = await requireAdminUser(req, res, supabase);
+  if (!adminUser) {
+    return;
+  }
+  const postId = String(req.query?.id || req.query?.post_id || "").trim();
+  if (req.method === "GET") {
+    if (postId) {
+      const detail = await getCommunityPostDetail(supabase, postId);
+      if (!detail) {
+        badRequest(res, "社区帖子不存在");
+        return;
+      }
+      ok(res, detail);
+      return;
+    }
+    ok(res, await listCommunityPosts(supabase, req.query || {}));
+    return;
+  }
+  if (req.method === "PATCH") {
+    const body = await parseJsonBody(req);
+    try {
+      ok(res, { post: await updateCommunityPost(supabase, postId, body) });
+    } catch (error) {
+      badRequest(res, error.message || "社区帖子更新失败");
+    }
+    return;
+  }
+  methodNotAllowed(res, ["GET", "PATCH"]);
+}
+
+async function handleCommunityComments(req, res, supabase) {
+  const adminUser = await requireAdminUser(req, res, supabase);
+  if (!adminUser) {
+    return;
+  }
+  const commentId = String(req.query?.id || req.query?.comment_id || "").trim();
+  if (req.method === "GET") {
+    if (commentId && String(req.query?.include_reports || "") === "1") {
+      ok(res, { reports: await listCommentReports(supabase, commentId) });
+      return;
+    }
+    ok(res, await listCommunityComments(supabase, req.query || {}));
+    return;
+  }
+  if (req.method === "PATCH") {
+    const body = await parseJsonBody(req);
+    try {
+      ok(res, { comment: await updateCommunityComment(supabase, commentId, body) });
+    } catch (error) {
+      badRequest(res, error.message || "社区评论更新失败");
+    }
+    return;
+  }
+  methodNotAllowed(res, ["GET", "PATCH"]);
+}
+
+async function handleCommunityImages(req, res, supabase) {
+  const adminUser = await requireAdminUser(req, res, supabase);
+  if (!adminUser) {
+    return;
+  }
+  if (req.method !== "DELETE") {
+    methodNotAllowed(res, ["DELETE"]);
+    return;
+  }
+  const imageId = String(req.query?.id || req.query?.image_id || "").trim();
+  try {
+    ok(res, { image: await deleteCommunityImage(supabase, imageId) });
+  } catch (error) {
+    badRequest(res, error.message || "社区图片删除失败");
+  }
+}
+
+async function handleCommunityUsers(req, res, supabase) {
+  const adminUser = await requireAdminUser(req, res, supabase);
+  if (!adminUser) {
+    return;
+  }
+  if (req.method !== "PATCH") {
+    methodNotAllowed(res, ["PATCH"]);
+    return;
+  }
+  const userId = String(req.query?.id || req.query?.user_id || "").trim();
+  const body = await parseJsonBody(req);
+  try {
+    ok(res, { user: await banCommunityUser(supabase, userId, body) });
+  } catch (error) {
+    badRequest(res, error.message || "社区用户风控更新失败");
+  }
+}
+
+
 module.exports = async function handler(req, res) {
   try {
     const supabase = getSupabaseAdmin();
@@ -2239,6 +2342,22 @@ module.exports = async function handler(req, res) {
     }
     if (head === "membership-codes") {
       await handleMembershipCodes(req, res, supabase, second || "", third || "");
+      return;
+    }
+    if (head === "community-posts") {
+      await handleCommunityPosts(req, res, supabase);
+      return;
+    }
+    if (head === "community-comments") {
+      await handleCommunityComments(req, res, supabase);
+      return;
+    }
+    if (head === "community-images") {
+      await handleCommunityImages(req, res, supabase);
+      return;
+    }
+    if (head === "community-users") {
+      await handleCommunityUsers(req, res, supabase);
       return;
     }
 

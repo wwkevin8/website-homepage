@@ -218,6 +218,38 @@
       return request(`/api/admin/managers/${id}`, {
         method: "DELETE"
       });
+    },
+    listCommunityPosts(filters) {
+      return request(`/api/admin/community-posts${buildQuery(filters)}`);
+    },
+    getCommunityPost(id) {
+      return request(`/api/admin/community-posts${buildQuery({ id })}`);
+    },
+    updateCommunityPost(id, payload) {
+      return request(`/api/admin/community-posts${buildQuery({ id })}`, {
+        method: "PATCH",
+        body: JSON.stringify(payload)
+      });
+    },
+    listCommunityComments(filters) {
+      return request(`/api/admin/community-comments${buildQuery(filters)}`);
+    },
+    updateCommunityComment(id, payload) {
+      return request(`/api/admin/community-comments${buildQuery({ id })}`, {
+        method: "PATCH",
+        body: JSON.stringify(payload)
+      });
+    },
+    deleteCommunityImage(id) {
+      return request(`/api/admin/community-images${buildQuery({ id })}`, {
+        method: "DELETE"
+      });
+    },
+    updateCommunityUser(id, payload) {
+      return request(`/api/admin/community-users${buildQuery({ id })}`, {
+        method: "PATCH",
+        body: JSON.stringify(payload)
+      });
     }
   };
 })();

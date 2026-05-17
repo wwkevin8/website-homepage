@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="/favicon.ico?v=20260509">
+  <link rel="icon" href="/favicon.png?v=20260509" type="image/png">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=20260509">
+  <title>社区管理 | NGN 管理后台</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css?v=20260505-cache-bust-1">
+</head>
+<body
+  data-admin-shell
+  data-admin-page="community"
+  data-admin-section="运营后台"
+  data-admin-title="社区管理"
+  data-admin-description="管理学生信息广场帖子、评论、举报、图片和用户发布权限。"
+>
+  <div class="admin-layout">
+    <aside class="admin-sidebar" data-admin-sidebar></aside>
+    <div class="admin-main">
+      <header class="admin-header" data-admin-header></header>
+      <main class="admin-content" data-admin-content>
+        <section class="admin-page" id="adminCommunityPage">
+          <section class="admin-panel">
+            <form class="admin-toolbar admin-toolbar-inline" id="adminCommunityFilters">
+              <label class="field">
+                <span>关键词</span>
+                <input type="text" name="search" placeholder="标题 / 内容 / 城市 / 学校 / 区域">
+              </label>
+              <label class="field">
+                <span>状态</span>
+                <select name="status">
+                  <option value="">全部</option>
+                  <option value="published">已发布</option>
+                  <option value="hidden">已隐藏</option>
+                  <option value="expired">已过期</option>
+                  <option value="deleted">已删除</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>分类</span>
+                <select name="category">
+                  <option value="">全部</option>
+                  <option value="buddy">找搭子</option>
+                  <option value="second_hand">二手交易</option>
+                  <option value="sublet">转租/短租</option>
+                  <option value="help">求助/问答</option>
+                  <option value="official">官方公告</option>
+                </select>
+              </label>
+              <div class="admin-inline-actions">
+                <button class="button button-primary" type="submit">查询</button>
+                <button class="button button-secondary" type="reset">重置</button>
+              </div>
+            </form>
+          </section>
+          <p class="transport-form-message" id="adminCommunityMessage"></p>
+          <section id="adminCommunityPostsTable"></section>
+          <div class="transport-pagination" id="adminCommunityPagination"></div>
+
+          <section class="admin-panel">
+            <div class="admin-panel-head">
+              <div>
+                <h2>被举报评论</h2>
+                <p>快速处理被举报的评论。也可以从帖子详情中查看某个帖子的全部评论。</p>
+              </div>
+              <button class="button button-secondary" type="button" id="adminCommunityRefreshReportedComments">刷新</button>
+            </div>
+            <div id="adminCommunityReportedComments"></div>
+          </section>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <div class="admin-overlay" id="adminCommunityDrawer" hidden>
+    <section class="admin-drawer" role="dialog" aria-modal="true" aria-labelledby="adminCommunityDrawerTitle">
+      <div class="admin-drawer-header">
+        <div>
+          <h2 id="adminCommunityDrawerTitle">帖子详情</h2>
+          <p id="adminCommunityDrawerNote">查看联系方式、图片、举报记录和用户风险信息。</p>
+        </div>
+        <button class="button button-text" type="button" data-community-drawer-close>关闭</button>
+      </div>
+      <div class="admin-drawer-body" id="adminCommunityDrawerBody">
+        <div class="admin-detail-pre">请选择一个帖子查看详情。</div>
+      </div>
+    </section>
+  </div>
+
+  <script src="./admin-api.js?v=20260517-community-admin-1"></script>
+  <script src="./admin-shell.js?v=20260517-community-admin-1"></script>
+  <script src="./admin-community.js?v=20260517-community-admin-1"></script>
+</body>
+</html>
