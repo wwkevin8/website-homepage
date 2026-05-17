@@ -102,6 +102,10 @@ function toApiModulePath(urlPathname) {
     return path.join(ROOT, "api", "public", "[...action].js");
   }
 
+  if (urlPathname === "/api/community-post-page" || /^\/community-post\/[^/]+$/.test(urlPathname)) {
+    return path.join(ROOT, "api", "community-post-page.js");
+  }
+
   if (urlPathname === "/api/cron/close-expired-transport-requests") {
     return path.join(ROOT, "api", "cron", "close-expired-transport-requests.js");
   }
@@ -154,6 +158,11 @@ function applyRouteParams(req, urlPathname) {
   const publicActionMatch = urlPathname.match(/^\/api\/public\/(.+)$/);
   if (publicActionMatch) {
     req.query = { ...(req.query || {}), action: publicActionMatch[1] };
+  }
+
+  const communityPostMatch = urlPathname.match(/^\/community-post\/([^/]+)$/);
+  if (communityPostMatch) {
+    req.query = { ...(req.query || {}), id: decodeURIComponent(communityPostMatch[1]) };
   }
 
   if (/^\/api\/transport-requests\/[^/]+$/.test(urlPathname)) {
@@ -287,7 +296,7 @@ function handleStatic(req, res, parsedUrl) {
 const server = http.createServer(async (req, res) => {
   const parsedUrl = new URL(req.url, `http://${req.headers.host || `localhost:${PORT}`}`);
 
-  if (parsedUrl.pathname.startsWith("/api/")) {
+  if (parsedUrl.pathname.startsWith("/api/") || /^\/community-post\/[^/]+$/.test(parsedUrl.pathname)) {
     await handleApi(req, res, parsedUrl);
     return;
   }

@@ -1,4 +1,10 @@
 const authConfigHandler = require("../../public-api-handlers/auth-config");
+const communityCommentReportsHandler = require("../../public-api-handlers/community-comment-reports");
+const communityCommentsHandler = require("../../public-api-handlers/community-comments");
+const communityImageFinalizeHandler = require("../../public-api-handlers/community-image-finalize");
+const communityImageUploadHandler = require("../../public-api-handlers/community-image-upload");
+const communityPostReportsHandler = require("../../public-api-handlers/community-post-reports");
+const communityPostsHandler = require("../../public-api-handlers/community-posts");
 const membershipBenefitSelectionHandler = require("../../public-api-handlers/membership-benefit-selection");
 const membershipMeHandler = require("../../public-api-handlers/membership-me");
 const membershipRedeemCodeHandler = require("../../public-api-handlers/membership-redeem-code");
@@ -14,6 +20,12 @@ const { badRequest } = require("../_lib/http");
 
 const HANDLERS = {
   "auth-config": authConfigHandler,
+  "community-comment-reports": communityCommentReportsHandler,
+  "community-comments": communityCommentsHandler,
+  "community-image-finalize": communityImageFinalizeHandler,
+  "community-image-upload": communityImageUploadHandler,
+  "community-post-reports": communityPostReportsHandler,
+  "community-posts": communityPostsHandler,
   "membership-me": membershipMeHandler,
   "membership/me": membershipMeHandler,
   "membership-benefit-selection": membershipBenefitSelectionHandler,

@@ -7,10 +7,227 @@
 
 ## Last Updated Task
 
-- Date: 2026-05-15
-- Scope: hotfix production membership API routing
+- Date: 2026-05-17
+- Scope: Community Noticeboard phase 5.5 frontend comment loop
 
 ## Latest Completed Work
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before implementing Community Noticeboard phase 5.5.
+- Implemented Community Noticeboard phase 5.5 only:
+  - extended `public-api-handlers/community-comments.js` so `GET /api/public/community-comments?post_id=...` returns only published comments for a visible `published` and unexpired post;
+  - the public comment list response returns only `id`, `content`, `created_at`, and safe `author_label`, and does not return `user_id`, email, contact fields, or service-role data;
+  - updated `community-post.html` with a comment-list container;
+  - updated `community.js` to load/render comments, show an empty comment state, refresh after comment submission, add per-comment report buttons, refresh after comment reports, and keep comment/user content escaped before insertion;
+  - updated `docs/PROJECT_MAP.md` for the expanded comment API and frontend behavior.
+- Phase 5.5 verification:
+  - `node --check` passed for `community.js`, `public-api-handlers/community-comments.js`, and `api/public/[...action].js`;
+  - `git diff --check` passed for the phase 5.5 files;
+  - focused local verification against the helper server on port `3143` and the Supabase project passed for published/unexpired comment list loading, empty state, logged-in comment creation, list refresh, unauthenticated comment blocking, URL/contact/sensitive/over-300 rejection, per-comment report buttons, comment-report success, 2-report auto-hide with frontend disappearance, hidden/deleted/expired post comment-list rejection, public response privacy, browser console cleanliness, no frontend service-role reference, and no direct frontend community table access;
+  - temporary phase 5.5 QA users, posts, comments, reports, rate-limit rows, and the temporary verification script were cleaned up.
+- Phase 5.5 intentionally did not add phase 6 admin community UI, admin APIs, deployment, commit, or push.
+- Current recommendation: Community Noticeboard frontend/API loop is now ready for user review; proceed to phase 6 admin community management only after explicit confirmation.
+
+- Read `E:\webside\AGENTS.md`, `E:\webside\docs\current-status.md`, and the Playwright skill before running Community Noticeboard phase 4/5 end-to-end verification.
+- Performed a scoped verification pass without adding phase 6 admin code:
+  - started the local helper server on port `3142`;
+  - created temporary QA users/posts/comments/images through Supabase service-role test setup;
+  - exercised real public APIs, the formal `/community-post/{id}` SEO route, Supabase Storage signed upload/finalize flow, and real browser pages;
+  - removed the temporary verification script and cleaned QA users, posts, comments, reports, image metadata, rate-limit rows, and private Storage objects created by the verification.
+- Verification passed for:
+  - `community.html` opening, category filtering, search, empty state, mobile layout, public list data loading, no contact-field display, no frontend service-role references, and no direct community Supabase table access;
+  - `community-submit.html` unauthenticated blocking, logged-in access, category-specific image-field visibility, backend-only contact-field copy, logged-in creation for `buddy`, `second_hand`, `sublet`, and `help`, default `published` status, create-response privacy, and post validation for official/short/html/script/url/contact/sensitive cases;
+  - image upload/finalize for `second_hand` and `sublet`, signed URL detail reads, and rejection for `buddy`/`help`, more than three images, over-2MB files, svg/gif/pdf/video types, non-owner upload/finalize, and hidden/deleted/expired posts;
+  - comment API unauthenticated rejection, logged-in comment creation, URL/contact/sensitive/over-300 rejection, fourth same-post daily comment `429`, post-report threshold auto-hide, comment-report threshold auto-hide via API, and hidden post public-detail exclusion;
+  - `/community-post/{id}` SEO HTML returning `200` for published/unexpired posts, correct title/meta/canonical/robots, `404` noindex for hidden/deleted/expired/missing posts, escaped user content, no image signed URLs, no comments, no view-count increment, and no contact/user/service-role output;
+  - `community-post.html?id=...` fallback loading title/detail fields, signed image URLs, comment submission, post report action, noindex meta, no private-field output, and no browser console errors.
+- Verification found two phase 5 frontend gaps:
+  - the detail page does not load/render an existing comments list because there is no public `GET /api/public/community-comments?post_id=...` endpoint and no `[data-comment-list]` UI yet;
+  - the detail page has no per-comment report button/UI, although `POST /api/public/community-comment-reports` works and auto-hides comments at the report threshold.
+- Recommendation before phase 6:
+  - add a small public comment-list endpoint and detail-page comment list/report UI as a focused phase 5.5, then rerun the failed comment-list/comment-report UI checks;
+  - after that, proceed to phase 6 admin community management.
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before implementing and closing out Community Noticeboard phases 4 and 5.
+- Implemented Community Noticeboard phase 4:
+  - added `api/community-post-page.js` for lightweight server-rendered community post detail HTML;
+  - added the Vercel rewrite `/community-post/:id -> /api/community-post-page?id=:id`;
+  - updated `dev-server.js` so local `/community-post/{id}` requests exercise the same serverless route;
+  - updated `docs/PROJECT_MAP.md` for the new SEO route and community post visibility behavior.
+- SEO behavior:
+  - `published` and unexpired posts return `200` HTML with escaped title/content, `robots=index, follow`, canonical `/community-post/{id}`, OG tags, Twitter card, disclaimer, NGN service links, and a frontend mount container;
+  - hidden, deleted, expired, missing, or non-`published` posts return `404` noindex/nofollow HTML;
+  - the route intentionally does not output image signed URLs, comments, contact fields, user email, user id, or service role secrets;
+  - the route intentionally does not increment `view_count`.
+- Implemented Community Noticeboard phase 5 public pages:
+  - added `community.html` for list/search/category browsing and NGN service entry links;
+  - added `community-submit.html` and `community-submit.js` for logged-in post submission, public-safe contact collection, disclaimer acceptance, and second-hand/sublet image upload through the phase 3 signed-upload APIs;
+  - added `community-post.html` as a noindex JS fallback detail page;
+  - added `community.js` for list rendering, formal/fallback detail hydration, image display from short-lived signed URLs, comment submission, report submission, and category-specific NGN service links;
+  - added `community.css` as scoped community styling without changing the global stylesheet.
+- Stage 4 verification:
+  - `node --check api/community-post-page.js` passed;
+  - `vercel.json` parsed successfully;
+  - direct handler verification against Supabase passed for published 200/indexable HTML, canonical formal URL, hidden/deleted/expired/missing 404 noindex HTML, user-content escaping, contact-field/user-id privacy, and frontend mount container output;
+  - QA cleanup verification returned zero remaining phase 4 QA users and posts.
+- Stage 5 verification:
+  - `node --check` passed for `api/community-post-page.js`, `community.js`, `community-submit.js`, and `dev-server.js`;
+  - `vercel.json` parsed successfully;
+  - `git diff --check` passed for the phase 4/5 community files;
+  - local browser verification against `npm run dev` on port `3131` passed for community list display, formal `/community-post/{id}` detail display, no contact field output, noindex fallback `community-post.html?id=...`, logged-in submit page availability, and mobile list layout;
+  - QA cleanup verification returned zero remaining phase 5 QA users and posts.
+- Phase 5 intentionally did not add admin community UI, SEO server-side image rendering, SEO server-side comment rendering, deployment, commit, or push.
+- Remaining known gap: the public detail page can submit comments through the phase 2 API, but a public comment-list GET endpoint has not yet been added, so rendering existing comments should be handled in a later scoped step if needed.
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before preparing the storage SOP.
+- Prepared a Chinese SOP for the storage/luggage business covering:
+  - public frontend flow through `storage.html` and `storage-booking.html`;
+  - customer login/profile requirements before storage booking submission;
+  - storage collection/intake, buy-box delivery, and storage return/dropoff distinctions;
+  - admin list/detail operations through `admin-storage.html` and `admin-storage-detail.html`;
+  - status, membership, notification, privacy, and exception-handling notes.
+- This task did not change any functional frontend, backend API, database, email, deployment, or project map files.
+- Verification was documentation-oriented only: confirmed the relevant storage pages, admin pages, API route names, storage helper references, and project-map entries exist.
+- Existing unrelated local workspace changes remain untouched, including admin manager/community noticeboard work and deleted hero image records.
+
+- Read `E:\webside\AGENTS.md`, `E:\webside\docs\current-status.md`, and the Supabase skill before implementing Community Noticeboard phase 3.
+- Implemented Community Noticeboard phase 3 only:
+  - extended `api/_lib/community.js` with image upload eligibility checks, private Storage signed upload URL creation, finalize validation, active-image count limit, failed-finalize object cleanup, and short-lived signed image URLs on visible post detail responses;
+  - added `public-api-handlers/community-image-upload.js`;
+  - added `public-api-handlers/community-image-finalize.js`;
+  - registered `/api/public/community-image-upload` and `/api/public/community-image-finalize` in `api/public/[...action].js`;
+  - updated `docs/PROJECT_MAP.md` for the new image APIs and `community_post_images` behavior.
+- Stage 3 API surface:
+  - `POST /api/public/community-image-upload`;
+  - `POST /api/public/community-image-finalize`;
+  - `GET /api/public/community-posts?id=POST_ID` now returns short-lived signed image URLs only for visible `published` and unexpired posts.
+- Stage 3 verification:
+  - `node --check` passed for `api/_lib/community.js`, both new image handlers, and `api/public/[...action].js`;
+  - `git diff --check` passed for the phase 3 API files;
+  - local HTTP verification against `npm run dev` behavior on port `3124` and the Supabase project passed for private bucket confirmation, unauthenticated upload rejection, `second_hand` image upload/finalize, `sublet` image upload/finalize, `buddy`/`help` rejection, non-owner upload/finalize rejection, hidden/deleted/expired post rejection, more than 3 active images rejection, over-2MB finalize rejection, bad MIME/extension rejection, wrong file-header rejection, and visible detail signed image URL generation;
+  - QA cleanup verification returned zero remaining phase 3 QA users, posts, and image metadata rows.
+- Stage 3 intentionally did not add frontend pages, SEO detail route, admin community UI, admin delete-image API, deployment, commit, or push.
+- If a client uploads to Storage but never calls finalize, or if cleanup after finalize failure cannot reach Storage, the object can remain as a private orphan under `community-images`; it will not be returned by public APIs without a finalized `community_post_images` row and should be cleaned by a later scheduled/admin maintenance task.
+- Ready for phase 4 only after user confirmation.
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before fixing the admin-manager save failure.
+- Fixed the administrator edit save failure where production showed `The page could not be found`:
+  - `admin-api.js` now uses one-segment production-safe manager mutation routes:
+    - `PATCH /api/admin/managers?id=...`;
+    - `DELETE /api/admin/managers?id=...`;
+    - `POST /api/admin/managers?id=...&manager_action=reset-password`;
+  - `api/admin/[...action].js` now dispatches those query-id manager mutations through the existing server-side manager detail logic;
+  - `admin-managers.html` bumps `admin-api.js` and `admin-pages.js` cache versions so the page loads the fixed request paths;
+  - `docs/PROJECT_MAP.md` documents the one-segment manager mutation routes.
+- Verification:
+  - `node --check admin-api.js` passed;
+  - `node --check admin-pages.js` passed;
+  - `node --check api/_lib/admin-managers.js` passed;
+  - `node --check api/admin/[...action].js` passed;
+  - `git diff --check` passed for the touched manager/API/documentation files.
+- No public pages, database schema, email flow, deployment, commit, or push was performed.
+- Unrelated local workspace state remains:
+  - Community Noticeboard phase 2 files and `api/public/[...action].js` changes are present from other local work;
+  - `img/hero-consultation-generated.jpg` and `img/hero-consultation-horde.png` are still deleted.
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before expanding Wkevin root-admin editing rights.
+- Fixed why Wkevin could not edit all administrator identity fields:
+  - the admin edit drawer previously disabled the `username` field for every edit;
+  - the server-side manager update mapper previously ignored `username` on PATCH;
+  - Wkevin now sees the username field enabled in edit mode;
+  - the admin update API now accepts username updates only when the actor is Wkevin root manager;
+  - username updates keep the existing 4-32 character format validation and now check duplicate usernames before saving;
+  - `admin-managers.html` now bumps the `admin-pages.js` cache version so the administrator-management page loads the updated edit behavior.
+- Verification:
+  - `node --check admin-pages.js` passed;
+  - `node --check api/_lib/admin-managers.js` passed;
+  - `node --check api/admin/[...action].js` passed;
+  - `git diff --check` passed for the touched admin-manager and documentation files;
+  - a focused helper test confirmed username is included for Wkevin/root updates and ignored for normal super-admin updates.
+- No public pages, database schema, email flow, deployment, commit, or push was performed.
+- Unrelated local workspace state remains:
+  - Community Noticeboard phase 2 files and `api/public/[...action].js` changes are present from other local work;
+  - `img/hero-consultation-generated.jpg` and `img/hero-consultation-horde.png` are still deleted.
+
+- Read `E:\webside\AGENTS.md`, `E:\webside\docs\current-status.md`, and the Supabase skill before implementing Community Noticeboard phase 2.
+- Implemented Community Noticeboard phase 2 only:
+  - extended `api/_lib/community.js` with public-safe comment creation, comment text validation, comment daily limits, reporting eligibility checks, duplicate-report checks, IP short-window report throttling, and report-threshold auto-hide for posts/comments;
+  - added `public-api-handlers/community-comments.js`;
+  - added `public-api-handlers/community-post-reports.js`;
+  - added `public-api-handlers/community-comment-reports.js`;
+  - registered `/api/public/community-comments`, `/api/public/community-post-reports`, and `/api/public/community-comment-reports` in `api/public/[...action].js`;
+  - updated `docs/PROJECT_MAP.md` for the new public API endpoints and community table behavior.
+- Stage 2 API surface:
+  - `POST /api/public/community-comments`;
+  - `POST /api/public/community-post-reports`;
+  - `POST /api/public/community-comment-reports`.
+- Stage 2 verification:
+  - `node --check` passed for `api/_lib/community.js`, all three new public community handlers, and `api/public/[...action].js`;
+  - `git diff --check` passed for the phase 2 community API files;
+  - local HTTP verification against `npm run dev` behavior on port `3123` and the Supabase project passed for unauthenticated comment `401`, authenticated published comments, comment response privacy, URL/contact/length rejection, same-post comment rate limit, banned-user comment rejection, duplicate post report rejection, post report threshold auto-hide, comment report threshold auto-hide, new-account report rejection, banned-user report rejection, and IP bulk report throttling;
+  - QA cleanup verification returned zero remaining phase 2 QA users, posts, comments, and custom QA rate-limit rows.
+- Stage 2 intentionally did not add image upload/finalize, SEO detail route, frontend community pages, admin community UI, deployment, commit, or push.
+- Ready for phase 3 only after user confirmation.
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before changing admin-manager authority.
+- Updated Wkevin root admin authority for the administrator management page/API:
+  - `api/_lib/admin-managers.js` now recognizes the root manager account by username `superadmin`, email `haoranw44@gmail.com`, or display name `Wkevin`;
+  - Wkevin can update other administrators' usernames through the edit drawer and server-side manager update route, with duplicate-username validation;
+  - Wkevin can delete other `super_admin` accounts through the server-side manager mutation guard;
+  - existing safeguards still prevent deleting/disabling the currently logged-in account and prevent removing the last active super admin;
+  - `admin-pages.js` now enables username editing and super-admin delete actions for Wkevin and keeps those elevated actions disabled for other super admins;
+  - `docs/PROJECT_MAP.md` documents the special Wkevin root-manager behavior for `/api/admin/managers/:id`.
+- Verification:
+  - `node --check admin-pages.js` passed;
+  - `node --check api/_lib/admin-managers.js` passed;
+  - `node --check api/admin/[...action].js` passed.
+- No public pages, database schema, email flow, deployment, commit, or push was performed.
+- Unrelated local workspace state remains:
+  - `img/hero-consultation-generated.jpg` and `img/hero-consultation-horde.png` are still deleted;
+  - `api/_lib/community.js` and `supabase/20260517_community_noticeboard.sql` remain untracked from prior Community Noticeboard work.
+
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before implementing Community Noticeboard phase 1.
+- Implemented Community Noticeboard phase 1 only:
+  - added `supabase/20260517_community_noticeboard.sql` with community post, field, image, comment, report, and rate-limit tables;
+  - added site-user posting risk fields (`posting_permission_status`, `trust_score`, `banned_until`, `ban_reason`);
+  - added private Supabase Storage bucket setup for `community-images`;
+  - enabled/forced RLS and revoked direct `public`, `anon`, and `authenticated` table access for the community tables;
+  - added `api/_lib/community.js` for public-safe post serialization, validation, expiry defaults, user/IP posting limits, duplicate-title checks, and lightweight view-count throttling;
+  - added `public-api-handlers/community-posts.js`;
+  - registered `/api/public/community-posts` in the public aggregate API;
+  - updated `docs/PROJECT_MAP.md` for the new public API, migration, tables, and `site_users` risk fields.
+- Stage 1 API surface:
+  - `GET /api/public/community-posts`;
+  - `GET /api/public/community-posts?id=POST_ID`;
+  - `POST /api/public/community-posts`.
+- Stage 1 verification:
+  - `node --check api/_lib/community.js` passed;
+  - `node --check public-api-handlers/community-posts.js` passed;
+  - `node --check api/public/[...action].js` passed;
+  - `git diff --check` passed for the phase 1 community files.
+- Stage 1 intentionally did not add frontend pages, comments, reports, image upload/finalize, SEO detail route, admin community UI, deployment, commit, or push.
+- Required follow-up:
+  - Supabase migration `community_noticeboard_phase1` has now been applied to project `ngn-transport` (`brmsymzkmdnxzhrcaghw`) with migration version `20260516233458`;
+  - continue with phase 2 only after confirmation.
+- Supabase verification after applying the migration:
+  - all seven community tables exist in `public`;
+  - RLS and force RLS are enabled on `community_posts`, `community_post_fields`, `community_post_images`, `community_comments`, `community_post_reports`, `community_comment_reports`, and `community_rate_limits`;
+  - `anon`, `authenticated`, and `public` have no direct grants on those community tables;
+  - `site_users.id` remains `uuid`, `site_users.created_at` exists, and the new posting risk columns exist;
+  - Storage bucket `community-images` exists and is private.
+- Stage 1 real API verification against local `npm run dev` and the Supabase project passed:
+  - `GET /api/public/community-posts` returned `200` with an empty initial list and no contact fields;
+  - unauthenticated `POST /api/public/community-posts` returned `401`;
+  - authenticated QA users successfully created `buddy`, `second_hand`, `sublet`, and `help` posts, all defaulting to `published`;
+  - create and detail responses did not include `contact_wechat`, `contact_phone`, or `contact_email`;
+  - ordinary user `official` creation, short title, short content, HTML, `script`/`iframe`, URL, phone, email, WeChat, WhatsApp, Telegram, sensitive word, and duplicate-title cases were rejected;
+  - `GET /api/public/community-posts?id=...` returned an active published post and returned `404` for `hidden`, `deleted`, `expired`, and missing posts;
+  - public list excluded hidden/deleted/expired QA posts;
+  - frontend/static files do not directly reference community Supabase tables, and frontend/static files do not reference `SUPABASE_SERVICE_ROLE_KEY` or service-role strings.
+- QA cleanup completed:
+  - removed QA community posts, view-count rate-limit rows, posting rate-limit rows, and temporary QA users created during verification.
+- Unrelated local workspace state remains:
+  - `img/hero-consultation-generated.jpg` and `img/hero-consultation-horde.png` are still deleted;
+  - Wkevin root admin authority changes are now tracked as the latest completed task above.
 
 - Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before diagnosing the production membership loading/search issue.
 - Diagnosed production 404s for multi-segment Vercel API routes:
@@ -1183,6 +1400,7 @@
 ## Current Project State
 
 - Admin pages render the right-bottom Fleta assistant pet widget again; it remains draggable, remembered per browser, and uses a 60-second CSS frame animation.
+- Wkevin is now treated as the root manager account for administrator management: admin username edits and server-side deletion of other super-admin accounts are available only to Wkevin, while self-delete/self-disable and last-active-super-admin safeguards remain.
 - The NGN membership entitlement system backend foundation is implemented locally and its database migration has been applied to Supabase project `ngn-transport` (`brmsymzkmdnxzhrcaghw`).
 - Membership API handlers have been verified by direct local invocation against Supabase; membership backend, admin UI, user-center UI, and current frontend refinements are local to `codex/membership-v1` and have not been pushed or deployed.
 - Membership remains independent from `site_users.is_member`; it is represented through separate entitlement tables, server-side helper logic, admin APIs, and user-safe public APIs.

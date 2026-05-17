@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="/favicon.ico?v=20260509">
+  <link rel="icon" href="/favicon.png?v=20260509" type="image/png">
+  <title>发布信息｜NGN 学生信息广场</title>
+  <meta name="description" content="登录后在 NGN 学生信息广场发布找搭子、二手、转租或求助信息。">
+  <link rel="stylesheet" href="./community.css?v=20260517-community-1">
+</head>
+<body class="community-page" data-community-page="submit">
+  <div class="community-shell">
+    <header class="community-topbar">
+      <a class="community-brand" href="./community.html">
+        <span class="community-mark">NGN</span>
+        <span>学生信息广场</span>
+      </a>
+      <nav class="community-nav" aria-label="社区导航">
+        <a href="./community.html">返回列表</a>
+        <span data-site-auth-nav data-auth-login-label="登录"></span>
+      </nav>
+    </header>
+
+    <section class="community-hero">
+      <div>
+        <h1>发布信息</h1>
+        <p class="community-subtitle">联系方式只存后台，不会在前台公开展示。</p>
+      </div>
+    </section>
+
+    <main class="community-layout">
+      <section class="community-submit-card">
+        <p class="community-message" data-community-submit-message></p>
+        <form class="community-form" data-community-submit-form>
+          <div class="community-form-grid">
+            <label class="community-field">
+              <span>分类</span>
+              <select name="category" required data-community-category>
+                <option value="buddy">找搭子</option>
+                <option value="second_hand">二手交易</option>
+                <option value="sublet">转租/短租</option>
+                <option value="help">求助/问答</option>
+              </select>
+            </label>
+            <label class="community-field">
+              <span>城市</span>
+              <input name="city" maxlength="80" placeholder="例如 Nottingham">
+            </label>
+            <label class="community-field">
+              <span>学校</span>
+              <input name="university" maxlength="120" placeholder="例如 University of Nottingham">
+            </label>
+            <label class="community-field">
+              <span>区域</span>
+              <input name="area" maxlength="120" placeholder="例如 City Centre / Beeston">
+            </label>
+            <label class="community-field" data-price-field>
+              <span>价格</span>
+              <input name="price" type="number" min="0" max="100000" step="0.01" placeholder="如有">
+            </label>
+          </div>
+
+          <label class="community-field">
+            <span>标题</span>
+            <input name="title" required minlength="8" maxlength="120" placeholder="至少 8 个字符">
+          </label>
+
+          <label class="community-field">
+            <span>正文</span>
+            <textarea name="content" required minlength="20" maxlength="300" placeholder="请勿在正文公开联系方式、外链或隐私信息。"></textarea>
+            <p class="community-help" data-content-help>找搭子、二手、转租最多 200 字；求助最多 300 字。</p>
+          </label>
+
+          <div class="community-form-grid">
+            <label class="community-field">
+              <span>微信</span>
+              <input name="contact_wechat" maxlength="120" placeholder="仅后台可见">
+            </label>
+            <label class="community-field">
+              <span>手机号</span>
+              <input name="contact_phone" maxlength="80" placeholder="仅后台可见">
+            </label>
+            <label class="community-field">
+              <span>邮箱</span>
+              <input name="contact_email" maxlength="160" placeholder="仅后台可见">
+            </label>
+          </div>
+
+          <label class="community-field" data-image-field>
+            <span>图片</span>
+            <input name="images" type="file" accept="image/jpeg,image/png,image/webp" multiple>
+            <p class="community-help">请勿上传包含微信二维码、手机号、邮箱、聊天记录、合同、护照、BRP、学生卡、他人照片或其他隐私信息的图片。违规图片或帖子可能会被隐藏或删除。</p>
+          </label>
+
+          <label class="community-checkbox">
+            <input name="disclaimer" type="checkbox" required>
+            <span>平台仅提供信息展示，不担保交易真实性、付款安全、商品质量、图片内容真实性、房源真实性、合同有效性或转租成功。用户需自行核实信息。转租/短租信息必须自行确认公寓、房东或住宿方是否允许合同转让或转租。请勿提前支付大额定金，不要公开个人隐私信息。</span>
+          </label>
+
+          <button class="community-button community-button-primary" type="submit" data-submit-button>提交发布</button>
+        </form>
+      </section>
+
+      <aside class="community-side">
+        <section class="community-panel">
+          <h2>发布后</h2>
+          <p>发布成功。请注意，违规内容、联系方式公开、广告或被举报内容可能会被隐藏或删除。</p>
+        </section>
+        <section class="community-panel">
+          <h2>图片限制</h2>
+          <p>二手交易和转租/短租最多 3 张图片，每张最大 2MB，仅支持 jpg、jpeg、png、webp。</p>
+        </section>
+      </aside>
+    </main>
+  </div>
+
+  <script src="./site-auth.js?v=20260517-community-1"></script>
+  <script src="./community-submit.js?v=20260517-community-1"></script>
+</body>
+</html>

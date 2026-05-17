@@ -23,6 +23,10 @@
   ],
   "rewrites": [
     {
+      "source": "/community-post/:id",
+      "destination": "/api/community-post-page?id=:id"
+    },
+    {
       "source": "/pickup",
       "destination": "/pickup.html"
     },
