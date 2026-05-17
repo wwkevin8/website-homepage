@@ -8,7 +8,7 @@
 ## Last Updated Task
 
 - Date: 2026-05-17
-- Scope: Vue admin read-only list checkpoint
+- Scope: Vue community post readonly detail migration
 
 ## Latest Completed Work
 
@@ -47,12 +47,83 @@
   - Vue source scan confirmed no `innerHTML`, `document.querySelector`, or `addEventListener`;
   - Vue source scan confirmed no references to old `admin-pages.js`, `transport-admin.js`, `admin-users.js`, or `admin-orders.js`.
 - This checkpoint does not deploy, push, merge, create a PR, add new pages, change APIs, change database schema, change public frontend pages, or implement dangerous operations.
+- Hardened the pending admin-manager root permission fix:
+  - `isRootManagerAccount()` no longer uses mutable display `name` or editable `username` as root authority;
+  - Wkevin/root is now identified by the fixed configured email only, pending a future fixed admin id migration;
+  - the old admin page's UI-only root helper was aligned to the same fixed-email rule so fake `name=Wkevin` does not expose root controls;
+  - local branch tests confirmed fake `name=Wkevin`, fake `username=superadmin`, normal `super_admin`, and `operations_admin` are not treated as root;
+  - local branch tests confirmed Wkevin/root can manage another `super_admin`, cannot delete/disable self, and nobody can delete/disable/downgrade the last active `super_admin`.
+- This root-permission hardening is still uncommitted and has not been pushed or deployed.
+- Repaired Vue admin list "view detail" behavior without migrating new pages or implementing dangerous operations:
+  - `/admin-vue/orders` now routes storage orders to `admin-storage-detail.html?id=...` and transport orders to `transport-admin-request-edit.html?id=...` when a stable id is available;
+  - `/admin-vue/transport/requests` now opens `transport-admin-request-edit.html?id=...` for view actions, while Group ID links continue to open `transport-admin-group-edit.html?id=...`;
+  - `/admin-vue/transport/groups` now uses the shared legacy group link helper for `transport-admin-group-edit.html?id=...`;
+  - `/admin-vue/storage/box-orders`, `/admin-vue/storage/collections`, and `/admin-vue/storage/returns` now use the shared storage detail helper with id fallbacks;
+  - `/admin-vue/memberships` sends readonly benefit-detail and operation-record actions to `admin-memberships.html`, while mutation actions remain placeholders;
+  - `/admin-vue/community` remains readonly-detail only and still performs no moderation mutations.
+- `npm run build:admin-vue` passed after the detail-link repair.
+- Migrated the first readonly Vue detail page:
+  - added `/admin-vue/storage/:id` for storage order readonly details;
+  - the three storage Vue list pages now open the Vue detail route as the primary detail entry;
+  - the Vue detail page uses the existing `GET /api/admin/storage-orders?id=...` endpoint and does not change backend API shape;
+  - the detail page keeps the old storage detail structure as readonly sections: order basics, user/contact, service appointment, address, boxes/items/quantity, price/fees, notes, folded JSON previews, and a disabled/placeholder operations area;
+  - `admin-storage-detail.html` remains available through an "open old detail" fallback link.
+- `npm run build:admin-vue` passed after the storage detail migration.
+- Migrated the second readonly Vue detail page:
+  - added `/admin-vue/transport/requests/:id` for transport request readonly details;
+  - the Vue transport request list now opens the Vue detail route as the primary detail entry;
+  - the Vue detail page uses the existing `GET /api/transport-requests/:id` endpoint and does not change backend API shape;
+  - the detail page keeps the old transport request edit structure as readonly sections: order basics, student/contact, flight and airport, trip, carpool, membership/price, notes, folded extra JSON, and a placeholder operations area;
+  - `transport-admin-request-edit.html` remains available through an "open old detail" fallback link.
+- `npm run build:admin-vue` passed after the transport request detail migration.
+- Migrated the third readonly Vue detail page:
+  - added `/admin-vue/transport/groups/:id` for transport group readonly details;
+  - the Vue transport group list now opens the Vue detail route as the primary detail entry;
+  - Group ID links from the Vue transport request list and transport request detail now prefer the Vue group detail route;
+  - the Vue detail page uses the existing `GET /api/transport-groups/:id` endpoint and does not change backend API shape;
+  - the detail page keeps the old transport group edit structure as readonly sections: group basics, trip, seats, payment, members, driver/dispatch summary, notes, folded extra JSON, and a placeholder operations area;
+  - `transport-admin-group-edit.html` remains available through an "open old group detail" fallback link.
+- `npm run build:admin-vue` passed after the transport group detail migration.
+- Migrated the fourth readonly Vue detail page:
+  - added `/admin-vue/orders/:id` for order center readonly summary details;
+  - the Vue order center list now opens the Vue order detail route as the primary detail entry;
+  - the Vue detail page uses the existing `GET /api/admin/orders/:id` endpoint and does not change backend API shape;
+  - the detail page keeps order center detail structure as readonly sections: order basics, customer info, service summary, notes/logs, professional detail entry, folded extra fields, and a placeholder operations area;
+  - professional detail entries route storage orders to `/admin-vue/storage/:id` and transport orders to `/admin-vue/transport/requests/:id` using the existing source id;
+  - `admin-orders.html` remains available through an "open old order center" fallback link.
+- `npm run build:admin-vue` passed after the order center detail migration.
+- Vue source scan still found no `innerHTML`, `document.querySelector`, `addEventListener`, `admin-orders.js`, or `admin-pages.js` usage.
+- Dangerous request scan found no new `PATCH`, `DELETE`, or export calls; only the existing shared fetch wrapper and existing logout `POST` remain.
+- Migrated the fifth readonly Vue detail page:
+  - added `/admin-vue/memberships/:id` for membership entitlement readonly details;
+  - the Vue membership list now opens the Vue detail route for "benefit detail" and "operation record" actions;
+  - the route uses `membership_entitlements.id` as the stable detail id, with the clicked row cached for precise readonly display and the existing `GET /api/admin/memberships` list endpoint as a no-API-change fallback;
+  - the detail page keeps the old membership business structure as readonly sections: user basics, membership entitlement, activation-code summary, benefit/audit records, folded extra fields, and a placeholder operations area;
+  - `admin-memberships.html` remains available through an "open old membership admin" fallback link.
+- `npm run build:admin-vue` passed after the membership detail migration.
+- Vue source scan still found no `innerHTML`, `document.querySelector`, `addEventListener`, `admin-memberships.js`, or `admin-pages.js` usage.
+- Dangerous request scan found no new `PATCH`, `DELETE`, or export calls; only the existing shared fetch wrapper and existing logout `POST` remain.
+- Migrated the sixth readonly Vue detail page:
+  - added `/admin-vue/community/posts/:id` for community post readonly details;
+  - the Vue community post list now opens the Vue detail route for post detail viewing;
+  - the detail page uses the existing `GET /api/admin/community-posts?id=...` endpoint and does not change backend API shape;
+  - the detail page keeps the old community management structure as readonly sections: post basics, publisher/risk info, images, reports, comments, folded extra fields, and a placeholder operations area;
+  - `admin-community.html` remains available through an "open old community admin" fallback link.
+- `npm run build:admin-vue` passed after the community post detail migration.
+- Vue source scan still found no `innerHTML`, `document.querySelector`, `addEventListener`, `admin-community.js`, or `admin-pages.js` usage.
+- Dangerous request scan found no new `PATCH`, `DELETE`, or export calls; only the existing shared fetch wrapper and existing logout `POST` remain.
 
 ## Current Project State
 
 - New Vue admin remains parallel-only and available through `/admin-vue/` after building.
 - Old admin remains the rollback and official legacy operator entry.
-- Detailed edit/detail workflows and dangerous operations remain on old admin until explicitly migrated.
+- Detailed edit workflows and dangerous operations remain on old admin until explicitly migrated.
+- Storage order readonly details now live in Vue as the main route; old storage detail remains a fallback and rollback entry.
+- Transport request readonly details now live in Vue as the main route; old transport request edit remains a fallback and rollback entry.
+- Transport group readonly details now live in Vue as the main route; old transport group edit remains a fallback and rollback entry.
+- Order center readonly summary details now live in Vue as the main route; old `admin-orders.html` remains a fallback and rollback entry.
+- Membership entitlement readonly details now live in Vue as the main route for benefit detail and operation record viewing; old `admin-memberships.html` remains a fallback and rollback entry.
+- Community post readonly details now live in Vue as the main route for post detail viewing; old `admin-community.html` remains a fallback and rollback entry.
 - No old admin HTML/JS files were removed or replaced.
 - No public frontend pages were intentionally modified.
 - No API response structures, database schema, email behavior, or secrets/env files were modified.
@@ -66,19 +137,18 @@
   - issue: `storageTypeLabels is not defined`;
   - impact: storage admin page is not officially open, so this does not affect current live business;
   - requirement: fix before opening storage admin, without re-adding heavy list fields such as `customer_form_json`, `final_readable_message`, or `service_flags_json` to the list API.
-- Membership Vue page is intentionally readonly in this phase. Real membership opening, code generation/deletion, benefit registration, operation logs, and entitlement deletion still belong to old admin until explicitly migrated.
-- Community Vue page is intentionally readonly in this phase. Real moderation actions such as hide, restore, delete, pin, update expiry, image deletion, comment moderation, and user bans still belong to old admin until explicitly migrated.
+- Membership Vue page and membership detail page are intentionally readonly in this phase. Real membership opening, code generation/deletion, benefit registration, operation log mutation, entitlement deletion, and benefit reset still belong to old admin until explicitly migrated.
+- Community Vue page and community post detail page are intentionally readonly in this phase. Real moderation actions such as hide, restore, delete, pin, update expiry, image deletion, comment moderation, and user bans still belong to old admin until explicitly migrated.
+- The Vue community post detail migration regenerated the root `admin-vue/` build output. Treat that folder as generated output and rebuild it when committing Vue source changes.
 - Existing unrelated dirty changes were present before this checkpoint and were not reverted:
   - `admin-api.js`;
   - `admin-managers.html`;
   - `admin-pages.js`;
   - `api/_lib/admin-managers.js`;
-  - `api/admin/[...action].js`;
-  - deleted `img/hero-consultation-generated.jpg`;
-  - deleted `img/hero-consultation-horde.png`.
+  - `api/admin/[...action].js`.
 
 ## Recommended Next Steps
 
-- Next Vue phase should be read-only detail page migration.
+- Next Vue phase can refine readonly detail field presentation after operator review, or plan the server-side permission review needed before any write-operation migration.
 - Do not implement real dangerous operations until the corresponding detail/read-only flow is accepted and server-side permission boundaries are reviewed.
 - For deployment later, follow the fixed release order: commit and push the intended changes to GitHub first, then deploy to Vercel.

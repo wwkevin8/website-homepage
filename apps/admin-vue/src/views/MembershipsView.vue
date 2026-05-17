@@ -7,6 +7,7 @@ import ErrorState from "@/components/ErrorState.vue";
 import LoadingState from "@/components/LoadingState.vue";
 import Pagination from "@/components/Pagination.vue";
 import StatusBadge from "@/components/StatusBadge.vue";
+import { membershipLegacyHref } from "@/utils/legacy-links";
 
 const CURRENT_CYCLE = "2026-27";
 
@@ -149,6 +150,34 @@ function membershipStatus(item) {
   return item.claim?.status || item.status || "";
 }
 
+function membershipDetailHref(item, section = "benefits") {
+  if (!item?.id) {
+    return "";
+  }
+  return `/admin-vue/memberships/${encodeURIComponent(item.id)}?section=${encodeURIComponent(section)}&cycle=${encodeURIComponent(item.membership_cycle || filters.cycle || CURRENT_CYCLE)}&return_to=${encodeURIComponent("/admin-vue/memberships")}`;
+}
+
+function rememberMembershipDetail(item) {
+  if (!item?.id || typeof window === "undefined") {
+    return;
+  }
+  try {
+    window.sessionStorage.setItem(`admin-vue:membership:${item.id}`, JSON.stringify(item));
+  } catch (err) {
+    // Detail page can still fall back to the existing list API.
+  }
+}
+
+function openMembershipDetail(item, section = "benefits") {
+  const href = membershipDetailHref(item, section);
+  if (!href) {
+    notice.value = `暂未找到对应会员详情：${displayValue(actionSubject(item))}`;
+    return;
+  }
+  rememberMembershipDetail(item);
+  window.location.href = href;
+}
+
 function actionSubject(item) {
   if (item.code_prefix) {
     return item.code_prefix;
@@ -162,7 +191,21 @@ function actionSubject(item) {
   return userLabel(item.user || item.redeemed_by_user) || item.code_prefix || item.id || "当前记录";
 }
 
+function isLegacyViewAction(action) {
+  const text = String(action);
+  return text.includes("详情") || text.includes("记录") || text.includes("璇︽儏") || text.includes("璁板綍");
+}
+
+function membershipLegacySection(action) {
+  const text = String(action);
+  return text.includes("记录") || text.includes("璁板綍") ? "logs" : "benefits";
+}
+
 function showPlaceholder(action, item = {}) {
+  if (isLegacyViewAction(action)) {
+    window.location.href = membershipLegacyHref(item, membershipLegacySection(action));
+    return;
+  }
   notice.value = `${action}将在后续阶段实现：${displayValue(actionSubject(item))}`;
 }
 
@@ -369,8 +412,8 @@ onMounted(() => {
           <template #cell-actions="{ row }">
             <div class="table-action-group table-action-group--compact">
               <button class="table-action-button" type="button" @click="showPlaceholder('登记权益', row)">登记权益</button>
-              <button class="table-action-button" type="button" @click="showPlaceholder('权益详情', row)">权益详情</button>
-              <button class="table-action-button" type="button" @click="showPlaceholder('操作记录', row)">操作记录</button>
+              <button class="table-action-button" type="button" @click="openMembershipDetail(row, 'benefits')">权益详情</button>
+              <button class="table-action-button" type="button" @click="openMembershipDetail(row, 'logs')">操作记录</button>
               <button class="table-action-button table-action-button--danger" type="button" @click="showPlaceholder('删除会员资格', row)">删除</button>
             </div>
           </template>

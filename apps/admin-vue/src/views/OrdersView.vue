@@ -162,8 +162,20 @@ function handlePageChange(page) {
   loadOrders(page);
 }
 
+function orderDetailHref(order) {
+  const id = order?.id || order?.order_id;
+  return id
+    ? `/admin-vue/orders/${encodeURIComponent(id)}?return_to=${encodeURIComponent("/admin-vue/orders")}`
+    : "";
+}
+
 function viewOrder(order) {
-  detailNotice.value = `详情功能将在后续阶段实现：${displayValue(order.order_no || order.id)}`;
+  const href = orderDetailHref(order);
+  if (href) {
+    window.location.href = href;
+    return;
+  }
+  detailNotice.value = `暂未找到对应 Vue 订单详情：${displayValue(order.order_no || order.id)}`;
 }
 
 onMounted(() => {

@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted, reactive, ref } from "vue";
-import { fetchCommunityComments, fetchCommunityPostDetail, fetchCommunityPosts } from "@/api/admin-api";
+import { fetchCommunityComments, fetchCommunityPosts } from "@/api/admin-api";
 import AdminTable from "@/components/AdminTable.vue";
 import EmptyState from "@/components/EmptyState.vue";
 import ErrorState from "@/components/ErrorState.vue";
@@ -182,17 +182,11 @@ async function loadReportedComments() {
 }
 
 async function openDetail(post) {
-  detailLoading.value = true;
-  detailError.value = "";
-  notice.value = "";
-  try {
-    selectedDetail.value = await fetchCommunityPostDetail(post.id);
-  } catch (err) {
-    selectedDetail.value = null;
-    detailError.value = err.message || "帖子详情加载失败";
-  } finally {
-    detailLoading.value = false;
+  if (!post?.id) {
+    notice.value = `暂未找到对应帖子详情：${displayValue(postTitle(post))}`;
+    return;
   }
+  window.location.href = `/admin-vue/community/posts/${encodeURIComponent(post.id)}?return_to=${encodeURIComponent("/admin-vue/community")}`;
 }
 
 function submitFilters() {

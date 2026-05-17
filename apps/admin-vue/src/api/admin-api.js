@@ -53,6 +53,10 @@ export function fetchOrders(filters = {}) {
   return request(`/api/admin/orders${query ? `?${query}` : ""}`);
 }
 
+export function fetchOrder(id) {
+  return request(`/api/admin/orders/${encodeURIComponent(id)}`);
+}
+
 export function fetchUsers(filters = {}) {
   const searchParams = new URLSearchParams();
   Object.entries(filters).forEach(([key, value]) => {
@@ -86,6 +90,10 @@ export function fetchTransportRequests(filters = {}) {
   return request(`/api/transport-requests${query ? `?${query}` : ""}`);
 }
 
+export function fetchTransportRequest(id) {
+  return request(`/api/transport-requests/${encodeURIComponent(id)}`);
+}
+
 export function fetchTransportGroups(filters = {}) {
   const searchParams = new URLSearchParams();
   Object.entries(filters).forEach(([key, value]) => {
@@ -95,6 +103,10 @@ export function fetchTransportGroups(filters = {}) {
   });
   const query = searchParams.toString();
   return request(`/api/transport-groups${query ? `?${query}` : ""}`);
+}
+
+export function fetchTransportGroup(id) {
+  return request(`/api/transport-groups/${encodeURIComponent(id)}`);
 }
 
 export function fetchTransportSyncLogs(filters = {}) {
@@ -117,6 +129,12 @@ export function fetchStorageOrders(filters = {}) {
   });
   const query = searchParams.toString();
   return request(`/api/admin/storage-orders${query ? `?${query}` : ""}`);
+}
+
+export function fetchStorageOrder(id) {
+  const searchParams = new URLSearchParams();
+  searchParams.set("id", id);
+  return request(`/api/admin/storage-orders?${searchParams.toString()}`);
 }
 
 export function fetchMemberships(filters = {}) {

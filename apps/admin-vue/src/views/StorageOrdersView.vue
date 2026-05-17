@@ -163,11 +163,16 @@ function rowTimeSlot(order) {
 }
 
 function detailHref(order) {
-  if (!order.id) {
+  const id = order.id || order.storage_order_id || order.legacy_id || order.order_id;
+  if (!id) {
     return "";
   }
   const returnTo = `/admin-vue/storage/${route.path.split("/").pop() || ""}`;
-  return `/admin-storage-detail.html?id=${encodeURIComponent(order.id)}&return_to=${encodeURIComponent(returnTo)}`;
+  const searchParams = new URLSearchParams({
+    return_to: returnTo,
+    order_type: orderType.value
+  });
+  return `/admin-vue/storage/${encodeURIComponent(id)}?${searchParams.toString()}`;
 }
 
 function buildQuery(page) {

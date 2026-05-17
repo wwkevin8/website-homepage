@@ -1,15 +1,21 @@
 import { createRouter, createWebHistory } from "vue-router";
 import { useSessionStore } from "@/stores/session";
 import AdminLayout from "@/layouts/AdminLayout.vue";
+import CommunityPostDetailView from "@/views/CommunityPostDetailView.vue";
 import CommunityView from "@/views/CommunityView.vue";
 import DashboardView from "@/views/DashboardView.vue";
 import LoginRedirectView from "@/views/LoginRedirectView.vue";
 import ManagersView from "@/views/ManagersView.vue";
+import MembershipDetailView from "@/views/MembershipDetailView.vue";
 import MembershipsView from "@/views/MembershipsView.vue";
 import NotFoundView from "@/views/NotFoundView.vue";
+import OrderDetailView from "@/views/OrderDetailView.vue";
 import OrdersView from "@/views/OrdersView.vue";
+import StorageOrderDetailView from "@/views/StorageOrderDetailView.vue";
 import StorageOrdersView from "@/views/StorageOrdersView.vue";
+import TransportGroupDetailView from "@/views/TransportGroupDetailView.vue";
 import TransportGroupsView from "@/views/TransportGroupsView.vue";
+import TransportRequestDetailView from "@/views/TransportRequestDetailView.vue";
 import TransportRequestsView from "@/views/TransportRequestsView.vue";
 import TransportSyncLogsView from "@/views/TransportSyncLogsView.vue";
 import UsersView from "@/views/UsersView.vue";
@@ -57,6 +63,12 @@ const router = createRouter({
           meta: { title: "订单中心" }
         },
         {
+          path: "orders/:id",
+          name: "order-detail",
+          component: OrderDetailView,
+          meta: { title: "订单详情" }
+        },
+        {
           path: "managers",
           name: "managers",
           component: ManagersView,
@@ -69,10 +81,22 @@ const router = createRouter({
           meta: { title: "会员权益" }
         },
         {
+          path: "memberships/:id",
+          name: "membership-detail",
+          component: MembershipDetailView,
+          meta: { title: "会员权益详情" }
+        },
+        {
           path: "community",
           name: "community",
           component: CommunityView,
           meta: { title: "社区管理" }
+        },
+        {
+          path: "community/posts/:id",
+          name: "community-post-detail",
+          component: CommunityPostDetailView,
+          meta: { title: "社区帖子详情" }
         },
         {
           path: "transport/requests",
@@ -81,10 +105,22 @@ const router = createRouter({
           meta: { title: "登记接送机订单" }
         },
         {
+          path: "transport/requests/:id",
+          name: "transport-request-detail",
+          component: TransportRequestDetailView,
+          meta: { title: "接送机订单详情" }
+        },
+        {
           path: "transport/groups",
           name: "transport-groups",
           component: TransportGroupsView,
           meta: { title: "拼车组管理" }
+        },
+        {
+          path: "transport/groups/:id",
+          name: "transport-group-detail",
+          component: TransportGroupDetailView,
+          meta: { title: "拼车组详情" }
         },
         {
           path: "transport/sync-logs",
@@ -109,6 +145,12 @@ const router = createRouter({
           name: "storage-returns",
           component: StorageOrdersView,
           meta: { title: "送寄存订单", orderType: "storage_return" }
+        },
+        {
+          path: "storage/:id",
+          name: "storage-order-detail",
+          component: StorageOrderDetailView,
+          meta: { title: "寄存订单详情" }
         }
       ]
     },

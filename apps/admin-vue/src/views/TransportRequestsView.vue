@@ -76,7 +76,7 @@ function studentTitle(request) {
 
 function groupHref(request) {
   const groupRef = String(request.group_ref || request.group_id || "").trim();
-  return groupRef ? `/transport-admin-group-edit.html?id=${encodeURIComponent(groupRef)}` : "";
+  return groupRef ? `/admin-vue/transport/groups/${encodeURIComponent(groupRef)}?return_to=${encodeURIComponent("/admin-vue/transport/requests")}` : "";
 }
 
 function buildQuery(page) {
@@ -128,7 +128,25 @@ function handlePageChange(page) {
   loadRequests(page);
 }
 
+function requestDetailHref(request) {
+  const id = request?.id || request?.request_id || request?.transport_request_id || request?.legacy_id;
+  if (!id) {
+    return "";
+  }
+  const searchParams = new URLSearchParams({ return_to: "/admin-vue/transport/requests" });
+  return `/admin-vue/transport/requests/${encodeURIComponent(id)}?${searchParams.toString()}`;
+}
+
 function showPlaceholder(action, request) {
+  if (String(action).includes("查看") || String(action).includes("鏌")) {
+    const href = requestDetailHref(request);
+    if (href) {
+      window.location.href = href;
+      return;
+    }
+    notice.value = `暂未找到对应旧详情页：${displayValue(request?.order_no || request?.id)}`;
+    return;
+  }
   notice.value = `${action}将在后续阶段实现：${displayValue(request?.order_no || request?.id)}`;
 }
 

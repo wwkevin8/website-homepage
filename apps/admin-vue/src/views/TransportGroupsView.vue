@@ -147,8 +147,11 @@ function paymentTone(group) {
 }
 
 function groupHref(group) {
-  const ref = String(group.id || group.group_ref || group.group_id || "").trim();
-  return ref ? `/transport-admin-group-edit.html?id=${encodeURIComponent(ref)}` : "";
+  const id = group?.id || group?.group_ref || group?.group_id || group?.legacy_id;
+  if (!id) {
+    return "";
+  }
+  return `/admin-vue/transport/groups/${encodeURIComponent(id)}?return_to=${encodeURIComponent("/admin-vue/transport/groups")}`;
 }
 
 function buildQuery(page) {
