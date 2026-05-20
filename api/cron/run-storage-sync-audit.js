@@ -9,6 +9,53 @@ function getAuthorizationBearerSecret(req) {
   return match ? String(match[1] || "").trim() : "";
 }
 
+function getLondonDateKey(value) {
+  const date = value ? new Date(value) : new Date();
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/London",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).format(date);
+}
+
+async function hasSentStorageDigestToday(supabase, currentLogId) {
+  const todayKey = getLondonDateKey(new Date());
+  const sinceIso = new Date(Date.now() - 36 * 60 * 60 * 1000).toISOString();
+  const { data, error } = await supabase
+    .from("storage_sync_audit_logs")
+    .select("id,checked_at,notification")
+    .gte("checked_at", sinceIso)
+    .order("checked_at", { ascending: false })
+    .limit(30);
+
+  if (error) {
+    return {
+      ok: false,
+      skipped: true,
+      reason: "digest_dedupe_check_failed",
+      error: error.message || "Failed to check prior storage digest notifications"
+    };
+  }
+
+  const alreadySent = (Array.isArray(data) ? data : []).some((item) => {
+    if (currentLogId && String(item.id) === String(currentLogId)) {
+      return false;
+    }
+    const notification = item.notification || {};
+    return getLondonDateKey(item.checked_at) === todayKey
+      && notification.ok === true
+      && notification.skipped === false;
+  });
+
+  return alreadySent
+    ? { ok: true, skipped: true, reason: "daily_digest_already_sent", date: todayKey }
+    : null;
+}
+
 module.exports = async function handler(req, res) {
   if (req.method !== "GET") {
     methodNotAllowed(res, ["GET"]);
@@ -28,7 +75,8 @@ module.exports = async function handler(req, res) {
       sampleSize: req.query?.sample_size
     });
 
-    const notification = await sendStorageSyncDailyDigestEmail(report);
+    const existingDigest = await hasSentStorageDigestToday(supabase, report.storage?.log_id);
+    const notification = existingDigest || await sendStorageSyncDailyDigestEmail(report);
     report.notification = notification;
     if (report.storage?.log_id) {
       const { error } = await supabase

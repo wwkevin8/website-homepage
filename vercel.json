@@ -107,7 +107,7 @@
     },
     {
       "path": "/api/cron/run-storage-sync-audit",
-      "schedule": "30 8 * * *"
+      "schedule": "15 */3 * * *"
     }
   ]
 }

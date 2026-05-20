@@ -8,7 +8,7 @@
 ## Last Updated Task
 
 - Date: 2026-05-20
-- Scope: Storage sync audit cron deployment verification
+- Scope: Storage sync audit cron frequency alignment
 
 ## Latest Completed Work
 
@@ -21,7 +21,7 @@
   - missing `site_user_id` on or after the cutover is a mismatch as `no_site_user_id_after_cutover`;
   - sensitive mismatch fields such as phone, WeChat/WhatsApp, email, and address are logged as presence-only values;
   - added daily summary email support through `STORAGE_SYNC_AUDIT_NOTIFY_EMAIL`, `STORAGE_SYNC_AUDIT_EMAIL_FROM`, existing `RESEND_API_KEY`, and SMTP fallback;
-  - added `vercel.json` cron schedule `30 8 * * *` for `/api/cron/run-storage-sync-audit`;
+  - added `vercel.json` cron schedule `15 */3 * * *` for `/api/cron/run-storage-sync-audit`, matching the transport active audit cadence;
   - added the Vue admin read-only log page `/admin-vue/storage/sync-logs`;
   - this release intentionally excludes QA order creation, test users, test orders, automatic deletion, automatic repair, instant anomaly notification, all-orders migration, buy-box detail migration, and storage detail migration.
 - Deployed and verified the storage sync audit cron release:
@@ -35,7 +35,13 @@
   - `/admin-vue/storage/sync-logs` returned 200 from production;
   - unauthenticated `GET /api/storage-sync-audit-logs` returned 401, confirming the log API remains admin-only;
   - Vercel production environment variables exist for `CRON_SECRET`, `STORAGE_SYNC_AUDIT_NOTIFY_EMAIL`, `STORAGE_SYNC_AUDIT_EMAIL_FROM`, and `RESEND_API_KEY`;
-  - next time-based check is to confirm the scheduled Vercel cron adds a new audit log and sends the next daily summary after the next `30 8 * * *` production run.
+  - next time-based check is to confirm the scheduled Vercel cron adds a new audit log on the next 3-hour cadence and sends at most one successful daily summary per London date.
+- Aligned storage audit cron frequency with the transport audit cadence:
+  - `/api/cron/run-storage-sync-audit` now runs every 3 hours through `15 */3 * * *`;
+  - the cron endpoint still requires `Authorization: Bearer <CRON_SECRET>`;
+  - the endpoint still performs passive audit only and writes only `storage_sync_audit_logs`;
+  - daily digest email now checks recent `storage_sync_audit_logs.notification` metadata and skips sending if a successful storage digest has already been sent for the current London date;
+  - this prevents the higher audit frequency from becoming a 3-hourly email blast.
 - Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before the checkpoint.
 - Completed full acceptance of the Vue admin read-only list version.
 - Migrated Vue admin pages now covered by the checkpoint:
