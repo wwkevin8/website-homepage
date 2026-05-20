@@ -13,6 +13,8 @@
 ## Latest Completed Work
 
 - Prepared `2.0 NGN管理后台` as the official backend entry:
+  - GitHub launch commit: `fee3859` (`launch-2.0-ngn-admin-backend`);
+  - Vercel production deployment: `dpl_4nTMgN9HVocwTRtRgqdSuS5G3qEu`, URL `https://webside-e39y4jsad-wwkevin8s-projects.vercel.app`, aliased to `https://ngn.best`;
   - `admin-login.html` now brands the login flow as `2.0 NGN管理后台` and sends successful/default admin sessions to `/admin-vue/`;
   - added `admin-legacy-guard.js` and attached it to old admin HTML pages so normal visits to old backend URLs redirect to the matching `/admin-vue/` route;
   - old backend HTML files remain in the repo for emergency rollback access only and are no longer linked from normal admin navigation/buttons;
@@ -26,6 +28,8 @@
   - source scan found no old-backend entry links or visible "old backend / old detail" prompts in 2.0 admin source, login page, shared admin shell, transport admin script, or admin email helper;
   - `npm run build:admin-vue` passed and regenerated `admin-vue/`;
   - Playwright verified old URLs such as `/admin-dashboard.html`, `/admin-storage.html?order_type=box_order`, `/admin-storage-detail.html?id=...`, `/transport-admin-request-edit.html?id=...`, `/transport-admin-group-edit.html?id=...`, and `/transport-admin-sync-logs.html` redirect into the corresponding `/admin-vue/` route and then, when unauthenticated, to `admin-login.html` with a 2.0 `return_to`;
+  - post-deployment Vercel inspect confirmed the deployment is Ready and aliased to `ngn.best`;
+  - post-deployment Playwright verified representative old production URLs redirect into 2.0 admin/login with 2.0 `return_to`, and `/admin-login.html` has title `后台登录 | 2.0 NGN管理后台`;
   - `npm run build:prod` passed.
 
 - Completed the pre-launch safety checkpoint for the Vue admin now formally named `2.0 NGN 管理后台`:
@@ -1205,7 +1209,7 @@
 - Membership detail page is still mostly readonly: customer-service detail and operation record viewing live in Vue, while mark-used/cancel/reset claim mutations are not yet exposed in the Vue detail page. The membership list now exposes opening membership, single/batch activation-code generation, activation-code deletion, manual benefit registration, and entitlement deletion through existing admin endpoints.
 - Community Vue page and community post detail page are intentionally readonly in this phase. Real moderation actions such as hide, restore, delete, pin, update expiry, image deletion, comment moderation, and user bans should be implemented in 2.0 admin before they become normal-path operations.
 - Phase 5A intentionally adds real storage-only operations in Vue: list export, list single-delete, detail service/address saves, detail status changes, detail current-order export, and detail single-delete. Batch delete and all non-storage dangerous operations remain unimplemented.
-- The transport request tracking fields have been applied to Supabase project `ngn-transport`; deploy still needs to follow the fixed GitHub-first release order before the Vue/API changes are live.
+- The transport request tracking fields have been applied to Supabase project `ngn-transport`; the 2.0 admin launch deployment has now followed the GitHub-first release order and is live on Vercel production.
 - The storage order tracking migration `supabase/20260519_storage_order_offline_tracking.sql` has been applied to Supabase project `ngn-transport`; refresh `/admin-vue/storage/orders` before testing mark/cancel recorded operations.
 - The latest sidebar collapse update regenerated the root `admin-vue/` build output. Treat that folder as generated output and rebuild it when committing Vue source changes.
 - Existing unrelated dirty changes were present before this checkpoint and were not reverted:
