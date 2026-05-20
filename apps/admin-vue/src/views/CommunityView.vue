@@ -187,7 +187,7 @@ async function openDetail(post) {
     notice.value = `暂未找到对应帖子详情：${displayValue(postTitle(post))}`;
     return;
   }
-  window.location.href = `/admin-vue/community/posts/${encodeURIComponent(post.id)}?return_to=${encodeURIComponent("/admin-vue/community")}`;
+  window.location.href = `/admin/community/posts/${encodeURIComponent(post.id)}?return_to=${encodeURIComponent("/admin/community")}`;
 }
 
 function submitFilters() {

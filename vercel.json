@@ -19,12 +19,22 @@
       "source": "/moving.html",
       "destination": "/moving",
       "permanent": true
+    },
+    {
+      "source": "/admin-vue",
+      "destination": "/admin/",
+      "permanent": false
+    },
+    {
+      "source": "/admin-vue/:path*",
+      "destination": "/admin/:path*",
+      "permanent": false
     }
   ],
   "rewrites": [
     {
-      "source": "/admin-vue/:path*",
-      "destination": "/admin-vue/index.html"
+      "source": "/admin/:path*",
+      "destination": "/admin/index.html"
     },
     {
       "source": "/community-post/:id",

@@ -22,10 +22,10 @@
 
   function storageListTarget(searchParams) {
     const orderType = searchParams.get("order_type");
-    if (orderType === "box_order") return "/admin-vue/storage/box-orders";
-    if (orderType === "storage_collection") return "/admin-vue/storage/collections";
-    if (orderType === "storage_return") return "/admin-vue/storage/returns";
-    return "/admin-vue/storage/orders";
+    if (orderType === "box_order") return "/admin/storage/box-orders";
+    if (orderType === "storage_collection") return "/admin/storage/collections";
+    if (orderType === "storage_return") return "/admin/storage/returns";
+    return "/admin/storage/orders";
   }
 
   function buildTarget(pathname, searchParams) {
@@ -35,35 +35,35 @@
     const requestId = searchParams.get("request_id") || id;
 
     const staticTargets = {
-      "admin-dashboard.html": "/admin-vue/",
-      "admin-orders.html": "/admin-vue/orders",
-      "admin-users.html": "/admin-vue/users",
-      "admin-managers.html": "/admin-vue/managers",
-      "admin-memberships.html": "/admin-vue/memberships",
-      "admin-community.html": "/admin-vue/community",
-      "pickup-admin.html": "/admin-vue/transport/requests",
-      "transport-admin-login.html": "/admin-vue/",
-      "transport-admin-requests.html": "/admin-vue/transport/requests",
-      "transport-admin-request-new.html": "/admin-vue/transport/requests",
-      "transport-admin-groups.html": "/admin-vue/transport/groups",
-      "transport-admin-group-new.html": "/admin-vue/transport/groups",
-      "transport-admin-sync-logs.html": "/admin-vue/transport/sync-logs"
+      "admin-dashboard.html": "/admin/",
+      "admin-orders.html": "/admin/orders",
+      "admin-users.html": "/admin/users",
+      "admin-managers.html": "/admin/managers",
+      "admin-memberships.html": "/admin/memberships",
+      "admin-community.html": "/admin/community",
+      "pickup-admin.html": "/admin/transport/requests",
+      "transport-admin-login.html": "/admin/",
+      "transport-admin-requests.html": "/admin/transport/requests",
+      "transport-admin-request-new.html": "/admin/transport/requests",
+      "transport-admin-groups.html": "/admin/transport/groups",
+      "transport-admin-group-new.html": "/admin/transport/groups",
+      "transport-admin-sync-logs.html": "/admin/transport/sync-logs"
     };
 
     if (file === "admin-storage.html") {
       return storageListTarget(searchParams);
     }
     if (file === "admin-storage-detail.html") {
-      return id ? `/admin-vue/storage/${encode(id)}` : "/admin-vue/storage/orders";
+      return id ? `/admin/storage/${encode(id)}` : "/admin/storage/orders";
     }
     if (file === "transport-admin-request-edit.html") {
-      return requestId ? `/admin-vue/transport/requests/${encode(requestId)}` : "/admin-vue/transport/requests";
+      return requestId ? `/admin/transport/requests/${encode(requestId)}` : "/admin/transport/requests";
     }
     if (file === "transport-admin-group-edit.html") {
-      return groupId ? `/admin-vue/transport/groups/${encode(groupId)}` : "/admin-vue/transport/groups";
+      return groupId ? `/admin/transport/groups/${encode(groupId)}` : "/admin/transport/groups";
     }
 
-    return staticTargets[file] || "/admin-vue/";
+    return staticTargets[file] || "/admin/";
   }
 
   const url = new URL(window.location.href);

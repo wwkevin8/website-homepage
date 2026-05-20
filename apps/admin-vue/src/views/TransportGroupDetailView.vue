@@ -183,7 +183,7 @@ function requestId(row) {
 
 function requestDetailHref(row) {
   const id = requestId(row);
-  return id ? `/admin-vue/transport/requests/${encodeURIComponent(id)}?return_to=${encodeURIComponent(`/admin-vue/transport/groups/${groupId.value}`)}` : "";
+  return id ? `/admin/transport/requests/${encodeURIComponent(id)}?return_to=${encodeURIComponent(`/admin/transport/groups/${groupId.value}`)}` : "";
 }
 
 function fillForm(record) {
@@ -498,8 +498,8 @@ onMounted(loadGroup);
         <p>按 group_id 查看组概要、费用与付款、加入成员和组内成员。</p>
       </div>
       <div class="view-heading__actions">
-        <BackButton href="/admin-vue/transport/groups" label="返回拼车组管理" />
-        <a class="secondary-button" href="/admin-vue/transport/requests">查看登记接送机订单</a>
+        <BackButton href="/admin/transport/groups" label="返回拼车组管理" />
+        <a class="secondary-button" href="/admin/transport/requests">查看登记接送机订单</a>
       </div>
     </div>
 

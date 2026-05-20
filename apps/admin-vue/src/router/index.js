@@ -23,15 +23,24 @@ import TransportRequestsView from "@/views/TransportRequestsView.vue";
 import TransportSyncLogsView from "@/views/TransportSyncLogsView.vue";
 import UsersView from "@/views/UsersView.vue";
 
+function normalizeAdminPath(path = "/") {
+  const rawPath = typeof path === "string" && path ? path : "/";
+  if (rawPath === "/admin-vue" || rawPath.startsWith("/admin-vue/")) {
+    return rawPath.replace(/^\/admin-vue(?=\/|$)/, "/admin");
+  }
+  if (rawPath === "/admin" || rawPath.startsWith("/admin/")) {
+    return rawPath;
+  }
+  return `/admin${rawPath.startsWith("/") ? rawPath : `/${rawPath}`}`;
+}
+
 function buildLoginUrl(returnPath = "/") {
-  const targetPath = returnPath.startsWith("/admin-vue")
-    ? returnPath
-    : `/admin-vue${returnPath.startsWith("/") ? returnPath : `/${returnPath}`}`;
+  const targetPath = normalizeAdminPath(returnPath);
   return `/admin-login.html?return_to=${encodeURIComponent(targetPath)}`;
 }
 
 const router = createRouter({
-  history: createWebHistory("/admin-vue/"),
+  history: createWebHistory("/admin/"),
   routes: [
     {
       path: "/login-redirect",

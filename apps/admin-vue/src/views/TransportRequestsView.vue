@@ -128,7 +128,7 @@ function studentTitle(row) {
 
 function groupHref(row) {
   const groupRef = String(row.group_ref || row.group_id || "").trim();
-  return groupRef ? `/admin-vue/transport/groups/${encodeURIComponent(groupRef)}?return_to=${encodeURIComponent("/admin-vue/transport/requests")}` : "";
+  return groupRef ? `/admin/transport/groups/${encodeURIComponent(groupRef)}?return_to=${encodeURIComponent("/admin/transport/requests")}` : "";
 }
 
 function buildFilterQuery() {
@@ -195,8 +195,8 @@ function handlePageChange(page) {
 function requestDetailHref(row) {
   const id = row?.id || row?.request_id || row?.transport_request_id || row?.legacy_id;
   if (!id) return "";
-  const searchParams = new URLSearchParams({ return_to: "/admin-vue/transport/requests" });
-  return `/admin-vue/transport/requests/${encodeURIComponent(id)}?${searchParams.toString()}`;
+  const searchParams = new URLSearchParams({ return_to: "/admin/transport/requests" });
+  return `/admin/transport/requests/${encodeURIComponent(id)}?${searchParams.toString()}`;
 }
 
 function requestActionId(row) {

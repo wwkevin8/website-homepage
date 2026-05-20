@@ -345,14 +345,14 @@ function rowOrderNo(record = order.value || {}) {
 
 function listHrefForOrder() {
   const returnTo = String(route.query.return_to || "");
-  if (returnTo.startsWith("/admin-vue/storage/")) return returnTo;
+  if (returnTo.startsWith("/admin/storage/")) return returnTo;
   const type = String(route.query.order_type || resolvedOrderType());
   const routes = {
-    box_order: "/admin-vue/storage/box-orders",
-    storage_collection: "/admin-vue/storage/collections",
-    storage_return: "/admin-vue/storage/returns"
+    box_order: "/admin/storage/box-orders",
+    storage_collection: "/admin/storage/collections",
+    storage_return: "/admin/storage/returns"
   };
-  return routes[type] || "/admin-vue/storage/collections";
+  return routes[type] || "/admin/storage/collections";
 }
 
 
@@ -369,7 +369,7 @@ const relatedBoxOrderNo = computed(() => firstValue(
 ));
 
 const relatedBoxOrderRoute = computed(() => {
-  const returnTo = route.fullPath.startsWith("/admin-vue") ? route.fullPath : `/admin-vue${route.fullPath}`;
+  const returnTo = route.fullPath.startsWith("/admin") ? route.fullPath : `/admin${route.fullPath}`;
   const boxId = firstValue(
     relatedBoxOrder.value?.id,
     order.value?.box_order_id,
@@ -735,7 +735,7 @@ async function loadOrder(options = {}) {
       router.replace({
         path: `/storage/box-orders/${encodeURIComponent(orderId.value)}`,
         query: {
-          return_to: route.query.return_to || "/admin-vue/storage/box-orders",
+          return_to: route.query.return_to || "/admin/storage/box-orders",
           order_type: "box_order"
         }
       });

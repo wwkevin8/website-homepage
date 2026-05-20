@@ -121,7 +121,7 @@ function escapeHtml(value) {
 
 function getAuditAdminUrl() {
   const baseUrl = getOptionalEnv("APP_BASE_URL") || "https://ngn.best";
-  return `${baseUrl.replace(/\/+$/, "")}/admin-vue/transport/sync-logs`;
+  return `${baseUrl.replace(/\/+$/, "")}/admin/transport/sync-logs`;
 }
 
 function formatSkippedReason(item) {

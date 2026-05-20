@@ -112,7 +112,7 @@ function commentSubject(comment) {
 
 function listHref() {
   const returnTo = String(route.query.return_to || "");
-  return returnTo.startsWith("/admin-vue/community") ? returnTo : "/admin-vue/community";
+  return returnTo.startsWith("/admin/community") ? returnTo : "/admin/community";
 }
 
 

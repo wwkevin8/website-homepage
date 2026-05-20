@@ -204,7 +204,7 @@ async function markGroupPaid(group) {
 function groupHref(group) {
   const id = group?.id || group?.group_ref || group?.group_id || group?.legacy_id;
   if (!id) return "";
-  return `/admin-vue/transport/groups/${encodeURIComponent(id)}?return_to=${encodeURIComponent("/admin-vue/transport/groups")}`;
+  return `/admin/transport/groups/${encodeURIComponent(id)}?return_to=${encodeURIComponent("/admin/transport/groups")}`;
 }
 
 function groupRef(group) {

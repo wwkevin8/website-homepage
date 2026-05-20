@@ -4,12 +4,22 @@ import { useRoute } from "vue-router";
 
 const route = useRoute();
 
+function normalizeAdminPath(path = "/") {
+  const rawPath = typeof path === "string" && path ? path : "/";
+  if (rawPath === "/admin-vue" || rawPath.startsWith("/admin-vue/")) {
+    return rawPath.replace(/^\/admin-vue(?=\/|$)/, "/admin");
+  }
+  if (rawPath === "/admin" || rawPath.startsWith("/admin/")) {
+    return rawPath;
+  }
+  return `/admin${rawPath.startsWith("/") ? rawPath : `/${rawPath}`}`;
+}
+
 const returnTo = computed(() => {
   const rawReturnTo = Array.isArray(route.query.return_to)
     ? route.query.return_to[0]
     : route.query.return_to;
-  const path = typeof rawReturnTo === "string" && rawReturnTo ? rawReturnTo : "/";
-  return path.startsWith("/admin-vue") ? path : `/admin-vue${path.startsWith("/") ? path : `/${path}`}`;
+  return normalizeAdminPath(rawReturnTo);
 });
 
 const loginHref = computed(() => `/admin-login.html?return_to=${encodeURIComponent(returnTo.value)}`);

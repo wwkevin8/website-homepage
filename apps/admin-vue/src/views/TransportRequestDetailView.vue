@@ -149,13 +149,13 @@ function luggageSummary() {
 
 function groupDetailHref(groupRef = currentGroupRef.value) {
   return groupRef
-    ? `/admin-vue/transport/groups/${encodeURIComponent(groupRef)}?return_to=${encodeURIComponent(`/admin-vue/transport/requests/${requestId.value}`)}`
+    ? `/admin/transport/groups/${encodeURIComponent(groupRef)}?return_to=${encodeURIComponent(`/admin/transport/requests/${requestId.value}`)}`
     : "";
 }
 
 function listHref() {
   const returnTo = String(route.query.return_to || "");
-  return returnTo.startsWith("/admin-vue/transport/requests") ? returnTo : "/admin-vue/transport/requests";
+  return returnTo.startsWith("/admin/transport/requests") ? returnTo : "/admin/transport/requests";
 }
 
 function populateEditableForm(record = {}) {

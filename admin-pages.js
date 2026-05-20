@@ -967,7 +967,7 @@
   }
 
   function buildStorageDetailUrl(id) {
-    return `/admin-vue/storage/${encodeURIComponent(id)}?return_to=${encodeURIComponent("/admin-vue/storage/orders")}`;
+    return `/admin/storage/${encodeURIComponent(id)}?return_to=${encodeURIComponent("/admin/storage/orders")}`;
   }
 
   function buildStorageExportUrl(form) {
@@ -1237,7 +1237,7 @@
   }
 
   function normalizeAdminReturnTo(value) {
-    const fallback = "/admin-vue/storage/orders";
+    const fallback = "/admin/storage/orders";
     const raw = String(value || "").trim();
     if (!raw) {
       return fallback;

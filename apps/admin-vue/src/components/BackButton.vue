@@ -2,7 +2,7 @@
 defineProps({
   href: {
     type: String,
-    default: "/admin-vue/"
+    default: "/admin/"
   },
   label: {
     type: String,

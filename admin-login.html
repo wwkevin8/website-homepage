@@ -53,6 +53,19 @@
         message.classList.toggle("is-success", Boolean(text && !isError));
       }
 
+      function normalizeAdminReturnTo(returnTo) {
+        if (!returnTo) {
+          return "/admin/";
+        }
+        if (returnTo === "/admin-vue" || returnTo.startsWith("/admin-vue/")) {
+          return returnTo.replace(/^\/admin-vue(?=\/|$)/, "/admin");
+        }
+        if (returnTo === "/admin" || returnTo.startsWith("/admin/")) {
+          return returnTo;
+        }
+        return "/admin/";
+      }
+
       async function checkSession() {
         const session = await window.AdminApi.session().catch(() => ({
           authenticated: false
@@ -60,7 +73,7 @@
 
         if (session.authenticated) {
           const returnTo = new URLSearchParams(window.location.search).get("return_to");
-          window.location.replace(returnTo || "/admin-vue/");
+          window.location.replace(normalizeAdminReturnTo(returnTo));
         }
       }
 
@@ -73,7 +86,7 @@
             window.sessionStorage.setItem("ngn_admin_session_cache", JSON.stringify(session));
           } catch (error) {}
           const returnTo = new URLSearchParams(window.location.search).get("return_to");
-          window.location.href = returnTo || "/admin-vue/";
+          window.location.href = normalizeAdminReturnTo(returnTo);
         } catch (error) {
           show(error.message || "\u767b\u5f55\u5931\u8d25", true);
         }

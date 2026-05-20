@@ -1411,7 +1411,7 @@ function getStorageDashboardOrderNo(item = {}) {
 function getStorageDashboardHref(item = {}) {
   const orderType = String(item.order_type || "").trim();
   const route = orderType === "box_order" ? "box-orders" : "storage-orders";
-  return `/admin-vue/storage/${route}/${encodeURIComponent(item.id)}`;
+  return `/admin/storage/${route}/${encodeURIComponent(item.id)}`;
 }
 
 function getDashboardOperationType(action) {
@@ -1503,7 +1503,7 @@ function normalizeDashboardRisk(value) {
 }
 
 function getDashboardRiskHref(risk) {
-  return `/admin-vue/orders?risk=${encodeURIComponent(risk)}`;
+  return `/admin/orders?risk=${encodeURIComponent(risk)}`;
 }
 
 function buildRiskFallbackOrderFromTransport(item = {}) {
@@ -1526,7 +1526,7 @@ function buildRiskFallbackOrderFromTransport(item = {}) {
     offline_recorded: item.offline_recorded ?? null,
     last_operated_by: item.last_operated_by || null,
     last_operated_at: item.last_operated_at || null,
-    source_detail_href: `/admin-vue/transport/requests/${encodeURIComponent(item.id)}`,
+    source_detail_href: `/admin/transport/requests/${encodeURIComponent(item.id)}`,
     order_detail_available: false
   };
 }
@@ -1564,7 +1564,7 @@ function mergeOrderWithSourceRiskFields(order = {}, source = {}) {
     last_operated_by: source.last_operated_by || order.last_operated_by || null,
     last_operated_at: source.last_operated_at || order.last_operated_at || null,
     source_detail_href: order.source_table === "transport_requests"
-      ? `/admin-vue/transport/requests/${encodeURIComponent(order.source_id)}`
+      ? `/admin/transport/requests/${encodeURIComponent(order.source_id)}`
       : getStorageDashboardHref({ ...source, id: order.source_id }),
     order_detail_available: true
   };
@@ -1996,7 +1996,7 @@ async function handleDashboard(req, res, supabase) {
       customer: item.student_name || "",
       due_at: item.flight_datetime || "",
       status: item.status || "",
-      href: `/admin-vue/transport/requests/${encodeURIComponent(item.id)}`
+      href: `/admin/transport/requests/${encodeURIComponent(item.id)}`
     })),
     ...dashboardRows(todayStorageResult).map(item => ({
       id: item.id,
@@ -2016,7 +2016,7 @@ async function handleDashboard(req, res, supabase) {
       customer: item.student_name || "",
       due_at: item.created_at || "",
       status: item.status || "",
-      href: `/admin-vue/transport/requests/${encodeURIComponent(item.id)}`
+      href: `/admin/transport/requests/${encodeURIComponent(item.id)}`
     })),
     ...dashboardRows(overdueStorageResult).map(item => ({
       id: item.id,
@@ -2026,7 +2026,7 @@ async function handleDashboard(req, res, supabase) {
       customer: item.customer_name || "",
       due_at: item.created_at || "",
       status: item.status || "",
-      href: `/admin-vue/storage/storage-orders/${encodeURIComponent(item.id)}`
+      href: `/admin/storage/storage-orders/${encodeURIComponent(item.id)}`
     }))
   ].slice(0, 10);
   let riskAlerts = [
@@ -2035,28 +2035,28 @@ async function handleDashboard(req, res, supabase) {
       label: "未归档订单",
       value: cards.unarchived_orders_total,
       helper: "已结束但仍在活动视图中",
-      href: "/admin-vue/orders?archived=active"
+      href: "/admin/orders?archived=active"
     },
     {
       key: "missing_operator",
       label: "无最近操作人",
       value: dashboardCount(transportOperatorMissingResult) + dashboardCount(storageOperatorMissingResult),
       helper: "需要明确客服责任人",
-      href: "/admin-vue/transport/requests"
+      href: "/admin/transport/requests"
     },
     {
       key: "offline_missing",
       label: "未标记线下记录",
       value: dashboardCount(transportOfflineMissingResult) + dashboardCount(storageOfflineMissingResult),
       helper: "可能尚未同步到客服台账",
-      href: "/admin-vue/storage/orders?offline_recorded=false"
+      href: "/admin/storage/orders?offline_recorded=false"
     },
     {
       key: "missing_required_fields",
       label: "关键字段缺失",
       value: dashboardCount(incompleteTransportResult) + dashboardCount(incompleteStorageResult),
       helper: "学生已提交但后台信息不完整",
-      href: "/admin-vue/orders"
+      href: "/admin/orders"
     }
   ];
   const riskSourcesList = await Promise.all(Object.keys(DASHBOARD_RISK_LABELS).map(risk => fetchDashboardRiskSources(supabase, risk, {

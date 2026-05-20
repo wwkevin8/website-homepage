@@ -3,7 +3,7 @@ import vue from "@vitejs/plugin-vue";
 import { fileURLToPath, URL } from "node:url";
 
 export default defineConfig({
-  base: "/admin-vue/",
+  base: "/admin/",
   plugins: [vue()],
   resolve: {
     alias: {
@@ -19,7 +19,7 @@ export default defineConfig({
     }
   },
   build: {
-    outDir: "../../admin-vue",
+    outDir: "../../admin",
     emptyOutDir: true
   }
 });

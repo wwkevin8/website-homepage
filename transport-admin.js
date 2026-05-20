@@ -39,7 +39,7 @@
       session = await Api.session().catch(() => ({ authenticated: false, is_admin: false }));
     }
     if (!isUsableAdminSession(session)) {
-      window.location.href = "/admin-login.html?return_to=%2Fadmin-vue%2F";
+      window.location.href = "/admin-login.html?return_to=%2Fadmin%2F";
       return false;
     }
     return true;
@@ -53,7 +53,7 @@
         event.preventDefault();
         await Api.logout().catch(() => {});
         window.AdminShell?.clearSessionCache?.();
-        window.location.href = "/admin-login.html?return_to=%2Fadmin-vue%2F";
+        window.location.href = "/admin-login.html?return_to=%2Fadmin%2F";
       });
     });
   }
@@ -267,7 +267,7 @@
     if (!groupId || !groupRef) {
       return '<span class="admin-table-subtle">--</span>';
     }
-    return `<a href="/admin-vue/transport/groups/${encodeURIComponent(groupRef)}"><strong>${Shared.escapeHtml(groupId)}</strong></a>`;
+    return `<a href="/admin/transport/groups/${encodeURIComponent(groupRef)}"><strong>${Shared.escapeHtml(groupId)}</strong></a>`;
   }
 
   function renderFutureRequestHint(item) {
@@ -589,7 +589,7 @@
                 <td>${Shared.escapeHtml(item.location_to || "--")}</td>
                 <td>${requestGroupLink(item)}</td>
                 <td><div class="admin-table-actions">
-                  <a class="button button-secondary admin-table-action" href="/admin-vue/transport/requests/${encodeURIComponent(item.id)}">查看</a>
+                  <a class="button button-secondary admin-table-action" href="/admin/transport/requests/${encodeURIComponent(item.id)}">查看</a>
                   <button class="button button-danger admin-table-action" type="button" data-delete-request="${item.id}" data-delete-order-no="${Shared.escapeHtml(item.order_no || "--")}">删除</button>
                 </div></td>
               </tr>
@@ -721,7 +721,7 @@
         return;
       }
       currentGroupHint.hidden = false;
-      currentGroupHint.innerHTML = `当前订单 ${Shared.escapeHtml(orderNo || "--")} 当前拼车组为 <a href="/admin-vue/transport/groups/${encodeURIComponent(groupRef)}"><strong>${Shared.escapeHtml(groupId)}</strong></a>。点击可查看当前拼车组详情。`;
+      currentGroupHint.innerHTML = `当前订单 ${Shared.escapeHtml(orderNo || "--")} 当前拼车组为 <a href="/admin/transport/groups/${encodeURIComponent(groupRef)}"><strong>${Shared.escapeHtml(groupId)}</strong></a>。点击可查看当前拼车组详情。`;
     }
 
     async function assignToGroup(targetGroupId) {
@@ -811,7 +811,7 @@
         const result = requestId ? await Api.updateRequest(requestId, payload) : await Api.createRequest(payload);
         msg(message, `订单已保存。Group ID: ${result.group_id || "--"}`);
         if (!requestId) {
-          window.location.href = `/admin-vue/transport/requests/${encodeURIComponent(result.id)}`;
+          window.location.href = `/admin/transport/requests/${encodeURIComponent(result.id)}`;
           return;
         }
         currentRequest = result;
@@ -849,7 +849,7 @@
       msg(message, `正在删除 ${orderNo}...`);
       try {
         await Api.deleteRequest(requestId);
-        window.location.href = "/admin-vue/transport/requests";
+        window.location.href = "/admin/transport/requests";
       } catch (error) {
         msg(message, error.message, true);
       }
@@ -1001,7 +1001,7 @@
                   <td class="transport-groups-cell transport-groups-cell-center">${renderGroupPayAllAction(item)}</td>
                   <td class="transport-groups-cell transport-groups-cell-center">${groupStatusBadge(item)}</td>
                 <td><div class="admin-table-actions">
-                  <a class="button button-secondary admin-table-action" href="/admin-vue/transport/groups/${encodeURIComponent(item.id || item.group_id)}">查看</a>
+                  <a class="button button-secondary admin-table-action" href="/admin/transport/groups/${encodeURIComponent(item.id || item.group_id)}">查看</a>
                   <button class="button button-danger admin-table-action" type="button" data-delete-group="${Shared.escapeHtml(item.id || item.group_id)}" data-delete-group-name="${Shared.escapeHtml(item.group_id || item.id || "--")}">删除</button>
                 </div></td>
               </tr>
@@ -1540,8 +1540,8 @@ ${addressLines}
                 const requestRef = request.id || member.request_id || request.order_no || "";
                 const requestActions = requestRef
                   ? `
-                      <a class="button button-secondary admin-table-action" href="/admin-vue/transport/requests/${encodeURIComponent(requestRef)}">查看订单详情</a>
-                      <a class="button button-secondary admin-table-action" href="/admin-vue/transport/requests/${encodeURIComponent(requestRef)}">更换拼车组</a>
+                      <a class="button button-secondary admin-table-action" href="/admin/transport/requests/${encodeURIComponent(requestRef)}">查看订单详情</a>
+                      <a class="button button-secondary admin-table-action" href="/admin/transport/requests/${encodeURIComponent(requestRef)}">更换拼车组</a>
                     `
                   : '<span class="admin-table-subtle">订单链接暂不可用</span>';
                 return `
@@ -1634,7 +1634,7 @@ ${addressLines}
         const payload = groupPayloadFromForm(form);
         const result = groupId ? await Api.updateGroup(groupId, payload) : await Api.createGroup(payload);
         if (!groupId) {
-          window.location.href = `/admin-vue/transport/groups/${encodeURIComponent(result.id || result.group_id)}`;
+          window.location.href = `/admin/transport/groups/${encodeURIComponent(result.id || result.group_id)}`;
           return;
         }
         await loadGroup(groupId);

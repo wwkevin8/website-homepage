@@ -245,7 +245,7 @@ function membershipDetailHref(item, section = "overview") {
   if (!item?.id) {
     return "";
   }
-  return `/admin-vue/memberships/${encodeURIComponent(item.id)}?section=${encodeURIComponent(section)}&cycle=${encodeURIComponent(item.membership_cycle || filters.cycle || CURRENT_CYCLE)}&return_to=${encodeURIComponent("/admin-vue/memberships")}`;
+  return `/admin/memberships/${encodeURIComponent(item.id)}?section=${encodeURIComponent(section)}&cycle=${encodeURIComponent(item.membership_cycle || filters.cycle || CURRENT_CYCLE)}&return_to=${encodeURIComponent("/admin/memberships")}`;
 }
 
 function rememberMembershipDetail(item) {
@@ -253,7 +253,7 @@ function rememberMembershipDetail(item) {
     return;
   }
   try {
-    window.sessionStorage.setItem(`admin-vue:membership:${item.id}`, JSON.stringify(item));
+    window.sessionStorage.setItem(`admin:membership:${item.id}`, JSON.stringify(item));
   } catch (err) {
     // Detail page can still fall back to the existing list API.
   }

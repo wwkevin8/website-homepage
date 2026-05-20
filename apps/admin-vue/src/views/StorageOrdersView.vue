@@ -300,11 +300,11 @@ function rowBoxFee(order) {
 function detailHref(order) {
   const id = order.id || order.storage_order_id || order.legacy_id || order.order_id;
   if (!id) return "";
-  const returnTo = `/admin-vue/storage/${route.path.split("/").pop() || ""}`;
+  const returnTo = `/admin/storage/${route.path.split("/").pop() || ""}`;
   const searchParams = new URLSearchParams({ return_to: returnTo, order_type: orderType.value });
   const detailBase = orderType.value === "box_order"
-    ? "/admin-vue/storage/box-orders"
-    : "/admin-vue/storage/storage-orders";
+    ? "/admin/storage/box-orders"
+    : "/admin/storage/storage-orders";
   return `${detailBase}/${encodeURIComponent(id)}?${searchParams.toString()}`;
 }
 

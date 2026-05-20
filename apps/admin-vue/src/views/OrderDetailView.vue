@@ -127,7 +127,7 @@ function registrationTone() {
 
 function listHref() {
   const returnTo = String(route.query.return_to || "");
-  return returnTo.startsWith("/admin-vue/orders") ? returnTo : "/admin-vue/orders";
+  return returnTo.startsWith("/admin/orders") ? returnTo : "/admin/orders";
 }
 
 function professionalHref() {
@@ -136,10 +136,10 @@ function professionalHref() {
   if (isStorageOrder.value) {
     const type = String(sourceRecord.value?.order_type || "").trim();
     const routeName = type === "box_order" || type === "box_delivery" ? "box-orders" : "storage-orders";
-    return `/admin-vue/storage/${routeName}/${encodeURIComponent(sourceId)}?return_to=${encodeURIComponent(`/admin-vue/orders/${orderId.value}`)}`;
+    return `/admin/storage/${routeName}/${encodeURIComponent(sourceId)}?return_to=${encodeURIComponent(`/admin/orders/${orderId.value}`)}`;
   }
   if (isTransportOrder.value) {
-    return `/admin-vue/transport/requests/${encodeURIComponent(sourceId)}?return_to=${encodeURIComponent(`/admin-vue/orders/${orderId.value}`)}`;
+    return `/admin/transport/requests/${encodeURIComponent(sourceId)}?return_to=${encodeURIComponent(`/admin/orders/${orderId.value}`)}`;
   }
   return "";
 }

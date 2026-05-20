@@ -246,13 +246,13 @@ function rowActionId(order) {
 function detailHref(order) {
   const id = baseStorageOrderId(order);
   if (!id) return "";
-  const returnTo = "/admin-vue/storage/orders";
+  const returnTo = "/admin/storage/orders";
   const query = new URLSearchParams({ return_to: returnTo, order_type: order.storage_order_kind || "" });
   const orderNo = String(rowOrderNo(order) || "").toUpperCase();
   if (order.storage_order_kind === "box_order" || orderNo.startsWith("ST-B")) {
-    return `/admin-vue/storage/box-orders/${encodeURIComponent(id)}?${query.toString()}`;
+    return `/admin/storage/box-orders/${encodeURIComponent(id)}?${query.toString()}`;
   }
-  return `/admin-vue/storage/storage-orders/${encodeURIComponent(id)}?${query.toString()}`;
+  return `/admin/storage/storage-orders/${encodeURIComponent(id)}?${query.toString()}`;
 }
 
 function buildFilterQuery() {

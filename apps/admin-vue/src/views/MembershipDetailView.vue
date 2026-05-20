@@ -144,7 +144,7 @@ function field(label, value, multiline = false) {
 
 function listHref() {
   const returnTo = String(route.query.return_to || "");
-  return returnTo.startsWith("/admin-vue/memberships") ? returnTo : "/admin-vue/memberships";
+  return returnTo.startsWith("/admin/memberships") ? returnTo : "/admin/memberships";
 }
 
 const userFields = computed(() => [
@@ -191,7 +191,7 @@ function cachedMembership() {
     return null;
   }
   try {
-    const raw = window.sessionStorage.getItem(`admin-vue:membership:${membershipId.value}`);
+    const raw = window.sessionStorage.getItem(`admin:membership:${membershipId.value}`);
     return raw ? JSON.parse(raw) : null;
   } catch (err) {
     return null;

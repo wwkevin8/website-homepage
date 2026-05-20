@@ -92,7 +92,7 @@ function formatDateTime(value) {
 
 function getAuditAdminUrl() {
   const baseUrl = getOptionalEnv("APP_BASE_URL") || "https://ngn.best";
-  return `${baseUrl.replace(/\/+$/, "")}/admin-vue/storage/sync-logs`;
+  return `${baseUrl.replace(/\/+$/, "")}/admin/storage/sync-logs`;
 }
 
 function safeMismatchLine(item) {

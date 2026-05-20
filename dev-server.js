@@ -284,8 +284,8 @@ function resolveStaticPath(urlPathname) {
   }
 
   const normalizedRelative = relativePath.replace(/\\/g, "/");
-  if ((normalizedRelative === "/admin-vue" || normalizedRelative.startsWith("/admin-vue/")) && !path.extname(fullPath)) {
-    const adminVueIndex = path.join(ROOT, "admin-vue", "index.html");
+  if ((normalizedRelative === "/admin" || normalizedRelative.startsWith("/admin/")) && !path.extname(fullPath)) {
+    const adminVueIndex = path.join(ROOT, "admin", "index.html");
     if (fs.existsSync(adminVueIndex) && fs.statSync(adminVueIndex).isFile()) {
       return adminVueIndex;
     }
@@ -302,6 +302,16 @@ function resolveStaticPath(urlPathname) {
 }
 
 function handleStatic(req, res, parsedUrl) {
+  if (parsedUrl.pathname === "/admin-vue" || parsedUrl.pathname.startsWith("/admin-vue/")) {
+    const targetPath = parsedUrl.pathname === "/admin-vue"
+      ? "/admin/"
+      : parsedUrl.pathname.replace(/^\/admin-vue(?=\/|$)/, "/admin");
+    res.statusCode = 302;
+    res.setHeader("Location", `${targetPath}${parsedUrl.search || ""}`);
+    res.end();
+    return;
+  }
+
   const filePath = resolveStaticPath(parsedUrl.pathname);
   if (!filePath) {
     sendText(res, 404, "Not found");

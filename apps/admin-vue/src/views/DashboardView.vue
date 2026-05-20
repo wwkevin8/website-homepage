@@ -14,7 +14,7 @@ const kpiDefinitions = [
     subtitle: "点击查看未登记接送机",
     icon: "记",
     tone: "blue",
-    href: "/admin-vue/orders?risk=offline_unrecorded&source_table=transport_requests"
+    href: "/admin/orders?risk=offline_unrecorded&source_table=transport_requests"
   },
   {
     key: "storage_orders_pending",
@@ -22,7 +22,7 @@ const kpiDefinitions = [
     subtitle: "点击查看未登记寄存",
     icon: "箱",
     tone: "amber",
-    href: "/admin-vue/orders?risk=offline_unrecorded&source_table=storage_orders"
+    href: "/admin/orders?risk=offline_unrecorded&source_table=storage_orders"
   },
   {
     key: "unregistered_orders_total",
@@ -30,7 +30,7 @@ const kpiDefinitions = [
     subtitle: "接送机与寄存未登记汇总",
     icon: "!",
     tone: "rose",
-    href: "/admin-vue/orders?offline_recorded=false"
+    href: "/admin/orders?offline_recorded=false"
   },
   {
     key: "total_users",
@@ -38,7 +38,7 @@ const kpiDefinitions = [
     subtitle: "站点注册用户",
     icon: "人",
     tone: "violet",
-    href: "/admin-vue/users"
+    href: "/admin/users"
   },
   {
     key: "daily_inspection_runs_total",
@@ -57,12 +57,12 @@ const kpiDefinitions = [
 ];
 
 const quickLinks = [
-  { label: "查看全部接送机订单", href: "/admin-vue/transport/requests" },
-  { label: "查看全部寄存订单", href: "/admin-vue/storage/orders" },
-  { label: "查看买箱订单", href: "/admin-vue/storage/box-orders" },
-  { label: "查看异常订单", href: "/admin-vue/orders?risk=overdue_unprocessed" },
-  { label: "查看同步/巡检日志", href: "/admin-vue/storage/sync-logs" },
-  { label: "会员权益管理", href: "/admin-vue/memberships" }
+  { label: "查看全部接送机订单", href: "/admin/transport/requests" },
+  { label: "查看全部寄存订单", href: "/admin/storage/orders" },
+  { label: "查看买箱订单", href: "/admin/storage/box-orders" },
+  { label: "查看异常订单", href: "/admin/orders?risk=overdue_unprocessed" },
+  { label: "查看同步/巡检日志", href: "/admin/storage/sync-logs" },
+  { label: "会员权益管理", href: "/admin/memberships" }
 ];
 
 const cards = computed(() => dashboard.value?.cards || {});

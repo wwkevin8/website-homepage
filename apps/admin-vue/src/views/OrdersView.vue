@@ -276,14 +276,14 @@ function handlePageChange(page) {
 function orderDetailHref(order) {
   const sourceId = order?.source_id || order?.storage_order_id || order?.transport_request_id;
   if (order?.source_table === "storage_orders" && sourceId) {
-    return `/admin-vue/storage/${encodeURIComponent(sourceId)}?return_to=${encodeURIComponent("/admin-vue/orders")}`;
+    return `/admin/storage/${encodeURIComponent(sourceId)}?return_to=${encodeURIComponent("/admin/orders")}`;
   }
   if (order?.source_table === "transport_requests" && sourceId) {
-    return `/admin-vue/transport/requests/${encodeURIComponent(sourceId)}?return_to=${encodeURIComponent("/admin-vue/orders")}`;
+    return `/admin/transport/requests/${encodeURIComponent(sourceId)}?return_to=${encodeURIComponent("/admin/orders")}`;
   }
   const id = order?.id || order?.order_id;
   return id
-    ? `/admin-vue/orders/${encodeURIComponent(id)}?return_to=${encodeURIComponent("/admin-vue/orders")}`
+    ? `/admin/orders/${encodeURIComponent(id)}?return_to=${encodeURIComponent("/admin/orders")}`
     : "";
 }
 

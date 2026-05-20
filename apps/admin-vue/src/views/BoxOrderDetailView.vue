@@ -127,9 +127,9 @@ function boxOrderNo(record = order.value || {}) {
 
 function listHrefForOrder() {
   const returnTo = String(route.query.return_to || "");
-  return returnTo.startsWith("/admin-vue/storage/") ? returnTo : "/admin-vue/storage/box-orders";
+  return returnTo.startsWith("/admin/storage/") ? returnTo : "/admin/storage/box-orders";
 }
-
+
 
 function statusLabel(status) {
   const labels = {
