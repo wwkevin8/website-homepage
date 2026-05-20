@@ -8,7 +8,7 @@
 ## Last Updated Task
 
 - Date: 2026-05-20
-- Scope: Storage sync audit cron deployment
+- Scope: Storage sync audit cron deployment verification
 
 ## Latest Completed Work
 
@@ -24,6 +24,18 @@
   - added `vercel.json` cron schedule `30 8 * * *` for `/api/cron/run-storage-sync-audit`;
   - added the Vue admin read-only log page `/admin-vue/storage/sync-logs`;
   - this release intentionally excludes QA order creation, test users, test orders, automatic deletion, automatic repair, instant anomaly notification, all-orders migration, buy-box detail migration, and storage detail migration.
+- Deployed and verified the storage sync audit cron release:
+  - Git commit deployed: `6a1772f` (`add storage sync audit cron and daily summary`);
+  - Vercel deployment: `dpl_3MJZtkxwhpn5mfQCxsXsnCLh7BmL`;
+  - Production URL: `https://ngn.best`;
+  - direct unauthenticated `GET /api/cron/run-storage-sync-audit` returned 403;
+  - authenticated `GET /api/cron/run-storage-sync-audit` with `Authorization: Bearer <CRON_SECRET>` returned 200;
+  - the latest audit log row from the deployment had sampled order count 1, order-center count 1, personal-center count 1, mismatch count 0, skipped count 0, and cutover `2026-05-07T00:00:00+00:00`;
+  - latest log notification metadata showed Resend accepted the daily summary for `STORAGE_SYNC_AUDIT_NOTIFY_EMAIL`;
+  - `/admin-vue/storage/sync-logs` returned 200 from production;
+  - unauthenticated `GET /api/storage-sync-audit-logs` returned 401, confirming the log API remains admin-only;
+  - Vercel production environment variables exist for `CRON_SECRET`, `STORAGE_SYNC_AUDIT_NOTIFY_EMAIL`, `STORAGE_SYNC_AUDIT_EMAIL_FROM`, and `RESEND_API_KEY`;
+  - next time-based check is to confirm the scheduled Vercel cron adds a new audit log and sends the next daily summary after the next `30 8 * * *` production run.
 - Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before the checkpoint.
 - Completed full acceptance of the Vue admin read-only list version.
 - Migrated Vue admin pages now covered by the checkpoint:
