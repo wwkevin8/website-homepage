@@ -13,6 +13,7 @@ import OrderDetailView from "@/views/OrderDetailView.vue";
 import OrdersView from "@/views/OrdersView.vue";
 import StorageOrderDetailView from "@/views/StorageOrderDetailView.vue";
 import StorageOrdersView from "@/views/StorageOrdersView.vue";
+import StorageSyncLogsView from "@/views/StorageSyncLogsView.vue";
 import TransportGroupDetailView from "@/views/TransportGroupDetailView.vue";
 import TransportGroupsView from "@/views/TransportGroupsView.vue";
 import TransportRequestDetailView from "@/views/TransportRequestDetailView.vue";
@@ -145,6 +146,12 @@ const router = createRouter({
           name: "storage-returns",
           component: StorageOrdersView,
           meta: { title: "送寄存订单", orderType: "storage_return" }
+        },
+        {
+          path: "storage/sync-logs",
+          name: "storage-sync-logs",
+          component: StorageSyncLogsView,
+          meta: { title: "寄存同步巡检日志" }
         },
         {
           path: "storage/:id",

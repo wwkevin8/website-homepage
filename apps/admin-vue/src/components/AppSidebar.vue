@@ -8,16 +8,16 @@ const sections = [
       { label: "用户管理", route: { name: "users" } },
       { label: "会员权益", route: { name: "memberships" } },
       { label: "社区管理", route: { name: "community" } },
-      { label: "管理员管理", route: { name: "managers" } },
-    ],
+      { label: "管理员管理", route: { name: "managers" } }
+    ]
   },
   {
     title: "接送机拼车管理",
     links: [
       { label: "登记接送机订单", route: { name: "transport-requests" } },
       { label: "拼车组管理", route: { name: "transport-groups" } },
-      { label: "同步巡检日志", route: { name: "transport-sync-logs" } },
-    ],
+      { label: "同步巡检日志", route: { name: "transport-sync-logs" } }
+    ]
   },
   {
     title: "寄存管理",
@@ -25,8 +25,9 @@ const sections = [
       { label: "买箱订单", route: { name: "storage-box-orders" } },
       { label: "取寄存订单", route: { name: "storage-collections" } },
       { label: "送寄存订单", route: { name: "storage-returns" } },
-    ],
-  },
+      { label: "寄存同步巡检日志", route: { name: "storage-sync-logs" } }
+    ]
+  }
 ];
 </script>
 

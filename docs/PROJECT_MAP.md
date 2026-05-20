@@ -12,7 +12,7 @@ Last structure scan: 2026-05-08. Scope: documentation-only scan of current files
 | Backend | Vercel Serverless Functions under `api/` | Public and admin APIs use aggregate dispatch routes plus shared handlers/helpers. |
 | Database/Auth | Supabase | Server-side code uses service-role client in `api/_lib/supabase.js`; user/admin sessions are custom signed cookies. |
 | Email | Resend and SMTP/nodemailer | Different flows use Resend-only or Resend/SMTP fallback. Production provider settings need confirmation. |
-| Deployment | Vercel | `vercel.json` defines cache headers and two cron jobs. Node engine is `24.x` in `package.json`. |
+| Deployment | Vercel | `vercel.json` defines cache headers and three cron jobs. Node engine is `24.x` in `package.json`. |
 | Main business areas | Storage orders, pickup/dropoff, carpool/transport requests, public board, admin operations | Public data boundaries are critical. |
 
 ## Page Inventory
@@ -56,6 +56,7 @@ Last structure scan: 2026-05-08. Scope: documentation-only scan of current files
 | `transport-admin-group-new.html` | Create transport group | 后台 | same transport admin bundle | `/api/transport-groups` | Group lifecycle-sensitive. |
 | `transport-admin-group-edit.html` | Edit group and members | 后台 | same transport admin bundle | `/api/transport-groups/:id`, `/api/transport-groups/:id/members`, `/api/transport-group-members/:id` | Group/member lifecycle-sensitive. |
 | `transport-admin-sync-logs.html` | Transport sync audit logs | 后台 | same transport admin bundle | `/api/transport-sync-audit-logs` | Cron/email audit support. |
+| `/admin-vue/storage/sync-logs` | Storage sync audit logs | 后台 Vue | `apps/admin-vue` | `/api/storage-sync-audit-logs`, `/api/run-storage-sync-audit` | Read-only storage sync audit logs; scheduled passive cron and daily summary email use the cron-only route. |
 | `pickup-admin.html` | Local/browser pickup admin prototype | 不确定/可能历史 | `script.js`, `styles.css` | No server API detected; script references local pickup-admin flow | Text says local-only admin; production use needs confirmation. |
 | `pickup-backup.html` | Pickup page backup variant | 备份 | `script.js`, `styles.css`, `styles-pickup-backup.css` | No active API detected in scan | Filename indicates backup; `pickup.html` reuses backup CSS/classes. |
 | `pickup-original-backup.html` | Older pickup backup variant | 备份 | `script.js`, `transport-shared.js`, `transport-api.js`, `transport-public.js`, `styles.css` | Public transport APIs through transport scripts | Backup status needs confirmation. |
@@ -147,8 +148,11 @@ Last structure scan: 2026-05-08. Scope: documentation-only scan of current files
 | `/api/transport-groups/:id/members` | `api/transport-groups/[id]/members.js` | POST | Replace/add group members | Yes | Yes | `transport_groups`, `transport_group_members`, `transport_requests` |
 | `/api/transport-group-members/:id` | `api/transport-group-members/[id].js` | DELETE | Remove group member | Yes | Yes | `transport_group_members`, related lifecycle tables |
 | `/api/transport-sync-audit-logs` | `api/transport-sync-audit-logs.js` | GET | Admin sync audit log list | Yes | Yes | `transport_sync_audit_logs` |
+| `/api/storage-sync-audit-logs` | `api/storage-sync-audit-logs.js` | GET | Admin storage sync audit log list | Yes | Yes | `storage_sync_audit_logs` |
+| `/api/run-storage-sync-audit` | `api/run-storage-sync-audit.js` | POST | Manually run read-only storage sync audit and write a log row when the table exists | Yes | Yes | `storage_orders`, `orders`, `site_users`, `storage_sync_audit_logs` |
 | `/api/cron/close-expired-transport-requests` | `api/cron/close-expired-transport-requests.js` | GET | Close expired transport requests | Secret | No admin session; requires `CRON_SECRET` | `transport_requests` |
 | `/api/cron/send-transport-sync-digest` | `api/cron/send-transport-sync-digest.js` | GET | Send daily sync digest | Secret | No admin session; requires `CRON_SECRET` | `transport_sync_audit_logs` |
+| `/api/cron/run-storage-sync-audit` | `api/cron/run-storage-sync-audit.js` | GET | Run passive storage sync audit and daily summary email | Secret | No admin session; requires `Authorization: Bearer <CRON_SECRET>` | `storage_sync_audit_logs` |
 | `/api/cron/run-transport-daily-flow-test` | `api/cron/run-transport-daily-flow-test.js` | GET | Run scheduled transport QA flow | Secret | No admin session; requires `CRON_SECRET` | `admin_users`, `site_users`, `transport_requests`, `transport_groups`, `transport_group_members`, `transport_sync_audit_logs` |
 
 ## Supabase Files
@@ -170,6 +174,8 @@ Last structure scan: 2026-05-08. Scope: documentation-only scan of current files
 | `supabase/20260416_admin_transport_groups_indexes.sql` | Admin transport group indexes | Performance. |
 | `supabase/20260416_public_transport_groups_indexes.sql` | Public transport group indexes | Performance. |
 | `supabase/20260416_transport_sync_audit_logs.sql` | Creates transport sync audit logs | Used by cron/admin log page. |
+| `supabase/20260520_storage_sync_audit_logs.sql` | Creates storage sync audit logs | Independent RLS-protected service-role table for storage sync audits. |
+| `supabase/20260520_storage_sync_audit_logs_cutover_notification.sql` | Adds storage audit cutover/notification fields | Additive metadata for scheduled storage audit logs. |
 | `supabase/20260513_auth_risk_events.sql` | Creates auth risk log and login failure counter table | Required for login/signup-code conditional captcha counting and audit logs. |
 | `supabase/20260513_auth_risk_events_device_id.sql` | Adds `device_id` to auth risk events | Supports session/device-based signup-code risk checks. |
 | `supabase/20260513_membership_entitlements.sql` | Creates NGN membership entitlement tables and order discount linkage fields | Adds membership entitlements, benefit claims, audit logs, updated_at triggers, claim identity trigger, RLS/revoke, and order price fields. |
@@ -220,6 +226,7 @@ Last structure scan: 2026-05-08. Scope: documentation-only scan of current files
 | `transport_group_members` | Request-to-group membership | public board/groups/join, admin group/member APIs, lifecycle helpers, cron | Some/Operational | Lifecycle-sensitive. |
 | `transport_groups_public_view` | Public/admin group listing view | public groups, admin groups, stats helpers | Public-safe intended | View definition/field exposure should be checked before expansion. |
 | `transport_sync_audit_logs` | Sync/daily-flow audit records | `/api/transport-sync-audit-logs`, cron digest/test | Operational | Admin-only display. |
+| `storage_sync_audit_logs` | Storage sync audit run summaries | `/api/storage-sync-audit-logs`, `/api/run-storage-sync-audit`, `/api/cron/run-storage-sync-audit` | Operational | Independent service-role-only log table for sampled storage/order-center/personal-center consistency checks. Cron writes only this table and does not modify storage/order/user business tables. |
 
 ## Order And Status Flows
 
@@ -326,6 +333,7 @@ Notification sub-statuses:
 | `api/_lib/transport-group-stats.js` | Public/admin group stats and pricing helpers. |
 | `api/_lib/transport-order-submission-email.js` | Transport request/join confirmation email via Resend. |
 | `api/_lib/transport-sync-audit-email.js` | Transport sync/daily-flow emails via Resend or SMTP. |
+| `api/_lib/storage-sync-audit-email.js` | Storage sync daily summary email via Resend or SMTP, without customer contact/address values. |
 | `public-api-handlers/transport-*.js`, `api/transport-*` | Public and admin transport APIs. |
 | `supabase/transport_dispatch.sql`, transport migrations/index files | Transport schema, views, indexes, status unification. |
 
@@ -334,9 +342,9 @@ Notification sub-statuses:
 | Service | Purpose | Integration Points | Required/Related Env | Notes |
 | --- | --- | --- | --- | --- |
 | Supabase | Database and auth data | `api/_lib/supabase.js`, SQL in `supabase/` | `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` | Service role must stay server-only. |
-| Vercel | Hosting, serverless APIs, cron | `vercel.json`, `api/`, deploy scripts | Vercel project env vars, `VERCEL_URL` optional in email URL building | Cron configured for daily flow test and sync digest. |
-| Resend | Transactional email | `auth-email.js`, `transport-order-submission-email.js`, `storage-order-notifier.js`, `transport-sync-audit-email.js` | `RESEND_API_KEY`, sender env vars | Some flows require Resend; production sender needs confirmation. |
-| SMTP/nodemailer | Email fallback/admin notifications | `storage-order-notifier.js`, `transport-sync-audit-email.js` | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`, `SMTP_SECURE` | Some email flows can fallback to SMTP. |
+| Vercel | Hosting, serverless APIs, cron | `vercel.json`, `api/`, deploy scripts | Vercel project env vars, `VERCEL_URL` optional in email URL building | Cron configured for transport daily flow test, transport sync digest, and storage sync audit. |
+| Resend | Transactional email | `auth-email.js`, `transport-order-submission-email.js`, `storage-order-notifier.js`, `transport-sync-audit-email.js`, `storage-sync-audit-email.js` | `RESEND_API_KEY`, sender env vars | Some flows require Resend; production sender needs confirmation. |
+| SMTP/nodemailer | Email fallback/admin notifications | `storage-order-notifier.js`, `transport-sync-audit-email.js`, `storage-sync-audit-email.js` | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`, `SMTP_SECURE` | Some email flows can fallback to SMTP. |
 | Cloudflare Turnstile | Bot protection | conditional login/register challenges, reset UI, `api/_lib/turnstile.js`, `auth-config.js` | `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` | Site key is public; secret is server-only. Login and registration code sending only require Turnstile after backend risk thresholds return `needCaptcha=true`; cooldown and temporary-block responses do not show Turnstile. |
 | Google Fonts | Fonts | HTML `<link>` tags | None | External dependency; previous QA noted font request failures. |
 | Google/Auth provider | Possible OAuth callback | `google-auth.js`, `auth-callback.html` | Supabase/provider config, 需要确认 | Active use needs confirmation. |
@@ -366,6 +374,9 @@ Notification sub-statuses:
 | `TRANSPORT_QR_CODE_URL` | QR code image URL for transport emails | May appear in emails | No/low | Yes if used | Optional. |
 | `TRANSPORT_SYNC_AUDIT_NOTIFY_EMAIL` | Audit/digest recipient | No | Yes/PII | Yes if digest active | Defaults exist in code, but production recipient should be confirmed. |
 | `TRANSPORT_SYNC_AUDIT_EMAIL_FROM` | Sender for transport sync emails | May appear in emails | No/medium | Yes if digest active | Optional override. |
+| `STORAGE_SYNC_AUDIT_SITE_USER_CUTOVER_AT` | Cutover timestamp for storage audit `site_user_id` checks | No | No/low | Yes if storage audit active | Defaults to `2026-05-07T00:00:00Z`; logs record the effective value. |
+| `STORAGE_SYNC_AUDIT_NOTIFY_EMAIL` | Storage audit daily summary recipient | No | Yes/PII | Yes if storage audit digest active | If missing, cron records `notification.skipped=true` and audit still succeeds. |
+| `STORAGE_SYNC_AUDIT_EMAIL_FROM` | Sender for storage audit summary emails | May appear in emails | No/medium | Yes if storage audit digest active | Optional override; falls back to auth/SMTP sender. |
 | `TRANSPORT_FLOW_TEST_PASSWORD` | QA user password for daily flow test | No | Yes | Yes if cron QA active | Defaults in code if absent; production behavior needs confirmation. |
 | `SMTP_HOST` | SMTP host | No | No/medium | Yes if SMTP active | Required for SMTP path. |
 | `SMTP_PORT` | SMTP port | No | No/low | Yes if SMTP active | Commonly `587` or provider value. |

@@ -120,6 +120,30 @@ export function fetchTransportSyncLogs(filters = {}) {
   return request(`/api/transport-sync-audit-logs${query ? `?${query}` : ""}`);
 }
 
+export function fetchStorageSyncLogs(filters = {}) {
+  const searchParams = new URLSearchParams();
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== "") {
+      searchParams.set(key, value);
+    }
+  });
+  const query = searchParams.toString();
+  return request(`/api/storage-sync-audit-logs${query ? `?${query}` : ""}`);
+}
+
+export function runStorageSyncAudit(options = {}) {
+  const searchParams = new URLSearchParams();
+  Object.entries(options).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== "") {
+      searchParams.set(key, value);
+    }
+  });
+  const query = searchParams.toString();
+  return request(`/api/run-storage-sync-audit${query ? `?${query}` : ""}`, {
+    method: "POST"
+  });
+}
+
 export function fetchStorageOrders(filters = {}) {
   const searchParams = new URLSearchParams();
   Object.entries(filters).forEach(([key, value]) => {

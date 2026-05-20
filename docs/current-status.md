@@ -7,11 +7,23 @@
 
 ## Last Updated Task
 
-- Date: 2026-05-17
-- Scope: Vue community post readonly detail migration
+- Date: 2026-05-20
+- Scope: Storage sync audit cron deployment
 
 ## Latest Completed Work
 
+- Prepared the isolated storage sync audit cron release on branch `codex/storage-sync-audit-cron`:
+  - added admin-only storage sync audit log reading and manual run endpoints;
+  - added cron-only `GET /api/cron/run-storage-sync-audit`, protected only by `Authorization: Bearer <CRON_SECRET>`;
+  - added `storage_sync_audit_logs` SQL plus additive `cutover_at` and `notification` metadata columns;
+  - added `STORAGE_SYNC_AUDIT_SITE_USER_CUTOVER_AT` support, defaulting to `2026-05-07T00:00:00Z`;
+  - legacy missing `site_user_id` before the cutover is skipped as `legacy_no_site_user_id`;
+  - missing `site_user_id` on or after the cutover is a mismatch as `no_site_user_id_after_cutover`;
+  - sensitive mismatch fields such as phone, WeChat/WhatsApp, email, and address are logged as presence-only values;
+  - added daily summary email support through `STORAGE_SYNC_AUDIT_NOTIFY_EMAIL`, `STORAGE_SYNC_AUDIT_EMAIL_FROM`, existing `RESEND_API_KEY`, and SMTP fallback;
+  - added `vercel.json` cron schedule `30 8 * * *` for `/api/cron/run-storage-sync-audit`;
+  - added the Vue admin read-only log page `/admin-vue/storage/sync-logs`;
+  - this release intentionally excludes QA order creation, test users, test orders, automatic deletion, automatic repair, instant anomaly notification, all-orders migration, buy-box detail migration, and storage detail migration.
 - Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before the checkpoint.
 - Completed full acceptance of the Vue admin read-only list version.
 - Migrated Vue admin pages now covered by the checkpoint:
