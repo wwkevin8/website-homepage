@@ -42,6 +42,14 @@
   - the endpoint still performs passive audit only and writes only `storage_sync_audit_logs`;
   - daily digest email now checks recent `storage_sync_audit_logs.notification` metadata and skips sending if a successful storage digest has already been sent for the current London date;
   - this prevents the higher audit frequency from becoming a 3-hourly email blast.
+- Deployed and verified the 3-hour storage audit cadence update:
+  - Git commit deployed: `fd8598d` (`align storage sync audit cron cadence`);
+  - Vercel deployment: `dpl_91adW5Atksw8ySwSayM3dCwMBwPZ`;
+  - Production URL: `https://ngn.best`;
+  - unauthenticated `GET /api/cron/run-storage-sync-audit` remained blocked with invalid cron secret;
+  - authenticated `GET /api/cron/run-storage-sync-audit?sample_size=1` returned 200 and wrote a new audit log;
+  - latest verification log had sampled order count 1, order-center count 1, personal-center count 1, mismatch count 0, skipped count 0, and cutover `2026-05-07T00:00:00+00:00`;
+  - latest verification notification was skipped with `reason: daily_digest_already_sent`, confirming the higher cron cadence does not repeatedly send daily summary email.
 - Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before the checkpoint.
 - Completed full acceptance of the Vue admin read-only list version.
 - Migrated Vue admin pages now covered by the checkpoint:
