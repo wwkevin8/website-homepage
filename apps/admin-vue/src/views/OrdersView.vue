@@ -274,13 +274,17 @@ function handlePageChange(page) {
 }
 
 function orderDetailHref(order) {
-  if (order?.order_detail_available === false && order?.source_detail_href) {
-    return order.source_detail_href;
+  const sourceId = order?.source_id || order?.storage_order_id || order?.transport_request_id;
+  if (order?.source_table === "storage_orders" && sourceId) {
+    return `/admin-vue/storage/${encodeURIComponent(sourceId)}?return_to=${encodeURIComponent("/admin-vue/orders")}`;
+  }
+  if (order?.source_table === "transport_requests" && sourceId) {
+    return `/admin-vue/transport/requests/${encodeURIComponent(sourceId)}?return_to=${encodeURIComponent("/admin-vue/orders")}`;
   }
   const id = order?.id || order?.order_id;
   return id
     ? `/admin-vue/orders/${encodeURIComponent(id)}?return_to=${encodeURIComponent("/admin-vue/orders")}`
-    : (order?.source_detail_href || "");
+    : "";
 }
 
 function viewOrder(order) {

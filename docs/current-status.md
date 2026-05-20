@@ -8,9 +8,25 @@
 ## Last Updated Task
 
 - Date: 2026-05-20
-- Scope: 2.0 NGN admin production pre-launch safety checkpoint
+- Scope: 2.0 NGN admin official backend launch
 
 ## Latest Completed Work
+
+- Prepared `2.0 NGN管理后台` as the official backend entry:
+  - `admin-login.html` now brands the login flow as `2.0 NGN管理后台` and sends successful/default admin sessions to `/admin-vue/`;
+  - added `admin-legacy-guard.js` and attached it to old admin HTML pages so normal visits to old backend URLs redirect to the matching `/admin-vue/` route;
+  - old backend HTML files remain in the repo for emergency rollback access only and are no longer linked from normal admin navigation/buttons;
+  - updated old admin shell/navigation hrefs to point at `/admin-vue/` routes instead of old admin pages;
+  - updated transport/admin internal links and the transport sync audit email link to prefer `/admin-vue/` routes;
+  - updated Vue order-center detail routing so transport/storage source records open 2.0 transport/storage detail pages, not old detail pages;
+  - removed the remaining 2.0 login-copy reference to an old login page;
+  - no Supabase schema, production data, email sending behavior, or public customer page behavior was changed.
+- Verification for the official backend launch prep:
+  - `node --check admin-legacy-guard.js`, `admin-shell.js`, `admin-pages.js`, `transport-admin.js`, and `api/_lib/transport-sync-audit-email.js` passed;
+  - source scan found no old-backend entry links or visible "old backend / old detail" prompts in 2.0 admin source, login page, shared admin shell, transport admin script, or admin email helper;
+  - `npm run build:admin-vue` passed and regenerated `admin-vue/`;
+  - Playwright verified old URLs such as `/admin-dashboard.html`, `/admin-storage.html?order_type=box_order`, `/admin-storage-detail.html?id=...`, `/transport-admin-request-edit.html?id=...`, `/transport-admin-group-edit.html?id=...`, and `/transport-admin-sync-logs.html` redirect into the corresponding `/admin-vue/` route and then, when unauthenticated, to `admin-login.html` with a 2.0 `return_to`;
+  - `npm run build:prod` passed.
 
 - Completed the pre-launch safety checkpoint for the Vue admin now formally named `2.0 NGN 管理后台`:
   - created the Git checkpoint commit with message `before-vue-admin-production-launch`;
@@ -1133,24 +1149,24 @@
 ## Current Project State
 
 - Vue admin dashboard today-todo rows now keep the status label as a compact pill and align the order-number/customer block in a consistent right-side column on desktop, while keeping a stacked layout on small screens.
-- New Vue admin remains parallel-only and available through `/admin-vue/` after building.
+- `2.0 NGN管理后台` at `/admin-vue/` is now the intended official backend entry after deployment.
 - Vue admin dashboard now uses the expanded `/api/admin/dashboard` aggregate to show operational KPIs, recent trends, real-status distribution, today/overdue work, clickable risk alerts, recent admin operations, quick links, and cache metadata in the main content area; dashboard risk counts align with `/admin-vue/orders?risk=...`.
 - Vue admin sidebar groups are collapsible, including the transport and storage operation groups.
-- Old admin remains the rollback and official legacy operator entry.
-- Detailed edit workflows and dangerous operations remain on old admin until explicitly migrated, except for already approved Vue operations such as storage actions, membership list actions, transport tracking actions, and manager edit/reset/delete actions.
-- Storage order details now have separate Vue routes: buy-box details live at `/admin-vue/storage/box-orders/:id`, and storage collection/return details live at `/admin-vue/storage/storage-orders/:id`; old storage detail remains a fallback and rollback entry.
+- Old admin HTML files remain in the repo only as emergency rollback assets; normal visits to old backend URLs redirect to the matching `/admin-vue/` route.
+- Detailed edit workflows should stay inside 2.0 NGN admin going forward; do not add new normal-path links back to old admin pages.
+- Storage order details now have separate Vue routes: buy-box details live at `/admin-vue/storage/box-orders/:id`, and storage collection/return details live at `/admin-vue/storage/storage-orders/:id`.
 - Storage all-orders control page now lives at `/admin-vue/storage/orders` and summarizes existing ST-B/ST-P/ST-S storage work without adding a fourth storage business type. It uses `offline_recorded` as the customer-service line between unrecorded and recorded orders; its filter actions and bulk actions now match the transport request list pattern.
 - Storage sub-list pages now also use `offline_recorded` for customer-service tracking, so `/admin-vue/storage/box-orders`, `/admin-vue/storage/collections`, and `/admin-vue/storage/returns` no longer surface the legacy `待确认` order-status badge in the list UI.
-- Transport request details now live in Vue as the main route with a compact customer-service form display; the lower trip/airport/note fields are editable, current group details and group replacement tools are visible, and operation records show who changed which fields. Old transport request edit remains a fallback and rollback entry.
+- Transport request details now live in Vue as the main route with a compact customer-service form display; the lower trip/airport/note fields are editable, current group details and group replacement tools are visible, and operation records show who changed which fields.
 - Vue transport request list now has selected-row-only customer-service operations: mark/cancel one row's `offline_recorded`, batch mark/cancel selected rows, export current filtered results from the filter panel, and export selected rows from the bulk action bar. The previous current-filter bulk mark action is no longer exposed in Vue.
 - Vue transport request and storage order lists now highlight membership-bound rows in yellow when the row has a membership benefit claim or membership discount amount.
 - Admin deletion of transport requests and storage orders now releases any linked reserved membership claim back to `selected`, and the Vue membership list exposes `解绑订单` for repairing stale linked-order claims.
 - Vue transport group list now shows `当前人均` using the backend-computed current average group price, placed between payment status and payment actions.
-- Transport group readonly details now live in Vue as the main route; old transport group edit remains a fallback and rollback entry.
-- Order center readonly summary details now live in Vue as the main route; old `admin-orders.html` remains a fallback and rollback entry.
-- Manager list operations now live in Vue for create, edit, direct password setting, reset password, and delete, reusing the existing `/api/admin/managers` endpoints and server-side super-admin protections; old `admin-managers.html` remains a fallback and rollback entry.
-- Membership entitlement list operations now live in Vue for the common admin actions: opening membership by user search, generating single or batch activation codes, manual benefit registration, entitlement deletion, activation-code deletion, latest-operation scanning, and direct customer-service detail viewing. Membership entitlement detail remains mostly readonly and now focuses on user basics, membership status/source, latest operation, and reverse-time operation records; old `admin-memberships.html` remains a fallback and rollback entry.
-- Community post readonly details now live in Vue as the main route for post detail viewing; old `admin-community.html` remains a fallback and rollback entry.
+- Transport group readonly details now live in Vue as the main route.
+- Order center readonly summary details now live in Vue as the main route and source-record links now open the corresponding 2.0 transport/storage detail pages.
+- Manager list operations now live in Vue for create, edit, direct password setting, reset password, and delete, reusing the existing `/api/admin/managers` endpoints and server-side super-admin protections.
+- Membership entitlement list operations now live in Vue for the common admin actions: opening membership by user search, generating single or batch activation codes, manual benefit registration, entitlement deletion, activation-code deletion, latest-operation scanning, and direct customer-service detail viewing. Membership entitlement detail remains mostly readonly and now focuses on user basics, membership status/source, latest operation, and reverse-time operation records.
+- Community post readonly details now live in Vue as the main route for post detail viewing.
 - Storage order export and single-row delete are now live in the three Vue storage list pages only. Delete is guarded by a confirmation dialog and reuses the existing admin storage delete endpoint.
 - Storage sub-list address display now shows apartment/building, detailed address, and postcode together in a single wrapping address column with duplicate fragments filtered across slash-separated address parts. A separate "妫板嫭婀℃禒閿嬬壐" column now displays each order's expected price when available.
 - Storage order detail now supports editing service appointment dates/times and address fields in Vue, while status changes, full editing, export, and deletion remain separate controlled actions.
@@ -1187,7 +1203,7 @@
   - impact: storage admin page is not officially open, so this does not affect current live business;
   - requirement: fix before opening storage admin, without re-adding heavy list fields such as `customer_form_json`, `final_readable_message`, or `service_flags_json` to the list API.
 - Membership detail page is still mostly readonly: customer-service detail and operation record viewing live in Vue, while mark-used/cancel/reset claim mutations are not yet exposed in the Vue detail page. The membership list now exposes opening membership, single/batch activation-code generation, activation-code deletion, manual benefit registration, and entitlement deletion through existing admin endpoints.
-- Community Vue page and community post detail page are intentionally readonly in this phase. Real moderation actions such as hide, restore, delete, pin, update expiry, image deletion, comment moderation, and user bans still belong to old admin until explicitly migrated.
+- Community Vue page and community post detail page are intentionally readonly in this phase. Real moderation actions such as hide, restore, delete, pin, update expiry, image deletion, comment moderation, and user bans should be implemented in 2.0 admin before they become normal-path operations.
 - Phase 5A intentionally adds real storage-only operations in Vue: list export, list single-delete, detail service/address saves, detail status changes, detail current-order export, and detail single-delete. Batch delete and all non-storage dangerous operations remain unimplemented.
 - The transport request tracking fields have been applied to Supabase project `ngn-transport`; deploy still needs to follow the fixed GitHub-first release order before the Vue/API changes are live.
 - The storage order tracking migration `supabase/20260519_storage_order_offline_tracking.sql` has been applied to Supabase project `ngn-transport`; refresh `/admin-vue/storage/orders` before testing mark/cancel recorded operations.

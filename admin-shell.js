@@ -6,28 +6,28 @@
   }
 
   const NAV_ITEMS = [
-    { key: "dashboard", label: "控制台", href: "./admin-dashboard.html" },
-    { key: "orders", label: "订单中心", href: "./admin-orders.html" },
-    { key: "users", label: "用户管理", href: "./admin-users.html" },
-    { key: "memberships", label: "会员权益", href: "./admin-memberships.html" },
-    { key: "community", label: "社区管理", href: "./admin-community.html" },
-    { key: "managers", label: "管理员管理", href: "./admin-managers.html", permission: "canViewAdminManagers" },
+    { key: "dashboard", label: "控制台", href: "/admin-vue/" },
+    { key: "orders", label: "订单中心", href: "/admin-vue/orders" },
+    { key: "users", label: "用户管理", href: "/admin-vue/users" },
+    { key: "memberships", label: "会员权益", href: "/admin-vue/memberships" },
+    { key: "community", label: "社区管理", href: "/admin-vue/community" },
+    { key: "managers", label: "管理员管理", href: "/admin-vue/managers", permission: "canViewAdminManagers" },
     {
       key: "transport",
       label: "接送机拼车管理",
       children: [
-        { key: "transport-forms", label: "登记接送机订单", href: "./transport-admin-requests.html" },
-        { key: "transport-orders", label: "拼车组管理", href: "./transport-admin-groups.html" },
-        { key: "transport-sync-logs", label: "同步巡检日志", href: "./transport-admin-sync-logs.html" }
+        { key: "transport-forms", label: "登记接送机订单", href: "/admin-vue/transport/requests" },
+        { key: "transport-orders", label: "拼车组管理", href: "/admin-vue/transport/groups" },
+        { key: "transport-sync-logs", label: "同步巡检日志", href: "/admin-vue/transport/sync-logs" }
       ]
     },
     {
       key: "storage",
       label: "寄存管理",
       children: [
-        { key: "storage-box", label: "买箱订单", href: "./admin-storage.html?order_type=box_order" },
-        { key: "storage-collection", label: "取寄存订单", href: "./admin-storage.html?order_type=storage_collection" },
-        { key: "storage-return", label: "送寄存订单", href: "./admin-storage.html?order_type=storage_return" }
+        { key: "storage-box", label: "买箱订单", href: "/admin-vue/storage/box-orders" },
+        { key: "storage-collection", label: "取寄存订单", href: "/admin-vue/storage/collections" },
+        { key: "storage-return", label: "送寄存订单", href: "/admin-vue/storage/returns" }
       ]
     }
   ];
@@ -408,7 +408,7 @@
         await AdminApi.logout().catch(() => {});
         clearCachedSession();
         window.setTimeout(() => {
-          window.location.href = "./admin-login.html";
+          window.location.href = "/admin-login.html?return_to=%2Fadmin-vue%2F";
         }, 800);
       } catch (error) {
         const message = error?.status === 404
@@ -422,7 +422,7 @@
   async function handleLogout() {
     await AdminApi.logout().catch(() => {});
     clearCachedSession();
-    window.location.href = "./admin-login.html";
+    window.location.href = "/admin-login.html?return_to=%2Fadmin-vue%2F";
   }
 
   function bindLogout() {
@@ -468,7 +468,7 @@
           <h2>${escapeHtml(options.title || "鏆傛棤璁块棶鏉冮檺")}</h2>
           <p>${escapeHtml(options.message || "您没有访问当前后台页面的权限。")}</p>
           <div class="admin-inline-actions">
-            <a class="button button-primary" href="./admin-login.html">杩斿洖鍚庡彴鐧诲綍</a>
+            <a class="button button-primary" href="/admin-login.html?return_to=%2Fadmin-vue%2F">杩斿洖鍚庡彴鐧诲綍</a>
           </div>
         </div>
       </section>
@@ -778,7 +778,7 @@
 
     if (!session.authenticated) {
       clearCachedSession();
-      window.location.href = `./admin-login.html?return_to=${encodeURIComponent(getReturnTo())}`;
+      window.location.href = `/admin-login.html?return_to=${encodeURIComponent("/admin-vue/")}`;
       return;
     }
 

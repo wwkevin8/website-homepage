@@ -49,7 +49,7 @@ export const useSessionStore = defineStore("session", () => {
   async function logout() {
     await logoutAdmin().catch(() => {});
     applySession(null);
-    window.location.href = "/admin-login.html";
+    window.location.href = "/admin-login.html?return_to=%2Fadmin-vue%2F";
   }
 
   return {

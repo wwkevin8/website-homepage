@@ -22,7 +22,7 @@ if (typeof window !== "undefined") {
 <template>
   <main class="standalone-view">
     <h1>正在前往登录页</h1>
-    <p>新版后台沿用旧后台登录状态，未登录时会跳转到旧登录页。</p>
+    <p>2.0 NGN管理后台需要先完成管理员登录。</p>
     <a :href="loginHref">立即登录</a>
   </main>
 </template>

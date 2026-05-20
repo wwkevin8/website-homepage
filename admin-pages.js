@@ -967,9 +967,7 @@
   }
 
   function buildStorageDetailUrl(id) {
-    const currentPageName = window.location.pathname.split("/").pop() || "admin-storage.html";
-    const current = `${currentPageName}${window.location.search || ""}`;
-    return `./admin-storage-detail.html?id=${encodeURIComponent(id)}&return_to=${encodeURIComponent(`./${current}`)}`;
+    return `/admin-vue/storage/${encodeURIComponent(id)}?return_to=${encodeURIComponent("/admin-vue/storage/orders")}`;
   }
 
   function buildStorageExportUrl(form) {
@@ -1239,7 +1237,7 @@
   }
 
   function normalizeAdminReturnTo(value) {
-    const fallback = "./admin-storage.html";
+    const fallback = "/admin-vue/storage/orders";
     const raw = String(value || "").trim();
     if (!raw) {
       return fallback;
