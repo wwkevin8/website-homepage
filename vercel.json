@@ -26,6 +26,11 @@
       "permanent": false
     },
     {
+      "source": "/admin-vue/",
+      "destination": "/admin/",
+      "permanent": false
+    },
+    {
       "source": "/admin-vue/:path*",
       "destination": "/admin/:path*",
       "permanent": false
