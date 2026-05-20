@@ -20,12 +20,16 @@
   - `vercel.json` and the local helper server keep old `/admin-vue` and `/admin-vue/*` links compatible by redirecting to the matching `/admin/` path;
   - `/api/...` routes were intentionally left unchanged.
 - Verification for the admin path change:
+  - GitHub release commits: `779b778` (`move 2.0 admin path to /admin`) and `9c27451` (`redirect admin-vue slash path`) on `codex/membership-v1`;
+  - Vercel production deployment: `dpl_HwS8BNn3e8Ar3P5Kyu1AxR8Bi2NX`, URL `https://webside-9pzirt36t-wwkevin8s-projects.vercel.app`, aliased to `https://ngn.best`;
   - `node --check` passed for `admin-legacy-guard.js`, `admin-shell.js`, `admin-pages.js`, `transport-admin.js`, `api/_lib/transport-sync-audit-email.js`, `api/_lib/storage-sync-audit-email.js`, `api/admin/[...action].js`, and `dev-server.js`;
   - `npm run build:admin-vue` passed and generated the new root `admin/` bundle with `/admin/assets/...`;
   - `npm run build:prod` passed after confirming `.vercel/output/` was not present before the build;
   - local HTTP checks on port 3001 confirmed `/admin/`, `/admin/orders`, `/admin/storage`, `/admin/members`, `/admin/storage/orders`, `/admin/storage/box-orders`, `/admin/transport/requests`, and `/admin/managers` return 200;
   - local HTTP checks confirmed `/admin-vue/` redirects to `/admin/` and `/admin-vue/orders` redirects to `/admin/orders`;
   - Playwright verified local admin login, sidebar/menu navigation, refresh on orders/memberships/managers/storage/pickup pages, real order detail refresh, real storage detail refresh, real pickup detail refresh, old-path redirect, and logout.
+  - production HTTP checks confirmed `/admin/`, `/admin/orders`, `/admin/storage/orders`, `/admin/memberships`, `/admin/managers`, and `/admin/transport/requests` return 200, while `/admin-vue`, `/admin-vue/`, and `/admin-vue/orders` redirect to matching `/admin/` paths;
+  - production Playwright verified admin login, sidebar/menu navigation, refresh on orders/storage/memberships/managers/pickup pages, old-path redirect to `/admin/orders`, and logout.
 
 - Completed the production pre-demo smoke check for `2.0 NGN admin` on `https://ngn.best`:
   - Vercel inspect confirmed production deployment `dpl_4nTMgN9HVocwTRtRgqdSuS5G3qEu` is Ready and aliased to `https://ngn.best`;
