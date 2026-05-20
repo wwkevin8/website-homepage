@@ -104,6 +104,14 @@
     {
       "path": "/api/cron/send-transport-sync-digest",
       "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/run-storage-sync-audit",
+      "schedule": "30 8 * * *"
+    },
+    {
+      "path": "/api/cron/send-membership-birthday-reminders",
+      "schedule": "5 0,23 * * *"
     }
   ]
 }

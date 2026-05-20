@@ -3,6 +3,41 @@ const { requireAdminUser } = require("../_lib/admin-auth");
 const { ok, badRequest, parseJsonBody, methodNotAllowed, serverError } = require("../_lib/http");
 const { mapRequestPayload, deriveRequestDisplayFlags, closeExpiredRequests, syncGroupStatus } = require("../_lib/transport");
 const { removeRequestFromGroup, backfillMissingPickupGroups } = require("../_lib/transport-group-lifecycle");
+const { logAdminOperation } = require("../_lib/orders");
+const { releaseClaimOrderBinding } = require("../_lib/membership");
+
+const AUDIT_FIELD_LABELS = {
+  service_type: "服务类型",
+  student_name: "姓名",
+  email: "邮箱",
+  phone: "手机号",
+  wechat: "微信号",
+  passenger_count: "登记人数",
+  luggage_count: "行李数量",
+  airport_code: "机场代码",
+  airport_name: "机场名称",
+  terminal: "航楼",
+  flight_no: "航班号",
+  flight_datetime: "出发/到达时间",
+  location_from: "出发地",
+  location_to: "目的地址",
+  preferred_time_start: "接机/服务时间",
+  preferred_time_end: "服务结束时间",
+  shareable: "是否可拼车",
+  status: "订单状态",
+  notes: "备注",
+  admin_note: "内部备注",
+  offline_recorded: "是否已线下记录",
+  closed_reason: "关闭原因",
+  closed_at: "关闭时间"
+};
+
+const DATE_TIME_AUDIT_FIELDS = new Set([
+  "flight_datetime",
+  "preferred_time_start",
+  "preferred_time_end",
+  "closed_at"
+]);
 
 function parsePaymentStatus(adminNote) {
   const match = String(adminNote || "").match(/\[payment:(paid|unpaid)\]/i);
@@ -11,6 +46,60 @@ function parsePaymentStatus(adminNote) {
 
 function isInvalidUuidError(error) {
   return Boolean(error?.message && error.message.includes("invalid input syntax for type uuid"));
+}
+
+function resolveAdminDisplayName(adminUser = {}) {
+  return String(adminUser.name || adminUser.username || adminUser.email || "admin").trim() || "admin";
+}
+
+function normalizeAuditValue(field, value) {
+  if (value === undefined || value === null || value === "") {
+    return null;
+  }
+  if (DATE_TIME_AUDIT_FIELDS.has(field)) {
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? String(value) : parsed.toISOString();
+  }
+  if (typeof value === "boolean") {
+    return value;
+  }
+  if (typeof value === "number") {
+    return value;
+  }
+  return String(value);
+}
+
+function buildChangedFields(existing = {}, payload = {}) {
+  return Object.entries(AUDIT_FIELD_LABELS)
+    .map(([field, label]) => {
+      const beforeValue = normalizeAuditValue(field, existing[field]);
+      const afterValue = normalizeAuditValue(field, payload[field]);
+      return beforeValue === afterValue
+        ? null
+        : {
+            field,
+            label,
+            before: beforeValue,
+            after: afterValue
+          };
+    })
+    .filter(Boolean);
+}
+
+async function fetchRequestOperationLogs(supabase, requestId) {
+  const { data, error } = await supabase
+    .from("admin_operation_logs")
+    .select("id, action, before_data, after_data, metadata, created_at, admin_user_id, admin_user:admin_users(id, name, username, email)")
+    .eq("target_type", "transport_request")
+    .eq("target_id", requestId)
+    .order("created_at", { ascending: false })
+    .limit(100);
+
+  if (error) {
+    throw error;
+  }
+
+  return data || [];
 }
 
 async function getRequestWithContext(supabase, id) {
@@ -45,6 +134,15 @@ async function getRequestWithContext(supabase, id) {
   }
 
   return deriveRequestDisplayFlags(data);
+}
+
+async function getRequestDetailWithLogs(supabase, id) {
+  const request = await getRequestWithContext(supabase, id);
+  const operationLogs = await fetchRequestOperationLogs(supabase, request.id);
+  return {
+    ...request,
+    operation_logs: operationLogs
+  };
 }
 
 async function getExistingRequestRow(supabase, id) {
@@ -95,7 +193,7 @@ module.exports = async function handler(req, res) {
     await closeExpiredRequests(supabase);
 
     if (req.method === "GET") {
-      ok(res, await getRequestWithContext(supabase, id));
+      ok(res, await getRequestDetailWithLogs(supabase, id));
       return;
     }
 
@@ -119,6 +217,9 @@ module.exports = async function handler(req, res) {
         payload.closed_at = null;
         payload.closed_reason = null;
       }
+      payload.last_operated_by = resolveAdminDisplayName(adminUser);
+      payload.last_operated_at = new Date().toISOString();
+      const changedFields = buildChangedFields(existing, payload);
 
       const shouldClose = payload.status === "closed" && existing.status !== "closed";
       const wasPaid = parsePaymentStatus(existing.admin_note) === "paid";
@@ -132,14 +233,43 @@ module.exports = async function handler(req, res) {
         throw error;
       }
 
+      if (changedFields.length) {
+        try {
+          await logAdminOperation(supabase, {
+            admin_user_id: adminUser.id || null,
+            target_type: "transport_request",
+            target_id: existing.id,
+            action: "update_transport_request",
+            before_data: changedFields.reduce((result, item) => {
+              result[item.field] = item.before;
+              return result;
+            }, {}),
+            after_data: changedFields.reduce((result, item) => {
+              result[item.field] = item.after;
+              return result;
+            }, {}),
+            metadata: {
+              order_no: existing.order_no,
+              admin_name: resolveAdminDisplayName(adminUser),
+              changed_fields: changedFields
+            }
+          });
+        } catch (logError) {
+          console.warn("transport_request_operation_log_failed", {
+            request_id: existing.id,
+            message: logError?.message || String(logError)
+          });
+        }
+      }
+
       if (shouldClose) {
         await removeRequestFromGroup(supabase, id);
       }
 
-      let updatedRequest = await getRequestWithContext(supabase, id);
+      let updatedRequest = await getRequestDetailWithLogs(supabase, id);
       if (!shouldClose && updatedRequest?.group_ref) {
         await syncGroupStatus(supabase, updatedRequest.group_ref);
-        updatedRequest = await getRequestWithContext(supabase, id);
+        updatedRequest = await getRequestDetailWithLogs(supabase, id);
       }
 
       let paymentEmail = null;
@@ -164,6 +294,9 @@ module.exports = async function handler(req, res) {
 
     if (req.method === "DELETE") {
       const existing = await getExistingRequestRow(supabase, id);
+      const groupLifecycle = await removeRequestFromGroup(supabase, existing.id, {
+        regroup: false
+      });
 
       const { error } = await supabase
         .from("transport_requests")
@@ -174,7 +307,20 @@ module.exports = async function handler(req, res) {
         throw error;
       }
 
-      ok(res, existing);
+      const releasedMembershipClaim = await releaseClaimOrderBinding(supabase, {
+        claim_id: existing.membership_benefit_claim_id,
+        order_table: "transport_requests",
+        order_id: existing.id,
+        order_no: existing.order_no,
+        admin_user_id: adminUser.id || null,
+        reason: "transport_request_deleted"
+      });
+
+      ok(res, {
+        ...existing,
+        group_lifecycle: groupLifecycle,
+        released_membership_claim: releasedMembershipClaim
+      });
       return;
     }
 

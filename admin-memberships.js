@@ -77,6 +77,7 @@
       membership_claim_cancelled: "作废权益",
       membership_claim_reset: "重置权益",
       membership_claim_order_bound: "绑定订单",
+      membership_claim_order_unbound: "解绑订单",
       membership_activation_code_created: "生成激活码",
       membership_activation_code_deleted: "删除激活码",
       membership_activation_code_revoked: "作废激活码",

@@ -227,7 +227,6 @@
       `航班号: ${data.flight_no}`,
       `航班时间: ${formatDateTime(data.flight_datetime)}`,
       `期望时间: ${formatDateTime(data.preferred_time)}`,
-      `拼车价位: ${data.share_goal_label}`,
       `同行人数: ${data.passenger_count_label}`,
       `截止日期: ${data.deadline_date || "-"}`,
       `行李: ${data.luggage_text}`,
@@ -683,7 +682,6 @@
       }
 
       const serviceMode = getCheckedValue(form, "service_mode");
-      const shareGoal = getCheckedValue(form, "share_goal");
       const passengerCount = String(form.passenger_count?.value || "1").trim() || "1";
       const fallbackAccept = getCheckedValue(form, "fallback_accept");
       const luggageSelections = getLuggageSelections(form);
@@ -700,7 +698,6 @@
       const fallbackAcceptLabel = fallbackAccept === "accept" ? "接受" : "不接受";
 
       const notesExtra = [
-        `拼车价位: ${getCheckedLabel(form, "share_goal") || "-"}`,
         `截止日期: ${form.deadline_date.value || "-"}`,
         `同行人数: ${passengerCount}`,
         `行李: ${luggageText}`,
@@ -723,7 +720,6 @@
         flight_no: form.flight_no.value.trim(),
         flight_datetime: form.flight_datetime.value,
         preferred_time: form.preferred_time.value,
-        share_goal_label: getCheckedLabel(form, "share_goal") || "-",
         passenger_count_label: passengerCount,
         deadline_date: form.deadline_date.value,
         luggage_text: luggageText,
@@ -758,7 +754,7 @@
         location_to: serviceMode === "dropoff" ? `${airportMeta.name} ${terminal}`.trim() : address,
         preferred_time_start: summaryData.preferred_time,
         preferred_time_end: null,
-        shareable: shareGoal !== "1",
+        shareable: true,
         notes: [
           `原始服务类型: ${summaryData.service_mode_label}`,
           notesExtra

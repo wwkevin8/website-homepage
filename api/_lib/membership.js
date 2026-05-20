@@ -120,6 +120,18 @@ function normalizeMemberBirthday(value) {
   return `${match[1]}-${match[2]}`;
 }
 
+function birthdayParts(value) {
+  const birthday = normalizeText(value);
+  const match = birthday.match(/^(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/);
+  if (!match) {
+    return { month: null, day: null };
+  }
+  return {
+    month: Number(match[1]),
+    day: Number(match[2])
+  };
+}
+
 function hashActivationCode(code) {
   const normalized = normalizeActivationCode(code);
   const secret = normalizeText(process.env.MEMBERSHIP_CODE_HASH_SECRET);
@@ -173,6 +185,7 @@ function siteUserDisplayFields(row) {
     name: row.nickname || row.name || "",
     email: row.email || "",
     phone: row.phone || "",
+    wechat_id: row.wechat_id || "",
     public_user_id: row.public_user_id || ""
   };
 }
@@ -545,6 +558,87 @@ async function bindClaimToOrder(supabase, claimId, orderTable, orderId, orderNo,
   return data;
 }
 
+async function releaseClaimOrderBinding(supabase, options = {}) {
+  const claimId = normalizeText(options.claim_id || options.claimId);
+  const orderTable = normalizeText(options.order_table || options.orderTable);
+  const orderId = normalizeText(options.order_id || options.orderId);
+  const orderNo = normalizeText(options.order_no || options.orderNo);
+  const adminUserId = options.admin_user_id || options.adminUserId || null;
+  const reason = normalizeText(options.reason);
+
+  if (!claimId && !orderId && !orderNo) {
+    return null;
+  }
+
+  let query = supabase
+    .from("membership_benefit_claims")
+    .select("*")
+    .limit(1);
+
+  if (claimId) {
+    query = query.eq("id", claimId);
+  } else {
+    query = query.eq("linked_order_table", orderTable || "transport_requests");
+    if (orderId) {
+      query = query.eq("linked_order_id", orderId);
+    } else {
+      query = query.eq("linked_order_no", orderNo);
+    }
+  }
+
+  const { data: beforeRows, error: beforeError } = await query;
+  if (beforeError) {
+    throw beforeError;
+  }
+  const before = Array.isArray(beforeRows) ? (beforeRows[0] || null) : beforeRows;
+  if (!before || before.status !== "reserved") {
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from("membership_benefit_claims")
+    .update({
+      status: "selected",
+      reserved_at: null,
+      linked_order_table: null,
+      linked_order_id: null,
+      linked_order_no: null,
+      membership_discount_amount: 0,
+      extra_charge_amount: 0,
+      final_price: null,
+      discount_breakdown_json: {},
+      updated_by_admin_id: adminUserId || null
+    })
+    .eq("id", before.id)
+    .eq("status", "reserved")
+    .select("*")
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+  if (!data) {
+    return null;
+  }
+
+  await logMembershipAudit(supabase, {
+    admin_user_id: adminUserId || null,
+    site_user_id: data.site_user_id,
+    entitlement_id: data.entitlement_id,
+    claim_id: data.id,
+    action: "membership_claim_order_unbound",
+    before_data: before,
+    after_data: data,
+    metadata: {
+      reason: reason || null,
+      order_table: before.linked_order_table || orderTable || null,
+      order_id: before.linked_order_id || orderId || null,
+      order_no: before.linked_order_no || orderNo || null
+    }
+  });
+  return data;
+}
+
 async function markClaimUsed(supabase, claimId, adminUserId) {
   const { data: before, error: beforeError } = await supabase
     .from("membership_benefit_claims")
@@ -790,6 +884,27 @@ async function grantMembershipEntitlement(supabase, payload = {}, adminUserId) {
     throw error;
   }
 
+  const memberBirthday = normalizeText(payload.metadata?.member_birthday || payload.member_birthday);
+  const birthday = birthdayParts(memberBirthday);
+  const optionalPatch = {
+    created_by_admin_id: adminUserId || data.granted_by_admin_id || null,
+    advisor_admin_id: payload.advisor_admin_id || payload.created_by_admin_id || adminUserId || data.granted_by_admin_id || null
+  };
+  if (birthday.month && birthday.day) {
+    optionalPatch.birthday_month = birthday.month;
+    optionalPatch.birthday_day = birthday.day;
+    optionalPatch.birthday_reminder_enabled = payload.birthday_reminder_enabled !== false;
+  }
+  const { error: optionalPatchError } = await supabase
+    .from("membership_entitlements")
+    .update(optionalPatch)
+    .eq("id", data.id);
+  if (optionalPatchError) {
+    console.warn("[membership] optional birthday/advisor patch skipped", optionalPatchError);
+  } else {
+    Object.assign(data, optionalPatch);
+  }
+
   await logMembershipAudit(supabase, {
     admin_user_id: adminUserId || null,
     site_user_id: data.site_user_id,
@@ -804,6 +919,9 @@ async function createMembershipActivationCode(supabase, payload = {}, adminUserI
   const membershipCycle = assertMembershipCycle(payload.membership_cycle || getCurrentMembershipCycle());
   const expiresAt = normalizeText(payload.expires_at) || null;
   const boundEmail = normalizeEmail(payload.bound_email) || null;
+  const benefitType = normalizeText(payload.benefit_type);
+  const rawNotes = normalizeText(payload.notes);
+  const notes = [rawNotes, benefitType ? `权益类型: ${benefitType}` : ""].filter(Boolean).join("\n") || null;
   const generatedByAdminId = adminUserId || null;
   let lastError = null;
 
@@ -817,7 +935,7 @@ async function createMembershipActivationCode(supabase, payload = {}, adminUserI
       bound_email: boundEmail,
       bound_phone: normalizeText(payload.bound_phone) || null,
       booking_reference: normalizeText(payload.booking_reference) || null,
-      notes: normalizeText(payload.notes) || null,
+      notes,
       generated_by_admin_id: generatedByAdminId,
       expires_at: expiresAt
     };
@@ -837,7 +955,8 @@ async function createMembershipActivationCode(supabase, payload = {}, adminUserI
           code_prefix: data.code_prefix,
           membership_cycle: data.membership_cycle,
           bound_email: data.bound_email || null,
-          booking_reference: data.booking_reference || null
+          booking_reference: data.booking_reference || null,
+          benefit_type: benefitType || null
         }
       });
       return { code, activationCode: data };
@@ -850,6 +969,33 @@ async function createMembershipActivationCode(supabase, payload = {}, adminUserI
   }
 
   throw lastError || new Error("Failed to generate membership activation code");
+}
+
+async function createMembershipActivationCodes(supabase, payload = {}, adminUserId) {
+  const rawCount = Number(payload.count || payload.quantity || 1);
+  const count = Number.isFinite(rawCount) ? Math.min(Math.max(1, Math.floor(rawCount)), 200) : 1;
+  const items = [];
+  for (let index = 0; index < count; index += 1) {
+    const result = await createMembershipActivationCode(supabase, payload, adminUserId);
+    items.push(result);
+  }
+
+  await logMembershipAudit(supabase, {
+    admin_user_id: adminUserId || null,
+    action: "membership_activation_codes_batch_created",
+    metadata: {
+      count,
+      membership_cycle: assertMembershipCycle(payload.membership_cycle || getCurrentMembershipCycle()),
+      benefit_type: normalizeText(payload.benefit_type) || null,
+      notes: normalizeText(payload.notes) || null,
+      code_prefixes: items.map(item => item.activationCode?.code_prefix).filter(Boolean)
+    }
+  });
+
+  return {
+    count: items.length,
+    items
+  };
 }
 
 async function listMembershipActivationCodes(supabase, filters = {}) {
@@ -909,7 +1055,7 @@ async function listMembershipActivationCodes(supabase, filters = {}) {
   if (redeemedUserIds.length) {
     const { data: redeemedUsers, error: redeemedUserError } = await supabase
       .from("site_users")
-      .select("id, public_user_id, email, phone, nickname")
+      .select("id, public_user_id, email, phone, nickname, wechat_id")
       .in("id", redeemedUserIds);
     if (redeemedUserError) {
       throw redeemedUserError;
@@ -1205,12 +1351,14 @@ module.exports = {
   selectBenefit,
   calculateMembershipDiscount,
   bindClaimToOrder,
+  releaseClaimOrderBinding,
   markClaimUsed,
   cancelOrResetClaim,
   createManualClaim,
   deleteMembershipEntitlement,
   grantMembershipEntitlement,
   createMembershipActivationCode,
+  createMembershipActivationCodes,
   deleteMembershipActivationCode,
   listMembershipActivationCodes,
   revokeMembershipActivationCode,

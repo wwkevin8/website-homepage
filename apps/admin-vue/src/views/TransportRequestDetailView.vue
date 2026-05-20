@@ -1,37 +1,68 @@
 <script setup>
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, reactive, ref, watch } from "vue";
 import { useRoute } from "vue-router";
-import { fetchTransportRequest } from "@/api/admin-api";
+import {
+  fetchTransportGroup,
+  fetchTransportGroups,
+  fetchTransportRequest,
+  saveTransportGroupMembers,
+  updateTransportRequest
+} from "@/api/admin-api";
 import BackButton from "@/components/BackButton.vue";
-import DetailSection from "@/components/DetailSection.vue";
 import EmptyState from "@/components/EmptyState.vue";
 import ErrorState from "@/components/ErrorState.vue";
-import JsonPreview from "@/components/JsonPreview.vue";
 import LoadingState from "@/components/LoadingState.vue";
-import ReadonlyField from "@/components/ReadonlyField.vue";
-import StatusBadge from "@/components/StatusBadge.vue";
 
 const route = useRoute();
 const request = ref(null);
 const loading = ref(false);
+const saving = ref(false);
+const assigning = ref(false);
 const error = ref("");
 const notice = ref("");
+const assignGroupId = ref("");
+const assignableGroups = ref([]);
 
 const requestId = computed(() => String(route.params.id || "").trim());
+const operationLogs = computed(() => Array.isArray(request.value?.operation_logs) ? request.value.operation_logs : []);
+const currentGroupId = computed(() => String(request.value?.group_id || "").trim());
+const currentGroupRef = computed(() => String(request.value?.group_ref || request.value?.group_id || "").trim());
+const hasCurrentGroup = computed(() => Boolean(currentGroupId.value && currentGroupRef.value));
+
+const airportOptions = [
+  { code: "LHR", name: "Heathrow" },
+  { code: "LGW", name: "Gatwick" },
+  { code: "MAN", name: "Manchester" },
+  { code: "BHX", name: "Birmingham" },
+  { code: "LTN", name: "Luton" },
+  { code: "STN", name: "Stansted" }
+];
+
+const editableForm = reactive({
+  airport_code: "",
+  airport_name: "",
+  terminal: "",
+  flight_no: "",
+  flight_datetime: "",
+  location_from: "",
+  location_to: "",
+  preferred_time_start: "",
+  notes: "",
+  admin_note: ""
+});
 
 function parseJson(value) {
-  if (!value) {
-    return null;
-  }
-  if (typeof value === "object") {
-    return value;
-  }
+  if (!value) return {};
+  if (typeof value === "object") return value;
   try {
-    return JSON.parse(value);
+    const parsed = JSON.parse(value);
+    return parsed && typeof parsed === "object" ? parsed : {};
   } catch (err) {
-    return value;
+    return {};
   }
 }
+
+const extraDetail = computed(() => parseJson(request.value?.extra_detail_json || request.value?.details_json));
 
 function firstValue(...values) {
   return values.find(value => value !== null && value !== undefined && String(value).trim() !== "");
@@ -41,101 +72,85 @@ function displayValue(value) {
   return value === null || value === undefined || value === "" ? "--" : String(value);
 }
 
+function fieldValue(...values) {
+  return displayValue(firstValue(...values));
+}
+
+function formText(...values) {
+  const value = firstValue(...values);
+  return value ? String(value) : "";
+}
+
+function emptyToNull(value) {
+  const next = String(value || "").trim();
+  return next ? next : null;
+}
+
 function formatDateTime(value) {
-  if (!value) {
-    return "--";
-  }
-  try {
-    return new Intl.DateTimeFormat("zh-CN", {
-      timeZone: "Europe/London",
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false
-    }).format(new Date(value));
-  } catch (err) {
-    return displayValue(value);
-  }
+  if (!value) return "--";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return displayValue(value);
+  return new Intl.DateTimeFormat("zh-CN", {
+    timeZone: "Europe/London",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false
+  }).format(date);
 }
 
-function formatDate(value) {
-  const text = String(value || "").slice(0, 10);
-  if (!text) {
-    return "--";
-  }
-  try {
-    return new Intl.DateTimeFormat("zh-CN", {
-      timeZone: "Europe/London",
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit"
-    }).format(new Date(`${text}T00:00:00`));
-  } catch (err) {
-    return text;
-  }
+function formatDateTimeLocal(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value || "").replace(" ", "T").slice(0, 16);
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/London",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    hourCycle: "h23"
+  }).formatToParts(date).reduce((result, part) => {
+    if (part.type !== "literal") result[part.type] = part.value;
+    return result;
+  }, {});
+  return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}`;
 }
 
-function formatMoney(value) {
-  if (value === null || value === undefined || value === "") {
-    return "--";
-  }
-  const amount = Number(value);
-  return Number.isFinite(amount) ? `GBP ${amount.toFixed(2)}` : displayValue(value);
+function datePart(value) {
+  const local = formatDateTimeLocal(value);
+  return local ? local.slice(0, 10) : "";
 }
 
-const membershipBreakdown = computed(() => parseJson(request.value?.membership_discount_breakdown_json) || null);
-const rawDetail = computed(() => ({
-  membership_discount_breakdown_json: membershipBreakdown.value,
-  luggage_options_json: parseJson(request.value?.luggage_options_json),
-  extra_detail_json: parseJson(request.value?.extra_detail_json || request.value?.details_json)
-}));
-
-function serviceLabel(serviceType = request.value?.service_type) {
+function serviceLabel() {
   const labels = {
     pickup: "接机",
     dropoff: "送机"
   };
-  return labels[serviceType] || displayValue(serviceType);
-}
-
-function statusLabel(status) {
-  const labels = {
-    pending: "待处理",
-    pending_confirmation: "待确认",
-    confirmed: "已确认",
-    grouped: "已拼车",
-    open: "拼车中",
-    closed: "已关闭",
-    cancelled: "已取消",
-    canceled: "已取消"
-  };
-  return labels[status] || displayValue(status);
-}
-
-function statusTone(status) {
-  if (status === "confirmed" || status === "grouped") {
-    return "success";
-  }
-  if (status === "cancelled" || status === "canceled" || status === "closed") {
-    return "neutral";
-  }
-  return "warning";
+  return labels[request.value?.service_type] || displayValue(request.value?.service_type);
 }
 
 function luggageSummary() {
-  const text = String(request.value?.notes || "").match(/行李[^：:]*[：:]?\s*([^\n]+)/)?.[1];
-  if (text) {
-    return text.trim();
-  }
+  const fromJson = firstValue(
+    extraDetail.value?.luggage_text,
+    extraDetail.value?.luggage,
+    extraDetail.value?.luggage_summary,
+    extraDetail.value?.luggageDescription
+  );
+  if (fromJson) return displayValue(fromJson);
+
   const count = Number(request.value?.luggage_count || 0);
   return count > 0 ? `共 ${count} 件` : "--";
 }
 
-function groupHref() {
-  const groupRef = String(request.value?.group_ref || request.value?.group_id || "").trim();
-  return groupRef ? `/admin-vue/transport/groups/${encodeURIComponent(groupRef)}?return_to=${encodeURIComponent(`/admin-vue/transport/requests/${requestId.value}`)}` : "";
+function groupDetailHref(groupRef = currentGroupRef.value) {
+  return groupRef
+    ? `/admin-vue/transport/groups/${encodeURIComponent(groupRef)}?return_to=${encodeURIComponent(`/admin-vue/transport/requests/${requestId.value}`)}`
+    : "";
 }
 
 function listHref() {
@@ -143,71 +158,124 @@ function listHref() {
   return returnTo.startsWith("/admin-vue/transport/requests") ? returnTo : "/admin-vue/transport/requests";
 }
 
-function oldDetailHref() {
-  return `/transport-admin-request-edit.html?id=${encodeURIComponent(requestId.value)}`;
+function populateEditableForm(record = {}) {
+  editableForm.airport_code = formText(record.airport_code);
+  editableForm.airport_name = formText(record.airport_name, extraDetail.value?.airport_name);
+  editableForm.terminal = formText(record.terminal, extraDetail.value?.terminal);
+  editableForm.flight_no = formText(record.flight_no, extraDetail.value?.flight_no);
+  editableForm.flight_datetime = formatDateTimeLocal(record.flight_datetime);
+  editableForm.location_from = formText(record.location_from, record.pickup_address, extraDetail.value?.location_from);
+  editableForm.location_to = formText(record.location_to, record.dropoff_address, record.address_full, extraDetail.value?.location_to);
+  editableForm.preferred_time_start = formatDateTimeLocal(firstValue(record.preferred_time_start, record.service_time, extraDetail.value?.preferred_time_start));
+  editableForm.notes = formText(record.notes, extraDetail.value?.notes);
+  editableForm.admin_note = formText(record.admin_note, record.staff_note, record.customer_service_note);
 }
 
-function field(label, value, multiline = false) {
-  return { label, value: displayValue(value), multiline };
+function handleAirportCodeChange() {
+  const option = airportOptions.find(item => item.code === editableForm.airport_code);
+  if (option && (!editableForm.airport_name || airportOptions.some(item => item.name === editableForm.airport_name))) {
+    editableForm.airport_name = option.name;
+  }
 }
 
-const baseFields = computed(() => [
-  field("Order No", request.value?.order_no),
-  field("服务类型", serviceLabel()),
-  field("状态", statusLabel(request.value?.status)),
-  field("创建时间", formatDateTime(request.value?.created_at)),
-  field("更新时间", formatDateTime(request.value?.updated_at))
-]);
+function logAdminName(log) {
+  return displayValue(log?.metadata?.admin_name || log?.admin_user?.name || log?.admin_user?.username || log?.admin_user?.email || log?.admin_user_id);
+}
 
-const studentFields = computed(() => [
-  field("姓名", request.value?.student_name),
-  field("电话", request.value?.phone),
-  field("邮箱", firstValue(request.value?.student_email, request.value?.email)),
-  field("微信号", request.value?.wechat),
-  field("乘客人数", firstValue(request.value?.passenger_count, 1)),
-  field("行李数量", luggageSummary(), true)
-]);
+function logActionLabel(log) {
+  const labels = {
+    update_transport_request: "编辑订单",
+    add_transport_request_to_group: "加入拼车组",
+    remove_transport_request_from_group: "移出拼车组",
+    move_transport_request_group: "更换拼车组"
+  };
+  return labels[log?.action] || displayValue(log?.action);
+}
 
-const flightFields = computed(() => [
-  field("机场", [request.value?.airport_code, request.value?.airport_name].filter(Boolean).join(" / ")),
-  field("航站楼", request.value?.terminal),
-  field("航班号", request.value?.flight_no),
-  field("到达/出发日期时间", formatDateTime(request.value?.flight_datetime)),
-  field("服务日期", formatDate(firstValue(request.value?.service_date, request.value?.flight_datetime, request.value?.preferred_time_start))),
-  field("服务时间", formatDateTime(firstValue(request.value?.preferred_time_start, request.value?.flight_datetime)))
-]);
+function logChangedFields(log) {
+  if (Array.isArray(log?.metadata?.changed_fields)) {
+    return log.metadata.changed_fields;
+  }
+  const beforeData = log?.before_data || {};
+  const afterData = log?.after_data || {};
+  return Array.from(new Set([...Object.keys(beforeData), ...Object.keys(afterData)])).map(field => ({
+    field,
+    label: field,
+    before: beforeData[field],
+    after: afterData[field]
+  }));
+}
 
-const tripFields = computed(() => [
-  field("出发地", request.value?.location_from),
-  field("目的地", request.value?.location_to),
-  field("接送地址", firstValue(request.value?.pickup_address, request.value?.dropoff_address, request.value?.address_full, request.value?.location_to), true),
-  field("公寓/楼宇", firstValue(request.value?.room_or_building, request.value?.apartment_name)),
-  field("邮编", request.value?.postcode),
-  field("备注", request.value?.notes, true)
-]);
+async function loadAssignableGroups(record) {
+  if (!record?.id) {
+    assignableGroups.value = [];
+    return;
+  }
+  const refDate = datePart(record.flight_datetime || record.preferred_time_start);
+  const payload = await fetchTransportGroups({
+    service_type: record.service_type,
+    airport_code: record.airport_code,
+    date_from: refDate || undefined,
+    date_to: refDate || undefined
+  }).catch(() => []);
+  const groups = Array.isArray(payload?.items) ? payload.items : Array.isArray(payload) ? payload : [];
+  assignableGroups.value = groups.filter(group => {
+    const groupId = String(group.group_id || "").trim();
+    const groupRef = String(group.group_ref || group.id || group.group_id || "").trim();
+    return groupId !== currentGroupId.value && groupRef !== currentGroupRef.value;
+  });
+}
 
-const groupFields = computed(() => [
-  field("当前 Group ID", firstValue(request.value?.group_id, request.value?.group_ref)),
-  field("是否已匹配", firstValue(request.value?.group_id, request.value?.group_ref) ? "是" : "否"),
-  field("拼车状态", statusLabel(request.value?.status)),
-  field("拼车组引用", request.value?.group_ref)
-]);
+async function saveEditableFields() {
+  if (!request.value || saving.value) return;
+  saving.value = true;
+  error.value = "";
+  notice.value = "";
+  try {
+    const updated = await updateTransportRequest(requestId.value, {
+      airport_code: editableForm.airport_code,
+      airport_name: editableForm.airport_name,
+      terminal: emptyToNull(editableForm.terminal),
+      flight_no: emptyToNull(editableForm.flight_no),
+      flight_datetime: emptyToNull(editableForm.flight_datetime),
+      location_from: editableForm.location_from,
+      location_to: editableForm.location_to,
+      preferred_time_start: emptyToNull(editableForm.preferred_time_start),
+      notes: emptyToNull(editableForm.notes),
+      admin_note: emptyToNull(editableForm.admin_note)
+    });
+    request.value = updated?.request || updated?.item || updated;
+    await loadAssignableGroups(request.value);
+    notice.value = "已保存，系统已同步更新上次操作人、时间和操作记录。";
+  } catch (err) {
+    notice.value = `保存失败：${err.message || "请检查必填字段后重试"}`;
+  } finally {
+    saving.value = false;
+  }
+}
 
-const noteFields = computed(() => [
-  field("用户备注", request.value?.notes, true),
-  field("内部备注", request.value?.admin_note, true),
-  field("客服备注", firstValue(request.value?.staff_note, request.value?.customer_service_note), true)
-]);
-
-const membershipFields = computed(() => [
-  field("membership_benefit_claim_id", request.value?.membership_benefit_claim_id),
-  field("membership_discount_amount", formatMoney(request.value?.membership_discount_amount)),
-  field("extra_charge_amount", formatMoney(request.value?.extra_charge_amount)),
-  field("final_price", formatMoney(request.value?.final_price))
-]);
-
-function showPlaceholder(action) {
-  notice.value = `${action}会在后续迁移阶段实现；当前 Vue 详情页不会发起修改请求。`;
+async function assignToGroup(targetGroupId) {
+  const target = String(targetGroupId || "").trim();
+  if (!target || !request.value?.id || assigning.value) return;
+  assigning.value = true;
+  notice.value = "";
+  try {
+    const targetGroup = await fetchTransportGroup(target);
+    const requestIds = new Set(
+      (targetGroup?.members || [])
+        .map(member => member.request_id || member.transport_requests?.id)
+        .filter(Boolean)
+    );
+    requestIds.add(request.value.id);
+    await saveTransportGroupMembers(target, Array.from(requestIds));
+    await loadRequest();
+    assignGroupId.value = "";
+    notice.value = "已更换拼车组，系统已确保该订单只属于一个拼车组。";
+  } catch (err) {
+    notice.value = `更换拼车组失败：${err.message || "请检查 Group ID 后重试"}`;
+  } finally {
+    assigning.value = false;
+  }
 }
 
 async function loadRequest() {
@@ -222,6 +290,7 @@ async function loadRequest() {
   try {
     const payload = await fetchTransportRequest(requestId.value);
     request.value = payload?.request || payload?.item || payload;
+    await loadAssignableGroups(request.value);
   } catch (err) {
     request.value = null;
     error.value = err.message || "接送机订单详情加载失败";
@@ -230,6 +299,10 @@ async function loadRequest() {
   }
 }
 
+watch(request, value => {
+  if (value) populateEditableForm(value);
+});
+
 onMounted(loadRequest);
 </script>
 
@@ -237,12 +310,11 @@ onMounted(loadRequest);
   <section class="transport-request-detail-view storage-detail-view">
     <div class="view-heading">
       <div>
-        <p class="view-heading__eyebrow">Transport request readonly detail</p>
+        <p class="view-heading__eyebrow">Transport request detail</p>
         <h2>接送机订单详情</h2>
       </div>
       <div class="view-heading__actions">
         <BackButton :href="listHref()" label="返回列表" />
-        <a class="secondary-button" :href="oldDetailHref()">打开旧详情页</a>
       </div>
     </div>
 
@@ -252,74 +324,157 @@ onMounted(loadRequest);
     <EmptyState v-else-if="!request" title="未找到接送机订单" description="请从接送机订单列表重新进入详情页。" />
 
     <template v-else>
-      <div class="detail-summary-bar">
-        <div>
-          <span>Order No</span>
-          <strong>{{ displayValue(request.order_no) }}</strong>
-        </div>
-        <StatusBadge :tone="statusTone(request.status)">{{ statusLabel(request.status) }}</StatusBadge>
-      </div>
+      <form class="transport-simple-detail-form" @submit.prevent="saveEditableFields">
+        <label>
+          <span>服务类型</span>
+          <input readonly :value="serviceLabel()" />
+        </label>
 
-      <DetailSection title="订单基础信息" description="按旧编辑页顶部订单身份信息只读展示。">
-        <div class="readonly-field-grid">
-          <ReadonlyField v-for="item in baseFields" :key="item.label" v-bind="item" />
-        </div>
-      </DetailSection>
+        <label>
+          <span>姓名</span>
+          <input readonly :value="fieldValue(request.student_name, request.name, extraDetail.name)" />
+        </label>
 
-      <DetailSection title="学生 / 客户信息" description="展示学生联系方式、乘客人数和行李摘要。">
-        <div class="readonly-field-grid">
-          <ReadonlyField v-for="item in studentFields" :key="item.label" v-bind="item" />
-        </div>
-      </DetailSection>
+        <label class="transport-simple-detail-form__wide">
+          <span>邮箱</span>
+          <input readonly :value="fieldValue(request.student_email, request.email, extraDetail.email)" />
+        </label>
 
-      <DetailSection title="航班与机场信息">
-        <div class="readonly-field-grid">
-          <ReadonlyField v-for="item in flightFields" :key="item.label" v-bind="item" />
-        </div>
-      </DetailSection>
+        <label>
+          <span>手机号</span>
+          <input readonly :value="fieldValue(request.phone, request.mobile, extraDetail.phone)" />
+        </label>
 
-      <DetailSection title="行程信息">
-        <div class="readonly-field-grid">
-          <ReadonlyField v-for="item in tripFields" :key="item.label" v-bind="item" />
-        </div>
-      </DetailSection>
+        <label>
+          <span>微信号</span>
+          <input readonly :value="fieldValue(request.wechat, request.wechat_id, extraDetail.wechat)" />
+        </label>
 
-      <DetailSection title="拼车信息" description="只读展示当前匹配状态，更换拼车组后续迁移。">
-        <div class="readonly-field-grid">
-          <ReadonlyField v-for="item in groupFields" :key="item.label" v-bind="item" />
-        </div>
-        <a v-if="groupHref()" class="secondary-button detail-inline-link" :href="groupHref()">打开旧拼车组详情</a>
-      </DetailSection>
+        <label class="transport-simple-detail-form__wide">
+          <span>登记人数</span>
+          <input readonly :value="fieldValue(request.passenger_count, extraDetail.passenger_count, 1)" />
+        </label>
 
-      <DetailSection title="会员抵扣与价格信息">
-        <div class="readonly-field-grid">
-          <ReadonlyField v-for="item in membershipFields" :key="item.label" v-bind="item" />
-        </div>
-      </DetailSection>
+        <label class="transport-simple-detail-form__wide">
+          <span>行李数量</span>
+          <textarea readonly rows="3" :value="luggageSummary()"></textarea>
+        </label>
 
-      <DetailSection title="备注信息">
-        <div class="readonly-field-grid">
-          <ReadonlyField v-for="item in noteFields" :key="item.label" v-bind="item" />
-        </div>
-      </DetailSection>
+        <label>
+          <span>机场代码</span>
+          <select v-model="editableForm.airport_code" :disabled="saving" @change="handleAirportCodeChange">
+            <option v-if="editableForm.airport_code && !airportOptions.some(item => item.code === editableForm.airport_code)" :value="editableForm.airport_code">
+              {{ editableForm.airport_code }}
+            </option>
+            <option v-for="airport in airportOptions" :key="airport.code" :value="airport.code">
+              {{ airport.code }}
+            </option>
+          </select>
+        </label>
 
-      <DetailSection title="原始 / 补充字段" description="额外 JSON 默认折叠展示，避免撑开页面。">
-        <div class="json-preview-grid">
-          <JsonPreview title="membership_discount_breakdown_json" :value="membershipBreakdown" />
-          <JsonPreview title="luggage_options_json" :value="rawDetail.luggage_options_json" />
-          <JsonPreview title="extra_detail_json" :value="rawDetail.extra_detail_json" />
-        </div>
-      </DetailSection>
+        <label>
+          <span>机场名称</span>
+          <input v-model="editableForm.airport_name" :disabled="saving" />
+        </label>
 
-      <DetailSection title="操作区" description="第一轮只读详情不执行保存、删除、分配或付款相关操作。">
-        <div class="detail-action-row">
-          <button class="table-action-button" type="button" @click="showPlaceholder('保存订单')">保存订单</button>
-          <button class="table-action-button" type="button" @click="showPlaceholder('更换拼车组')">更换拼车组</button>
-          <button class="table-action-button" type="button" @click="showPlaceholder('强制更换')">强制更换</button>
-          <button class="table-action-button" type="button" @click="showPlaceholder('重新分配')">重新分配</button>
-          <button class="table-action-button table-action-button--danger" type="button" @click="showPlaceholder('删除订单')">删除订单</button>
+        <label>
+          <span>出发航站楼</span>
+          <input v-model="editableForm.terminal" :disabled="saving" />
+        </label>
+
+        <label>
+          <span>航班号</span>
+          <input v-model="editableForm.flight_no" :disabled="saving" />
+        </label>
+
+        <label>
+          <span>航班时间</span>
+          <input v-model="editableForm.flight_datetime" :disabled="saving" type="datetime-local" />
+        </label>
+
+        <label>
+          <span>出发地</span>
+          <input v-model="editableForm.location_from" :disabled="saving" />
+        </label>
+
+        <label>
+          <span>目的地址</span>
+          <input v-model="editableForm.location_to" :disabled="saving" />
+        </label>
+
+        <label class="transport-simple-detail-form__wide">
+          <span>接送时间</span>
+          <input v-model="editableForm.preferred_time_start" :disabled="saving" type="datetime-local" />
+        </label>
+
+        <label class="transport-simple-detail-form__wide">
+          <span>备注</span>
+          <textarea v-model="editableForm.notes" :disabled="saving" rows="3" placeholder="--"></textarea>
+        </label>
+
+        <label class="transport-simple-detail-form__wide">
+          <span>内部备注</span>
+          <textarea v-model="editableForm.admin_note" :disabled="saving" rows="3" placeholder="--"></textarea>
+        </label>
+
+        <div class="transport-simple-detail-form__actions">
+          <button class="primary-button" type="submit" :disabled="saving">
+            {{ saving ? "保存中..." : "保存订单" }}
+          </button>
         </div>
-      </DetailSection>
+      </form>
+
+      <section class="transport-detail-panel">
+        <p v-if="hasCurrentGroup" class="transport-current-group-hint">
+          当前订单 {{ displayValue(request.order_no) }} 的拼车组为
+          <a :href="groupDetailHref()"><strong>{{ currentGroupId }}</strong></a>。
+        </p>
+        <p v-else class="transport-current-group-hint">当前订单暂未关联拼车组。</p>
+      </section>
+
+      <section class="transport-detail-panel">
+        <h3>更换现有拼车组</h3>
+        <p class="detail-muted">更换到目标拼车组后，系统会自动退出原拼车组，确保一单只属于一个拼车组。</p>
+        <form class="transport-force-assign-row" @submit.prevent="assignToGroup(assignGroupId)">
+          <label>
+            <span>按 Group ID 强制更换</span>
+            <input v-model="assignGroupId" :disabled="assigning" type="text" placeholder="输入目标 Group ID" autocomplete="off" />
+          </label>
+          <button class="table-action-button" type="submit" :disabled="assigning || !assignGroupId.trim()">
+            {{ assigning ? "更换中..." : "执行更换" }}
+          </button>
+        </form>
+
+        <div v-if="assignableGroups.length" class="transport-assign-card-list">
+          <article v-for="group in assignableGroups" :key="group.id || group.group_id" class="transport-assign-card">
+            <div>
+              <strong>{{ displayValue(group.group_id || group.id) }}</strong>
+              <p>{{ displayValue(group.airport_code) }} / {{ displayValue(group.terminal) }} / {{ formatDateTime(group.preferred_time_start || group.group_date) }}</p>
+              <p>{{ displayValue(group.location_to) }} / 当前 {{ Number(group.current_passenger_count || 0) }} 人 / 剩余 {{ Number(group.remaining_passenger_count || 0) }} 位</p>
+            </div>
+            <button class="table-action-button" type="button" :disabled="assigning" @click="assignToGroup(group.id || group.group_ref || group.group_id)">
+              更换到该拼车组
+            </button>
+          </article>
+        </div>
+        <div v-else class="transport-empty-box">当前没有其它可更换的拼车组。</div>
+      </section>
+
+      <section class="transport-detail-panel">
+        <h3>操作记录</h3>
+        <ul v-if="operationLogs.length" class="transport-operation-log-list">
+          <li v-for="log in operationLogs" :key="log.id || `${log.action}-${log.created_at}`">
+            <div>
+              <strong>{{ logActionLabel(log) }}</strong>
+              <span>{{ formatDateTime(log.created_at) }} / {{ logAdminName(log) }}</span>
+            </div>
+            <p v-for="item in logChangedFields(log)" :key="`${log.id}-${item.field}`">
+              {{ item.label || item.field }}：{{ displayValue(item.before) }} -> {{ displayValue(item.after) }}
+            </p>
+          </li>
+        </ul>
+        <div v-else class="transport-empty-box">暂无操作记录。上线后每次保存会记录客服和修改字段。</div>
+      </section>
     </template>
   </section>
 </template>

@@ -3,7 +3,7 @@
     buddy: "找搭子",
     second_hand: "二手交易",
     sublet: "转租/短租",
-    help: "求助/问答",
+    help: "求助问答",
     official: "官方公告"
   };
 
@@ -63,28 +63,53 @@
     return `/community-post/${encodeURIComponent(id)}`;
   }
 
+  function compactLocation(post) {
+    return [post.city, post.area].filter(Boolean).join(" · ") || post.university || "区域未填写";
+  }
+
   function renderPostCard(post) {
-    const category = CATEGORY_LABELS[post.category] || post.category;
-    const meta = [
-      post.city,
-      post.area,
-      formatPrice(post.price),
-      `评论 ${Number(post.comment_count || 0)}`,
-      `浏览 ${Number(post.view_count || 0)}`,
-      `发布 ${formatDate(post.published_at)}`,
-      `过期 ${formatDate(post.expires_at)}`
-    ].filter(Boolean);
+    const category = CATEGORY_LABELS[post.category] || post.category || "未分类";
+    const price = formatPrice(post.price);
+    const categoryClass = `category-${String(post.category || "general").replace(/[^a-z0-9_-]/gi, "")}`;
     return `
-      <a class="community-card" href="${postUrl(post.id)}">
-        <h2 class="community-card-title">
-          ${post.is_pinned ? '<span class="community-pill">置顶</span>' : ""}
-          <span>${escapeHtml(post.title)}</span>
-        </h2>
-        <div class="community-meta">
-          <span class="community-pill ${post.category === "official" ? "is-official" : ""}">${escapeHtml(category)}</span>
-          ${meta.map(item => `<span>${escapeHtml(item)}</span>`).join("")}
+      <a class="community-card ${categoryClass}" href="${postUrl(post.id)}" aria-label="查看帖子：${escapeHtml(post.title)}">
+        <div class="community-card-main">
+          <h2 class="community-card-title">
+            ${post.is_pinned ? '<span class="community-pill community-pill-pin">置顶</span>' : ""}
+            <span>${escapeHtml(post.title)}</span>
+          </h2>
+          <p class="community-card-summary">${escapeHtml(post.content || "暂无摘要")}</p>
+          <div class="community-card-footer" aria-label="帖子状态">
+            <span class="community-pill ${post.category === "official" ? "is-official" : ""}">${escapeHtml(category)}</span>
+            <span class="community-meta-item community-meta-place">${escapeHtml(compactLocation(post))}</span>
+            ${price ? `<span class="community-meta-item">${escapeHtml(price)}</span>` : ""}
+            <span class="community-meta-item">发布 ${escapeHtml(formatDate(post.published_at || post.created_at))}</span>
+            <span class="community-meta-item">评论 ${Number(post.comment_count || 0)}</span>
+            <span class="community-meta-item">浏览 ${Number(post.view_count || 0)}</span>
+          </div>
         </div>
       </a>
+    `;
+  }
+
+  function renderEmptyState() {
+    return `
+      <div class="community-card community-empty">
+        <p>暂无相关信息，可以发布第一条信息。</p>
+        <a class="community-button community-button-primary" href="./community-submit.html">发布信息</a>
+      </div>
+    `;
+  }
+
+  function renderMorePanel() {
+    return `
+      <section class="community-more-panel" aria-label="更多信息">
+        <div>
+          <h2>更多信息正在陆续发布中</h2>
+          <p>你也可以发布第一条信息，帮同学更快找到搭子、闲置、短租或答案。</p>
+        </div>
+        <a class="community-button" href="./community-submit.html">发布信息</a>
+      </section>
     `;
   }
 
@@ -112,9 +137,11 @@
       try {
         const data = await request(`/api/public/community-posts?${query.toString()}`);
         const items = data.items || [];
-        list.innerHTML = items.length
-          ? items.map(renderPostCard).join("")
-          : '<div class="community-card"><p class="community-help">暂时没有可展示的信息。</p></div>';
+        if (!items.length) {
+          list.innerHTML = renderEmptyState();
+        } else {
+          list.innerHTML = `${items.map(renderPostCard).join("")}${items.length < 4 ? renderMorePanel() : ""}`;
+        }
         setMessage(message, "");
       } catch (error) {
         list.innerHTML = "";
@@ -151,8 +178,7 @@
       post.city,
       post.area,
       price,
-      `发布 ${formatDate(post.published_at)}`,
-      `过期 ${formatDate(post.expires_at)}`
+      `发布 ${formatDate(post.published_at)}`
     ].filter(Boolean);
     const images = Array.isArray(post.images) ? post.images : [];
     return `

@@ -9,6 +9,27 @@ function unwrapApiBody(body) {
   return body;
 }
 
+function extractApiErrorMessage(body, fallback) {
+  if (!body || typeof body !== "object") {
+    return fallback;
+  }
+  if (typeof body.message === "string" && body.message.trim()) {
+    return body.message;
+  }
+  if (typeof body.error === "string" && body.error.trim()) {
+    return body.error;
+  }
+  if (body.error && typeof body.error === "object") {
+    if (typeof body.error.message === "string" && body.error.message.trim()) {
+      return body.error.message;
+    }
+    if (typeof body.error.details === "string" && body.error.details.trim()) {
+      return body.error.details;
+    }
+  }
+  return fallback;
+}
+
 async function request(path, options = {}) {
   const response = await fetch(path, {
     credentials: "include",
@@ -25,13 +46,49 @@ async function request(path, options = {}) {
     : null;
 
   if (!response.ok) {
-    const error = new Error(body?.message || body?.error || `Request failed with ${response.status}`);
+    const error = new Error(extractApiErrorMessage(body, `Request failed with ${response.status}`));
     error.status = response.status;
     error.body = body;
     throw error;
   }
 
   return unwrapApiBody(body);
+}
+
+async function requestBlob(path, options = {}) {
+  const response = await fetch(path, {
+    credentials: "include",
+    headers: {
+      Accept: "application/vnd.ms-excel,application/octet-stream,application/json",
+      ...(options.headers || {})
+    },
+    ...options
+  });
+
+  if (!response.ok) {
+    const contentType = response.headers.get("content-type") || "";
+    const body = contentType.includes("application/json")
+      ? await response.json().catch(() => null)
+      : null;
+    const error = new Error(extractApiErrorMessage(body, `Request failed with ${response.status}`));
+    error.status = response.status;
+    error.body = body;
+    throw error;
+  }
+
+  return {
+    blob: await response.blob(),
+    filename: parseContentDispositionFilename(response.headers.get("content-disposition"))
+  };
+}
+
+function parseContentDispositionFilename(value = "") {
+  const utf8Match = String(value).match(/filename\*=UTF-8''([^;]+)/i);
+  if (utf8Match?.[1]) {
+    return decodeURIComponent(utf8Match[1]);
+  }
+  const asciiMatch = String(value).match(/filename="?([^";]+)"?/i);
+  return asciiMatch?.[1] || "";
 }
 
 export function fetchAdminSession() {
@@ -51,6 +108,20 @@ export function fetchOrders(filters = {}) {
   });
   const query = searchParams.toString();
   return request(`/api/admin/orders${query ? `?${query}` : ""}`);
+}
+
+export function bulkSetOrdersOfflineRecorded(items = [], offlineRecorded = true) {
+  return request("/api/admin/orders", {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      action: "set_offline_recorded",
+      items,
+      offline_recorded: offlineRecorded
+    })
+  });
 }
 
 export function fetchOrder(id) {
@@ -79,6 +150,49 @@ export function fetchManagers(filters = {}) {
   return request(`/api/admin/managers${query ? `?${query}` : ""}`);
 }
 
+export function createManager(payload = {}) {
+  return request("/api/admin/managers", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(payload)
+  });
+}
+
+export function updateManager(id, payload = {}) {
+  const searchParams = new URLSearchParams();
+  searchParams.set("id", id);
+  return request(`/api/admin/managers?${searchParams.toString()}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(payload)
+  });
+}
+
+export function resetManagerPassword(id) {
+  const searchParams = new URLSearchParams();
+  searchParams.set("id", id);
+  searchParams.set("manager_action", "reset-password");
+  return request(`/api/admin/managers?${searchParams.toString()}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({})
+  });
+}
+
+export function deleteManager(id) {
+  const searchParams = new URLSearchParams();
+  searchParams.set("id", id);
+  return request(`/api/admin/managers?${searchParams.toString()}`, {
+    method: "DELETE"
+  });
+}
+
 export function fetchTransportRequests(filters = {}) {
   const searchParams = new URLSearchParams();
   Object.entries(filters).forEach(([key, value]) => {
@@ -92,6 +206,47 @@ export function fetchTransportRequests(filters = {}) {
 
 export function fetchTransportRequest(id) {
   return request(`/api/transport-requests/${encodeURIComponent(id)}`);
+}
+
+export function updateTransportRequest(id, payload = {}) {
+  return request(`/api/transport-requests/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(payload)
+  });
+}
+
+export function deleteTransportRequest(id) {
+  return request(`/api/transport-requests/${encodeURIComponent(id)}`, {
+    method: "DELETE"
+  });
+}
+
+export function bulkSetTransportRequestsOfflineRecorded(ids = [], offlineRecorded = true) {
+  return request("/api/transport-requests", {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      action: "set_offline_recorded",
+      ids,
+      offline_recorded: offlineRecorded
+    })
+  });
+}
+
+export function exportTransportRequests(filters = {}) {
+  const searchParams = new URLSearchParams();
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== "") {
+      searchParams.set(key, value);
+    }
+  });
+  const query = searchParams.toString();
+  return requestBlob(`/api/transport-requests/export${query ? `?${query}` : ""}`);
 }
 
 export function fetchTransportGroups(filters = {}) {
@@ -109,6 +264,34 @@ export function fetchTransportGroup(id) {
   return request(`/api/transport-groups/${encodeURIComponent(id)}`);
 }
 
+export function updateTransportGroup(id, payload = {}) {
+  return request(`/api/transport-groups/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(payload)
+  });
+}
+
+export function deleteTransportGroup(id) {
+  return request(`/api/transport-groups/${encodeURIComponent(id)}`, {
+    method: "DELETE"
+  });
+}
+
+export function saveTransportGroupMembers(groupId, requestIds = []) {
+  return request(`/api/transport-groups/${encodeURIComponent(groupId)}/members`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      request_ids: requestIds
+    })
+  });
+}
+
 export function fetchTransportSyncLogs(filters = {}) {
   const searchParams = new URLSearchParams();
   Object.entries(filters).forEach(([key, value]) => {
@@ -118,6 +301,30 @@ export function fetchTransportSyncLogs(filters = {}) {
   });
   const query = searchParams.toString();
   return request(`/api/transport-sync-audit-logs${query ? `?${query}` : ""}`);
+}
+
+export function fetchStorageSyncLogs(filters = {}) {
+  const searchParams = new URLSearchParams();
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== "") {
+      searchParams.set(key, value);
+    }
+  });
+  const query = searchParams.toString();
+  return request(`/api/storage-sync-audit-logs${query ? `?${query}` : ""}`);
+}
+
+export function runStorageSyncAudit(options = {}) {
+  const searchParams = new URLSearchParams();
+  Object.entries(options).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== "") {
+      searchParams.set(key, value);
+    }
+  });
+  const query = searchParams.toString();
+  return request(`/api/run-storage-sync-audit${query ? `?${query}` : ""}`, {
+    method: "POST"
+  });
 }
 
 export function fetchStorageOrders(filters = {}) {
@@ -137,6 +344,51 @@ export function fetchStorageOrder(id) {
   return request(`/api/admin/storage-orders?${searchParams.toString()}`);
 }
 
+export function updateStorageOrder(id, payload = {}) {
+  const searchParams = new URLSearchParams();
+  searchParams.set("id", id);
+  return request(`/api/admin/storage-orders?${searchParams.toString()}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(payload)
+  });
+}
+
+export function bulkSetStorageOrdersOfflineRecorded(ids = [], offlineRecorded = true) {
+  return request("/api/admin/storage-orders", {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      action: "set_offline_recorded",
+      ids,
+      offline_recorded: offlineRecorded
+    })
+  });
+}
+
+export function exportStorageOrders(filters = {}) {
+  const searchParams = new URLSearchParams();
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== "") {
+      searchParams.set(key, value);
+    }
+  });
+  const query = searchParams.toString();
+  return requestBlob(`/api/admin/storage-orders-export${query ? `?${query}` : ""}`);
+}
+
+export function deleteStorageOrder(id) {
+  const searchParams = new URLSearchParams();
+  searchParams.set("id", id);
+  return request(`/api/admin/storage-orders?${searchParams.toString()}`, {
+    method: "DELETE"
+  });
+}
+
 export function fetchMemberships(filters = {}) {
   const searchParams = new URLSearchParams();
   Object.entries(filters).forEach(([key, value]) => {
@@ -148,6 +400,48 @@ export function fetchMemberships(filters = {}) {
   return request(`/api/admin/memberships${query ? `?${query}` : ""}`);
 }
 
+export function grantMembership(payload = {}) {
+  return request("/api/admin/memberships", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(payload)
+  });
+}
+
+export function deleteMembership(id) {
+  const searchParams = new URLSearchParams();
+  searchParams.set("id", id);
+  return request(`/api/admin/memberships?${searchParams.toString()}`, {
+    method: "DELETE"
+  });
+}
+
+export function createMembershipClaim(payload = {}) {
+  return request("/api/admin/membership-claims", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(payload)
+  });
+}
+
+export function updateMembershipClaim(id, action, payload = {}) {
+  return request("/api/admin/membership-claims", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      ...payload,
+      claim_id: id,
+      action
+    })
+  });
+}
+
 export function fetchMembershipCodes(filters = {}) {
   const searchParams = new URLSearchParams();
   Object.entries(filters).forEach(([key, value]) => {
@@ -157,6 +451,35 @@ export function fetchMembershipCodes(filters = {}) {
   });
   const query = searchParams.toString();
   return request(`/api/admin/membership-codes${query ? `?${query}` : ""}`);
+}
+
+export function fetchMembershipBirthdays(filters = {}) {
+  const searchParams = new URLSearchParams();
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== "") {
+      searchParams.set(key, value);
+    }
+  });
+  const query = searchParams.toString();
+  return request(`/api/admin/membership-birthdays${query ? `?${query}` : ""}`);
+}
+
+export function createMembershipCode(payload = {}) {
+  return request("/api/admin/membership-codes", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(payload)
+  });
+}
+
+export function deleteMembershipCode(id) {
+  const searchParams = new URLSearchParams();
+  searchParams.set("id", id);
+  return request(`/api/admin/membership-codes?${searchParams.toString()}`, {
+    method: "DELETE"
+  });
 }
 
 export function fetchCommunityPosts(filters = {}) {

@@ -246,6 +246,7 @@ function mapRequestPayload(payload, existing = {}) {
     status: ensureEnum(requestedStatus, REQUEST_STATUSES, "status"),
     notes: normalizeNullableText(payload.notes ?? existing.notes),
     admin_note: normalizeNullableText(payload.admin_note ?? existing.admin_note),
+    offline_recorded: payload.offline_recorded ?? existing.offline_recorded ?? false,
     closed_reason: normalizeNullableText(payload.closed_reason ?? existing.closed_reason),
     closed_at: payload.closed_at === undefined
       ? existing.closed_at ?? null
@@ -340,6 +341,14 @@ function applyRequestFilters(query, reqQuery) {
     query.eq("status", "closed");
   } else if (reqQuery.status) {
     query.eq("status", reqQuery.status);
+  }
+  if (reqQuery.offline_recorded === "true") {
+    query.eq("offline_recorded", true);
+  } else if (reqQuery.offline_recorded === "false") {
+    query.eq("offline_recorded", false);
+  }
+  if (reqQuery.last_operated_by) {
+    query.eq("last_operated_by", String(reqQuery.last_operated_by).trim());
   }
   if (reqQuery.date_from) {
     query.gte("flight_datetime", `${reqQuery.date_from}T00:00:00.000Z`);

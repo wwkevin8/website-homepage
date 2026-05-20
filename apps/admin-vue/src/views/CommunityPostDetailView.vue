@@ -1,4 +1,4 @@
-<script setup>
+﻿<script setup>
 import { computed, onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
 import { fetchCommunityPostDetail } from "@/api/admin-api";
@@ -72,6 +72,8 @@ function categoryLabel(category) {
 
 function statusLabel(status) {
   const labels = {
+    active: "正常显示",
+    closed: "已关闭",
     published: "已发布",
     hidden: "已隐藏",
     expired: "已过期",
@@ -81,7 +83,7 @@ function statusLabel(status) {
 }
 
 function statusTone(status) {
-  if (status === "published") {
+  if (status === "active" || status === "published") {
     return "success";
   }
   if (status === "hidden" || status === "expired") {
@@ -113,9 +115,7 @@ function listHref() {
   return returnTo.startsWith("/admin-vue/community") ? returnTo : "/admin-vue/community";
 }
 
-function oldCommunityHref() {
-  return "/admin-community.html";
-}
+
 
 function field(label, value, multiline = false) {
   return { label, value: displayValue(value), multiline };
@@ -129,7 +129,6 @@ const baseFields = computed(() => [
   field("状态", statusLabel(post.value?.display_status || post.value?.status)),
   field("城市 / 校区 / 区域", [post.value?.city, post.value?.university, post.value?.area].filter(Boolean).join(" / ")),
   field("价格", formatMoney(post.value?.price)),
-  field("过期时间", formatDateTime(post.value?.expires_at)),
   field("创建时间", formatDateTime(post.value?.created_at)),
   field("更新时间", formatDateTime(post.value?.updated_at))
 ]);
@@ -186,7 +185,6 @@ onMounted(loadDetail);
       </div>
       <div class="view-heading__actions">
         <BackButton :href="listHref()" label="返回社区管理" />
-        <a class="secondary-button" :href="oldCommunityHref()">打开旧社区后台</a>
       </div>
     </div>
 
@@ -272,7 +270,6 @@ onMounted(loadDetail);
           <button class="table-action-button" type="button" @click="showPlaceholder('隐藏帖子')">隐藏</button>
           <button class="table-action-button" type="button" @click="showPlaceholder('恢复帖子')">恢复</button>
           <button class="table-action-button" type="button" @click="showPlaceholder(post.is_pinned ? '取消置顶' : '置顶帖子')">{{ post.is_pinned ? "取消置顶" : "置顶" }}</button>
-          <button class="table-action-button" type="button" @click="showPlaceholder('修改过期时间')">修改过期时间</button>
           <button class="table-action-button" type="button" @click="showPlaceholder('封禁用户', post.user_id)">封禁用户</button>
           <button class="table-action-button table-action-button--danger" type="button" @click="showPlaceholder('删除帖子')">删除</button>
         </div>

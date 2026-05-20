@@ -373,10 +373,17 @@ module.exports = async function handler(req, res) {
     }
 
     if (req.method === "DELETE") {
+      const existingGroup = await fetchSingleGroupRow(supabase, "transport_groups", id);
+      if (!existingGroup) {
+        badRequest(res, "group not found");
+        return;
+      }
+      const groupRef = existingGroup.group_id || existingGroup.id;
+
       const { data: existingMembers, error: existingMembersError } = await supabase
         .from("transport_group_members")
         .select(GROUP_DELETE_MEMBER_SELECT)
-        .eq("group_id", id);
+        .eq("group_id", groupRef);
 
       if (existingMembersError) {
         throw existingMembersError;
@@ -397,12 +404,6 @@ module.exports = async function handler(req, res) {
         if (requestError) {
           throw requestError;
         }
-      }
-
-      const existingGroup = await fetchSingleGroupRow(supabase, "transport_groups", id);
-      if (!existingGroup) {
-        badRequest(res, "group not found");
-        return;
       }
 
       const { error } = await supabase

@@ -87,6 +87,7 @@ function toApiModulePath(urlPathname) {
     urlPathname.startsWith("/api/admin/users") ||
     urlPathname.startsWith("/api/admin/memberships") ||
     urlPathname.startsWith("/api/admin/membership-claims") ||
+    urlPathname.startsWith("/api/admin/membership-birthdays") ||
     urlPathname.startsWith("/api/admin/membership-codes") ||
     urlPathname.startsWith("/api/admin/community-") ||
     urlPathname.startsWith("/api/admin/storage-orders") ||
@@ -133,6 +134,18 @@ function toApiModulePath(urlPathname) {
 
   if (urlPathname === "/api/transport-sync-audit-logs") {
     return path.join(ROOT, "api", "transport-sync-audit-logs.js");
+  }
+
+  if (urlPathname === "/api/storage-sync-audit-logs") {
+    return path.join(ROOT, "api", "storage-sync-audit-logs.js");
+  }
+
+  if (urlPathname === "/api/run-storage-sync-audit") {
+    return path.join(ROOT, "api", "run-storage-sync-audit.js");
+  }
+
+  if (urlPathname === "/api/cron/run-storage-sync-audit") {
+    return path.join(ROOT, "api", "cron", "run-storage-sync-audit.js");
   }
 
   if (/^\/api\/transport-groups\/[^/]+$/.test(urlPathname)) {

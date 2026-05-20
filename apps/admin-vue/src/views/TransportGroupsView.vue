@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted, reactive, ref } from "vue";
-import { fetchTransportGroups } from "@/api/admin-api";
+import { deleteTransportGroup, fetchTransportGroup, fetchTransportGroups, updateTransportRequest } from "@/api/admin-api";
 import AdminTable from "@/components/AdminTable.vue";
 import EmptyState from "@/components/EmptyState.vue";
 import ErrorState from "@/components/ErrorState.vue";
@@ -16,10 +16,11 @@ const columns = [
   { key: "group_date", label: "出行日期", width: "8%" },
   { key: "airport_time", label: "机场 / 时间", width: "11%" },
   { key: "location_to", label: "目的地", width: "10%" },
-  { key: "seats", label: "当前人数 / 座位数", width: "8%" },
-  { key: "payment_status", label: "是否全部已付款", width: "9%" },
-  { key: "pay_all", label: "一键确认全部付款", width: "10%" },
-  { key: "status", label: "状态", width: "7%" },
+  { key: "seats", label: "人数 / 座位", width: "7%" },
+  { key: "payment_status", label: "付款状态", width: "8%" },
+  { key: "current_average_price", label: "当前人均", width: "7%", className: "is-number" },
+  { key: "payment_actions", label: "付款操作", width: "120px", className: "is-actions" },
+  { key: "status", label: "状态", width: "6%" },
   { key: "actions", label: "操作", width: "128px", className: "is-actions", sticky: "end" }
 ];
 
@@ -39,6 +40,8 @@ const pagination = ref({ page: 1, page_size: defaultFilters.pageSize, total: 0, 
 const loading = ref(false);
 const error = ref("");
 const notice = ref("");
+const savingPaymentGroup = ref("");
+const deletingGroup = ref("");
 
 const hasGroups = computed(() => groups.value.length > 0);
 
@@ -46,10 +49,14 @@ function displayValue(value) {
   return value === null || value === undefined || value === "" ? "--" : String(value);
 }
 
+function formatMoney(value) {
+  if (value === null || value === undefined || value === "") return "--";
+  const amount = Number(value);
+  return Number.isFinite(amount) ? `£${amount.toFixed(2)}` : displayValue(value);
+}
+
 function formatDate(value) {
-  if (!value) {
-    return "--";
-  }
+  if (!value) return "--";
   try {
     return new Intl.DateTimeFormat("zh-CN", {
       timeZone: "Europe/London",
@@ -58,14 +65,12 @@ function formatDate(value) {
       day: "2-digit"
     }).format(new Date(`${String(value).slice(0, 10)}T00:00:00`));
   } catch (err) {
-    return value;
+    return displayValue(value);
   }
 }
 
 function formatTime(value) {
-  if (!value) {
-    return "--";
-  }
+  if (!value) return "--";
   try {
     return new Intl.DateTimeFormat("en-GB", {
       timeZone: "Europe/London",
@@ -79,7 +84,9 @@ function formatTime(value) {
 }
 
 function serviceLabel(serviceType) {
-  return serviceType === "dropoff" ? "送机" : serviceType === "pickup" ? "接机" : displayValue(serviceType);
+  if (serviceType === "dropoff") return "送机";
+  if (serviceType === "pickup") return "接机";
+  return displayValue(serviceType);
 }
 
 function statusLabel(status) {
@@ -88,19 +95,15 @@ function statusLabel(status) {
     active: "拼车中",
     open: "拼车中",
     full: "已拼满",
-    closed: "已过期",
+    closed: "已关闭",
     cancelled: "已取消"
   };
   return labels[status] || displayValue(status);
 }
 
 function statusTone(status) {
-  if (status === "closed" || status === "cancelled") {
-    return "neutral";
-  }
-  if (status === "full") {
-    return "success";
-  }
+  if (status === "closed" || status === "cancelled") return "neutral";
+  if (status === "full") return "success";
   return "warning";
 }
 
@@ -115,8 +118,7 @@ function memberRows(group) {
       orderNo: orderNos[index] || "--",
       studentName: studentNames[index] || "--",
       terminal: detail.terminal || group.terminal || "--",
-      flightTime: detail.flight_datetime || group.flight_time_reference || group.preferred_time_start,
-      destination: group.location_to || "--"
+      flightTime: detail.flight_datetime || group.flight_time_reference || group.preferred_time_start
     };
   });
 }
@@ -133,9 +135,7 @@ function paymentLabel(group) {
   const payment = paymentSummary(group);
   const total = Number(payment.total_member_count || 0);
   const paid = Number(payment.paid_member_count || 0);
-  if (total <= 0) {
-    return "无成员";
-  }
+  if (total <= 0) return "无成员";
   return paid >= total ? "已全部付款" : `${paid}/${total} 已付款`;
 }
 
@@ -146,12 +146,102 @@ function paymentTone(group) {
   return total > 0 && unpaid <= 0 ? "success" : "warning";
 }
 
+function paymentMembers(group) {
+  const members = paymentSummary(group).member_payments;
+  return Array.isArray(members) ? members : [];
+}
+
+function unpaidPaymentMembers(group) {
+  return paymentMembers(group).filter(member => String(member.payment_status || "").toLowerCase() !== "paid");
+}
+
+function groupActionKey(group) {
+  return String(group?.group_id || group?.id || "");
+}
+
+function paymentActionLabel(group) {
+  const unpaidMembers = unpaidPaymentMembers(group);
+  if (!unpaidMembers.length) return "已付款";
+  return unpaidMembers.length > 1 ? `标记${unpaidMembers.length}人付款` : "标记付款";
+}
+
+function withPaymentMarker(adminNote, status) {
+  const cleanedNote = String(adminNote || "").replace(/\[payment:(paid|unpaid)\]\s*/gi, "").trim();
+  const marker = `[payment:${status}]`;
+  return cleanedNote ? `${marker}\n${cleanedNote}` : marker;
+}
+
+async function markGroupPaid(group) {
+  const groupKey = groupActionKey(group);
+  const unpaidMembers = unpaidPaymentMembers(group).filter(member => member.request_id);
+  if (!unpaidMembers.length || savingPaymentGroup.value) {
+    return;
+  }
+
+  const confirmed = window.confirm(`确认将 ${displayValue(group.group_id || group.id)} 的 ${unpaidMembers.length} 个未付款成员标记为已付款吗？`);
+  if (!confirmed) {
+    return;
+  }
+
+  savingPaymentGroup.value = groupKey;
+  notice.value = "";
+  error.value = "";
+  try {
+    for (const member of unpaidMembers) {
+      await updateTransportRequest(member.request_id, {
+        admin_note: withPaymentMarker(member.admin_note, "paid")
+      });
+    }
+    await loadGroups(pagination.value.page || 1);
+    notice.value = `已将 ${displayValue(group.group_id || group.id)} 的 ${unpaidMembers.length} 个成员标记为已付款。`;
+  } catch (err) {
+    notice.value = err.message || "标记付款失败，请稍后重试。";
+  } finally {
+    savingPaymentGroup.value = "";
+  }
+}
+
 function groupHref(group) {
   const id = group?.id || group?.group_ref || group?.group_id || group?.legacy_id;
-  if (!id) {
-    return "";
-  }
+  if (!id) return "";
   return `/admin-vue/transport/groups/${encodeURIComponent(id)}?return_to=${encodeURIComponent("/admin-vue/transport/groups")}`;
+}
+
+function groupRef(group) {
+  return group?.id || group?.group_ref || group?.group_id || group?.legacy_id || "";
+}
+
+async function deleteGroup(row) {
+  const ref = groupRef(row);
+  const name = displayValue(row?.group_id || row?.id);
+  if (!ref || deletingGroup.value) {
+    return;
+  }
+
+  deletingGroup.value = String(ref);
+  notice.value = "";
+  error.value = "";
+  try {
+    const group = await fetchTransportGroup(ref);
+    const memberCount = Array.isArray(group?.members) ? group.members.length : 0;
+    if (memberCount > 0) {
+      window.alert("请把当前拼车组成员移到其他组里。");
+      return;
+    }
+    if (!window.confirm(`确定删除 ${name} 吗？`)) {
+      return;
+    }
+    await deleteTransportGroup(ref);
+    const nextPage = pagination.value.page > 1 && groups.value.length <= 1
+      ? pagination.value.page - 1
+      : pagination.value.page;
+    await loadGroups(nextPage || 1);
+    notice.value = `${name} 已删除。`;
+  } catch (err) {
+    notice.value = err.message || "删除拼车组失败，请稍后重试。";
+  } finally {
+    deletingGroup.value = "";
+  }
 }
 
 function buildQuery(page) {
@@ -183,7 +273,7 @@ async function loadGroups(page = pagination.value.page || 1) {
     };
   } catch (err) {
     groups.value = [];
-    error.value = err.message || "拼车组列表加载失败";
+    error.value = err.message || "拼车组列表加载失败。";
   } finally {
     loading.value = false;
   }
@@ -202,10 +292,6 @@ function handlePageChange(page) {
   loadGroups(page);
 }
 
-function showPlaceholder(action, group) {
-  notice.value = `${action}将在后续阶段实现：${displayValue(group?.group_id || group?.id)}`;
-}
-
 onMounted(() => {
   loadGroups(1);
 });
@@ -215,10 +301,9 @@ onMounted(() => {
   <section class="transport-groups-view">
     <div class="view-heading">
       <div>
-        <p class="view-heading__eyebrow">Phase 6 transport group list migration</p>
+        <p class="view-heading__eyebrow">Transport groups</p>
         <h2>拼车组管理</h2>
       </div>
-      <a class="secondary-button" href="/transport-admin-groups.html">打开旧拼车组后台</a>
     </div>
 
     <TransportGroupFilters v-model="filters" @submit="submitFilters" @reset="resetFilters" />
@@ -266,25 +351,38 @@ onMounted(() => {
           <strong class="cell-truncate">{{ Number(row.current_passenger_count || 0) }} / {{ Number(row.max_passengers || 0) }}</strong>
         </template>
         <template #cell-payment_status="{ row }">
-          <StatusBadge :tone="paymentTone(row)">
-            {{ paymentLabel(row) }}
-          </StatusBadge>
+          <StatusBadge :tone="paymentTone(row)">{{ paymentLabel(row) }}</StatusBadge>
         </template>
-        <template #cell-pay_all="{ row }">
-          <button class="table-action-button" type="button" @click="showPlaceholder('确认全部付款', row)">
-            确认付款
+        <template #cell-current_average_price="{ row }">
+          <span class="cell-truncate price-cell" :title="formatMoney(row.current_average_price_gbp)">
+            {{ formatMoney(row.current_average_price_gbp) }}
+          </span>
+        </template>
+        <template #cell-payment_actions="{ row }">
+          <button
+            class="table-action-button"
+            type="button"
+            :disabled="!unpaidPaymentMembers(row).length || savingPaymentGroup === groupActionKey(row)"
+            @click="markGroupPaid(row)"
+          >
+            {{ savingPaymentGroup === groupActionKey(row) ? "保存中..." : paymentActionLabel(row) }}
           </button>
         </template>
         <template #cell-status="{ row }">
-          <StatusBadge :tone="statusTone(row.status)">
-            {{ statusLabel(row.status) }}
-          </StatusBadge>
+          <StatusBadge :tone="statusTone(row.status)">{{ statusLabel(row.status) }}</StatusBadge>
         </template>
         <template #cell-actions="{ row }">
           <div class="table-action-group table-action-group--compact">
-            <a v-if="groupHref(row)" class="table-action-button" :href="groupHref(row)">查看</a>
-            <button v-else class="table-action-button" type="button" @click="showPlaceholder('查看详情', row)">查看</button>
-            <button class="table-action-button table-action-button--danger" type="button" @click="showPlaceholder('删除拼车组', row)">删除</button>
+            <a v-if="groupHref(row)" class="table-action-button" :href="groupHref(row)">查看详情</a>
+            <button v-else class="table-action-button" type="button" @click="notice = '未找到可打开的拼车组详情。'">查看详情</button>
+            <button
+              class="table-action-button table-action-button--danger"
+              type="button"
+              :disabled="deletingGroup === String(groupRef(row))"
+              @click="deleteGroup(row)"
+            >
+              {{ deletingGroup === String(groupRef(row)) ? "删除中..." : "删除" }}
+            </button>
           </div>
         </template>
       </AdminTable>

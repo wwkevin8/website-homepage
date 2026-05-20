@@ -7,12 +7,895 @@
 
 ## Last Updated Task
 
-- Date: 2026-05-17
-- Scope: Vue community post readonly detail migration
+- Date: 2026-05-20
+- Scope: 2.0 NGN admin production pre-launch safety checkpoint
 
 ## Latest Completed Work
 
+- Completed the pre-launch safety checkpoint for the Vue admin now formally named `2.0 NGN 管理后台`:
+  - created the Git checkpoint commit with message `before-vue-admin-production-launch`;
+  - confirmed the Vue admin source and generated `/admin-vue/` output use `2.0 NGN 管理后台` in the document title/sidebar/dashboard heading;
+  - kept the old admin HTML entry files in place as rollback/fallback routes, did not delete old admin pages, and removed the remaining Vue sidebar legacy-entry rendering path so the old backend is not presented as a visible frontend navigation choice;
+  - confirmed Vercel project `webside` currently has Ready production deployments available for rollback, including latest production `https://webside-gcd0iy2nc-wwkevin8s-projects.vercel.app` and prior production `https://webside-a7sndd45s-wwkevin8s-projects.vercel.app`;
+  - did not run a production deployment as part of this checkpoint;
+  - did not directly modify Supabase schema or production data during this checkpoint;
+  - reviewed SQL changes in `supabase/` and confirmed the pending/new field work is represented by explicit SQL files using additive `add column if not exists` style changes, so old-row reads remain compatible with null/default values.
+- Verification before the `before-vue-admin-production-launch` GitHub checkpoint:
+  - `node --check api/admin/[...action].js` passed;
+  - `node --check api/_lib/membership.js` passed;
+  - `node --check api/_lib/orders.js` passed;
+  - `node --check api/_lib/storage-orders.js` passed;
+  - `node --check api/_lib/transport.js` passed;
+  - `npm run build:admin-vue` passed;
+  - `npm run build:prod` passed;
+  - `git diff --check` passed after cleaning non-functional trailing whitespace in Vue source files.
+
+- Re-ran the membership birthday reminder test after adding the registered birthday-date wording:
+  - temporarily set the same Wkevin-owned active membership to the UK test date `2026-05-20`;
+  - sent one advisor birthday reminder email to `haoranw44@gmail.com`;
+  - Resend returned message id `18193549-bb8d-435a-b881-cfdc4fde5080`, with `matched_count=1`, `sent_count=1`, and `failed_count=0`;
+  - restored the simulated birthday fields to null and deleted the simulated reminder row after the send test.
+
+- Added a `当前人均` column to Vue Admin transport group management:
+  - `/admin-vue/transport/groups` now shows each group's existing `current_average_price_gbp` value between `付款状态` and `付款操作`;
+  - the amount is formatted as GBP and uses the same backend-computed pricing/stats value already used by the group detail page;
+  - adjusted nearby table column widths so the new column fits without changing group actions or payment behavior;
+  - rebuilt the generated root `admin-vue/` output so the static admin bundle includes the new column;
+  - no public page, API, database, email behavior, deployment config, or transport grouping workflow was changed.
+- Verification after adding the transport group average column:
+  - `npm run build:admin-vue` passed;
+  - source/build scan confirmed `当前人均` and `current_average_price_gbp` are present in the Vue source and generated admin output;
+  - local helper server on port 3000 returned `200 OK` for `/admin-vue/transport/groups`.
+
+- Updated the advisor birthday reminder email wording:
+  - each member entry in the plain-text and HTML email now includes `她/他登记的生日日期为：xx月xx日`;
+  - the change only affects the advisor-facing birthday reminder email body and does not change reminder matching, recipient selection, database schema, cron timing, or student-facing notifications.
+- Verification after the wording update:
+  - `node --check api/_lib/membership-birthday-reminders.js` passed.
+
+- Tested the membership birthday reminder email path against Wkevin's advisor account:
+  - confirmed Wkevin admin account exists in Supabase with email `haoranw44@gmail.com`;
+  - temporarily set one Wkevin-owned active membership to the UK test date `2026-05-20`;
+  - ran `runMembershipBirthdayReminders` locally with the real Supabase and Resend environment from `.env`;
+  - Resend returned message id `ccaf459b-c2eb-4f4f-b690-1bf0abc59798`, with `matched_count=1`, `sent_count=1`, and `failed_count=0`;
+  - restored the simulated member birthday fields to their original null state and deleted the simulated reminder row so production membership data does not retain the fake birthday test state.
+
+- Refined the Vue Admin dashboard `今日待处理事项` alignment after visual review:
+  - replaced the stretched two-column grid with a flex row that keeps the status label at its natural pill width;
+  - fixed only the right-side order/customer/time block to a stable width so order numbers still align vertically;
+  - kept the small-screen layout stacked so the todo rows remain readable on mobile;
+  - rebuilt the generated root `admin-vue/` output so the static admin bundle includes the refined styling;
+  - no public page, API, database, email behavior, deployment config, or business workflow behavior was changed.
+- Verification after the visual refinement:
+  - `npm run build:admin-vue` passed;
+  - source/build scan confirmed the generated CSS uses the fixed right-side info column and no longer uses the previous stretched grid rule.
+
+- Fixed the Vue Admin order-center detail page failing to open for transport orders:
+  - removed the nonexistent `transport_requests.group_id` column from the order-center source-record query in `api/_lib/orders.js`;
+  - removed the order-center detail page's dependency on that field, so the customer-service summary no longer breaks when the transport table has no group column;
+  - kept the current `已登记 / 未登记` detail cleanup intact and did not change registration mutation behavior.
+- Verification after the source-field compatibility fix:
+  - `node --check api/_lib/orders.js` passed;
+  - `node --check api/admin/[...action].js` passed;
+  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` build output.
+
+- Aligned order numbers in the Vue Admin dashboard `今日待处理事项` list:
+  - updated the dashboard task row styling so the right-side order information uses a stable fixed-width column;
+  - kept the mobile layout stacked through the existing small-screen media query;
+  - rebuilt the generated root `admin-vue/` output so the live static admin bundle includes the alignment fix;
+  - no public page, API, database, email behavior, deployment config, or business workflow behavior was changed.
+- Verification after the dashboard todo alignment fix:
+  - `npm run build:admin-vue` passed;
+  - source/build scan confirmed the new `dashboard-task-row` grid rule is present in both Vue source CSS and generated admin CSS.
+
+- Renamed the visible Vue Admin sidebar brand from `Vue Admin` to `2.0 NGN 管理后台`:
+  - updated the source sidebar brand in `apps/admin-vue/src/components/AppSidebar.vue`;
+  - updated the Vue admin document title in `apps/admin-vue/index.html`;
+  - updated the hidden dashboard eyebrow source copy so old `NGN Vue Admin` wording is not left in Vue source;
+  - rebuilt the generated root `admin-vue/` output so the live static admin bundle reflects the new title;
+  - no public page, API, database, email, deployment config, or business workflow behavior was changed.
+- Verification after the brand title rename:
+  - `npm run build:admin-vue` passed;
+  - source/build scan confirmed `2.0 NGN 管理后台` is present in the Vue source and generated admin output.
+
+- Cleaned the Vue Admin order-center detail page for customer-service use:
+  - `/admin-vue/orders/:id` no longer shows raw JSON/code blocks for order payloads, status logs, notes, attachments, or detail payloads;
+  - removed the old readonly placeholder operation area for archive/cancel archive/save note/bulk archive, keeping the page aligned with the current `已登记 / 未登记` workflow;
+  - the detail page now shows a concise customer-service summary: registration state, recent registration operator/time, customer contact, service arrangement, notes, recent operations, and a link to the professional source detail page;
+  - `fetchOrderDetail` now returns the matching transport/storage source record as readonly `source_record` so the order-center detail can display useful business fields without exposing raw payloads;
+  - no public page, database schema, email behavior, deployment config, or registration mutation logic was changed.
+- Verification after the order-center detail cleanup:
+  - `node --check api/_lib/orders.js` passed;
+  - `node --check api/admin/[...action].js` passed;
+  - `npm --prefix apps/admin-vue run build` passed and regenerated the root `admin-vue/` build output;
+  - local browser opened `/admin-vue/orders/test-order-detail-check` and unauthenticated access redirected to `admin-login.html`, confirming the protected admin route still loads through the login boundary.
+
+- Fixed the local helper-server route mapping for the recent birthday panel:
+  - `dev-server.js` now routes `/api/admin/membership-birthdays` into the existing admin aggregate handler instead of returning a local 404;
+  - restarted the local helper server on port 3000 so the new route mapping is active;
+  - unauthenticated local request now returns 401 instead of 404, confirming the route reaches the protected Admin API.
+
+- Corrected the Vue Admin overdue risk wording and data filter:
+  - renamed the visible risk label from `超过 24 小时未处理` to `超过 24 小时未登记` in the dashboard risk cards, order-center active filter, and order-center risk dropdown;
+  - updated the helper copy to say the order was created more than 24 hours ago and still has not completed offline registration;
+  - changed the backend `overdue_unprocessed` source query to require `offline_recorded=false`, so already registered orders no longer appear in this risk bucket;
+  - updated the dashboard overdue todo titles to `接送机超过 24 小时未登记` and `寄存超过 24 小时未登记`.
+- Verification after the overdue-registration risk correction:
+  - `node --check api/admin/[...action].js` passed;
+  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` build output;
+  - source scan confirmed the Vue order-center visible copy now uses `超过 24 小时未登记`;
+  - `npm run build:prod` passed.
+
+- Added Vue Admin manager creation and clarified password handling:
+  - `/admin-vue/managers` now has a `新增管理员` action in the page heading;
+  - the manager modal now switches between `新增管理员` and `编辑管理员` modes;
+  - creating a manager uses the existing protected `POST /api/admin/managers` endpoint and requires an initial password of at least 8 characters;
+  - editing a manager now explicitly says the current password cannot be viewed; operators can leave the password blank or set a new one;
+  - this keeps password storage hash-only and does not add any plaintext password display, storage, or API exposure;
+  - no public page, database schema, email behavior, deployment config, or new route was changed.
+- Verification after adding manager creation:
+  - `node --check apps/admin-vue/src/api/admin-api.js` passed;
+  - `node --check api/_lib/admin-managers.js` passed;
+  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` build output;
+  - source/build scan confirmed `新增管理员`, `初始密码`, and `当前密码不可查看` are present;
+  - local browser opened `/admin-vue/managers` and confirmed unauthenticated access still redirects to the admin login flow.
+
+- Added a lightweight recent-birthday panel under the one-time membership activation-code section:
+  - `/api/admin/membership-birthdays` now returns active members in the selected cycle whose birthday fell within the recent 30-day window, including user contact, benefit type, advisor, and the latest birthday reminder record;
+  - `/admin-vue/memberships` now shows `最近生日会员` below `一次性会员激活码`, with birthday date, member, contact, cycle, benefit, reminder advisor, reminder status, and a detail button;
+  - this is an admin-only customer-service visibility feature and does not send student birthday messages or add marketing automation.
+- Verification after adding the recent-birthday panel:
+  - `node --check api/admin/[...action].js` passed;
+  - `node --check apps/admin-vue/src/api/admin-api.js` passed;
+  - `npm --prefix apps/admin-vue run build` passed and regenerated the root `admin-vue/` build output;
+  - Supabase query confirmed there is currently 1 active member with birthday month/day stored.
+
+- Adjusted the Vue Admin dashboard inspection KPIs:
+  - added `今日巡检总次数` immediately before `今日巡检异常数`;
+  - `今日巡检总次数` is computed as today's transport sync audit runs plus storage sync audit runs;
+  - `今日巡检异常数` remains today's transport/storage sync audit `mismatch_count` sum;
+  - removed the misleading click-through from `今日巡检异常数` because the metric is a transport + storage aggregate and should not jump to only the storage sync log page.
+- Verification after the inspection KPI update:
+  - `node --check api/admin/[...action].js` passed;
+  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` build output;
+  - `npm run build:prod` initially hit a stale hashed admin-vue asset reference during generated-output refresh, then passed on rerun after the generated assets settled.
+
+- Added direct password setting to the Vue Admin manager edit flow:
+  - `/admin-vue/managers` edit modal now includes a `设置密码` field with `留空不修改；填写至少 8 位新密码` guidance;
+  - the Vue save payload sends the optional password field together with the manager profile fields;
+  - `PATCH /api/admin/managers?id=...` now hashes and saves a supplied non-empty password, while leaving the password unchanged when the field is blank;
+  - the endpoint still requires the existing super-admin server-side permission checks and keeps the Wkevin/root username rule plus self-delete/last-active-super-admin protections;
+  - `docs/PROJECT_MAP.md` was updated to document optional password setting on the manager PATCH endpoint;
+  - no public page, database schema, email behavior, deployment config, or new route was changed.
+- Verification after adding direct manager password setting:
+  - `node --check api/_lib/admin-managers.js` passed;
+  - `node --check apps/admin-vue/src/api/admin-api.js` passed;
+  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` build output;
+  - source/build scan confirmed the `设置密码` field and backend `password_hash` update path are present;
+  - local browser opened `/admin-vue/managers` and confirmed unauthenticated access still redirects to the admin login flow.
+
+- Simplified the Vue Admin dashboard KPI row for the current customer-service workflow:
+  - removed the `7日登录` and `异常订单数` KPI cards from `DashboardView.vue`;
+  - changed the former `已登记订单` card to `未登记总订单`, using the same red warning visual style as the previous exception card;
+  - `未登记总订单` is computed as `待登记接送机 + 待登记寄存` and links to `/admin-vue/orders?offline_recorded=false`;
+  - added `今日巡检异常数`, computed from today's `mismatch_count` totals in `transport_sync_audit_logs` and `storage_sync_audit_logs`.
+- Verification after the dashboard KPI simplification:
+  - `node --check api/admin/[...action].js` passed;
+  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` build output;
+  - source scan confirmed `DashboardView.vue` no longer contains `已登记订单`, `7日登录`, or `异常订单数`;
+  - `npm run build:prod` passed.
+
+- Applied the missing membership birthday database migrations to Supabase project `ngn-transport` after the Vue membership page showed `column membership_activation_codes.member_birthday does not exist`:
+  - applied the additive `membership_activation_codes.member_birthday` column from `supabase/20260515_membership_activation_code_birthday.sql`;
+  - applied the additive membership birthday reminder schema from `supabase/20260520_membership_birthday_reminders.sql`, including `membership_entitlements` birthday/reminder/advisor fields and the service-role-only `membership_birthday_reminders` table;
+  - verified the expected columns now exist in Supabase and that `membership_activation_codes` can select `id, code_prefix, member_birthday`;
+  - ran Supabase security advisors after the schema change; findings are existing RLS-no-policy/service-role style advisories plus the new service-role-only birthday reminder table using the same pattern.
+
+- Connected the Vue Admin manager action buttons to the existing protected manager APIs:
+  - `/admin-vue/managers` row actions no longer show the placeholder `后续阶段实现` notice for edit, reset password, or delete;
+  - edit opens a Vue modal and saves name, email, phone, role, and status through `PATCH /api/admin/managers?id=...`; Wkevin/root can also edit username, matching the existing server-side rule;
+  - reset password opens a confirmation dialog and calls `POST /api/admin/managers?id=...&manager_action=reset-password`, then shows the generated temporary password in the page notice;
+  - delete opens a confirmation dialog and calls `DELETE /api/admin/managers?id=...`;
+  - Vue now mirrors the old manager page's root/self-protection affordances, while the existing server-side super-admin and last-active-super-admin protections remain authoritative;
+  - no public page, database schema, email behavior, deployment config, or new admin route was changed.
+- Verification after wiring manager actions:
+  - `node --check apps/admin-vue/src/api/admin-api.js` passed;
+  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` build output;
+  - source/build scan confirmed the manager page no longer contains the manager action placeholder text and does contain the edit/reset/delete action wiring;
+  - local browser opened `http://localhost:3000/admin-vue/managers` and confirmed unauthenticated access still shows the protected admin login flow.
+
+- Added a lightweight backend-only membership birthday reminder service:
+  - `membership_entitlements` now has additive birthday month/day, reminder opt-out, advisor admin, and creator admin fields through `supabase/20260520_membership_birthday_reminders.sql`;
+  - the new `membership_birthday_reminders` table records one reminder result per membership/date with advisor, recipient email, Resend message id, status, and any send error, preventing repeat reminders for the same UK date;
+  - `api/cron/send-membership-birthday-reminders.js` is protected by `CRON_SECRET` and calls the new Resend helper to send one grouped email per advisor, not one email per member;
+  - advisor resolution now uses membership advisor, then creator admin, then activation-code creator, then a default operations recipient;
+  - `vercel.json` schedules the cron at `5 0,23 * * *`, so the job can hit approximately 00:05 UK time across GMT/BST while the reminder table keeps sends idempotent;
+  - the admin membership aggregate now returns birthday reminder metadata, and the Vue membership detail page shows clearer labels for member birthday, reminder state, advisor, and last reminder time;
+  - no student birthday email, SMS, WeChat reminder, marketing automation, membership level, points, package, or complex benefit system was added.
+- Verification after adding membership birthday reminders:
+  - `node --check api/_lib/membership.js` passed;
+  - `node --check api/_lib/membership-birthday-reminders.js` passed;
+  - `node --check api/cron/send-membership-birthday-reminders.js` passed;
+  - `node --check api/admin/[...action].js` passed;
+  - `vercel.json` parsed successfully;
+  - `npm --prefix apps/admin-vue run build` passed and regenerated the root `admin-vue/` build output;
+  - Supabase CLI was not available locally, so the SQL migration file was created first and then applied through the Supabase plugin in the follow-up database fix.
+
+- Cleaned the Vue Admin page headings:
+  - all Vue admin pages now hide the small eyebrow/subtitle line above the main page title, including legacy migration labels such as `Phase 2 foundation`;
+  - the main `h2` heading no longer keeps the old top offset, so pages show a single clean title such as `用户管理` or `订单中心`;
+  - this was a frontend-only admin UI polish and did not change APIs, database schema, email behavior, public pages, or deployment configuration.
+- Verification after the page heading cleanup:
+  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` build output;
+  - source/build scan confirmed `.view-heading__eyebrow` is now hidden globally.
+
+- Corrected the Vue Admin order-center registration wording and behavior:
+  - `/admin-vue/orders` now treats the visible `订单状态` as customer-service registration state only, with `未登记` and `已登记` as the only filter choices;
+  - the order table `状态` badge now displays `未登记` / `已登记` from `offline_recorded`, rather than lower-level source statuses such as transport `published` or storage `pending_confirmation`;
+  - the old line-tracking column is now `最近登记人`, showing the operator and time tied to registration/last-operation fields;
+  - `一键登记` still updates selected source orders through `/api/admin/orders`, then reloads the list. If the current filter is `未登记`, newly registered rows drop out of the list; if the current filter is another risk bucket, they remain visible but show `已登记`.
+- Corrected Dashboard KPI/status semantics:
+  - the previous `活跃订单` card is now `已登记订单`, so it no longer overlaps conceptually with `异常订单数`;
+  - `异常订单数` remains a risk summary and can include duplicate risk hits because one order may match more than one risk bucket;
+  - dashboard order status distribution now shows only `未登记` and `已登记`, matching the order-center operator workflow.
+- Extended `/api/admin/orders` list filtering:
+  - `GET /api/admin/orders?offline_recorded=true/false` now returns source-table rows filtered by registration state;
+  - risk-filtered order lists also respect `offline_recorded=true/false` and `source_table=...`.
+- Verification after the registration status correction:
+  - `node --check api/admin/[...action].js` passed;
+  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` build output;
+  - unauthenticated `GET /api/admin/orders?offline_recorded=true&page_size=1` returned 401, confirming registration-state lists remain admin-only;
+  - `npm run build:prod` passed.
+
+- Applied small follow-up refinements to keep the Vue membership page simple and customer-service friendly:
+  - activation-code delete success now shows a short success notice that clears after 3 seconds instead of leaving a long-lived top message;
+  - membership status display now treats entitlement status separately, so active members show `有效`;
+  - benefit/claim statuses now use clearer wording such as `已选择权益`, `已登记权益`, and `权益已使用` instead of a standalone `已选择`;
+  - membership operation log labels were generalized away from order-binding language, using labels such as `创建会员`, `登记权益`, `修改权益`, `使用激活码兑换`, and `更新会员信息`;
+  - membership and activation-code deletion now require a second confirmation before calling the existing delete endpoints;
+  - no membership-level, order-forcing, redemption, points, package, public page, database schema, email, or deployment behavior was added.
+- Verification after the membership page follow-up:
+  - `npm --prefix apps/admin-vue run build` passed and regenerated the root `admin-vue/` build output;
+  - source scan confirmed the Vue membership views no longer contain standalone `已选择`, `解绑订单`, `绑定订单`, or `已删除激活码` strings.
+- Refined the Vue admin membership workflow for customer-service operations:
+  - `/api/admin/memberships` now returns each membership with user/contact fields, current claim, advisor, activation-code source, enriched audit logs, and a `last_operation` summary derived from membership audit logs;
+  - `/api/admin/memberships/:id` now supports fetching a single membership detail through the same admin aggregate used by the list;
+  - `/admin-vue/memberships` now adds a `最后操作` column showing operator, time, and action, and clicking a membership row or `权益详情` opens the detail route;
+  - `/admin-vue/memberships/:id` now focuses on customer-service detail: user basics, membership information, activation-code source, latest operation information, and reverse-time operation records;
+  - `/api/admin/membership-codes` now accepts a batch count and can generate up to 200 one-time activation codes in one request while preserving the existing unique `NGN-2026-XXXX` style generation;
+  - `/admin-vue/memberships` now has a batch activation-code dialog with quantity, membership cycle, benefit type, current-admin advisor, and optional notes, then shows the generated full code list for copying and refreshes the code table;
+  - no public page, order-required membership binding, complex benefit redemption workflow, email behavior, deployment config, or database schema was changed for this task.
+- Verification after the membership workflow refinement:
+  - `node --check api/_lib/membership.js` passed;
+  - `node --check api/admin/[...action].js` passed;
+  - `npm --prefix apps/admin-vue run build` passed and regenerated the root `admin-vue/` build output;
+  - unauthenticated local `GET /api/admin/memberships?cycle=2026-27&page_size=1` returned 401, confirming the membership aggregate remains admin-only.
+- Aligned the Vue Admin dashboard registration cards with the real operator workflow:
+  - the first KPI is now `待登记接送机`, sourced from transport orders that are not marked `offline_recorded`;
+  - the second KPI is now `待登记寄存`, sourced from storage orders that are not marked `offline_recorded`;
+  - both cards jump directly to `/admin-vue/orders?risk=offline_unrecorded&source_table=...`, so the list view shows the exact order set behind the dashboard number.
+- Added actionable bulk handling to the Vue order center:
+  - `/admin-vue/orders` now preserves `source_table` query filters from dashboard links and shows them in the current-filter banner;
+  - the order table now has a `选择订单` column, selected-count summary, `全选当前页`, `导出选中`, and `一键登记` actions;
+  - selected rows can be exported as a CSV from the current order-center data;
+  - `一键登记` marks selected transport/storage source orders as `offline_recorded=true`, updates last operator/time fields, writes admin operation logs, clears selection, and reloads the list.
+- Extended `/api/admin/orders` without adding schema:
+  - risk lists can now be narrowed by `source_table`, service/status/search/date filters, keeping dashboard counts and click-through lists traceable;
+  - `PATCH /api/admin/orders` supports selected-order `action=set_offline_recorded` for transport and storage source rows, still behind existing admin auth.
+- Verification after the dashboard/order-center registration update:
+  - `node --check api/admin/[...action].js` passed;
+  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` build output;
+  - unauthenticated `PATCH /api/admin/orders` returned 401, confirming one-click registration remains admin-only;
+  - `npm run build:prod` passed;
+  - `docs/PROJECT_MAP.md` was updated for the expanded `/api/admin/orders` GET/PATCH behavior.
+
+- Simplified the public NGN student information plaza submit flow so it behaves like a quick student community post instead of an application form:
+  - `community-submit.html` now keeps the core fields to category, title,正文, optional contact, optional images, folded optional extra info, and one short privacy/truth confirmation checkbox;
+  - title now has no minimum length and is limited to 60 characters;
+  -正文 now has no minimum length and is limited to 500 characters;
+  - city, university, area, price, and extra notes are moved into folded `更多信息（选填）`;
+  - contact is optional and simplified to one type selector plus one content field, with copy that it is only visible to backend/customer support;
+  - image upload remains optional and category-gated to second-hand and sublet/short-let posts, with the existing 3-image and 2MB-per-image limits.
+- Removed public expiry behavior from the current information plaza flow:
+  - `community-submit.html` no longer renders an expiry/effective-period field;
+  - `community.js` no longer renders expiry metadata in the post list or detail page;
+  - `api/_lib/community.js` no longer assigns category-based expiry dates to new posts;
+  - public list/detail/comment-report visibility now uses visible post statuses instead of hiding posts by `expires_at`;
+  - new public posts are created with status `active`, while legacy `published` posts remain visible for compatibility.
+- Added minimal admin compatibility for the new status model:
+  - `api/_lib/admin-community.js` treats `active` plus legacy `published` as normal visible posts and restores hidden posts to `active`;
+  - Vue community admin list/detail labels now recognize `active` and `closed`;
+  - Vue community admin list/detail no longer display expiry-time columns, fields, filters, or placeholder buttons.
+- Added `supabase/20260520_community_simplify_post_constraints.sql` for the required database-side alignment:
+  - allows `community_posts.expires_at` to be null;
+  - changes the default post status to `active`;
+  - allows `active`, `closed`, `hidden`, plus legacy `published`, `expired`, and `deleted`;
+  - updates title/content checks to 1-60 and 1-500 characters using `NOT VALID` constraints so historical longer titles do not block the migration while new writes are still checked.
+- Verification after simplifying community submit:
+  - `node --check community-submit.js` passed;
+  - `node --check community.js` passed;
+  - `node --check api/_lib/community.js` passed;
+  - `node --check api/_lib/admin-community.js` passed;
+  - `CommunityView.vue` and `CommunityPostDetailView.vue` parsed successfully with the local Vue SFC compiler;
+  - source scan confirmed the submit page has no `minlength`, no expiry/effective-period field, and no remaining 200/300-character submit copy;
+  - local browser verification confirmed title max 60,正文 max 500, no minimum lengths, no expiry input, folded optional info, category-gated image upload, no horizontal overflow on desktop/mobile, and screenshots were saved under `output/playwright/community-submit-simple-desktop.png` and `output/playwright/community-submit-simple-mobile.png`;
+  - database migration file was created but not applied to Supabase in this task.
+- Corrected the Vue Admin dashboard to match real operator workflows:
+  - removed the visible dashboard `未归档订单`, `已归档`, and `已取消` dashboard concepts;
+  - replaced the sixth KPI with `异常订单数`, computed as the sum of the four dashboard risk buckets;
+  - dashboard status distribution now only shows `待处理`, `处理中 / 已确认`, and `已完成`;
+  - dashboard risk cards now link to `/admin-vue/orders?risk=...` rather than generic pages.
+- Added shared risk filtering for dashboard and the Vue order center:
+  - `/api/admin/dashboard` and `/api/admin/orders?risk=...` now use the same source-table risk query for `overdue_unprocessed`, `no_operator`, `offline_unrecorded`, and `missing_fields`;
+  - `/admin-vue/orders` reads the `risk` query parameter on load, automatically applies the filter, shows `当前筛选：...`, and keeps an explicit empty state when no orders match;
+  - the Vue order center now shows source tracking fields such as offline-recorded state and last operator, and falls back to the source business detail page when a derived risk row has no unified order record.
+- Cleaned daily Vue order center display:
+  - removed the routine `归档状态` column from `/admin-vue/orders`;
+  - removed the visible `已取消` option from the Vue order filter/status labels for this operator dashboard flow;
+  - kept underlying legacy archive APIs untouched for compatibility and rollback.
+- Verification after the dashboard/risk alignment:
+  - `node --check api/admin/[...action].js` passed;
+  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` build output;
+  - source scan found no `归档`, `已取消`, `cancelled`, `archived`, or `unarchived` strings in `DashboardView.vue`, `OrdersView.vue`, or `OrderFilters.vue`;
+  - unauthenticated `GET /api/admin/orders?risk=no_operator&page_size=1` returned 401, confirming the risk list remains admin-only;
+  - `npm run build:prod` passed.
+- Polished the current `ngn.best` information plaza homepage so it feels more like a real student community discussion list:
+  - post cards now use a stronger title hierarchy, two-line summaries, clearer metadata grouping, category color dots, and a stronger hover state;
+  - right-side NGN service entries now render as clickable rows with arrows and a light green hover background;
+  - the rules card was shortened to three easy-to-scan bullets about privacy, ads/false content/attacks, and moderation;
+  - when the post list is short, the page now shows a lightweight `更多信息正在陆续发布中` module with a small publish button, reducing the unfinished empty-page feeling;
+  - the search panel was slimmed down by visually hiding the `搜索信息` micro-title and aligning input/button heights;
+  - no Flarum deployment, PHP/MySQL server, account integration, API, database, email, cron, or deployment configuration was added or changed.
+- Verification after the community homepage detail polish:
+  - `node --check community.js` passed;
+  - Playwright opened `http://localhost:3000/community.html` at desktop and mobile widths and captured screenshots under `output/playwright/community-polish-desktop.png` and `output/playwright/community-polish-mobile.png`;
+  - desktop verification confirmed stronger discussion-card styling, the short-content module, arrow service rows, three rule bullets, and no horizontal overflow;
+  - mobile verification confirmed the order: top navigation, title intro, publish button, search, chips, post list, content module, then rules/service cards, with no horizontal overflow.
+- Upgraded the Vue Admin homepage/control panel into a business dashboard:
+  - `apps/admin-vue/src/views/DashboardView.vue` now renders KPI cards, 7-day order trends, order status distribution, today/overdue todos, risk alerts, recent operation logs, quick links, and cache metadata;
+  - `apps/admin-vue/src/styles.css` now includes the dashboard-specific responsive layout, white cards, soft shadows, KPI icon blocks, lightweight CSS bar/donut charts, task/risk lists, log table, and quick-entry buttons;
+  - existing sidebar/menu structure and other Vue admin pages were intentionally left unchanged.
+- Extended the existing admin dashboard aggregate API without adding database schema:
+  - `/api/admin/dashboard` now returns `cards`, `trends`, `status_distribution`, `today_todos`, `risk_alerts`, `recent_operations`, and `generated_at`;
+  - the endpoint still requires server-side admin auth through the existing admin aggregate route;
+  - optional dashboard subqueries degrade to zero or empty lists if a non-critical source is unavailable, so the dashboard should not fail just because one secondary table/field cannot be read.
+- Updated `docs/PROJECT_MAP.md` to document the expanded `/api/admin/dashboard` response and its use of `admin_operation_logs`.
+- Verification after the Vue Admin dashboard refresh:
+  - `node --check api/admin/[...action].js` passed;
+  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` build output;
+  - `npm run build:prod` passed;
+  - local browser navigation to `/admin-vue/` without an active admin session redirected to `admin-login.html?return_to=/admin-vue/`, confirming the dashboard remains behind existing admin auth.
+- Implemented the short-term plan B for the current `ngn.best` information plaza homepage without deploying Flarum or adding any PHP/MySQL server:
+  - `community.html` was rebuilt as a Flarum-inspired forum homepage with a simple NGN topbar, primary discussion area, forum category chips, and a lightweight right sidebar;
+  - forum categories are limited to 全部, 找搭子, 二手交易, 转租/短租, 求助问答, 官方公告;
+  - NGN service links are only shown in the right sidebar card: 接机/拼车, 寄存, 搬家, 订房咨询, 新生礼包;
+  - `community.js` now renders the homepage post list as clickable discussion-style rows with title, two-line summary, category tag, city/area, published date, comment count, view count, and expiry text;
+  - the empty state shows `暂无相关信息，可以发布第一条信息。` with a publish button;
+  - `community.css` now uses NGN green plus a soft rainbow accent, white cards, light shadows, consistent 8px radius, Flarum-like tag chips, and mobile single-column ordering.
+- Verification after the plan B homepage refresh:
+  - `node --check community.js` passed;
+  - `node --check site-auth.js` passed;
+  - Playwright opened `http://localhost:3000/community.html` at desktop and mobile widths and captured screenshots under `output/playwright/community-forum-desktop.png` and `output/playwright/community-forum-mobile.png`;
+  - desktop verification confirmed the left discussion list/right sidebar structure, no large service strip, forum-only category chips, and no horizontal overflow;
+  - mobile verification confirmed top navigation, publish button, search, chips, posts, then rules/service cards in a single column with no horizontal overflow.
+- Created a membership benefits SOP deliverable:
+  - corrected `docs/member-benefits-sop.docx` to match the real booking-member business logic: there are no membership levels, and the only business path to membership is completing an NGN accommodation booking;
+  - the SOP now treats admin direct grant and one-time activation codes as post-booking qualification delivery methods, not independent ways to become a member;
+  - the SOP documents one active entitlement per user/cycle, one primary benefit selection per cycle, public four-choice benefits (`storage`, `pickup`, `moving`, `welcome_pack`), order-backed binding for storage/pickup, offline/manual handling for moving/welcome pack, and admin audit actions for mark-used/cancel/reset/unbind;
+  - updated `docs/member-benefits-flowchart.md` with a Mermaid source flowchart for the corrected booking-member qualification and benefit-use process;
+  - regenerated and embedded a corrected visual process flowchart in the Word document;
+  - this was a documentation-only task and did not change public pages, admin pages, APIs, database schema, email behavior, deployment configuration, or runtime code.
+- Verification after creating the membership benefits SOP:
+  - re-audited the membership logic in `api/_lib/membership.js`, public membership handlers, admin membership handlers, `service-center.js`, `profile.js`, storage submit, transport submit, membership SQL, and `docs/PROJECT_MAP.md`;
+  - rendered `docs/member-benefits-sop.docx` to five PNG pages with the Documents artifact renderer;
+  - visually inspected all rendered pages and confirmed Chinese text, tables, the corrected flowchart, and footer layout render without clipping, overlap, or missing glyphs.
+- Completed a technical evaluation for using Flarum as an independent NGN student information plaza/forum:
+  - recommendation is to keep the current `ngn.best` Vercel + Supabase main site unchanged and deploy Flarum on an independent PHP hosting target under `forum.ngn.best` or `bbs.ngn.best`;
+  - Flarum should not be copied from `discuss.flarum.org.cn` and should not be forced into the existing Vercel project;
+  - Vercel is not recommended for production Flarum because Flarum expects a traditional PHP web server, Composer/CLI maintenance, MySQL/MariaDB, and persistent writable runtime storage, while Vercel Functions are serverless with a read-only filesystem except `/tmp`;
+  - first-phase account strategy should be independent forum accounts, with the main site only linking to the forum subdomain;
+  - later SSO can be evaluated through OAuth/OIDC using Supabase Auth as an OAuth/OIDC provider or a dedicated auth bridge, but this should be treated as a second phase.
+- Added the approved storage sync audit scheduled phase:
+  - storage audit now uses `STORAGE_SYNC_AUDIT_SITE_USER_CUTOVER_AT`, defaulting to `2026-05-07T00:00:00Z`, to split legacy missing `site_user_id` from new-order missing `site_user_id`;
+  - `created_at < cutover_at` with no `site_user_id` is skipped with `reason: legacy_no_site_user_id`;
+  - `created_at >= cutover_at` with no `site_user_id` is a mismatch with `reason: no_site_user_id_after_cutover`;
+  - sensitive mismatch fields matching phone, WeChat/WhatsApp, email, or address are recorded as presence-only values (`present` / `missing`) instead of full customer values;
+  - `storage_sync_audit_logs` now has additive `cutover_at` and `notification` metadata columns, applied to Supabase project `ngn-transport`;
+  - added cron-only `GET /api/cron/run-storage-sync-audit`, protected by `CRON_SECRET`, which runs passive storage audit and then sends one daily summary email;
+  - `vercel.json` now schedules `/api/cron/run-storage-sync-audit` at `30 8 * * *`;
+  - the cron path writes only `storage_sync_audit_logs` and does not modify `storage_orders`, `orders`, `order_status_logs`, `site_users`, public submit/delete flows, or QA data;
+  - no active QA user creation, QA buy-box/collection/return order creation, automated cleanup, automated repair, or instant anomaly notification was added.
+- Added storage sync audit daily summary email support:
+  - recipient uses `STORAGE_SYNC_AUDIT_NOTIFY_EMAIL`;
+  - sender uses `STORAGE_SYNC_AUDIT_EMAIL_FROM`, then `AUTH_EMAIL_FROM`, then `SMTP_FROM`, then a safe default;
+  - Resend uses existing `RESEND_API_KEY`; SMTP fallback uses existing SMTP env vars;
+  - if recipient or provider configuration is missing, the audit still succeeds and records `notification.skipped=true`;
+  - summary email includes run time, sampled count, order-center count, personal-center count, mismatch count, skipped count, recent safe mismatch/skipped summaries, cutover, and the admin log URL, without full phone, WeChat, email, or address values.
+- Verification after adding storage audit cron and daily summary:
+  - `node --check` passed for `api/_lib/storage-sync-audit.js`, `api/_lib/storage-sync-audit-email.js`, `api/cron/run-storage-sync-audit.js`, `api/run-storage-sync-audit.js`, `api/storage-sync-audit-logs.js`, and `dev-server.js`;
+  - `vercel.json` parsed successfully;
+  - local cron route without a secret returned 403;
+  - storage cron auth was tightened to accept only `Authorization: Bearer <CRON_SECRET>`; query-string `secret` and `x-cron-secret` are not accepted by `/api/cron/run-storage-sync-audit`;
+  - local verification confirmed no Authorization returns 403, query-string secret returns 403, and correct Bearer secret returns 200;
+  - manual `GET /api/run-storage-sync-audit` returned 405 and unauthenticated manual `POST /api/run-storage-sync-audit` returned 401;
+  - temporary local cron verification with `CRON_SECRET` and `sample_size=1` returned 200 and wrote one storage audit log with `notification.skipped=true` because the notify email was intentionally blank;
+  - Supabase column check confirmed `storage_sync_audit_logs.cutover_at` and `storage_sync_audit_logs.notification` exist;
+  - `npm run build:prod` passed.
+
+- Refreshed the public community information plaza homepage:
+  - `community.html` now uses a simple NGN topbar with logo, `信息广场`, `发布信息`, and the compact site-auth user slot;
+  - removed the large service-button strip from the forum homepage and kept service links only in the lighter right sidebar;
+  - the homepage category filters are now forum categories only: 全部, 找搭子, 二手交易, 转租/短租, 求助问答, 官方公告;
+  - the main content uses a two-column layout with the post list as the primary area and lightweight rules/service cards on the right;
+  - search and category chips were restyled to feel like a student community board instead of an admin filter bar;
+  - post cards now show title, two-line summary, category, city/area, publish date, comment count, view count, and expiry text, with stronger treatment only when a post is close to expiry;
+  - empty results now show `暂无相关信息，可以发布第一条信息。` with a publish button;
+  - the shared site-auth dropdown now exposes `我的发布`, `个人资料`, and `退出登录`.
+- Verification after refreshing the community homepage:
+  - `node --check community.js` passed;
+  - `node --check site-auth.js` passed;
+  - Playwright opened `http://localhost:3000/community.html` at desktop and mobile widths, captured screenshots under `output/playwright/`, and confirmed no horizontal overflow, the desktop split, mobile stacking, forum-only chips, and removal of the large service strip.
+- Removed the unused "最少能接受几人拼车价位" option group from the public carpool request form:
+  - `pickup-form.html` no longer renders the `share_goal` radio group shown above the 同行人数 section;
+  - `pickup-form.js` no longer reads `share_goal`, no longer includes 拼车价位 in the generated summary or notes, and submits new front-office carpool requests with `shareable: true`;
+  - this is a public frontend form cleanup only and does not change admin pages, APIs, database schema, email, payment, deployment configuration, or transport public-board privacy behavior.
+- Verification after removing the public carpool form option:
+  - `node --check pickup-form.js` passed;
+  - source scan confirmed `pickup-form.html` and `pickup-form.js` no longer contain `share_goal`, `最少能接受`, `拼车价位`, `只想包车`, or the removed carpool price choices.
+- Confirmed the manually opened `/admin-vue/storage/sync-logs` page state after the user verified the list loads:
+  - current loaded audit records show `mismatch_count = 0`;
+  - a log with one skipped check is consistent with the known legacy storage order without `site_user_id`;
+  - the page currently has no repair, delete-log, rerun-sync, cron, notification, daily summary, QA order creation, or public submit/delete behavior;
+  - `GET /api/storage-sync-audit-logs` remains admin-only and returns audit summary fields rather than full storage order rows;
+  - skipped checks currently store `reason: no_site_user_id`, and the Vue page maps that reason to readable text rather than displaying `unknown`;
+  - privacy follow-up before treating the audit log page as release-ready: future mismatch rows can include `expected` / `actual` values for fields such as `phone` and `wechat_or_whatsapp`, so those values should be masked or omitted before cron/notification/release use.
+- Added direct detail access for membership pickup reservations in the personal center:
+  - `service-center.html` now has a direct `查看详情` button in the pickup summary card;
+  - `service-center.js` wires that button to the existing personal-center order detail modal for both normal pickup reservations and membership-bound pickup reservations;
+  - membership-bound pickup reservations remain deduplicated from the ordinary recent-record list, but the pickup summary card can still open the linked order details;
+  - `service-center.js` also adds a `查看详情` action inside the membership benefit card when the selected pickup benefit is bound to an order;
+  - pickup membership displays no longer show the membership discount/price amount, and the detail modal hides the `当前每人价格` row for membership pickup orders;
+  - this is a public personal-center display-only change and does not change APIs, database schema, admin behavior, membership binding behavior, email, payment, or deployment configuration.
+- Verification after adding the detail button and hiding pickup membership prices:
+  - `node --check service-center.js` passed;
+  - UTF-8 sanity checks confirmed `service-center.js` and `service-center.html` still contain readable Chinese text and not mojibake;
+  - `npm run build:prod` passed.
+- Rechecked the storage sync audit log 404 after the browser still showed `Request failed with 404`:
+  - confirmed the Vue admin page requests the correct API paths: `GET /api/storage-sync-audit-logs` and `POST /api/run-storage-sync-audit`;
+  - confirmed the API files exist at `api/storage-sync-audit-logs.js` and `api/run-storage-sync-audit.js`;
+  - found the active local `npm run dev` process on port 3000 was still running the old in-memory route table from before the local `dev-server.js` route fix;
+  - restarted the local dev server on port 3000 so it now uses the updated route mappings;
+  - unauthenticated `GET /api/storage-sync-audit-logs` now returns 401 instead of 404;
+  - unauthenticated `POST /api/run-storage-sync-audit` now returns 401 instead of 404;
+  - no Vercel cron, email notification, daily summary, QA order creation, public submit/delete flow, database schema, or Vue page behavior was changed in this recheck.
+- Fixed the personal-center pickup summary card for membership-bound pickup reservations:
+  - `service-center.js` now keeps membership-bound pickup orders hidden from the duplicate ordinary order list, but the ordinary pickup summary card no longer says `当前无接机预约` when the current pickup is the linked membership reservation;
+  - the pickup summary card now shows `当前为会员预约` and uses the linked pickup service time to show either `9 月接机免费` or `非 9 月或其他时间接机优惠 100 镑`;
+  - if the service month cannot be resolved but the claim has a 100 GBP discount amount, the card falls back to the 100 GBP discount copy;
+  - the summary card remains non-clickable for the membership-bound duplicate; the membership benefit card remains the canonical place to show the linked order number and membership benefit state;
+  - this is a public personal-center display/copy change only and does not change APIs, database schema, admin behavior, membership binding behavior, email, payment, or deployment configuration.
+- Verification after fixing the pickup summary card:
+  - `node --check service-center.js` passed;
+  - `npm run build:prod` passed.
+- Fixed local dev-server routing for storage sync audit APIs:
+  - `dev-server.js` now maps `GET /api/storage-sync-audit-logs` to `api/storage-sync-audit-logs.js`;
+  - `dev-server.js` now maps `POST /api/run-storage-sync-audit` to `api/run-storage-sync-audit.js`;
+  - this fixes local `/admin-vue/storage/sync-logs` showing `Request failed with 404` even though the Vue page and API files existed;
+  - this is a local helper server routing fix only and does not change the API handlers, database schema, Vue page logic, Vercel cron, notifications, public pages, storage submit, or delete behavior.
+- Verification after fixing the local storage audit API routes:
+  - `node --check dev-server.js` passed;
+  - unauthenticated `GET /api/storage-sync-audit-logs` on the local helper server returned 401 instead of 404;
+  - unauthenticated `POST /api/run-storage-sync-audit` returned 401 instead of 404;
+  - authenticated `GET /api/storage-sync-audit-logs?page=1&page_size=2` returned 200 with stored log data;
+  - authenticated `POST /api/run-storage-sync-audit?sample_size=3` returned 200 and stored a small manual audit log.
+- Updated personal-center copy for pickup membership reservations:
+  - `service-center.js` now renders pickup membership-bound reservations as `当前为会员预约`;
+  - if the linked pickup service time is in September, the membership card copy says `9 月接机免费`;
+  - if the linked pickup service time is outside September, the copy says `非 9 月或其他时间接机优惠 100 镑`;
+  - if the service month cannot be resolved but the claim already has a 100 GBP discount amount, the copy falls back to `本次接机优惠 100 镑`;
+  - this is a public personal-center copy/display change only and does not change APIs, database schema, membership binding, admin behavior, email, payment, or deployment configuration.
+- Verification after updating pickup membership reservation copy:
+  - `node --check service-center.js` passed;
+  - `npm run build:prod` passed.
+- Removed duplicate display of membership-bound orders in the personal center:
+  - `service-center.js` now filters the current membership claim's linked order out of the ordinary pickup/storage summary cards and the recent-record list;
+  - the membership benefit card remains the canonical place to show the linked membership service order;
+  - non-membership pickup/dropoff and storage orders still appear normally in the personal center;
+  - this is a public personal-center display-only change and does not change APIs, database schema, membership binding, admin behavior, email, payment, or deployment configuration.
+- Verification after the personal-center deduplication:
+  - `node --check service-center.js` passed;
+  - `npm run build:prod` passed.
+- Fixed stale membership claim order bindings after order deletion:
+  - deleting a transport request through the authenticated admin `DELETE /api/transport-requests/:id` path now releases the linked membership benefit claim when the deleted request had `membership_benefit_claim_id`;
+  - deleting a storage order through the authenticated admin storage-order delete path now releases the linked membership benefit claim in the same way;
+  - releasing a claim changes it from `reserved` back to `selected`, clears `linked_order_table`, `linked_order_id`, `linked_order_no`, membership discount, extra charge, final price, and discount breakdown, and writes a `membership_claim_order_unbound` audit log;
+  - `/admin-vue/memberships` now shows a guarded `解绑订单` action for reserved claims with a linked order, so existing stale records from already-deleted orders can be manually repaired;
+  - membership detail and old membership audit labels now display `membership_claim_order_unbound` as `解绑订单`;
+  - this is an admin API/member-state consistency change and does not change database schema, public API exposure, payment behavior, email behavior, or deployment configuration.
+- Verification after fixing membership claim unbinding:
+  - `node --check api/_lib/membership.js` passed;
+  - `node --check api/transport-requests/[id].js` passed;
+  - `node --check api/admin/[...action].js` passed;
+  - `MembershipsView.vue` and `MembershipDetailView.vue` parsed with `@vue/compiler-sfc`;
+  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` bundle;
+  - `npm run build:prod` passed.
+- Fixed Vue admin membership-order highlighting:
+  - `/admin-vue/transport/requests` now receives `membership_benefit_claim_id` and `membership_discount_amount` from the transport request list API, so pickup/dropoff orders bound to a membership benefit can be identified in the list;
+  - the shared Vue `AdminTable` now supports an optional row class function, and membership-bound transport rows are highlighted yellow;
+  - Vue storage all-orders and storage sub-list pages also use the same membership highlight rule for consistency: rows with a membership benefit claim or a positive membership discount are highlighted yellow;
+  - this is an admin display/API-field exposure change only; no public page, database schema, email, payment, membership binding behavior, or deployment configuration was changed.
+- Verification after fixing membership-order highlighting:
+  - `node --check api/transport-requests/index.js` passed;
+  - `node --check api/transport-requests/export.js` passed;
+  - `AdminTable.vue`, `TransportRequestsView.vue`, `StorageOrdersView.vue`, and `StorageAllOrdersView.vue` parsed with `@vue/compiler-sfc`;
+  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` bundle;
+  - `npm run build:prod` passed.
+- Added the manual storage sync audit log phase:
+  - created `storage_sync_audit_logs` with RLS forced and anon/authenticated access revoked;
+  - added a shared read-only storage audit helper that samples recent `storage_orders`, checks the unified `orders` mirror row, checks bound users through the personal-center storage orders path, records mismatches/skipped checks, and writes one summary row;
+  - added authenticated admin APIs `GET /api/storage-sync-audit-logs` and `POST /api/run-storage-sync-audit`;
+  - added `/admin-vue/storage/sync-logs` with filtering, pagination, details, and a guarded `手动巡检一次` button;
+  - added the storage sync log entry to the Vue storage sidebar;
+  - no Vercel cron, email notification, QA order creation, public page, storage submit, or delete behavior was changed.
+- Before enabling any storage audit cron or notifications, the `site_user_id` missing check must be tightened:
+  - use `storage_orders.created_at` plus a configurable cutover timestamp; do not use `order_type`, order number format, or `service_label` to decide old/new orders;
+  - recommended environment variable: `STORAGE_SYNC_AUDIT_SITE_USER_CUTOVER_AT=2026-05-07T00:00:00Z`;
+  - if the environment variable is missing, use `2026-05-07T00:00:00Z` as the default and record the actual `cutover_at` used in each audit log;
+  - when `created_at < cutover_at` and `site_user_id` is empty, record a skipped check with reason `legacy_no_site_user_id`;
+  - when `created_at >= cutover_at` and `site_user_id` is empty, record a mismatch with reason/field `no_site_user_id_after_cutover`;
+  - the Vue log details should clearly show skipped reasons, mismatch reasons, and the `cutover_at` used by that run.
+- Applied and verified the storage audit table on Supabase project `ngn-transport`:
+  - `storage_sync_audit_logs` exists with RLS enabled and forced;
+  - one manual audit run completed and stored successfully: sampled 10 orders, checked 10 order-center rows, checked 9 personal-center rows, skipped 1 old order without `site_user_id`, and found 0 mismatches;
+  - notifications remain disabled and reported as skipped.
+- Verification after adding the manual storage audit phase:
+  - `node --check api/_lib/storage-sync-audit.js` passed;
+  - `node --check api/storage-sync-audit-logs.js` passed;
+  - `node --check api/run-storage-sync-audit.js` passed;
+  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` bundle;
+  - `npm run build:prod` passed.
+- Restored real actions on the Vue membership entitlement list:
+  - `/admin-vue/memberships` now runs real admin actions for `开通会员`, `生成激活码`, row-level `登记权益` / `重新登记权益`, row-level `删除` membership entitlement, and activation-code `删除`;
+  - the Vue API helper now wraps the existing authenticated admin membership endpoints for grant, delete, manual claim creation, claim action, code creation, and code deletion;
+  - generated activation codes are shown once in the Vue page after creation, matching the existing backend behavior;
+  - destructive membership and activation-code deletes still require confirmation and reuse the existing server-side admin authorization boundaries;
+  - this is an admin Vue membership UI/API-client wiring change and does not change public pages, API route behavior, database schema, email behavior, payment behavior, or deployment configuration.
+- Verification after restoring Vue membership actions:
+  - `MembershipsView.vue` parsed and template-compiled with `@vue/compiler-sfc`;
+  - `node --check api/admin/[...action].js` passed;
+  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` bundle;
+  - the active generated bundle was scanned and confirmed to contain the restored action text such as `完整激活码`, `开通中...`, `重新登记权益`, and delete success text.
+- Restored the Vue transport request list row delete action:
+  - `/admin-vue/transport/requests` now shows a guarded single-row `删除` action in the operation column between `查看详情` and `标记/取消已记录`;
+  - deletion uses the existing authenticated `DELETE /api/transport-requests/:id` path through the shared Vue admin API helper;
+  - the action opens the shared confirmation-dialog pattern and warns that related transport group membership cleanup runs with the delete;
+  - this is an admin Vue list action restoration and does not change public pages, API routes, database schema, email behavior, payment behavior, or deployment configuration.
+- Verification after restoring the transport request list delete action:
+  - `TransportRequestsView.vue` parsed and template-compiled with `@vue/compiler-sfc` from the `apps/admin-vue` dependency context;
+  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` bundle;
+  - the active generated bundle was scanned and confirmed to contain `确认删除接送机订单`, `删除中...`, and the delete confirmation warning;
+  - `npm run build:prod` passed.
+- Replaced the old order-status display on Vue storage sub-lists with offline-recorded tracking:
+  - `/admin-vue/storage/box-orders`, `/admin-vue/storage/collections`, and `/admin-vue/storage/returns` now filter by `offline_recorded` instead of the legacy storage `status`;
+  - the order-number badge and buy-box status column now show `未记录` / `已记录` instead of legacy values such as `待确认`;
+  - each storage sub-list row now has a `标记已记录` / `取消已记录` action using the existing authenticated storage order PATCH path;
+  - this is an admin Vue/customer-service tracking change and does not change public pages, database schema, email, payment, or deployment configuration.
+- Verification after replacing storage sub-list status display:
+  - `rg` confirmed `StorageOrdersView.vue` no longer contains `待确认`, `pending_confirmation`, `filters.status`, `statusLabel(row.status)`, or `statusTone(row.status)`;
+  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` bundle.
+- Adjusted Vue storage sub-list search behavior:
+  - `/admin-vue/storage/box-orders`, `/admin-vue/storage/collections`, and `/admin-vue/storage/returns` now automatically search across all dates whenever the search box has a keyword or order number;
+  - when the search box is empty, the existing date range filter behavior remains unchanged;
+  - this prevents older orders such as `ST260410-0001` from being hidden by the default `当前及未来` date filter during direct searches;
+  - this is a Vue admin query-parameter change only and does not change storage APIs, database schema, public pages, email, payment, delete/export behavior, or deployment configuration.
+- Verification after widening storage sub-list search:
+  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` bundle;
+  - the generated bundle was scanned and confirmed to contain the new search-driven `date_scope=all` behavior.
+- Tightened the Vue storage sub-list address display:
+  - `/admin-vue/storage/box-orders`, `/admin-vue/storage/collections`, and `/admin-vue/storage/returns` now split room/apartment, full address, and postcode fields on `/` before display;
+  - repeated address fragments, room/building names, and postcodes are filtered by a normalized address key so values already present in a more complete address segment are not shown again;
+  - this is a Vue admin display-only change and does not change storage APIs, database schema, public pages, email, payment, delete/export behavior, or deployment configuration.
+- Verification after tightening the storage sub-list address display:
+  - `StorageOrdersView.vue` parsed and template-compiled with `@vue/compiler-sfc`;
+  - sample address cases matching the operator screenshot were checked with the new deduplication logic;
+  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` bundle.
+- Restored the Vue transport group detail driver dispatch summary behavior:
+  - `/admin-vue/transport/groups/:id` now generates the driver dispatch summary with the same legacy template as `transport-admin-group-edit.html`, including flight info, price/cross-terminal text, contact/payment lines, luggage totals, address/departure address, and the final driver line;
+  - saved custom summaries now use the same `[dispatch_summary_override]` marker pattern as the old admin so regular group notes and dispatch-summary overrides stay compatible between old admin and Vue admin;
+  - this did not change transport group APIs, database schema, email behavior, public pages, payment logic, member logic, or deployment configuration.
+- Verification after restoring the dispatch summary:
+  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` bundle;
+  - the source was checked for the restored legacy summary markers and sections.
+- Adjusted the Vue transport group detail page title size:
+  - `/admin-vue/transport/groups/:id` now gives the `拼车组详情` page title stronger visual weight so it matches the registered pickup/dropoff detail page title;
+  - this was a CSS-only admin Vue change and did not touch transport group business logic, APIs, database schema, public pages, email behavior, or deployment configuration.
+- Verification after the title-size adjustment:
+  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` bundle.
+- Restored the Vue storage all-orders row delete action:
+  - `/admin-vue/storage/orders` now shows a guarded single-row `删除` action in the operation column alongside `查看详情` and line-record toggles;
+  - deletion uses the existing authenticated `DELETE /api/admin/storage-orders?id=...` path through the shared Vue admin API helper;
+  - the action opens the existing confirmation-dialog pattern before deleting and does not add batch delete;
+  - no API route, database schema, public page, email, or deployment behavior changed.
+- Verification after restoring the storage all-orders delete action:
+  - `StorageAllOrdersView.vue` parsed and template-compiled with `@vue/compiler-sfc`;
+  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` bundle;
+  - the active generated bundle was scanned and confirmed to contain the restored delete labels and confirmation text.
+- Reworked `/admin-vue/transport/groups/:id` to follow the previous admin detail layout:
+  - restored the legacy-style sections: `组概要`, `费用与付款`, `组内成员列表`, `加入成员`, and `司机派单摘要`;
+  - fields that were editable in the old detail stay editable in Vue: max passengers, service time, payment status, adding/removing members, and driver dispatch summary;
+  - readonly fields such as Group ID, created time, service type, airport, terminal summary, current member count, order/member details, fees, and joined time remain readonly;
+  - the member table now mirrors the old-detail information density with order status, contact, flight/time, terminal, luggage, destination, surcharge, payment status, joined time, and actions;
+  - the dispatch summary now has one-click copy, reset to auto-generated content, and save actions.
+- Verification after aligning the Vue group detail with the old layout:
+  - `TransportGroupDetailView.vue` parsed and template-compiled with `@vue/compiler-sfc`;
+  - `node --check api/transport-groups/[id].js` passed;
+  - `node --check api/transport-groups/[id]/members.js` passed;
+  - `node --check api/transport-requests/[id].js` passed;
+  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` bundle;
+  - the active generated bundle was scanned and confirmed to contain the restored legacy-style section/action labels;
+  - `npm run build:prod` passed.
+- Moved the Vue admin account controls from the top-right header into the lower-left sidebar:
+  - the logged-in admin name and `退出登录` button now render at the bottom of the Vue admin sidebar;
+  - the global top header was removed from the Vue admin layout so page content starts higher and the previous blank horizontal area is gone;
+  - mobile sidebar layout keeps the account name and logout button below the navigation without changing routes or business behavior.
+- Verification after the Vue admin account-layout adjustment:
+  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` bundle;
+  - `npm run build:prod` passed;
+  - Playwright opened `/admin-vue/transport/groups` on the local server and confirmed unauthenticated access still redirects to `admin-login.html?return_to=...`.
+- Restored `/admin-vue/transport/groups/:id` from a readonly summary into a management-style Vue detail page:
+  - the page now keeps operators inside the new Vue admin while showing editable group controls;
+  - restored management sections for group info, pricing/payment summary, adding a member by order number, and current members;
+  - restored actions for saving group status/max passengers/service time/notes, marking a member paid/unpaid, removing a member, viewing the linked request, adding an order to the group, and deleting an empty group;
+  - dangerous actions remain guarded: removing members and deleting groups require confirmation, and non-empty groups still cannot be deleted directly.
+- Added the Vue API wrapper for the existing `PATCH /api/transport-groups/:id` endpoint.
+- Verification after restoring the Vue group management detail:
+  - `node --check api/transport-groups/[id].js` passed;
+  - `node --check api/transport-groups/[id]/members.js` passed;
+  - `TransportGroupDetailView.vue` parsed and template-compiled with `@vue/compiler-sfc`;
+  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` bundle;
+  - the active generated bundle was scanned and confirmed to contain the restored management actions;
+  - `npm run build:prod` passed.
+- Reverted the mistaken old-admin transport group detail jump:
+  - Vue transport group list `查看详情` now opens `/admin-vue/transport/groups/:id` again;
+  - Group ID links from Vue transport request list and request detail also stay inside the Vue admin group detail route;
+  - direct visits to `/admin-vue/transport/groups/:id` no longer redirect to `transport-admin-group-edit.html`;
+  - restored payment and delete actions on the Vue group list remain unchanged.
+- Verification after keeping group detail in Vue:
+  - `TransportGroupsView.vue`, `TransportRequestsView.vue`, `TransportRequestDetailView.vue`, and `TransportGroupDetailView.vue` parsed and template-compiled with `@vue/compiler-sfc`;
+  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` bundle;
+  - the active generated bundle was scanned and confirmed to contain the Vue group route, with no `transport-admin-group-edit.html` or old-admin group redirect;
+  - `npm run build:prod` passed.
+- Restored the transport group detail entry to the old admin workflow after operator review:
+  - Vue transport group list `查看详情` now opens `transport-admin-group-edit.html?id=...` instead of the simplified Vue group-detail screen;
+  - Group ID links from Vue transport request list and request detail now also open the old transport group detail page;
+  - direct visits to `/admin-vue/transport/groups/:id` now redirect to `transport-admin-group-edit.html?id=...`;
+  - the Vue transport group list still keeps the restored row-level payment and delete actions.
+- Verification after restoring the group detail entry:
+  - `TransportGroupsView.vue`, `TransportRequestsView.vue`, `TransportRequestDetailView.vue`, and `TransportGroupDetailView.vue` parsed and template-compiled with `@vue/compiler-sfc`;
+  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` bundle;
+  - the active generated bundle was scanned and confirmed to contain `transport-admin-group-edit.html` and no old Vue group-link template;
+  - `npm run build:prod` passed.
+- Restored the Vue transport group row delete action:
+  - `/admin-vue/transport/groups` now shows `删除` next to `查看详情` in the row action column;
+  - the Vue action follows the old-admin guard and refuses deletion when the group still has members, showing `请把当前拼车组成员移到其他组里。`;
+  - single-row delete uses the existing authenticated `DELETE /api/transport-groups/:id` endpoint; no batch delete was added;
+  - the delete endpoint now resolves the stored group first and uses the real `group_id` when loading members, so member/regroup logic is not skipped when the frontend passes the database id.
+- Verification after restoring the group delete action:
+  - `node --check api/transport-groups/[id].js` passed;
+  - `node --check api/transport-groups/index.js` passed;
+  - `TransportGroupsView.vue` parsed and template-compiled with `@vue/compiler-sfc`;
+  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` bundle;
+  - the active generated bundle was scanned and confirmed to contain the restored delete labels and member-guard message;
+  - `npm run build:prod` passed.
+- Made the Vue admin sidebar section headers collapsible:
+  - `后台`, `接送机拼车管理`, and `寄存管理` now render as accessible toggle buttons with `aria-expanded`;
+  - clicking a section header folds or expands that section's links, including the transport and storage groups shown in the operator screenshot;
+  - active sections are visually highlighted while still allowing the operator to collapse them;
+  - no route, API, database, public page, email, or deployment behavior changed.
+- Verification after the sidebar collapse update:
+  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` bundle;
+  - `npm run build:prod` passed;
+  - the active generated bundle was scanned and confirmed to contain the collapsible sidebar controls;
+  - local unauthenticated access to `/admin-vue/transport/groups` still redirects to `admin-login.html?return_to=...`, so browser inspection stopped at the expected login gate.
+- Restored the Vue transport group payment action after operator review:
+  - `/admin-vue/transport/groups` now shows a dedicated `付款操作` column again;
+  - groups with unpaid members show `标记付款` or `标记X人付款`;
+  - clicking the button updates the affected transport requests through the existing `PATCH /api/transport-requests/:id` path, preserving existing internal notes while adding the `[payment:paid]` marker;
+  - the existing payment-confirmation email trigger remains on the transport request PATCH path, so the Vue group list does not bypass the established payment flow;
+  - `/api/transport-groups` now includes each member's existing `admin_note` in the admin-only payment summary so the Vue action does not overwrite notes.
+- Verification after restoring the transport group payment action:
+  - `node --check api/transport-groups/index.js` passed;
+  - `TransportGroupsView.vue` parsed and template-compiled with `@vue/compiler-sfc`;
+  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` bundle;
+  - the active generated bundle was scanned and confirmed to contain `付款操作`, `标记付款`, `保存中...`, and `已付款`;
+  - `npm run build:prod` passed.
+- Unified the Vue admin offline-record and export operation model on storage all-orders and transport request lists:
+  - `/admin-vue/storage/orders` and `/admin-vue/transport/requests` now keep only `查询`, `重置`, and `导出当前筛选结果` in the filter action area;
+  - the high-risk transport list action `一键标记当前筛选为已线下记录` was removed from the page header;
+  - both pages now use a shared `AdminBulkActionBar` above the table with `选择当前页`, `批量标记已记录`, `批量取消已记录`, and `导出选中订单`;
+  - bulk mark/cancel and selected export are selected-row only; no frontend action marks all filtered transport rows;
+  - row actions on both pages are normalized to `查看详情` plus `标记已记录`/`取消已记录`;
+  - list labels now consistently show `线下记录` with `未记录` / `已记录`.
+- Added narrow backend support needed by the unified UI:
+  - `PATCH /api/transport-requests` now supports selected-id `set_offline_recorded` for marking or canceling selected transport requests;
+  - `/api/admin/storage-orders-export` now supports selected expanded storage all-order row ids, so exporting selected rows does not accidentally export every expanded row for the same base storage record;
+  - transport request export now uses `线下记录` with `未记录` / `已记录`.
+- Verification after the unified operation update:
+  - `node --check api/transport-requests/index.js` passed;
+  - `node --check api/transport-requests/export.js` passed;
+  - `node --check api/admin/[...action].js` passed;
+  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` bundle;
+  - `npm run build:prod` passed;
+  - Playwright opened the local Vue transport request route and confirmed unauthenticated access still redirects to the backend login page.
+- Cleaned mojibake text on the Vue transport request list header/filter area:
+  - `TransportRequestFilters.vue` now uses normal Chinese labels, options, and action text for the transport request filters and export button;
+  - `AppHeader.vue` now shows `退出登录` instead of garbled text in the top-right account area;
+  - `LoginRedirectView.vue` now shows normal Chinese fallback login copy;
+  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` bundle;
+  - the active generated bundle was scanned and confirmed to contain the expected Chinese labels with no matching old mojibake fragments for the fixed text.
+- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before implementing the storage all-orders page.
+- Added the Vue storage all-orders control route:
+  - new route `/admin-vue/storage/orders`;
+  - sidebar order under 寄存管理 is now 全部订单, 买箱订单, 取寄存订单, 送寄存订单;
+  - the page summarizes ST-B buy-box, ST-P storage collection, and ST-S/ST-R-compatible storage return rows without creating a fourth business type;
+  - the page includes search, service type, order status, offline-recorded state, last operator, date range, sort, page-size filters, current-page selection, safe bulk mark/cancel offline-recorded, filtered export, and per-row detail routing;
+  - no archive/归档 concept or action is present on this new page.
+- Added storage offline tracking support:
+  - local migration `supabase/20260519_storage_order_offline_tracking.sql` adds `offline_recorded`, `last_operated_by`, and `last_operated_at` to `storage_orders` plus focused indexes;
+  - historical storage rows default to `offline_recorded=false`; no backfill from the generic `orders.archived` field was added;
+  - `/api/admin/storage-orders` now supports the all-orders view, offline-recorded and last-operator filters, dynamic operator options, and selected-id bulk mark/cancel offline-recorded;
+  - storage order PATCH updates now also refresh `last_operated_by` and `last_operated_at` for key admin edits such as status/date/address/note/offline changes.
+- Updated storage exports:
+  - `/api/admin/storage-orders-export?order_type=all` exports the current all-orders filter result with offline-recorded and last-operation columns;
+  - the storage export does not add archived/归档 fields.
+- Refreshed the Vue storage sub-list component because the existing source had malformed encoded template tags that blocked Vue compilation; the replacement preserves the three existing subpages, list filters, export, detail links, and single-row delete.
+- Follow-up after the storage all-orders page did not appear locally:
+  - repaired malformed Vue source files that were blocking the admin build output refresh: `TransportGroupsView.vue`, `TransportGroupDetailView.vue`, `TransportRequestDetailView.vue`, `TransportRequestsView.vue`, `OrderFilters.vue`, and `TransportGroupFilters.vue`;
+  - `npm run build:admin-vue` now passes and regenerated the root `admin-vue/` bundle, including the `/admin-vue/storage/orders` route and the sidebar "全部订单" entry;
+  - `npm run build:prod` now passes.
+- Cleaned the Vue storage all-orders control page after operator review:
+  - removed the order-status filter, request parameter, table column, and all-orders export column from the control page because客服只需要按线下记录状态处理;
+  - kept line-recorded status as the single operational status on the all-orders page: 未记录 / 已记录;
+  - changed the address summary to split and deduplicate room/apartment, full address, and postcode segments so repeated values such as room number and postcode are not shown multiple times;
+  - regenerated the root `admin-vue/` bundle after the cleanup.
+- Refined the Vue storage all-orders operation column after operator review:
+  - added back a guarded single-row 删除 action using the existing `/api/admin/storage-orders?id=...` DELETE path;
+  - no batch delete action was added;
+  - address summary deduplication now also removes shorter room/building/postcode fragments when they are already contained inside a longer address segment, reducing repeated text such as building names appearing twice;
+  - regenerated the root `admin-vue/` bundle after this adjustment.
+- Added readiness handling for the storage all-orders offline-recorded buttons:
+  - `/api/admin/storage-orders` now reports whether the storage offline tracking columns are available;
+  - if `offline_recorded`, `last_operated_by`, or `last_operated_at` is missing, bulk and single-row mark/cancel recorded operations return a clear Chinese migration message instead of the raw Postgres "column does not exist" error;
+  - the Vue all-orders page disables mark/cancel recorded buttons and shows the migration message until `supabase/20260519_storage_order_offline_tracking.sql` is applied.
+- Applied the storage offline tracking migration to Supabase project `ngn-transport`:
+  - `offline_recorded`, `last_operated_by`, and `last_operated_at` now exist on `public.storage_orders`;
+  - the five related storage tracking/service-date indexes now exist;
+  - current historical storage rows remain initialized as `offline_recorded=false`, so they display as 未记录 until customer service marks them.
+- Verification after the storage all-orders implementation:
+  - `node --check api/admin/[...action].js` passed;
+  - `node --check api/_lib/storage-orders.js` passed;
+  - `StorageAllOrdersView.vue` was parsed and template-compiled directly with `@vue/compiler-sfc`;
+  - scan of the new all-orders page/API client/storage migration found no archive/归档 wording;
+  - generated Vue bundle scan confirms the storage all-orders route is present;
+  - `npm run build:admin-vue` passed after removing the all-orders status UI and refreshing address display;
+  - `npm run build:admin-vue` and `npm run build:prod` passed after adding single-row delete and stronger address deduplication;
+  - `node --check api/admin/[...action].js`, `npm run build:admin-vue`, and `npm run build:prod` passed after adding offline-recorded readiness handling.
 - Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before the checkpoint.
+- Updated transport request deletion to preserve carpool/group consistency:
+  - `DELETE /api/transport-requests/:id` now removes the request from any `transport_group_members` rows before deleting the request;
+  - affected transport groups are synced through the existing lifecycle logic, so remaining members are reclassified and empty groups are cleaned up;
+  - deleting a request does not create a replacement group for the request being deleted.
+- Restored the visible delete button in the currently served Vue transport request list:
+  - the Vue source already had the row-level delete action, but the generated `admin-vue` bundle still had the older two-button action column;
+  - patched the active generated bundle so `/admin-vue/transport/requests` now shows `查看`, `删除`, then `标记/取消线下记录`;
+  - the generated delete action calls `DELETE /api/transport-requests/:id`, so it uses the server-side carpool cleanup added above;
+  - full `npm run build:admin-vue` is still blocked by unrelated existing Vue syntax issues, currently `MembershipDetailView.vue`; small syntax blockers in `BoxOrderDetailView.vue` and `NotFoundView.vue` were minimally corrected while trying to rebuild.
+- Removed prominent old-admin entry points from daily Vue admin business pages:
+  - storage list pages now keep the Excel export action but no longer show the old storage admin button in the page header;
+  - storage and buy-box detail pages no longer show old-detail fallback buttons in the header;
+  - other migrated list/detail page headers no longer show obvious old-admin buttons for users, orders, managers, memberships, community, transport requests, transport groups, or sync logs;
+  - the Vue sidebar no longer shows the bottom return-to-old-admin legacy entry;
+  - the transport request filter shortcut now routes to the Vue transport groups page instead of the old transport groups page.
+- Old admin HTML pages were not deleted and remain available by direct URL for rollback, but the Vue admin no longer actively steers operators back to them from routine business screens.
+- Restored the delete action in the Vue transport request list:
+  - `/admin-vue/transport/requests` operation column now includes a per-row `鍒犻櫎` button;
+  - clicking it asks for confirmation before calling the existing authenticated `DELETE /api/transport-requests/:id` endpoint;
+  - after deletion the current list page reloads and selected-row state is cleaned.
+- Verification after restoring the list delete action:
+  - source scan confirmed `deleteTransportRequest`, `deleteRequest`, and the row-level `鍒犻櫎` button are present;
+  - `npm run build:admin-vue` is currently blocked by an unrelated dirty `CommunityPostDetailView.vue` syntax error at line 190 (`Invalid end tag`), so the Vue build output was not regenerated for this small list change.
+- Cleaned the service-type display on `/admin-vue/transport/requests/:id`:
+  - changed the read-only service type from a disabled select to a read-only input so the dropdown arrow is no longer shown;
+  - no data, API, database, or behavior change was made.
+- Verification after the service-type display cleanup:
+  - scanned `TransportRequestDetailView.vue` to confirm the service type uses a read-only input;
+  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` build output;
+  - `npm run build:prod` passed.
+- Fixed Vue admin API error-message extraction:
+  - the shared Vue admin request helper now unwraps nested API errors such as `{ error: { message } }`;
+  - transport request group-change failures now show the real backend reason instead of `[object Object]`;
+  - the same fix also improves other Vue admin JSON error messages that use the shared request helper.
+- Verification after the error-message fix:
+  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` build output;
+  - `npm run build:prod` passed.
+- Adjusted the `/admin-vue/transport/requests/:id` lower action label after operator feedback:
+  - the bottom action now says "鍒犻櫎璁㈠崟" and uses the danger button style;
+  - it still links to the existing advanced transport request management page for the actual delete flow, so no new Vue delete API call was added;
+  - the top header action remains "鏇村绠＄悊鎿嶄綔".
+- Verification after the delete-label adjustment:
+  - scanned `TransportRequestDetailView.vue` to confirm there is no "鏃у悗鍙? wording;
+  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` build output;
+  - `npm run build:prod` passed.
+- Cleaned confusing operator-facing wording on `/admin-vue/transport/requests/:id`:
+  - replaced "鎵撳紑鏃ц鎯呴〉" and "鍒犻櫎璁㈠崟锛堟棫鍚庡彴锛? with the neutral label "鏇村绠＄悊鎿嶄綔";
+  - removed the red delete-styled button from the Vue detail page so it no longer looks like a direct Vue delete action;
+  - the link still opens the existing advanced transport request management page for operations that have not been migrated into Vue.
+- Verification after the wording cleanup:
+  - scanned `TransportRequestDetailView.vue` to confirm the old-backend wording is gone;
+  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` build output;
+  - `npm run build:prod` passed.
+- Updated `/admin-vue/transport/requests/:id` after operator review to restore the old-detail lower workflow:
+  - the detail page now shows the current order's current Group ID with a link to the Vue group detail page;
+  - the detail page now shows a "鏇存崲鐜版湁鎷艰溅缁? section with force-by-Group-ID replacement and same-date/same-airport candidate group cards;
+  - saving the editable lower fields remains in Vue, while delete is still routed to the old detail page instead of adding a new Vue delete mutation;
+  - the detail page now shows an operation-record section listing who edited the order, when, and which fields changed.
+- Added transport request operation logging:
+  - `PATCH /api/transport-requests/:id` now compares changed fields and writes them into existing `admin_operation_logs` with `target_type='transport_request'`;
+  - `GET /api/transport-requests/:id` now returns the latest transport request operation logs for the Vue detail page;
+  - `POST /api/transport-groups/:id/members` now records affected request group membership changes in `admin_operation_logs` and updates the affected requests' last-operator summary fields;
+  - this reuses the existing admin audit table rather than adding a new audit table.
+- Applied Supabase migration `admin_operation_logs_transport_request_target_index` to project `ngn-transport`:
+  - local SQL file: `supabase/20260519_admin_operation_logs_transport_request_target_index.sql`;
+  - adds `idx_admin_operation_logs_target_type_target_id_created_at` for detail-page operation-log lookup;
+  - verified the index exists through Supabase SQL.
+- Updated `docs/PROJECT_MAP.md` for the transport request detail logs and group-member logging behavior.
+- Verification after the transport detail group/log update:
+  - `node --check api/transport-requests/[id].js` passed;
+  - `node --check api/transport-groups/[id]/members.js` passed;
+  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` build output;
+  - `npm run build:prod` passed.
+- Updated `/admin-vue/transport/requests/:id` after operator review:
+  - the lower detail fields are now editable in Vue: airport code, airport name, terminal, flight number, flight/departure time, departure location, destination address, pickup/service time, notes, and internal notes;
+  - the upper customer identity/contact fields remain read-only for this step;
+  - saving uses the existing authenticated `PATCH /api/transport-requests/:id` endpoint, so `last_operated_by` and `last_operated_at` are updated by the server;
+  - no new API route, database schema change, public page change, old admin page change, email behavior change, or delete/payment/grouping operation was added.
+- Verification after the editable transport detail update:
+  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` build output;
+  - the first parallel `npm run build:prod` attempt failed because it read a stale generated Vue asset name while `build:admin-vue` was refreshing output;
+  - rerunning `npm run build:prod` sequentially passed.
+- Simplified `/admin-vue/transport/requests/:id` for customer-service review:
+  - replaced the verbose migrated readonly detail sections with a single compact readonly form similar to the operator screenshot;
+  - the visible fields now focus on service type, name, email, phone, WeChat, passenger count, luggage, airport, terminal, flight number, trip times/locations, notes, and internal notes;
+  - removed the main-page display of transport group fields, membership/price fields, raw JSON previews, and placeholder operation buttons from this Vue detail page;
+  - kept the existing old-detail fallback link and the existing `GET /api/transport-requests/:id` data source;
+  - no API, database schema, public page, old admin page, email behavior, or real mutation behavior changed.
+- Verification after the transport detail simplification:
+  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` build output;
+  - `npm run build:prod` passed.
+- Cleaned remaining mojibake text in the Vue storage detail page:
+  - fixed the storage detail page title, loading text, back/old-detail links, order-number label, notes section title, and customer-service summary label;
+  - fixed storage detail money formatting to use `拢` and cleaned box/quantity fallback labels;
+  - scanned the Vue storage list/detail/box-detail source files for common mojibake fragments after the fix.
+- Refined `/admin-vue/storage/storage-orders/:id` for operator clarity:
+  - removed duplicated readonly service-date fields so the display section now keeps only storage start date, storage end date, and storage days;
+  - removed room number and floor/upstairs-description readonly fields from the address display;
+  - changed the boxes/items/quantity section into a readonly operator summary with associated buy-box order number, a box-type detail table, weight/overweight display, and no storage-quantity or buy-box editing controls;
+  - related buy-box lookup now uses existing order relationship fields such as `box_order_no` and resolves to the Vue buy-box detail route when an id can be found, otherwise it opens the buy-box list with a search query instead of falling back to the dashboard;
+  - replaced the old fee card grid with one readable total-price formula showing storage fee, home-service fee, stairs fee, overweight fee, buy-box fee, optional extra fee, and membership discount;
+  - `npm run build:admin-vue` passed after the cleanup.
+- Refined the Vue transport request offline-recorded workflow after operator review:
+  - the last-operator filter now uses real historical `transport_requests.last_operated_by` values returned by the backend instead of a fixed hardcoded staff list;
+  - if another admin account such as Firo edits a request, the existing server-side PATCH audit logic records that account name and it becomes available in the filter after reload;
+  - the Vue list now supports selecting rows, exporting selected rows, exporting the current page, or exporting all current filtered results with explicit button labels;
+  - the list heading now has a guarded "mark current filtered results offline-recorded" action, which updates `offline_recorded`, `last_operated_by`, and `last_operated_at` server-side for matching rows;
+  - `/api/transport-requests/export` now accepts selected/current-page `ids` for scoped exports;
+  - `/api/transport-requests` now supports the narrow bulk `PATCH` action for marking filtered rows as offline-recorded;
+  - no manual order creation, customer-owner assignment, payment-status work, carpool-status refactor, public page change, database schema change, or email behavior change was added.
+- Verification after the transport list refinement:
+  - `node --check api/transport-requests/index.js` passed;
+  - `node --check api/transport-requests/export.js` passed;
+  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` build output;
+  - `npm run build:prod` passed after the API and Vue changes.
 - Completed full acceptance of the Vue admin read-only list version.
 - Migrated Vue admin pages now covered by the checkpoint:
   - dashboard: `/admin-vue/`;
@@ -112,21 +995,187 @@
 - `npm run build:admin-vue` passed after the community post detail migration.
 - Vue source scan still found no `innerHTML`, `document.querySelector`, `addEventListener`, `admin-community.js`, or `admin-pages.js` usage.
 - Dangerous request scan found no new `PATCH`, `DELETE`, or export calls; only the existing shared fetch wrapper and existing logout `POST` remain.
+- Started Phase 5A real-operation migration with storage orders only:
+  - `/admin-vue/storage/box-orders`, `/admin-vue/storage/collections`, and `/admin-vue/storage/returns` now use the existing `GET /api/admin/storage-orders-export` endpoint for Excel export with the current filters;
+  - the same three storage list pages now support single-row deletion through the existing `DELETE /api/admin/storage-orders?id=...` endpoint;
+  - deletion requires a reusable Vue `ConfirmDialog` and displays order number, service type, and customer name before the request;
+  - deletion refreshes the current list page after success and disables repeated delete clicks while the request is running;
+  - no batch deletion, edit save, status mutation, or non-storage module write operation was added.
+- `npm run build:admin-vue` passed after Phase 5A storage operation migration.
+- Vue source scan still found no `innerHTML`, `document.querySelector`, or `addEventListener` usage.
+- Dangerous request scan now shows the intended storage single-delete `DELETE` in the Vue API client and the existing logout `POST`; no `PATCH` or export mutation was added.
+- Refined Vue storage order list address display:
+  - `/admin-vue/storage/box-orders`, `/admin-vue/storage/collections`, and `/admin-vue/storage/returns` now combine apartment/building, detailed address, and postcode into one "address" column;
+  - the full combined address is available in the cell title/hover text to avoid losing detail in compact table layouts;
+  - this uses existing `address_full`, `room_or_building`, and `postcode` fields already returned by the storage list API, so no API or database change was required.
+- `npm run build:admin-vue` passed after the storage address display refinement.
+- Refined the same Vue storage address cell again so the combined address wraps across lines instead of truncating with an ellipsis.
+- `npm run build:admin-vue` passed after the storage address wrapping refinement.
+- Refined the Vue storage address cell again so duplicate apartment/address/postcode fragments are filtered before display; shorter fragments are replaced when a more complete address segment contains them, and repeated secondary address text was removed from the cell.
+- Added a "妫板嫭婀℃禒閿嬬壐" column to the right of the Vue storage list address column for `/admin-vue/storage/box-orders`, `/admin-vue/storage/collections`, and `/admin-vue/storage/returns`; it uses existing list fields such as `estimated_total_price` and does not require API or database changes.
+- Refined the Vue storage list expected-price display from `GBP 0.00` style to the pound-symbol format `鎷?.00`.
+
+- Refined the Vue storage order detail page:
+  - detail display now reads more fallback values from `customer_form_json.serviceDetails` and `userSnapshot`, reducing false `--` values when data exists in the original form payload;
+  - service appointment dates/times and address fields can now be edited from `/admin-vue/storage/:id` using the existing `PATCH /api/admin/storage-orders?id=...` endpoint;
+  - raw JSON blocks were relabeled as troubleshooting data so operators understand they are original stored payloads rather than the main business view.
+- `npm run build:admin-vue` passed after the storage detail editable schedule/address refinement.
+- Removed the raw JSON/troubleshooting section from the Vue storage order detail page so customer service operators only see business-readable fields.
+- Refined the Vue storage order detail field fallback logic:
+  - `-` and `--` placeholders are treated as empty values;
+  - service, address, box type, quantity, purchase-box, and item-description fields now also fall back to structured purchase items and clearly labeled lines in `final_readable_message`;
+  - fields with no actual source data display `閺堫亜锝為崘妾?instead of ambiguous dashes.
+- Replaced the old stored `final_readable_message` display in the Vue storage detail page with a live customer-service-readable summary generated from parsed business fields, so historical `--` placeholders are no longer shown to operators.
+- Removed the customer-service note field from the Vue storage detail operator view and from the generated customer-service-readable summary. Existing note data remains untouched in the backend.
+- Removed the duplicated global Vue admin page title from the outer header:
+  - the top header now only shows the current admin account and logout action;
+  - each Vue page keeps its own local `view-heading` title and actions;
+  - this fixes the repeated title/eyebrow issue across all `/admin-vue/*` pages without changing API behavior, database schema, old admin pages, or public pages.
+- Simplified the Vue transport group detail page (`/admin-vue/transport/groups/:id`) for operator use:
+  - the page now follows a compact operations layout with group overview, fees/payment, member list, join-member placeholder, and driver dispatch summary sections;
+  - raw JSON, low-value internal field blocks, and duplicated readonly grids were removed from the main operator view;
+  - edit/payment/join/copy buttons remain placeholders and do not send real mutation requests in this step;
+  - the page still uses the existing `GET /api/transport-groups/:id` detail API and keeps the old group detail page as a fallback link.
+- `npm run build:admin-vue` passed after the transport group detail simplification.
+- Polished the Vue transport group detail layout again:
+  - the group overview is now a card grid instead of one crowded horizontal strip;
+  - max passenger/date placeholder controls were separated into a cleaner edit row;
+  - payment member rows, join-member controls, and responsive behavior were tightened;
+  - no API, database, old admin, public page, or real mutation behavior changed.
+- `npm run build:admin-vue` passed after the transport group detail layout polish.
+- Restored Vue storage module real operations for Phase 5A:
+  - the three Vue storage list routes continue using the existing `GET /api/admin/storage-orders-export` endpoint for Excel export with current filters;
+  - the three Vue storage list routes continue using the existing `DELETE /api/admin/storage-orders?id=...` endpoint for single-row deletion with a confirmation dialog;
+  - `/admin-vue/storage/:id` now uses the existing `PATCH /api/admin/storage-orders?id=...` endpoint to save the editable service appointment and address fields, then reloads the detail;
+  - `/admin-vue/storage/:id` now supports status changes through the same existing PATCH endpoint, guarded by a confirmation dialog;
+  - `/admin-vue/storage/:id` now supports deleting the current order through the existing DELETE endpoint, guarded by a confirmation dialog and returning to the matching list after success;
+  - `/admin-vue/storage/:id` exports the current order through the existing list export endpoint using the current order number as the search filter;
+  - no database schema, public page, old admin page, or non-storage module operation was changed.
+- `npm run build:admin-vue` passed after the Vue storage real-operation migration.
+- Fixed the Vue box-order list display for required buy-box operations fields:
+  - `/admin-vue/storage/box-orders` now uses a box-order-specific table layout instead of the generic storage list columns;
+  - the table now shows box type, purchased box quantity, address/apartment/postcode, box fee, and status using existing lightweight list fields such as `purchased_boxes`, `estimate_summary_json`, `address_full`, `room_or_building`, and `postcode`;
+  - the buy-box list no longer shows the expected-total column, and the address column now sits immediately to the right of purchased quantity;
+  - `/admin-vue/storage/collections` and `/admin-vue/storage/returns` keep the existing generic storage columns;
+  - no storage API response structure, database schema, delete/export/edit behavior, old admin page, or public page was changed.
+- `npm run build:admin-vue` passed after the box-order list display fix and the follow-up column-order refinement.
+- Cleaned up duplicated editable schedule fields on `/admin-vue/storage/:id`:
+  - removed the editable `service_date`, `storage_intake_date`, and `expected_storage_end_date` controls from the Vue detail form instead of hiding them;
+  - the schedule save payload now only sends the remaining editable fields, so removed duplicate fields are not submitted from the Vue detail page;
+  - operators now edit one storage start date and one storage end date in the schedule form;
+  - no API response shape, database schema, old admin page, public page, or non-storage module behavior changed.
+- Refined the Vue box-order list again:
+  - removed the separate `娑旀壆顔堥弫浼村櫤` column from `/admin-vue/storage/box-orders`;
+  - box quantity remains visible inside the `缁犲崬鐎穈 summary, for example `1閸欓顔?鑴?5`;
+  - the address column was widened to use the freed space;
+  - no API, database, old admin page, public page, or storage operation behavior changed.
+
+- Fixed Vue storage list/detail date synchronization:
+  - `/admin-vue/storage/collections` list service date now prefers `storage_start_date` before legacy `storage_intake_date`;
+  - saving the Vue storage detail schedule now also synchronizes the legacy date fields needed by the list, filters, sorting, and old admin compatibility;
+  - no API response structure, database schema, public page, or non-storage module behavior changed.
+- Added Phase 5A-2 storage pricing recalculation support:
+  - added `api/_lib/storage-pricing.js` to reuse the existing public storage estimate rules for admin-side recalculation;
+  - existing `PATCH /api/admin/storage-orders?id=...` now accepts `recalculate_pricing: true` and recalculates `estimated_total_price`, `estimated_box_count`, and `estimate_summary_json` from the current storage dates, quantity, access/lift conditions, purchase boxes, weights, and stored estimate details;
+  - `/admin-vue/storage/:id` now lets operators edit storage quantity and save it with pricing recalculation;
+  - saving schedule or address/lift fields from the Vue storage detail page now requests pricing recalculation for storage collection orders with estimate details;
+  - no database schema, public page, new API route, old admin page, or non-storage module behavior changed.
+- Fixed the first Phase 5A-2 recalculation trigger issue:
+  - Vue storage detail now identifies legacy collection orders by stable order signals such as `ST-P` order numbers and storage collection labels before falling back to date fields;
+  - Vue storage detail now treats stored calculator snapshots and total box counts as valid recalculation inputs, not only `estimate_summary_json.items`;
+  - this fixes the case where saving storage quantity showed "fees not recalculated" even though the order had enough stored pricing inputs.
+- Fixed the second Phase 5A-2 recalculation trigger issue for buy-box orders:
+  - `/admin-vue/storage/:id` now labels the quantity editor as buy-box quantity for `ST-B`/box orders;
+  - buy-box orders now request pricing recalculation too, instead of being treated as non-recalculable storage orders;
+  - backend recalculation now updates buy-box purchase quantities, `purchased_boxes`, `estimated_box_count`, `estimated_total_price`, and `estimate_summary_json` for box orders.
+- Verification after Phase 5A-2:
+  - `node --check api/_lib/storage-pricing.js` passed;
+  - `node --check api/admin/[...action].js` passed;
+  - direct helper smoke test returned recalculated count, days, and total for a sample storage collection order;
+  - direct helper smoke test returned recalculated buy-box count, purchased boxes, and total for a sample `ST-B` order;
+  - Vue storage source scan found no `innerHTML`, `document.querySelector`, or `addEventListener`;
+  - `npm run build:admin-vue` passed again after the buy-box recalculation fix.
+- Fixed Vue storage detail order-number display:
+  - `/admin-vue/storage/:id` now chooses the displayed order number by resolved storage order type;
+  - box orders still prefer `box_order_no`, storage collection orders now prefer `storage_pickup_order_no`, and storage return orders prefer the return/main order number;
+  - this prevents a storage collection detail page from showing the associated buy-box `ST-B` order number as its primary order number;
+  - no API, database, public page, old admin page, or storage operation behavior changed.
+- Split Vue storage details into separate operator pages:
+  - added a dedicated buy-box detail route at `/admin-vue/storage/box-orders/:id` with its own `BoxOrderDetailView.vue`;
+  - added a dedicated storage-service detail route at `/admin-vue/storage/storage-orders/:id` for storage collection/return orders;
+  - the three storage list pages now route box orders and storage orders to different detail paths instead of forcing all records through one mixed detail page;
+  - buy-box detail now only shows box-order information such as user contact, purchased box lines, delivery information, fee summary, backend status, internal notes, and operation records;
+  - storage detail was cleaned so its visible business sections focus on storage period, box/item quantity, pickup/address information, storage-related fees, and storage operations;
+  - if an old generic storage detail route receives a box order, it redirects to the dedicated buy-box detail route;
+  - `npm run build:admin-vue` passed after the split;
+  - no API, database schema, public page, old admin page, or deployment behavior changed.
+- Added the urgent Vue transport request customer-service tracking fields:
+  - `supabase/20260519_transport_request_offline_tracking.sql` adds `offline_recorded`, `last_operated_by`, and `last_operated_at` to `transport_requests` plus focused indexes;
+  - `/api/transport-requests` now returns and filters by `offline_recorded` and `last_operated_by`;
+  - `/api/transport-requests/:id` now records the current admin display name and timestamp on every admin PATCH, including status changes, note changes, and offline-recorded toggles;
+  - `/api/transport-requests/export` now exports the current filtered result with offline-recorded and last-operation columns;
+  - `/admin-vue/transport/requests` now shows status, offline-recorded state, last operator/time, fixed operator filters, offline-recorded filters, current-filter export, and per-row mark/cancel offline-recorded buttons;
+  - no manual order creation, owner assignment, payment-status work, carpool-status refactor, auto-archive behavior, public page change, or email behavior change was added.
+- Verification after the Vue transport tracking work:
+  - `node --check api/_lib/transport.js` passed;
+  - `node --check api/transport-requests/index.js` passed;
+  - `node --check api/transport-requests/[id].js` passed;
+  - `node --check api/transport-requests/export.js` passed;
+  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` build output;
+  - `npm run build:prod` passed after the API and Vue changes;
+  - Playwright opened `http://localhost:3000/admin-vue/transport/requests` and confirmed unauthenticated access redirects to `admin-login.html?return_to=...`.
+- Applied the transport request tracking schema to Supabase project `ngn-transport`:
+  - migration `transport_request_offline_tracking` was applied successfully through the Supabase plugin;
+  - verified `transport_requests.offline_recorded`, `transport_requests.last_operated_by`, and `transport_requests.last_operated_at` exist with the expected types/defaults;
+  - verified `idx_transport_requests_offline_recorded` and `idx_transport_requests_last_operated_by` exist;
+  - Supabase advisors were run after the migration; findings were existing broad project advisories plus the newly created indexes being reported as unused before real traffic.
 
 ## Current Project State
 
+- Vue admin dashboard today-todo rows now keep the status label as a compact pill and align the order-number/customer block in a consistent right-side column on desktop, while keeping a stacked layout on small screens.
 - New Vue admin remains parallel-only and available through `/admin-vue/` after building.
+- Vue admin dashboard now uses the expanded `/api/admin/dashboard` aggregate to show operational KPIs, recent trends, real-status distribution, today/overdue work, clickable risk alerts, recent admin operations, quick links, and cache metadata in the main content area; dashboard risk counts align with `/admin-vue/orders?risk=...`.
+- Vue admin sidebar groups are collapsible, including the transport and storage operation groups.
 - Old admin remains the rollback and official legacy operator entry.
-- Detailed edit workflows and dangerous operations remain on old admin until explicitly migrated.
-- Storage order readonly details now live in Vue as the main route; old storage detail remains a fallback and rollback entry.
-- Transport request readonly details now live in Vue as the main route; old transport request edit remains a fallback and rollback entry.
+- Detailed edit workflows and dangerous operations remain on old admin until explicitly migrated, except for already approved Vue operations such as storage actions, membership list actions, transport tracking actions, and manager edit/reset/delete actions.
+- Storage order details now have separate Vue routes: buy-box details live at `/admin-vue/storage/box-orders/:id`, and storage collection/return details live at `/admin-vue/storage/storage-orders/:id`; old storage detail remains a fallback and rollback entry.
+- Storage all-orders control page now lives at `/admin-vue/storage/orders` and summarizes existing ST-B/ST-P/ST-S storage work without adding a fourth storage business type. It uses `offline_recorded` as the customer-service line between unrecorded and recorded orders; its filter actions and bulk actions now match the transport request list pattern.
+- Storage sub-list pages now also use `offline_recorded` for customer-service tracking, so `/admin-vue/storage/box-orders`, `/admin-vue/storage/collections`, and `/admin-vue/storage/returns` no longer surface the legacy `待确认` order-status badge in the list UI.
+- Transport request details now live in Vue as the main route with a compact customer-service form display; the lower trip/airport/note fields are editable, current group details and group replacement tools are visible, and operation records show who changed which fields. Old transport request edit remains a fallback and rollback entry.
+- Vue transport request list now has selected-row-only customer-service operations: mark/cancel one row's `offline_recorded`, batch mark/cancel selected rows, export current filtered results from the filter panel, and export selected rows from the bulk action bar. The previous current-filter bulk mark action is no longer exposed in Vue.
+- Vue transport request and storage order lists now highlight membership-bound rows in yellow when the row has a membership benefit claim or membership discount amount.
+- Admin deletion of transport requests and storage orders now releases any linked reserved membership claim back to `selected`, and the Vue membership list exposes `解绑订单` for repairing stale linked-order claims.
+- Vue transport group list now shows `当前人均` using the backend-computed current average group price, placed between payment status and payment actions.
 - Transport group readonly details now live in Vue as the main route; old transport group edit remains a fallback and rollback entry.
 - Order center readonly summary details now live in Vue as the main route; old `admin-orders.html` remains a fallback and rollback entry.
-- Membership entitlement readonly details now live in Vue as the main route for benefit detail and operation record viewing; old `admin-memberships.html` remains a fallback and rollback entry.
+- Manager list operations now live in Vue for create, edit, direct password setting, reset password, and delete, reusing the existing `/api/admin/managers` endpoints and server-side super-admin protections; old `admin-managers.html` remains a fallback and rollback entry.
+- Membership entitlement list operations now live in Vue for the common admin actions: opening membership by user search, generating single or batch activation codes, manual benefit registration, entitlement deletion, activation-code deletion, latest-operation scanning, and direct customer-service detail viewing. Membership entitlement detail remains mostly readonly and now focuses on user basics, membership status/source, latest operation, and reverse-time operation records; old `admin-memberships.html` remains a fallback and rollback entry.
 - Community post readonly details now live in Vue as the main route for post detail viewing; old `admin-community.html` remains a fallback and rollback entry.
+- Storage order export and single-row delete are now live in the three Vue storage list pages only. Delete is guarded by a confirmation dialog and reuses the existing admin storage delete endpoint.
+- Storage sub-list address display now shows apartment/building, detailed address, and postcode together in a single wrapping address column with duplicate fragments filtered across slash-separated address parts. A separate "妫板嫭婀℃禒閿嬬壐" column now displays each order's expected price when available.
+- Storage order detail now supports editing service appointment dates/times and address fields in Vue, while status changes, full editing, export, and deletion remain separate controlled actions.
+- Storage order detail now supports controlled status changes, current-order export, and single-order deletion in Vue using existing admin storage APIs and confirmation dialogs.
+- Storage order detail no longer shows raw JSON payloads in the operator-facing Vue page.
+- Storage order detail now surfaces more existing business data from structured purchase items and readable summaries, reducing false empty fields.
+- Storage order detail's expandable summary is now generated from current parsed fields instead of showing the raw stored readable-message text.
+- Storage order detail no longer shows the customer-service note field in the operator-facing Vue page.
+- Vue admin pages now use a single visible page heading: the global header no longer duplicates each route title.
+- Vue admin account controls now sit in the sidebar footer, and the removed global header no longer leaves blank vertical space above page content.
+- Vue transport group detail now uses a cleaner card-based operations layout instead of the earlier verbose readonly migration layout. Real group edits, payment confirmation, joining members, and summary saving remain unimplemented placeholders.
+- Vue box-order list now has dedicated buy-box columns for box type summary, address/apartment/postcode, box fee, and status. The expected-total and separate purchased-quantity columns are hidden on the box-order list only; quantity stays embedded in the box type summary. Storage collection and return lists keep their existing columns.
+- Vue storage detail schedule form now removes duplicate start/end date controls and keeps a single storage start date plus a single storage end date for editing.
+- Vue storage list service-date display is now aligned with the storage detail start/end date edits so operators do not see stale legacy date values after saving.
+- Vue storage detail now supports editing storage quantity or buy-box quantity and requesting backend price recalculation for storage collection and box orders with existing estimate details.
+- Vue storage detail now displays the primary order number according to order type, so storage collection details show `ST-P...` instead of an associated buy-box `ST-B...` number.
+- Vue storage list detail links now use separate routes for box orders and storage-service orders to avoid mixed fields in operator detail pages.
+- Storage admin pricing recalculation currently reuses stored estimate inputs; multi-box-type orders cannot safely change a single total quantity unless per-box quantities are migrated later.
 - No old admin HTML/JS files were removed or replaced.
-- No public frontend pages were intentionally modified.
-- No API response structures, database schema, email behavior, or secrets/env files were modified.
+- The public community information plaza homepage now uses the short-term Flarum-inspired student-board layout, with service links demoted to the right sidebar, forum categories as primary filters, and no standalone Flarum/PHP/MySQL deployment added.
+- The public carpool request form was intentionally modified to remove the unused share-goal price option.
+- Transport request admin API responses now include `offline_recorded`, `last_operated_by`, and `last_operated_at`; public transport APIs were not intentionally expanded. No email behavior or secrets/env files were modified.
+- Personal center display now treats the membership benefit card as the single display location for the currently linked membership order, so the same order is not repeated in ordinary pickup/storage cards or recent records.
+- Personal center pickup membership reservations now show whether the member booking is a September free pickup or a non-September/other-time 100 GBP discount.
+- Personal center pickup cards and bound pickup membership cards now provide direct `查看详情` access, while pickup membership displays hide price/discount amounts.
 - Frontend session state in Vue remains UI-only; backend APIs still enforce authorization server-side.
 - The root `admin-vue/` folder is generated build output from `npm run build:admin-vue`.
 
@@ -137,9 +1186,12 @@
   - issue: `storageTypeLabels is not defined`;
   - impact: storage admin page is not officially open, so this does not affect current live business;
   - requirement: fix before opening storage admin, without re-adding heavy list fields such as `customer_form_json`, `final_readable_message`, or `service_flags_json` to the list API.
-- Membership Vue page and membership detail page are intentionally readonly in this phase. Real membership opening, code generation/deletion, benefit registration, operation log mutation, entitlement deletion, and benefit reset still belong to old admin until explicitly migrated.
+- Membership detail page is still mostly readonly: customer-service detail and operation record viewing live in Vue, while mark-used/cancel/reset claim mutations are not yet exposed in the Vue detail page. The membership list now exposes opening membership, single/batch activation-code generation, activation-code deletion, manual benefit registration, and entitlement deletion through existing admin endpoints.
 - Community Vue page and community post detail page are intentionally readonly in this phase. Real moderation actions such as hide, restore, delete, pin, update expiry, image deletion, comment moderation, and user bans still belong to old admin until explicitly migrated.
-- The Vue community post detail migration regenerated the root `admin-vue/` build output. Treat that folder as generated output and rebuild it when committing Vue source changes.
+- Phase 5A intentionally adds real storage-only operations in Vue: list export, list single-delete, detail service/address saves, detail status changes, detail current-order export, and detail single-delete. Batch delete and all non-storage dangerous operations remain unimplemented.
+- The transport request tracking fields have been applied to Supabase project `ngn-transport`; deploy still needs to follow the fixed GitHub-first release order before the Vue/API changes are live.
+- The storage order tracking migration `supabase/20260519_storage_order_offline_tracking.sql` has been applied to Supabase project `ngn-transport`; refresh `/admin-vue/storage/orders` before testing mark/cancel recorded operations.
+- The latest sidebar collapse update regenerated the root `admin-vue/` build output. Treat that folder as generated output and rebuild it when committing Vue source changes.
 - Existing unrelated dirty changes were present before this checkpoint and were not reverted:
   - `admin-api.js`;
   - `admin-managers.html`;
@@ -149,6 +1201,8 @@
 
 ## Recommended Next Steps
 
-- Next Vue phase can refine readonly detail field presentation after operator review, or plan the server-side permission review needed before any write-operation migration.
+- After committing/pushing and deploying, verify `/admin-vue/transport/requests` filters, offline-recorded toggles, and filtered export against real admin data.
+- Verify `/admin-vue/transport/requests/:id` with a real admin session to confirm field saves and group replacements write readable operation-log entries.
+- Next Vue phase should verify storage export/delete and storage detail price recalculation in the browser, then continue with the next explicitly approved low-risk operation only after server-side permission boundaries are reviewed.
 - Do not implement real dangerous operations until the corresponding detail/read-only flow is accepted and server-side permission boundaries are reviewed.
 - For deployment later, follow the fixed release order: commit and push the intended changes to GitHub first, then deploy to Vercel.

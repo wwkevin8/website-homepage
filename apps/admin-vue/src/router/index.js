@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from "vue-router";
 import { useSessionStore } from "@/stores/session";
 import AdminLayout from "@/layouts/AdminLayout.vue";
+import BoxOrderDetailView from "@/views/BoxOrderDetailView.vue";
 import CommunityPostDetailView from "@/views/CommunityPostDetailView.vue";
 import CommunityView from "@/views/CommunityView.vue";
 import DashboardView from "@/views/DashboardView.vue";
@@ -11,8 +12,10 @@ import MembershipsView from "@/views/MembershipsView.vue";
 import NotFoundView from "@/views/NotFoundView.vue";
 import OrderDetailView from "@/views/OrderDetailView.vue";
 import OrdersView from "@/views/OrdersView.vue";
+import StorageAllOrdersView from "@/views/StorageAllOrdersView.vue";
 import StorageOrderDetailView from "@/views/StorageOrderDetailView.vue";
 import StorageOrdersView from "@/views/StorageOrdersView.vue";
+import StorageSyncLogsView from "@/views/StorageSyncLogsView.vue";
 import TransportGroupDetailView from "@/views/TransportGroupDetailView.vue";
 import TransportGroupsView from "@/views/TransportGroupsView.vue";
 import TransportRequestDetailView from "@/views/TransportRequestDetailView.vue";
@@ -129,6 +132,12 @@ const router = createRouter({
           meta: { title: "同步巡检日志" }
         },
         {
+          path: "storage/orders",
+          name: "storage-all-orders",
+          component: StorageAllOrdersView,
+          meta: { title: "全部订单" }
+        },
+        {
           path: "storage/box-orders",
           name: "storage-box-orders",
           component: StorageOrdersView,
@@ -145,6 +154,24 @@ const router = createRouter({
           name: "storage-returns",
           component: StorageOrdersView,
           meta: { title: "送寄存订单", orderType: "storage_return" }
+        },
+        {
+          path: "storage/sync-logs",
+          name: "storage-sync-logs",
+          component: StorageSyncLogsView,
+          meta: { title: "寄存同步巡检日志" }
+        },
+        {
+          path: "storage/box-orders/:id",
+          name: "storage-box-order-detail",
+          component: BoxOrderDetailView,
+          meta: { title: "买箱订单详情" }
+        },
+        {
+          path: "storage/storage-orders/:id",
+          name: "storage-service-order-detail",
+          component: StorageOrderDetailView,
+          meta: { title: "寄存订单详情" }
         },
         {
           path: "storage/:id",

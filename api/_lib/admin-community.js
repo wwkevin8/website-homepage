@@ -66,7 +66,7 @@ function isUuid(value) {
 
 function normalizeStatus(value) {
   const status = String(value || "").trim();
-  return ["published", "hidden", "expired", "deleted"].includes(status) ? status : "";
+  return ["active", "closed", "hidden", "published", "expired", "deleted"].includes(status) ? status : "";
 }
 
 function normalizeCategory(value) {
@@ -74,17 +74,10 @@ function normalizeCategory(value) {
   return ["buddy", "second_hand", "sublet", "help", "official"].includes(category) ? category : "";
 }
 
-function isExpired(row) {
-  if (!row?.expires_at) {
-    return false;
-  }
-  return new Date(row.expires_at).getTime() <= Date.now();
-}
-
 function serializePost(row) {
   return {
     ...row,
-    display_status: row?.status === "published" && isExpired(row) ? "expired" : row?.status,
+    display_status: row?.status === "published" ? "active" : row?.status,
     price: row?.price === null || row?.price === undefined ? null : Number(row.price),
     is_pinned: Boolean(row?.is_pinned),
     view_count: Number(row?.view_count || 0),
@@ -184,11 +177,10 @@ async function listCommunityPosts(supabase, filters = {}) {
   let query = supabase
     .from("community_posts")
     .select(POST_LIST_COLUMNS, { count: "exact" });
-  if (status && status !== "expired") {
+  if (status === "active") {
+    query = query.in("status", ["active", "published"]);
+  } else if (status) {
     query = query.eq("status", status);
-  }
-  if (status === "expired") {
-    query = query.eq("status", "published").lte("expires_at", new Date().toISOString());
   }
   if (category) {
     query = query.eq("category", category);
@@ -361,18 +353,12 @@ async function updateCommunityPost(supabase, postId, body = {}) {
   } else if (action === "delete") {
     patch.status = "deleted";
   } else if (action === "restore") {
-    patch.status = "published";
+    patch.status = "active";
     patch.auto_hidden_reason = null;
   } else if (action === "pin") {
     patch.is_pinned = true;
   } else if (action === "unpin") {
     patch.is_pinned = false;
-  } else if (action === "update_expires") {
-    const expiresAt = new Date(body.expires_at || body.expiresAt || "");
-    if (Number.isNaN(expiresAt.getTime())) {
-      throw new Error("Invalid expires_at");
-    }
-    patch.expires_at = expiresAt.toISOString();
   } else {
     throw new Error("Unsupported post action");
   }

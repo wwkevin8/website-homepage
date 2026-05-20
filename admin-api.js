@@ -203,19 +203,19 @@
       });
     },
     updateManager(id, payload) {
-      return request(`/api/admin/managers/${id}`, {
+      return request(`/api/admin/managers${buildQuery({ id })}`, {
         method: "PATCH",
         body: JSON.stringify(payload)
       });
     },
     resetManagerPassword(id) {
-      return request(`/api/admin/managers/${id}/reset-password`, {
+      return request(`/api/admin/managers${buildQuery({ id, manager_action: "reset-password" })}`, {
         method: "POST",
         body: JSON.stringify({})
       });
     },
     deleteManager(id) {
-      return request(`/api/admin/managers/${id}`, {
+      return request(`/api/admin/managers${buildQuery({ id })}`, {
         method: "DELETE"
       });
     },

@@ -107,6 +107,66 @@
     return labels[status] || status || "--";
   }
 
+  function claimOrderMatches(item, claim) {
+    if (!item || !claim) {
+      return false;
+    }
+    const linkedId = String(claim.linked_order_id || "");
+    const linkedNo = String(claim.linked_order_no || "");
+    return (linkedId && linkedId === String(item.id || ""))
+      || (linkedNo && linkedNo === String(item.order_no || item.orderNo || ""));
+  }
+
+  function findLinkedMembershipTransportRequest(claim, requests = []) {
+    if (!claim || (claim.linked_order_table && claim.linked_order_table !== "transport_requests")) {
+      return null;
+    }
+    return requests.find(item => claimOrderMatches(item, claim)) || null;
+  }
+
+  function getUkMonth(value) {
+    if (!value) {
+      return null;
+    }
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      return null;
+    }
+    const month = new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Europe/London",
+      month: "2-digit"
+    }).format(date);
+    const parsed = Number(month);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  function membershipPickupReservationCopy(claim, requests = []) {
+    const linkedRequest = findLinkedMembershipTransportRequest(claim, requests);
+    const serviceMonth = getUkMonth(linkedRequest?.flight_datetime || linkedRequest?.preferred_time_start);
+    const discountAmount = Number(claim?.membership_discount_amount || 0);
+    const ending = claim?.status === "used" ? "服务已完成。" : "等待服务完成。";
+
+    if (serviceMonth === 9) {
+      return `当前为会员预约：9 月接机免费，${ending}`;
+    }
+    if (serviceMonth && serviceMonth !== 9) {
+      return `当前为会员预约：非 9 月或其他时间接机优惠 100 镑，${ending}`;
+    }
+    if (discountAmount >= 100) {
+      return `当前为会员预约：本次接机优惠 100 镑，${ending}`;
+    }
+    return "当前为会员预约：接机会员权益已绑定订单，优惠金额以客服确认为准。";
+  }
+
+  function hasPickupMembershipReservation(membershipState) {
+    const claim = membershipState?.claim || null;
+    return claim?.benefit_type === "pickup" && ["reserved", "used"].includes(claim.status);
+  }
+
+  function membershipPickupSummaryCopy(claim, requests = []) {
+    return membershipPickupReservationCopy(claim, requests).replace(/^当前为会员预约：/, "");
+  }
+
   async function fetchMembershipState() {
     const response = await fetch(resolveUrl("/api/public/membership-me"), {
       credentials: "include",
@@ -156,15 +216,37 @@
   function renderMembershipDetails(claim) {
     const orderNo = claim?.linked_order_no || "";
     const discountAmount = Number(claim?.membership_discount_amount || 0);
-    if (!orderNo && !(discountAmount > 0)) {
+    const shouldShowDiscount = claim?.benefit_type !== "pickup" && discountAmount > 0;
+    if (!orderNo && !shouldShowDiscount) {
       return "";
     }
     return `
       <dl class="profile-membership-details">
         ${orderNo ? `<div><dt>关联订单</dt><dd>${escapeHtml(orderNo)}</dd></div>` : ""}
-        ${discountAmount > 0 ? `<div><dt>免去金额</dt><dd>${escapeHtml(formatMembershipMoney(discountAmount))}</dd></div>` : ""}
+        ${shouldShowDiscount ? `<div><dt>免去金额</dt><dd>${escapeHtml(formatMembershipMoney(discountAmount))}</dd></div>` : ""}
       </dl>
     `;
+  }
+
+  function encodeDetailPayload(item) {
+    return encodeURIComponent(JSON.stringify(item));
+  }
+
+  function membershipOrderDetailAction(claim, context = {}) {
+    if (claim?.benefit_type !== "pickup") {
+      return "";
+    }
+    const linkedRequest = findLinkedMembershipTransportRequest(claim, context.requests || []);
+    if (!linkedRequest) {
+      return "";
+    }
+    const payload = encodeDetailPayload({
+      ...linkedRequest,
+      recordKind: "transport",
+      membershipBenefitType: "pickup",
+      hidePrice: true
+    });
+    return `<button class="button button-secondary" type="button" data-request-detail="${payload}">查看详情</button>`;
   }
 
   function renderMembershipPass({ title, statusText, copy, details = "", action = "" }) {
@@ -184,7 +266,7 @@
     `;
   }
 
-  function renderMembershipState(state) {
+  function renderMembershipState(state, context = {}) {
     const statusNode = document.querySelector("#serviceCenterMembershipStatus");
     const bodyNode = document.querySelector("#serviceCenterMembershipBody");
     const messageNode = document.querySelector("#serviceCenterMembershipMessage");
@@ -279,14 +361,17 @@
       return;
     }
     if (claim.status === "reserved" || claim.status === "used") {
-      const statusCopy = claim.status === "used"
-        ? "权益已使用 / 已完成。"
-        : "当前状态：已绑定订单，等待服务完成。";
+      const statusCopy = claim.benefit_type === "pickup"
+        ? membershipPickupReservationCopy(claim, context.requests)
+        : (claim.status === "used"
+          ? "权益已使用 / 已完成。"
+          : "当前状态：已绑定订单，等待服务完成。");
       bodyNode.innerHTML = renderMembershipPass({
         title: benefit.label,
         statusText: claim.status === "used" ? "已完成" : "已绑定订单",
         copy: statusCopy,
-        details: renderMembershipDetails(claim)
+        details: renderMembershipDetails(claim),
+        action: membershipOrderDetailAction(claim, context)
       });
       return;
     }
@@ -438,6 +523,10 @@
   }
 
   function buildRequestDetailMarkup(item) {
+    const shouldShowPrice = !(item.hidePrice === true
+      || (item.service_type === "pickup" && (item.membershipBenefitType === "pickup"
+        || item.membership_benefit_claim_id
+        || Number(item.membership_discount_amount || 0) > 0)));
     return `
       <div class="service-center-detail-grid">
         <article class="service-center-detail-field">
@@ -476,10 +565,12 @@
           <strong>目前拼车人数</strong>
           <span>${escapeHtml(item.current_passenger_count || item.passenger_count || "-")}</span>
         </article>
-        <article class="service-center-detail-field">
-          <strong>当前每人价格</strong>
-          <span>${escapeHtml(formatCurrencyGbp(item.current_average_price_gbp))}</span>
-        </article>
+        ${shouldShowPrice ? `
+          <article class="service-center-detail-field">
+            <strong>当前每人价格</strong>
+            <span>${escapeHtml(formatCurrencyGbp(item.current_average_price_gbp))}</span>
+          </article>
+        ` : ""}
         <article class="service-center-detail-field service-center-detail-field-wide">
           <strong>出发地</strong>
           <span>${escapeHtml(item.location_from || "-")}</span>
@@ -528,31 +619,65 @@
     return Array.isArray(payload.data) ? payload.data : [];
   }
 
-  function renderPickupCard(requests) {
+  function renderPickupCard(requests, membershipState = null, allRequests = requests) {
     const titleNode = document.querySelector("[data-service-center-pickup-title]");
     const copyNode = document.querySelector("[data-service-center-pickup-copy]");
     const cardNode = document.querySelector("[data-service-center-pickup-card]");
+    const detailButton = document.querySelector("[data-service-center-pickup-detail]");
     if (!titleNode || !copyNode) {
       return;
     }
 
-    const activePickup = requests.find(item => item.service_type === "pickup" && item.status !== "closed");
-    if (!activePickup) {
-      titleNode.textContent = "当前无接机预约";
-      copyNode.textContent = "需要时可直接发起。";
+    const clearDetail = () => {
       if (cardNode) {
         cardNode.removeAttribute("data-request-detail");
         cardNode.classList.remove("service-center-card-clickable");
       }
+      if (detailButton) {
+        detailButton.hidden = true;
+        detailButton.removeAttribute("data-request-detail");
+      }
+    };
+    const setDetail = item => {
+      const payload = encodeDetailPayload(item);
+      if (cardNode) {
+        cardNode.dataset.requestDetail = payload;
+        cardNode.classList.add("service-center-card-clickable");
+      }
+      if (detailButton) {
+        detailButton.dataset.requestDetail = payload;
+        detailButton.hidden = false;
+      }
+    };
+
+    const activePickup = requests.find(item => item.service_type === "pickup" && item.status !== "closed");
+    if (!activePickup) {
+      if (hasPickupMembershipReservation(membershipState)) {
+        const linkedRequest = findLinkedMembershipTransportRequest(membershipState.claim, allRequests);
+        titleNode.textContent = "当前为会员预约";
+        copyNode.textContent = membershipPickupSummaryCopy(membershipState.claim, allRequests);
+        if (linkedRequest) {
+          setDetail({
+            ...linkedRequest,
+            recordKind: "transport",
+            membershipBenefitType: "pickup",
+            hidePrice: true
+          });
+        } else {
+          clearDetail();
+        }
+        return;
+      }
+
+      titleNode.textContent = "当前无接机预约";
+      copyNode.textContent = "需要时可直接发起。";
+      clearDetail();
       return;
     }
 
     titleNode.textContent = `${activePickup.group_id || activePickup.order_no || "接机拼车组"} · ${getStatusLabel(activePickup.status)}`;
     copyNode.textContent = `${activePickup.airport_name || "-"} ${activePickup.terminal || ""} · ${formatDateTime(activePickup.flight_datetime)}`;
-    if (cardNode) {
-      cardNode.dataset.requestDetail = encodeURIComponent(JSON.stringify(activePickup));
-      cardNode.classList.add("service-center-card-clickable");
-    }
+    setDetail(activePickup);
   }
 
   function renderStorageCard(storageOrders) {
@@ -626,6 +751,42 @@
         <button class="button button-secondary" type="button">查看详情</button>
       </article>
     `).join("");
+  }
+
+  function membershipLinkedOrderKeys(membershipState) {
+    const claim = membershipState?.claim || null;
+    if (!claim || !["reserved", "used"].includes(claim.status)) {
+      return { ids: new Set(), orderNos: new Set(), table: "" };
+    }
+    return {
+      ids: new Set([claim.linked_order_id].filter(Boolean).map(value => String(value))),
+      orderNos: new Set([claim.linked_order_no].filter(Boolean).map(value => String(value))),
+      table: String(claim.linked_order_table || "")
+    };
+  }
+
+  function isMembershipLinkedTransport(item, linkedKeys) {
+    if (linkedKeys.table && linkedKeys.table !== "transport_requests") {
+      return false;
+    }
+    return linkedKeys.ids.has(String(item.id || ""))
+      || linkedKeys.orderNos.has(String(item.order_no || ""));
+  }
+
+  function isMembershipLinkedStorage(item, linkedKeys) {
+    if (linkedKeys.table && linkedKeys.table !== "storage_orders") {
+      return false;
+    }
+    return linkedKeys.ids.has(String(item.id || item.storageOrderId || ""))
+      || linkedKeys.orderNos.has(String(item.orderNo || item.order_no || ""));
+  }
+
+  function filterMembershipLinkedRecords(requests = [], storageOrders = [], membershipState = null) {
+    const linkedKeys = membershipLinkedOrderKeys(membershipState);
+    return {
+      requests: requests.filter(item => !isMembershipLinkedTransport(item, linkedKeys)),
+      storageOrders: storageOrders.filter(item => !isMembershipLinkedStorage(item, linkedKeys))
+    };
   }
 
   function renderAllRecords(requests, storageOrders = []) {
@@ -765,11 +926,12 @@
         })
       ]);
       if (membershipState) {
-        renderMembershipState(membershipState);
+        renderMembershipState(membershipState, { requests });
       }
-      renderPickupCard(requests);
-      renderStorageCard(storageOrders);
-      renderAllRecords(requests, storageOrders);
+      const displayRecords = filterMembershipLinkedRecords(requests, storageOrders, membershipState);
+      renderPickupCard(displayRecords.requests, membershipState, requests);
+      renderStorageCard(displayRecords.storageOrders);
+      renderAllRecords(displayRecords.requests, displayRecords.storageOrders);
       bindDetailModal();
     } catch (error) {
       console.error("[service-center] failed to load requests", error);

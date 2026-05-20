@@ -65,10 +65,6 @@
     const category = form.category.value;
     const imageField = document.querySelector("[data-image-field]");
     const priceField = document.querySelector("[data-price-field]");
-    const textarea = form.content;
-    const max = category === "help" ? 300 : 200;
-    textarea.maxLength = max;
-    textarea.placeholder = `请勿公开联系方式、外链或隐私信息，最多 ${max} 字。`;
     if (imageField) {
       imageField.hidden = !IMAGE_CATEGORIES.has(category);
     }
@@ -77,7 +73,36 @@
     }
   }
 
+  function normalizeContact(type, value) {
+    const contact = {
+      contact_wechat: "",
+      contact_phone: "",
+      contact_email: "",
+      fields: {}
+    };
+    const text = String(value || "").trim();
+    if (!type || !text) {
+      return contact;
+    }
+    if (type === "wechat") {
+      contact.contact_wechat = text;
+    } else if (type === "phone") {
+      contact.contact_phone = text;
+    } else if (type === "email") {
+      contact.contact_email = text;
+    } else {
+      contact.fields.contact_other = text;
+    }
+    return contact;
+  }
+
   function collectPayload(form) {
+    const contact = normalizeContact(form.contact_type.value, form.contact_value.value);
+    const fields = { ...contact.fields };
+    const moreInfo = form.more_info.value.trim();
+    if (moreInfo) {
+      fields.more_info = moreInfo;
+    }
     return {
       category: form.category.value,
       title: form.title.value.trim(),
@@ -86,9 +111,10 @@
       university: form.university.value.trim(),
       area: form.area.value.trim(),
       price: form.price.value,
-      contact_wechat: form.contact_wechat.value.trim(),
-      contact_phone: form.contact_phone.value.trim(),
-      contact_email: form.contact_email.value.trim()
+      contact_wechat: contact.contact_wechat,
+      contact_phone: contact.contact_phone,
+      contact_email: contact.contact_email,
+      fields
     };
   }
 
@@ -155,7 +181,7 @@
         return;
       }
       if (!form.disclaimer.checked) {
-        setMessage(messageNode, "请先勾选免责声明。", "error");
+        setMessage(messageNode, "请先确认发布内容真实且未公开隐私信息。", "error");
         return;
       }
 
@@ -177,10 +203,10 @@
         if (files.length) {
           await uploadImages(post.id, files, messageNode);
         }
-        setMessage(messageNode, "发布成功。请注意，违规内容、联系方式公开、广告或被举报内容可能会被隐藏或删除。", "success");
+        setMessage(messageNode, "发布成功。", "success");
         window.setTimeout(() => {
           window.location.href = `/community-post/${encodeURIComponent(post.id)}`;
-        }, 900);
+        }, 700);
       } catch (error) {
         setMessage(messageNode, error.message || "发布失败，请检查内容后重试。", "error");
       } finally {

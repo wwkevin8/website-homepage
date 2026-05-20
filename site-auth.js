@@ -162,7 +162,8 @@
             <span>${nickname}</span>
           </button>
           <div class="site-auth-menu-dropdown" data-site-auth-menu-dropdown hidden>
-            <a class="site-auth-menu-item" href="./service-center.html">个人中心</a>
+            <a class="site-auth-menu-item" href="./service-center.html">我的发布</a>
+            <a class="site-auth-menu-item" href="./profile.html">个人资料</a>
             <button class="site-auth-menu-item" type="button" data-site-auth-logout>退出登录</button>
           </div>
         </div>

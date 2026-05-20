@@ -3,6 +3,7 @@ const { requireAdminUser } = require("../../_lib/admin-auth");
 const { ok, badRequest, parseJsonBody, methodNotAllowed, serverError } = require("../../_lib/http");
 const { syncGroupStatus } = require("../../_lib/transport");
 const { removeRequestFromGroup } = require("../../_lib/transport-group-lifecycle");
+const { logAdminOperation } = require("../../_lib/orders");
 
 const GROUP_MEMBER_REQUEST_SELECT = [
   "id",
@@ -15,6 +16,32 @@ const GROUP_MEMBER_REQUEST_SELECT = [
 
 function isMissingColumnError(error, marker) {
   return Boolean(error?.message && error.message.includes(marker));
+}
+
+function resolveAdminDisplayName(adminUser = {}) {
+  return String(adminUser.name || adminUser.username || adminUser.email || "admin").trim() || "admin";
+}
+
+async function logGroupMemberChange(supabase, adminUser, requestId, payload) {
+  try {
+    await logAdminOperation(supabase, {
+      admin_user_id: adminUser.id || null,
+      target_type: "transport_request",
+      target_id: requestId,
+      action: payload.action,
+      before_data: payload.before_data || null,
+      after_data: payload.after_data || null,
+      metadata: {
+        ...payload.metadata,
+        admin_name: resolveAdminDisplayName(adminUser)
+      }
+    });
+  } catch (error) {
+    console.warn("transport_request_group_operation_log_failed", {
+      request_id: requestId,
+      message: error?.message || String(error)
+    });
+  }
 }
 
 async function fetchSingleGroupRow(supabase, groupId) {
@@ -106,10 +133,29 @@ module.exports = async function handler(req, res) {
     const nextIds = new Set(requestIds);
     const toRemove = (existingMembers || []).filter(item => !nextIds.has(item.request_id));
     const toInsert = requestIds.filter(requestId => !existingIds.has(requestId));
+    const affectedRequestIds = new Set([
+      ...toRemove.map(item => item.request_id).filter(Boolean),
+      ...toInsert
+    ]);
 
     if (toRemove.length) {
       for (const member of toRemove) {
         await removeRequestFromGroup(supabase, member.request_id, { regroup: false });
+        await logGroupMemberChange(supabase, adminUser, member.request_id, {
+          action: "remove_transport_request_from_group",
+          before_data: { group_id: group.group_id || group.id },
+          after_data: { group_id: null },
+          metadata: {
+            changed_fields: [
+              {
+                field: "group_id",
+                label: "拼车组",
+                before: group.group_id || group.id,
+                after: null
+              }
+            ]
+          }
+        });
       }
     }
 
@@ -126,6 +172,21 @@ module.exports = async function handler(req, res) {
 
       for (const conflict of conflictingMembers || []) {
         await removeRequestFromGroup(supabase, conflict.request_id, { regroup: false });
+        await logGroupMemberChange(supabase, adminUser, conflict.request_id, {
+          action: "move_transport_request_group",
+          before_data: { group_id: conflict.group_id },
+          after_data: { group_id: group.group_id || group.id },
+          metadata: {
+            changed_fields: [
+              {
+                field: "group_id",
+                label: "拼车组",
+                before: conflict.group_id,
+                after: group.group_id || group.id
+              }
+            ]
+          }
+        });
       }
 
       const { error } = await supabase
@@ -150,9 +211,44 @@ module.exports = async function handler(req, res) {
       if (requestError) {
         throw requestError;
       }
+
+      for (const requestId of toInsert) {
+        const conflict = (conflictingMembers || []).find(item => item.request_id === requestId);
+        if (conflict) {
+          continue;
+        }
+        await logGroupMemberChange(supabase, adminUser, requestId, {
+          action: "add_transport_request_to_group",
+          before_data: { group_id: null },
+          after_data: { group_id: group.group_id || group.id },
+          metadata: {
+            changed_fields: [
+              {
+                field: "group_id",
+                label: "拼车组",
+                before: null,
+                after: group.group_id || group.id
+              }
+            ]
+          }
+        });
+      }
     }
 
     const nextGroup = await syncGroupStatus(supabase, group.group_id || group.id);
+    if (affectedRequestIds.size) {
+      const { error: operationSummaryError } = await supabase
+        .from("transport_requests")
+        .update({
+          last_operated_by: resolveAdminDisplayName(adminUser),
+          last_operated_at: new Date().toISOString()
+        })
+        .in("id", Array.from(affectedRequestIds));
+
+      if (operationSummaryError) {
+        throw operationSummaryError;
+      }
+    }
     ok(res, nextGroup);
   } catch (error) {
     serverError(res, error);

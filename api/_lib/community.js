@@ -8,6 +8,9 @@ const COMMUNITY_IMAGE_BUCKET = "community-images";
 const COMMUNITY_IMAGE_MAX_BYTES = 2 * 1024 * 1024;
 const COMMUNITY_IMAGE_MAX_COUNT = 3;
 const COMMUNITY_IMAGE_SIGNED_URL_SECONDS = 10 * 60;
+const COMMUNITY_POST_TITLE_MAX = 60;
+const COMMUNITY_POST_CONTENT_MAX = 500;
+const VISIBLE_POST_STATUSES = ["active", "published"];
 const IMAGE_TYPES = {
   jpg: {
     mime: "image/jpeg",
@@ -21,20 +24,6 @@ const IMAGE_TYPES = {
     mime: "image/webp",
     extensions: new Set(["webp"])
   }
-};
-const CATEGORY_EXPIRY_DAYS = {
-  buddy: 7,
-  second_hand: 14,
-  sublet: 30,
-  help: 30,
-  official: null
-};
-const CATEGORY_CONTENT_MAX = {
-  buddy: 200,
-  second_hand: 200,
-  sublet: 200,
-  help: 300,
-  official: 300
 };
 const SENSITIVE_TERMS = [
   "代写",
@@ -181,18 +170,17 @@ function findSensitiveTerms(text) {
 }
 
 function assertPublicTextSafe(title, content, category) {
-  if (title.length < 8) {
-    throw new Error("标题至少需要 8 个字符");
+  if (!title) {
+    throw new Error("请填写标题。");
   }
-  if (title.length > 120) {
-    throw new Error("标题不能超过 120 个字符");
+  if (title.length > COMMUNITY_POST_TITLE_MAX) {
+    throw new Error(`标题不能超过 ${COMMUNITY_POST_TITLE_MAX} 个字。`);
   }
-  if (content.length < 20) {
-    throw new Error("内容至少需要 20 个字符");
+  if (!content) {
+    throw new Error("请填写正文。");
   }
-  const maxContentLength = CATEGORY_CONTENT_MAX[category] || 200;
-  if (content.length > maxContentLength) {
-    throw new Error(`该分类内容不能超过 ${maxContentLength} 个字符`);
+  if (content.length > COMMUNITY_POST_CONTENT_MAX) {
+    throw new Error(`正文不能超过 ${COMMUNITY_POST_CONTENT_MAX} 个字。`);
   }
   const combined = `${title}\n${content}`;
   if (hasHtmlTags(combined) || hasScriptOrIframe(combined)) {
@@ -227,21 +215,6 @@ function normalizePrice(value) {
   return Math.round(price * 100) / 100;
 }
 
-function resolveExpiresAt(category, value) {
-  if (value && category === "official") {
-    const parsed = new Date(value);
-    if (Number.isNaN(parsed.getTime())) {
-      throw new Error("过期时间格式不正确");
-    }
-    return parsed.toISOString();
-  }
-  const days = CATEGORY_EXPIRY_DAYS[category];
-  if (!days) {
-    return new Date(Date.now() + 3650 * 24 * 60 * 60 * 1000).toISOString();
-  }
-  return new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
-}
-
 function serializePublicPost(row, fields = []) {
   if (!row) {
     return null;
@@ -251,7 +224,7 @@ function serializePublicPost(row, fields = []) {
     category: row.category,
     title: row.title,
     content: row.content,
-    status: row.status,
+    status: row.status === "published" ? "active" : row.status,
     city: row.city || null,
     university: row.university || null,
     area: row.area || null,
@@ -475,17 +448,16 @@ function buildCreatePostPayload(body, userId) {
   if (!USER_POST_CATEGORIES.has(category)) {
     throw new Error("官方公告只能由管理员发布");
   }
-  const title = normalizeText(body.title, { maxLength: 1000 });
-  const content = normalizeMultilineText(body.content, { maxLength: 2000 });
+  const title = normalizeText(body.title, { maxLength: COMMUNITY_POST_TITLE_MAX + 1 });
+  const content = normalizeMultilineText(body.content, { maxLength: COMMUNITY_POST_CONTENT_MAX + 1 });
   assertPublicTextSafe(title, content, category);
-  const expiresAt = resolveExpiresAt(category, body.expires_at);
   return {
     post: {
       user_id: userId,
       category,
       title,
       content,
-      status: "published",
+      status: "active",
       city: normalizeOptionalContact(body.city, { maxLength: 80 }),
       university: normalizeOptionalContact(body.university, { maxLength: 120 }),
       area: normalizeOptionalContact(body.area, { maxLength: 120 }),
@@ -497,7 +469,7 @@ function buildCreatePostPayload(body, userId) {
       view_count: 0,
       comment_count: 0,
       report_count: 0,
-      expires_at: expiresAt,
+      expires_at: null,
       published_at: new Date().toISOString()
     },
     fields: normalizeFields(body.fields)
@@ -548,8 +520,7 @@ async function listCommunityPosts(supabase, queryParams = {}) {
   let query = supabase
     .from("community_posts")
     .select(PUBLIC_POST_COLUMNS, { count: "exact" })
-    .eq("status", "published")
-    .gt("expires_at", new Date().toISOString());
+    .in("status", VISIBLE_POST_STATUSES);
   if (category) {
     query = query.eq("category", category);
   }
@@ -614,8 +585,7 @@ async function getCommunityPostDetail(supabase, req, postId) {
     .from("community_posts")
     .select(PUBLIC_POST_COLUMNS)
     .eq("id", postId)
-    .eq("status", "published")
-    .gt("expires_at", new Date().toISOString())
+    .in("status", VISIBLE_POST_STATUSES)
     .maybeSingle();
   if (error) {
     throw error;
@@ -648,8 +618,7 @@ async function getVisibleCommunityPost(supabase, postId) {
     .from("community_posts")
     .select(PUBLIC_POST_COLUMNS)
     .eq("id", postId)
-    .eq("status", "published")
-    .gt("expires_at", new Date().toISOString())
+    .in("status", VISIBLE_POST_STATUSES)
     .maybeSingle();
   if (error) {
     throw error;
@@ -1152,11 +1121,10 @@ async function reportCommunityComment(supabase, req, user, body) {
   }
   const { data: comment, error: commentError } = await supabase
     .from("community_comments")
-    .select(`${PUBLIC_COMMENT_COLUMNS}, community_posts!inner(id, status, expires_at)`)
+    .select(`${PUBLIC_COMMENT_COLUMNS}, community_posts!inner(id, status)`)
     .eq("id", commentId)
     .eq("status", "published")
-    .eq("community_posts.status", "published")
-    .gt("community_posts.expires_at", new Date().toISOString())
+    .in("community_posts.status", VISIBLE_POST_STATUSES)
     .maybeSingle();
   if (commentError) {
     throw commentError;

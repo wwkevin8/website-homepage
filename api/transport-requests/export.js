@@ -19,6 +19,11 @@ const REQUEST_EXPORT_SELECT = [
   "flight_datetime",
   "location_from",
   "location_to",
+  "offline_recorded",
+  "last_operated_by",
+  "last_operated_at",
+  "membership_benefit_claim_id",
+  "membership_discount_amount",
   "created_at",
   "transport_group_members(group_id,is_initiator,request_id)",
   "site_users(email)"
@@ -87,6 +92,9 @@ function buildRows(items) {
     "您抵达/起飞日期和时间": formatExcelTextDateTime(item.flight_datetime),
     "出发地": item.location_from || "",
     "目的地": item.location_to || "",
+    "线下记录": item.offline_recorded ? "已记录" : "未记录",
+    "上次操作人": item.last_operated_by || "",
+    "上次操作时间": formatExcelTextDateTime(item.last_operated_at),
     "Group ID": item.group_id || ""
   }));
 }
@@ -102,6 +110,14 @@ function buildFilename(queryParams) {
   ].join("");
   const servicePart = queryParams.service_type ? `-${queryParams.service_type}` : "";
   return `transport-requests${servicePart}-${stamp}.csv`;
+}
+
+function parseIdList(value) {
+  return String(value || "")
+    .split(",")
+    .map(item => item.trim())
+    .filter(Boolean)
+    .slice(0, 5000);
 }
 
 function csvEscape(value) {
@@ -124,6 +140,9 @@ function rowsToCsv(rows) {
     "您抵达/起飞日期和时间",
     "出发地",
     "目的地",
+    "线下记录",
+    "上次操作人",
+    "上次操作时间",
     "Group ID"
   ];
   const lines = [
@@ -152,13 +171,18 @@ module.exports = async function handler(req, res) {
       .select(REQUEST_EXPORT_SELECT)
       .limit(5000);
 
-    applyRequestFilters(query, queryParams);
+    const ids = parseIdList(queryParams.ids);
+    if (ids.length) {
+      query.in("id", ids);
+    } else {
+      applyRequestFilters(query, queryParams);
+    }
     applyRequestSort(query, queryParams.sort);
 
-    if (queryParams.grouped === "true") {
+    if (!ids.length && queryParams.grouped === "true") {
       query.not("transport_group_members", "is", null);
     }
-    if (queryParams.grouped === "false") {
+    if (!ids.length && queryParams.grouped === "false") {
       query.is("transport_group_members", null);
     }
 

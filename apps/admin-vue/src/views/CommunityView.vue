@@ -1,4 +1,4 @@
-<script setup>
+﻿<script setup>
 import { computed, onMounted, reactive, ref } from "vue";
 import { fetchCommunityComments, fetchCommunityPosts } from "@/api/admin-api";
 import AdminTable from "@/components/AdminTable.vue";
@@ -9,12 +9,11 @@ import Pagination from "@/components/Pagination.vue";
 import StatusBadge from "@/components/StatusBadge.vue";
 
 const postColumns = [
-  { key: "title", label: "帖子", width: "24%" },
+  { key: "title", label: "帖子", width: "28%" },
   { key: "category", label: "分类", width: "10%" },
   { key: "status", label: "状态", width: "10%" },
   { key: "user", label: "发布者", width: "15%" },
   { key: "published_at", label: "发布时间", width: "11%" },
-  { key: "expires_at", label: "过期时间", width: "11%" },
   { key: "metrics", label: "浏览/评论/举报", width: "10%" },
   { key: "actions", label: "操作", width: "210px", className: "is-actions", sticky: "end" }
 ];
@@ -96,6 +95,8 @@ function categoryLabel(category) {
 
 function statusLabel(status) {
   const labels = {
+    active: "正常显示",
+    closed: "已关闭",
     published: "已发布",
     hidden: "已隐藏",
     expired: "已过期",
@@ -105,7 +106,7 @@ function statusLabel(status) {
 }
 
 function statusTone(status) {
-  if (status === "published") {
+  if (status === "active" || status === "published") {
     return "success";
   }
   if (status === "hidden" || status === "expired") {
@@ -217,7 +218,7 @@ onMounted(() => {
         <h2>社区管理</h2>
       </div>
       <div class="view-heading__actions">
-        <a class="secondary-button" href="/admin-community.html">打开旧社区后台</a>
+
       </div>
     </div>
 
@@ -240,9 +241,9 @@ onMounted(() => {
           <span>状态</span>
           <select v-model="filters.status">
             <option value="">全部</option>
-            <option value="published">已发布</option>
+            <option value="active">正常显示</option>
+            <option value="closed">已关闭</option>
             <option value="hidden">已隐藏</option>
-            <option value="expired">已过期</option>
             <option value="deleted">已删除</option>
           </select>
         </label>
@@ -295,9 +296,6 @@ onMounted(() => {
           </template>
           <template #cell-published_at="{ row }">
             <span class="cell-truncate" :title="formatDateTime(row.published_at || row.created_at)">{{ formatDateTime(row.published_at || row.created_at) }}</span>
-          </template>
-          <template #cell-expires_at="{ row }">
-            <span class="cell-truncate" :title="formatDateTime(row.expires_at)">{{ formatDateTime(row.expires_at) }}</span>
           </template>
           <template #cell-metrics="{ row }">
             <span class="cell-truncate">{{ Number(row.view_count || 0) }} / {{ Number(row.comment_count || 0) }} / {{ Number(row.report_count || 0) }}</span>
@@ -375,7 +373,6 @@ onMounted(() => {
             <div><span>分类</span><strong>{{ categoryLabel(selectedDetail.post?.category) }}</strong></div>
             <div><span>城市/区域</span><strong>{{ displayValue([selectedDetail.post?.city, selectedDetail.post?.area].filter(Boolean).join(" / ")) }}</strong></div>
             <div><span>价格</span><strong>{{ formatMoney(selectedDetail.post?.price) }}</strong></div>
-            <div><span>过期时间</span><strong>{{ formatDateTime(selectedDetail.post?.expires_at) }}</strong></div>
             <div><span>微信</span><strong>{{ displayValue(selectedDetail.post?.contact_wechat) }}</strong></div>
             <div><span>电话</span><strong>{{ displayValue(selectedDetail.post?.contact_phone) }}</strong></div>
             <div><span>Email</span><strong>{{ displayValue(selectedDetail.post?.contact_email) }}</strong></div>
@@ -384,7 +381,6 @@ onMounted(() => {
             <button class="table-action-button" type="button" @click="showPlaceholder('隐藏帖子', postTitle(selectedDetail.post))">隐藏帖子</button>
             <button class="table-action-button" type="button" @click="showPlaceholder('恢复帖子', postTitle(selectedDetail.post))">恢复帖子</button>
             <button class="table-action-button" type="button" @click="showPlaceholder(selectedDetail.post?.is_pinned ? '取消置顶' : '置顶帖子', postTitle(selectedDetail.post))">{{ selectedDetail.post?.is_pinned ? "取消置顶" : "置顶帖子" }}</button>
-            <button class="table-action-button" type="button" @click="showPlaceholder('修改过期时间', postTitle(selectedDetail.post))">修改过期时间</button>
             <button class="table-action-button" type="button" @click="showPlaceholder('封禁用户', selectedDetail.post?.user_id)">封禁发布者</button>
             <button class="table-action-button table-action-button--danger" type="button" @click="showPlaceholder('删除帖子', postTitle(selectedDetail.post))">删除帖子</button>
           </div>

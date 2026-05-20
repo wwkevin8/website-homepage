@@ -32,15 +32,20 @@ defineEmits(["submit", "reset"]);
     </label>
     <label class="field">
       <span>订单状态</span>
-      <select v-model="model.status">
+      <select v-model="model.registrationStatus">
         <option value="">全部</option>
-        <option value="pending_confirmation">待确认</option>
-        <option value="confirmed">已确认</option>
-        <option value="draft">草稿</option>
-        <option value="open">进行中</option>
-        <option value="grouped">已拼单</option>
-        <option value="closed">已完成</option>
-        <option value="cancelled">已取消</option>
+        <option value="false">未登记</option>
+        <option value="true">已登记</option>
+      </select>
+    </label>
+    <label class="field">
+      <span>风险筛选</span>
+      <select v-model="model.risk">
+        <option value="">全部</option>
+        <option value="overdue_unprocessed">超过 24 小时未登记</option>
+        <option value="no_operator">无最近操作人</option>
+        <option value="offline_unrecorded">未登记</option>
+        <option value="missing_fields">关键字段缺失</option>
       </select>
     </label>
     <label class="field">

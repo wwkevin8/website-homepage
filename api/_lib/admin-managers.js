@@ -8,6 +8,18 @@ const {
 } = require("./admin-auth");
 const { hashPassword, generateTemporaryPassword } = require("./admin-security");
 
+const ROOT_MANAGER_ACCOUNT = {
+  email: "haoranw44@gmail.com"
+};
+
+function isRootManagerAccount(admin) {
+  if (!admin) {
+    return false;
+  }
+
+  return normalizeEmail(admin.email) === ROOT_MANAGER_ACCOUNT.email;
+}
+
 function assertRequiredText(value, label) {
   const text = String(value || "").trim();
   if (!text) {
@@ -38,11 +50,16 @@ function assertPassword(value) {
   return text;
 }
 
-function mapManagerCreatePayload(body) {
-  const username = normalizeUsername(assertRequiredText(body.username, "璐﹀彿"));
+function assertUsername(value) {
+  const username = normalizeUsername(assertRequiredText(value, "璐﹀彿"));
   if (!/^[a-z0-9._-]{4,32}$/.test(username)) {
     throw new Error("璐﹀彿闇€涓?4 鍒?32 浣嶅瓧姣嶃€佹暟瀛楁垨 . _ -");
   }
+  return username;
+}
+
+function mapManagerCreatePayload(body) {
+  const username = assertUsername(body.username);
 
   return {
     username,
@@ -55,7 +72,7 @@ function mapManagerCreatePayload(body) {
   };
 }
 
-function mapManagerUpdatePayload(body) {
+function mapManagerUpdatePayload(body, options = {}) {
   const payload = {
     name: assertRequiredText(body.name, "濮撳悕"),
     email: normalizeEmail(body.email) || null,
@@ -63,6 +80,14 @@ function mapManagerUpdatePayload(body) {
     role: assertRole(body.role),
     status: assertStatus(body.status)
   };
+
+  if (options.allowUsername) {
+    payload.username = assertUsername(body.username);
+  }
+
+  if (String(body.password || "").trim()) {
+    payload.password_hash = hashPassword(assertPassword(body.password));
+  }
 
   return payload;
 }
@@ -98,8 +123,9 @@ async function assertManagerMutationAllowed(supabase, actor, target, nextPayload
   const nextStatus = nextPayload?.status || target.status;
   const nextRole = nextPayload?.role || target.role;
   const deleting = Boolean(nextPayload?.delete);
+  const actorIsRootManager = isRootManagerAccount(actor);
 
-  if (deleting && target.role === "super_admin") {
+  if (deleting && target.role === "super_admin" && !actorIsRootManager) {
     throw new Error("瓒呯骇绠＄悊鍛樿处鍙蜂笉鑳藉垹闄?");
   }
 
@@ -153,5 +179,6 @@ module.exports = {
   assertManagerMutationAllowed,
   buildManagerFilters,
   serializeManagerList,
-  createTemporaryPasswordPayload
+  createTemporaryPasswordPayload,
+  isRootManagerAccount
 };

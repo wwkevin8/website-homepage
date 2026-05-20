@@ -7,14 +7,14 @@ const model = defineModel({
 defineEmits(["submit", "reset"]);
 
 const airportOptions = [
-  { code: "LHR", name: "希思罗机场" },
-  { code: "LGW", name: "盖特威克机场" },
-  { code: "MAN", name: "曼彻斯特机场" },
-  { code: "LTN", name: "卢顿机场" },
-  { code: "LCY", name: "伦敦城市机场" },
-  { code: "BHX", name: "伯明翰机场" },
-  { code: "STN", name: "斯坦斯特德机场" },
-  { code: "OTHER", name: "其他机场" }
+  { code: "LHR", name: "Heathrow" },
+  { code: "LGW", name: "Gatwick" },
+  { code: "MAN", name: "Manchester" },
+  { code: "LTN", name: "Luton" },
+  { code: "LCY", name: "London City" },
+  { code: "BHX", name: "Birmingham" },
+  { code: "STN", name: "Stansted" },
+  { code: "OTHER", name: "其它机场" }
 ];
 </script>
 
@@ -37,7 +37,7 @@ const airportOptions = [
       <select v-model="model.airportCode">
         <option value="">全部机场</option>
         <option v-for="airport in airportOptions" :key="airport.code" :value="airport.code">
-          {{ airport.code }} · {{ airport.name }}
+          {{ airport.code }} / {{ airport.name }}
         </option>
       </select>
     </label>

@@ -545,6 +545,8 @@ function buildStorageOrderAdminFilters(query, queryParams = {}, options = {}) {
   const orderType = normalizeString(queryParams.order_type) === "box_delivery"
     ? ""
     : normalizeString(queryParams.order_type);
+  const offlineRecorded = normalizeString(queryParams.offline_recorded);
+  const lastOperatedBy = normalizeString(queryParams.last_operated_by);
 
   if (search) {
     const safe = search.replace(/,/g, " ").trim();
@@ -578,6 +580,16 @@ function buildStorageOrderAdminFilters(query, queryParams = {}, options = {}) {
     query.eq("notification_status", notificationStatus);
   }
 
+  if (offlineRecorded === "true" && (!options.supportedColumns || options.supportedColumns.has("offline_recorded"))) {
+    query.eq("offline_recorded", true);
+  } else if (offlineRecorded === "false" && (!options.supportedColumns || options.supportedColumns.has("offline_recorded"))) {
+    query.eq("offline_recorded", false);
+  }
+
+  if (lastOperatedBy && (!options.supportedColumns || options.supportedColumns.has("last_operated_by"))) {
+    query.eq("last_operated_by", lastOperatedBy);
+  }
+
   if (dateScope === "expired") {
     query.lt("service_date", today);
   } else if (dateScope !== "all") {
@@ -600,6 +612,9 @@ function buildStorageOrderAdminFilters(query, queryParams = {}, options = {}) {
     query.or("order_type.eq.storage_return,service_label.ilike.%取回%");
   } else if (orderType === "storage") {
     query.eq("order_type", "storage");
+  } else if (orderType === "all") {
+    // The Vue "全部订单" page expands existing storage rows into ST-B/ST-P/ST-S rows.
+    // It is not a separate business type, so no order_type predicate belongs here.
   } else {
     query.neq("order_type", "box_delivery");
   }

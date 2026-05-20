@@ -36,6 +36,11 @@ const REQUEST_LIST_SELECT = [
   "location_to",
   "luggage_count",
   "status",
+  "offline_recorded",
+  "last_operated_by",
+  "last_operated_at",
+  "membership_benefit_claim_id",
+  "membership_discount_amount",
   "created_at",
   "transport_group_members(group_id,is_initiator,request_id)",
   "site_users(email)"
@@ -53,9 +58,26 @@ const REQUEST_COMPACT_SELECT = [
   "passenger_count",
   "luggage_count",
   "status",
+  "offline_recorded",
+  "last_operated_by",
+  "last_operated_at",
+  "membership_benefit_claim_id",
+  "membership_discount_amount",
   "created_at",
   "transport_group_members(group_id,is_initiator,request_id)"
 ].join(", ");
+
+function resolveAdminDisplayName(adminUser = {}) {
+  return String(adminUser.name || adminUser.username || adminUser.email || "admin").trim() || "admin";
+}
+
+function parseIdList(value) {
+  const source = Array.isArray(value) ? value : String(value || "").split(",");
+  return source
+    .map(item => String(item || "").trim())
+    .filter(Boolean)
+    .slice(0, 500);
+}
 
 function applyRequestSort(query, value) {
   const sort = String(value || "submitted_latest").trim();
@@ -76,6 +98,30 @@ function applyRequestSort(query, value) {
   }
 
   query.order("created_at", { ascending: false }).order("flight_datetime", { ascending: false });
+}
+
+async function listOperatorOptions(supabase) {
+  const { data, error } = await supabase
+    .from("transport_requests")
+    .select("last_operated_by, last_operated_at")
+    .not("last_operated_by", "is", null)
+    .order("last_operated_at", { ascending: false, nullsFirst: false })
+    .limit(5000);
+
+  if (error) {
+    throw error;
+  }
+
+  const seen = new Set();
+  return (data || [])
+    .map(item => String(item.last_operated_by || "").trim())
+    .filter(name => {
+      if (!name || seen.has(name)) {
+        return false;
+      }
+      seen.add(name);
+      return true;
+    });
 }
 
 async function attachDuplicateFutureFlags(supabase, items) {
@@ -171,7 +217,11 @@ module.exports = async function handler(req, res) {
       }
 
       const queryStartedAt = nowMs();
-      const { data, error, count } = await query;
+      const [listResult, operatorOptions] = await Promise.all([
+        query,
+        compact ? Promise.resolve([]) : listOperatorOptions(supabase)
+      ]);
+      const { data, error, count } = listResult;
       const baseQueryMs = nowMs() - queryStartedAt;
       if (error) {
         throw error;
@@ -206,12 +256,81 @@ module.exports = async function handler(req, res) {
 
       ok(res, {
         items,
+        operator_options: operatorOptions,
         pagination: {
           page,
           page_size: pageSize,
           total: count || 0,
           total_pages: count ? Math.ceil(count / pageSize) : 0
         }
+      });
+      return;
+    }
+
+    if (req.method === "PATCH") {
+      const body = await parseJsonBody(req);
+      if (body.action === "set_offline_recorded") {
+        const ids = parseIdList(body.ids || body.request_ids);
+        if (!ids.length) {
+          badRequest(res, "transport request ids are required");
+          return;
+        }
+
+        const nextOfflineRecorded = body.offline_recorded === true || body.offline_recorded === "true";
+        const { data, error } = await supabase
+          .from("transport_requests")
+          .update({
+            offline_recorded: nextOfflineRecorded,
+            last_operated_by: resolveAdminDisplayName(adminUser),
+            last_operated_at: new Date().toISOString()
+          })
+          .in("id", ids)
+          .select("id, order_no, offline_recorded, last_operated_by, last_operated_at");
+
+        if (error) {
+          throw error;
+        }
+
+        ok(res, {
+          updated_count: Array.isArray(data) ? data.length : 0,
+          offline_recorded: nextOfflineRecorded,
+          items: data || []
+        });
+        return;
+      }
+
+      if (body.action !== "mark_offline_recorded") {
+        badRequest(res, "Unsupported bulk action");
+        return;
+      }
+
+      const filters = body.filters && typeof body.filters === "object" ? body.filters : {};
+      let query = supabase
+        .from("transport_requests")
+        .update({
+          offline_recorded: true,
+          last_operated_by: resolveAdminDisplayName(adminUser),
+          last_operated_at: new Date().toISOString()
+        })
+        .select("id, order_no");
+
+      applyRequestFilters(query, filters);
+
+      if (filters.grouped === "true") {
+        query.not("transport_group_members", "is", null);
+      }
+      if (filters.grouped === "false") {
+        query.is("transport_group_members", null);
+      }
+
+      const { data, error } = await query;
+      if (error) {
+        throw error;
+      }
+
+      ok(res, {
+        updated_count: Array.isArray(data) ? data.length : 0,
+        items: data || []
       });
       return;
     }
@@ -234,7 +353,7 @@ module.exports = async function handler(req, res) {
       return;
     }
 
-    methodNotAllowed(res, ["GET", "POST"]);
+    methodNotAllowed(res, ["GET", "POST", "PATCH"]);
   } catch (error) {
     serverError(res, error);
   }

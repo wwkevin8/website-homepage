@@ -11,8 +11,29 @@ defineProps({
   rowKey: {
     type: String,
     default: "id"
+  },
+  rowClass: {
+    type: Function,
+    default: null
+  },
+  rowClickable: {
+    type: Boolean,
+    default: false
   }
 });
+
+const emit = defineEmits(["row-click"]);
+
+function handleRowClick(row, event) {
+  if (!event || !event.target) {
+    emit("row-click", row);
+    return;
+  }
+  if (event.target.closest?.("button, a, input, select, textarea, label")) {
+    return;
+  }
+  emit("row-click", row);
+}
 </script>
 
 <template>
@@ -37,7 +58,12 @@ defineProps({
         </tr>
       </thead>
       <tbody>
-        <tr v-for="(row, index) in rows" :key="row[rowKey] || index">
+        <tr
+          v-for="(row, index) in rows"
+          :key="row[rowKey] || index"
+          :class="[rowClass ? rowClass(row, index) : null, { 'is-clickable-row': rowClickable }]"
+          @click="rowClickable ? handleRowClick(row, $event) : null"
+        >
           <td
             v-for="column in columns"
             :key="column.key"

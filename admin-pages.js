@@ -281,6 +281,10 @@
     return status === "active" ? "\u542f\u7528" : status === "disabled" ? "\u505c\u7528" : status || "--";
   }
 
+  function isRootManagerAccount(admin) {
+    return String(admin?.email || "").trim().toLowerCase() === "haoranw44@gmail.com";
+  }
+
   function getBadgeClass(type, value) {
     if (type === "manager-role") {
       return value === "super_admin" ? "is-success" : "is-neutral";
@@ -571,7 +575,7 @@
                   <div class="admin-table-actions">
                     <button class="button button-text" type="button" data-manager-edit="${item.id}">\u7f16\u8f91</button>
                     <button class="button button-text" type="button" data-manager-reset-password="${item.id}">\u91cd\u7f6e\u5bc6\u7801</button>
-                    <button class="button button-text is-danger" type="button" data-manager-delete="${item.id}" ${item.role === "super_admin" ? "disabled title=\"\u8d85\u7ea7\u7ba1\u7406\u5458\u8d26\u53f7\u4e0d\u80fd\u5220\u9664\"" : currentSession?.admin?.id === item.id ? "disabled title=\"\u5f53\u524d\u8d26\u53f7\u4e0d\u80fd\u5220\u9664\u81ea\u5df1\"" : ""}>\u5220\u9664\u8d26\u53f7</button>
+                    <button class="button button-text is-danger" type="button" data-manager-delete="${item.id}" ${item.role === "super_admin" && !isRootManagerAccount(currentSession?.admin) ? "disabled title=\"\u53ea\u6709 Wkevin \u53ef\u5220\u9664\u5176\u4ed6\u8d85\u7ea7\u7ba1\u7406\u5458\"" : currentSession?.admin?.id === item.id ? "disabled title=\"\u5f53\u524d\u8d26\u53f7\u4e0d\u80fd\u5220\u9664\u81ea\u5df1\"" : ""}>\u5220\u9664\u8d26\u53f7</button>
                   </div>
                 </td>
               </tr>
@@ -729,9 +733,11 @@
     title.textContent = mode === "create" ? "\u65b0\u589e\u7ba1\u7406\u5458" : "\u7f16\u8f91\u7ba1\u7406\u5458";
     note.textContent = mode === "create"
       ? "\u521b\u5efa\u540e\u53f0\u7ba1\u7406\u5458\u8d26\u53f7\uff0c\u5e76\u76f4\u63a5\u5206\u914d\u89d2\u8272\u3002"
-      : "\u53ef\u4fee\u6539\u7ba1\u7406\u5458\u7684\u59d3\u540d\u3001\u90ae\u7bb1\u3001\u624b\u673a\u53f7\u548c\u89d2\u8272\u3002";
+      : isRootManagerAccount(currentSession?.admin)
+        ? "\u53ef\u4fee\u6539\u7ba1\u7406\u5458\u7684\u59d3\u540d\u3001\u8d26\u53f7\u3001\u90ae\u7bb1\u3001\u624b\u673a\u53f7\u548c\u89d2\u8272\u3002"
+        : "\u53ef\u4fee\u6539\u7ba1\u7406\u5458\u7684\u59d3\u540d\u3001\u90ae\u7bb1\u3001\u624b\u673a\u53f7\u548c\u89d2\u8272\u3002";
     passwordField.hidden = mode !== "create";
-    form.username.disabled = mode !== "create";
+    form.username.disabled = mode !== "create" && !isRootManagerAccount(currentSession?.admin);
 
     if (item) {
       form.id.value = item.id || "";
@@ -905,8 +911,8 @@
       const deleteId = target.getAttribute("data-manager-delete");
       if (deleteId) {
         const item = latestItems.find(entry => entry.id === deleteId);
-        if (item?.role === "super_admin") {
-          showMessage("\u8d85\u7ea7\u7ba1\u7406\u5458\u8d26\u53f7\u4e0d\u80fd\u5220\u9664", true);
+        if (item?.role === "super_admin" && !isRootManagerAccount(currentSession?.admin)) {
+          showMessage("\u53ea\u6709 Wkevin \u53ef\u5220\u9664\u5176\u4ed6\u8d85\u7ea7\u7ba1\u7406\u5458", true);
           return;
         }
         openConfirmModal({

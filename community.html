@@ -6,66 +6,70 @@
   <link rel="icon" href="/favicon.ico?v=20260509">
   <link rel="icon" href="/favicon.png?v=20260509" type="image/png">
   <title>NGN 学生信息广场｜找搭子、二手、转租、求助</title>
-  <meta name="description" content="NGN 学生信息广场，浏览找搭子、二手交易、转租短租和求助问答信息。">
-  <link rel="stylesheet" href="./community.css?v=20260517-community-1">
+  <meta name="description" content="NGN 学生信息广场，浏览找搭子、二手交易、转租短租、求助问答和官方公告。">
+  <link rel="stylesheet" href="./community.css?v=20260520-community-forum-2">
 </head>
 <body class="community-page" data-community-page="list">
   <div class="community-shell">
     <header class="community-topbar">
       <a class="community-brand" href="./">
         <span class="community-mark">NGN</span>
-        <span>Nottingham Good Neighbor</span>
+        <span class="community-brand-text">Nottingham Good Neighbor</span>
       </a>
-      <nav class="community-nav" aria-label="社区导航">
-        <a href="./community.html">信息广场</a>
+      <nav class="community-nav" aria-label="信息广场导航">
+        <a class="is-active" href="./community.html">信息广场</a>
         <a href="./community-submit.html">发布信息</a>
-        <span data-site-auth-nav data-auth-login-label="登录"></span>
+        <span class="community-auth-slot" data-site-auth-nav data-auth-login-label="登录"></span>
       </nav>
     </header>
 
-    <section class="community-hero">
-      <div>
-        <h1>NGN 学生信息广场</h1>
-        <p class="community-subtitle">找搭子、二手交易、转租短租、求助问答。公开页面不会展示发布者联系方式。</p>
-      </div>
-      <a class="community-button community-button-primary" href="./community-submit.html">发布信息</a>
-    </section>
-
-    <nav class="community-service-strip" aria-label="NGN 服务入口">
-      <a href="./pickup.html">接机</a>
-      <a href="./storage.html">寄存</a>
-      <a href="./service-center.html">订房</a>
-      <a href="./moving.html">搬家</a>
-      <a href="./service-center.html">新生礼包</a>
-    </nav>
-
     <main class="community-layout">
-      <section class="community-panel" aria-label="帖子列表">
-        <div class="community-toolbar">
-          <input class="community-search" type="search" placeholder="搜索标题、内容、城市、学校或区域" data-community-search>
-          <button class="community-button" type="button" data-community-search-button>搜索</button>
+      <section class="community-main" aria-label="帖子列表">
+        <div class="community-heading">
+          <p class="community-eyebrow">NGN Community Board</p>
+          <div class="community-heading-row">
+            <div>
+              <h1>学生信息广场</h1>
+              <p>找同行、出闲置、看短租、问问题。公开页面不展示发布者联系方式。</p>
+            </div>
+            <a class="community-button community-button-primary" href="./community-submit.html">发布信息</a>
+          </div>
         </div>
+
+        <div class="community-search-panel">
+          <label class="community-search-wrap">
+            <span>搜索信息</span>
+            <input class="community-search" type="search" placeholder="搜索标题、内容、城市、学校或区域" data-community-search>
+          </label>
+          <button class="community-button community-search-submit" type="button" data-community-search-button>搜索</button>
+        </div>
+
         <div class="community-tabs" role="tablist" aria-label="分类筛选" data-community-tabs>
           <button class="community-tab is-active" type="button" data-category="">全部</button>
           <button class="community-tab" type="button" data-category="buddy">找搭子</button>
           <button class="community-tab" type="button" data-category="second_hand">二手交易</button>
           <button class="community-tab" type="button" data-category="sublet">转租/短租</button>
-          <button class="community-tab" type="button" data-category="help">求助/问答</button>
+          <button class="community-tab" type="button" data-category="help">求助问答</button>
           <button class="community-tab" type="button" data-category="official">官方公告</button>
         </div>
+
         <p class="community-message" data-community-message></p>
         <div class="community-list" data-community-list></div>
       </section>
 
-      <aside class="community-side">
-        <section class="community-panel">
+      <aside class="community-side" aria-label="信息广场说明">
+        <section class="community-side-card">
           <h2>发帖规则</h2>
-          <p>请勿在标题、正文、评论或图片中公开微信、手机号、邮箱、房间号、完整地址或隐私资料。违规内容或被举报内容可能会被隐藏或删除。</p>
+          <ul class="community-rule-list">
+            <li>请勿公开微信、手机号、邮箱、房间号等隐私信息</li>
+            <li>请勿发布广告、虚假信息或攻击性内容</li>
+            <li>违规内容可能被隐藏或删除</li>
+          </ul>
         </section>
-        <section class="community-panel">
+        <section class="community-side-card">
           <h2>NGN 服务入口</h2>
           <div class="community-service-panel">
-            <a href="./pickup.html">接机 / 拼车</a>
+            <a href="./pickup.html">接机/拼车</a>
             <a href="./storage.html">寄存</a>
             <a href="./moving.html">搬家</a>
             <a href="./service-center.html">订房咨询</a>
@@ -76,7 +80,7 @@
     </main>
   </div>
 
-  <script src="./site-auth.js?v=20260517-community-1"></script>
-  <script src="./community.js?v=20260517-community-1"></script>
+  <script src="./site-auth.js?v=20260520-community-forum-2"></script>
+  <script src="./community.js?v=20260520-community-forum-2"></script>
 </body>
 </html>

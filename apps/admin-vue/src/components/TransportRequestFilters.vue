@@ -1,7 +1,20 @@
 <script setup>
+import { computed } from "vue";
+
 const model = defineModel({
   type: Object,
   required: true
+});
+
+const props = defineProps({
+  operatorOptions: {
+    type: Array,
+    default: () => []
+  },
+  exporting: {
+    type: Boolean,
+    default: false
+  }
 });
 
 defineEmits(["submit", "reset", "export"]);
@@ -16,6 +29,13 @@ const airportOptions = [
   { code: "STN", name: "斯坦斯特德机场" },
   { code: "OTHER", name: "其他机场" }
 ];
+
+const operatorSelectOptions = computed(() => {
+  const values = [model.value?.lastOperatedBy, ...props.operatorOptions]
+    .map(value => String(value || "").trim())
+    .filter(Boolean);
+  return Array.from(new Set(values));
+});
 </script>
 
 <template>
@@ -50,6 +70,21 @@ const airportOptions = [
       </select>
     </label>
     <label class="field">
+      <span>线下记录状态</span>
+      <select v-model="model.offlineRecorded">
+        <option value="">全部</option>
+        <option value="false">未记录</option>
+        <option value="true">已记录</option>
+      </select>
+    </label>
+    <label class="field">
+      <span>上次操作人</span>
+      <select v-model="model.lastOperatedBy">
+        <option value="">全部</option>
+        <option v-for="operator in operatorSelectOptions" :key="operator" :value="operator">{{ operator }}</option>
+      </select>
+    </label>
+    <label class="field">
       <span>开始日期</span>
       <input v-model="model.dateFrom" type="date" />
     </label>
@@ -62,8 +97,8 @@ const airportOptions = [
       <select v-model="model.sort">
         <option value="submitted_latest">按提交时间：最近到最远</option>
         <option value="submitted_oldest">按提交时间：最远到最近</option>
-        <option value="flight_nearest">按抵达/起飞：最近到最久</option>
-        <option value="flight_latest">按抵达/起飞：最久到最近</option>
+        <option value="flight_nearest">按到达/出发：最近到最久</option>
+        <option value="flight_latest">按到达/出发：最久到最近</option>
       </select>
     </label>
     <label class="field field--compact">
@@ -77,8 +112,9 @@ const airportOptions = [
     <div class="filter-actions transport-request-filter-panel__actions">
       <button class="primary-button" type="submit">查询</button>
       <button class="secondary-button" type="reset">重置</button>
-      <button class="secondary-button" type="button" @click="$emit('export')">导出 Excel</button>
-      <a class="secondary-button" href="/transport-admin-groups.html">拼车组管理</a>
+      <button class="secondary-button" type="button" :disabled="exporting" @click="$emit('export')">
+        导出当前筛选结果
+      </button>
     </div>
   </form>
 </template>

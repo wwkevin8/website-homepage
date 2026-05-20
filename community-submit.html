@@ -7,26 +7,27 @@
   <link rel="icon" href="/favicon.ico?v=20260509">
   <link rel="icon" href="/favicon.png?v=20260509" type="image/png">
   <title>发布信息｜NGN 学生信息广场</title>
-  <meta name="description" content="登录后在 NGN 学生信息广场发布找搭子、二手、转租或求助信息。">
-  <link rel="stylesheet" href="./community.css?v=20260517-community-1">
+  <meta name="description" content="登录后在 NGN 学生信息广场快速发布找搭子、二手、转租或求助信息。">
+  <link rel="stylesheet" href="./community.css?v=20260520-community-submit-simple-1">
 </head>
 <body class="community-page" data-community-page="submit">
   <div class="community-shell">
     <header class="community-topbar">
       <a class="community-brand" href="./community.html">
         <span class="community-mark">NGN</span>
-        <span>学生信息广场</span>
+        <span class="community-brand-text">Nottingham Good Neighbor</span>
       </a>
-      <nav class="community-nav" aria-label="社区导航">
-        <a href="./community.html">返回列表</a>
-        <span data-site-auth-nav data-auth-login-label="登录"></span>
+      <nav class="community-nav" aria-label="信息广场导航">
+        <a href="./community.html">信息广场</a>
+        <a class="is-active" href="./community-submit.html">发布信息</a>
+        <span class="community-auth-slot" data-site-auth-nav data-auth-login-label="登录"></span>
       </nav>
     </header>
 
     <section class="community-hero">
       <div>
         <h1>发布信息</h1>
-        <p class="community-subtitle">联系方式只存后台，不会在前台公开展示。</p>
+        <p class="community-subtitle">写清楚标题和正文就能发布。联系方式选填，公开页面不会展示。</p>
       </div>
     </section>
 
@@ -34,69 +35,82 @@
       <section class="community-submit-card">
         <p class="community-message" data-community-submit-message></p>
         <form class="community-form" data-community-submit-form>
-          <div class="community-form-grid">
-            <label class="community-field">
-              <span>分类</span>
-              <select name="category" required data-community-category>
-                <option value="buddy">找搭子</option>
-                <option value="second_hand">二手交易</option>
-                <option value="sublet">转租/短租</option>
-                <option value="help">求助/问答</option>
-              </select>
-            </label>
-            <label class="community-field">
-              <span>城市</span>
-              <input name="city" maxlength="80" placeholder="例如 Nottingham">
-            </label>
-            <label class="community-field">
-              <span>学校</span>
-              <input name="university" maxlength="120" placeholder="例如 University of Nottingham">
-            </label>
-            <label class="community-field">
-              <span>区域</span>
-              <input name="area" maxlength="120" placeholder="例如 City Centre / Beeston">
-            </label>
-            <label class="community-field" data-price-field>
-              <span>价格</span>
-              <input name="price" type="number" min="0" max="100000" step="0.01" placeholder="如有">
-            </label>
-          </div>
+          <label class="community-field">
+            <span>分类</span>
+            <select name="category" required data-community-category>
+              <option value="buddy">找搭子</option>
+              <option value="second_hand">二手交易</option>
+              <option value="sublet">转租/短租</option>
+              <option value="help">求助问答</option>
+            </select>
+          </label>
 
           <label class="community-field">
             <span>标题</span>
-            <input name="title" required minlength="8" maxlength="120" placeholder="至少 8 个字符">
+            <input name="title" required maxlength="60" placeholder="例如：出锅 / 求搭子 / 找室友 / 曼城接机">
           </label>
 
           <label class="community-field">
             <span>正文</span>
-            <textarea name="content" required minlength="20" maxlength="300" placeholder="请勿在正文公开联系方式、外链或隐私信息。"></textarea>
-            <p class="community-help" data-content-help>找搭子、二手、转租最多 200 字；求助最多 300 字。</p>
+            <textarea name="content" required maxlength="500" placeholder="简单写清楚时间、地点、物品、预算或你想问的问题。最多 500 字。"></textarea>
+            <p class="community-help">最多 500 字。请勿在正文公开微信、手机号、邮箱、房间号、完整地址或证件/合同信息。</p>
           </label>
 
-          <div class="community-form-grid">
+          <section class="community-contact-box" aria-label="联系方式">
+            <div class="community-form-grid">
+              <label class="community-field">
+                <span>联系方式类型（选填）</span>
+                <select name="contact_type">
+                  <option value="">不填写</option>
+                  <option value="wechat">微信</option>
+                  <option value="phone">手机</option>
+                  <option value="email">邮箱</option>
+                  <option value="other">其他</option>
+                </select>
+              </label>
+              <label class="community-field">
+                <span>联系方式内容（选填）</span>
+                <input name="contact_value" maxlength="160" placeholder="仅后台可见，公开页面不会展示">
+              </label>
+            </div>
+            <p class="community-help">如希望客服协助对接，建议填写联系方式。</p>
+          </section>
+
+          <details class="community-more-fields">
+            <summary>更多信息（选填）</summary>
+            <div class="community-form-grid">
+              <label class="community-field">
+                <span>城市</span>
+                <input name="city" maxlength="80" placeholder="例如 Nottingham">
+              </label>
+              <label class="community-field">
+                <span>学校</span>
+                <input name="university" maxlength="120" placeholder="例如 University of Nottingham">
+              </label>
+              <label class="community-field">
+                <span>区域</span>
+                <input name="area" maxlength="120" placeholder="例如 City Centre / Beeston">
+              </label>
+              <label class="community-field" data-price-field>
+                <span>价格</span>
+                <input name="price" type="number" min="0" max="100000" step="0.01" placeholder="如有">
+              </label>
+            </div>
             <label class="community-field">
-              <span>微信</span>
-              <input name="contact_wechat" maxlength="120" placeholder="仅后台可见">
+              <span>补充说明</span>
+              <textarea name="more_info" maxlength="500" placeholder="例如交易方式、可看房时间、物品状态、偏好时间等。"></textarea>
             </label>
-            <label class="community-field">
-              <span>手机号</span>
-              <input name="contact_phone" maxlength="80" placeholder="仅后台可见">
-            </label>
-            <label class="community-field">
-              <span>邮箱</span>
-              <input name="contact_email" maxlength="160" placeholder="仅后台可见">
-            </label>
-          </div>
+          </details>
 
           <label class="community-field" data-image-field>
-            <span>图片</span>
+            <span>图片（选填）</span>
             <input name="images" type="file" accept="image/jpeg,image/png,image/webp" multiple>
-            <p class="community-help">请勿上传包含微信二维码、手机号、邮箱、聊天记录、合同、护照、BRP、学生卡、他人照片或其他隐私信息的图片。违规图片或帖子可能会被隐藏或删除。</p>
+            <p class="community-help">二手交易和转租/短租最多 3 张，每张最大 2MB。请勿上传包含微信二维码、手机号、邮箱、聊天记录、合同、护照、BRP、学生卡等隐私内容的图片。</p>
           </label>
 
           <label class="community-checkbox">
             <input name="disclaimer" type="checkbox" required>
-            <span>平台仅提供信息展示，不担保交易真实性、付款安全、商品质量、图片内容真实性、房源真实性、合同有效性或转租成功。用户需自行核实信息。转租/短租信息必须自行确认公寓、房东或住宿方是否允许合同转让或转租。请勿提前支付大额定金，不要公开个人隐私信息。</span>
+            <span>我确认发布内容真实，且未公开联系方式、证件、合同、房间号等隐私信息。</span>
           </label>
 
           <button class="community-button community-button-primary" type="submit" data-submit-button>提交发布</button>
@@ -105,18 +119,18 @@
 
       <aside class="community-side">
         <section class="community-panel">
-          <h2>发布后</h2>
-          <p>发布成功。请注意，违规内容、联系方式公开、广告或被举报内容可能会被隐藏或删除。</p>
+          <h2>快速发布</h2>
+          <p>分类、标题、正文是核心字段。联系方式、图片和更多信息都可以稍后再补充。</p>
         </section>
         <section class="community-panel">
           <h2>图片限制</h2>
-          <p>二手交易和转租/短租最多 3 张图片，每张最大 2MB，仅支持 jpg、jpeg、png、webp。</p>
+          <p>仅二手交易和转租/短租默认显示图片上传，最多 3 张，每张最大 2MB。</p>
         </section>
       </aside>
     </main>
   </div>
 
-  <script src="./site-auth.js?v=20260517-community-1"></script>
-  <script src="./community-submit.js?v=20260517-community-1"></script>
+  <script src="./site-auth.js?v=20260520-community-submit-simple-1"></script>
+  <script src="./community-submit.js?v=20260520-community-submit-simple-1"></script>
 </body>
 </html>

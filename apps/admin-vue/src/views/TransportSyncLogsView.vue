@@ -1,4 +1,4 @@
-<script setup>
+﻿<script setup>
 import { computed, onMounted, reactive, ref } from "vue";
 import { fetchTransportSyncLogs } from "@/api/admin-api";
 import AdminTable from "@/components/AdminTable.vue";
@@ -176,7 +176,7 @@ onMounted(() => {
         <p class="view-heading__eyebrow">Transport sync audit</p>
         <h2>同步巡检日志</h2>
       </div>
-      <a class="secondary-button" href="/transport-admin-sync-logs.html">打开旧同步日志后台</a>
+
     </div>
 
     <form class="admin-filter-panel sync-log-filter-panel" @submit.prevent="submitFilters" @reset.prevent="resetFilters">

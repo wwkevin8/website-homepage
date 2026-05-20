@@ -23,9 +23,11 @@ const {
   buildManagerFilters,
   serializeManagerList,
   createTemporaryPasswordPayload,
-  assertManagerMutationAllowed
+  assertManagerMutationAllowed,
+  isRootManagerAccount
 } = require("../_lib/admin-managers");
 const { buildStorageOrderAdminFilters } = require("../_lib/storage-orders");
+const { recalculateStorageOrderPricing } = require("../_lib/storage-pricing");
 const {
   parsePositiveInteger,
   parsePageSize,
@@ -42,6 +44,7 @@ const {
 const {
   cancelOrResetClaim,
   createMembershipActivationCode,
+  createMembershipActivationCodes,
   createManualClaim,
   deleteMembershipActivationCode,
   deleteMembershipEntitlement,
@@ -50,6 +53,7 @@ const {
   listMembershipActivationCodes,
   logMembershipAudit,
   markClaimUsed,
+  releaseClaimOrderBinding,
   revokeMembershipActivationCode
 } = require("../_lib/membership");
 const {
@@ -68,6 +72,19 @@ let cachedStorageOrderDetailColumns = null;
 let dashboardCache = null;
 
 const DASHBOARD_CACHE_TTL_MS = 120000;
+const DASHBOARD_RISK_LABELS = {
+  overdue_unprocessed: "超过 24 小时未登记",
+  no_operator: "无最近操作人",
+  offline_unrecorded: "未标记线下记录",
+  missing_fields: "关键字段缺失"
+};
+const DASHBOARD_RISK_HELPERS = {
+  overdue_unprocessed: "创建超过 24 小时仍未完成线下登记",
+  no_operator: "需要明确客服责任人",
+  offline_unrecorded: "可能尚未同步到客服台账",
+  missing_fields: "学生已提交但后台信息不完整"
+};
+const ORDER_LIST_COLUMNS = "id, source_table, source_id, order_no, user_id, service_type, customer_name, phone, wechat_or_whatsapp, status, flight_no, pickup_date, storage_start_date, storage_end_date, archived, archived_at, completed_at, latest_note_at, created_at, updated_at";
 const STORAGE_ORDER_LIST_COLUMNS = [
   "id",
   "order_no",
@@ -103,6 +120,9 @@ const STORAGE_ORDER_LIST_COLUMNS = [
   "final_price",
   "membership_discount_breakdown_json",
   "status",
+  "offline_recorded",
+  "last_operated_by",
+  "last_operated_at",
   "created_at"
 ];
 const STORAGE_ORDER_DETAIL_COLUMNS = [
@@ -300,6 +320,12 @@ function formatAdminCsvExcelText(value) {
 }
 
 function getStorageExportServiceLabel(item = {}) {
+  if (item.service_type_label) {
+    return item.service_type_label;
+  }
+  if (item.storage_order_kind) {
+    return storageOrderKindLabel(item.storage_order_kind);
+  }
   const orderType = String(item.order_type || "").trim();
   if (orderType === "box_delivery") {
     return "买箱订单";
@@ -472,6 +498,108 @@ function buildStorageExportColumns(orderType) {
   ];
 }
 
+function buildStorageExportRows(items = []) {
+  return items.map(item => {
+    const formJson = isPlainObject(item.customer_form_json) ? item.customer_form_json : {};
+    const serviceDetails = getStorageServiceDetailsFromJson(formJson);
+    const address = firstNonEmptyText(
+      item.address_full,
+      serviceDetails.collectionAddress,
+      serviceDetails.serviceAddress,
+      serviceDetails.returnAddress,
+      serviceDetails.addressFull,
+      serviceDetails.address_full
+    );
+    return {
+      __highlight: Boolean(item.membership_benefit_claim_id),
+      "提交时间": formatAdminCsvExcelText(formatAdminCsvDateTime(item.created_at)),
+      "订单编号": item.display_order_no || item.order_no || "",
+      "主订单编号": item.parent_order_no || "",
+      "买箱编号": item.box_order_no || "",
+      "服务类型": getStorageExportServiceLabel(item),
+      "姓名": item.customer_name || "",
+      "微信": item.wechat_id || "",
+      "电话": formatAdminCsvExcelText(item.phone || ""),
+      "邮箱": item.student_email || item.linked_user_email || "",
+      "User ID": item.public_user_id || item.site_user_id || "",
+      "服务日期": formatAdminCsvExcelText(item.service_date_unified || item.service_date || ""),
+      "时间段": item.service_time_slot_unified || item.service_time_slot || item.service_time || "",
+      "箱子摘要": storageExportPurchaseQuantity(item) || "",
+      "送箱日期": formatAdminCsvExcelText(item.box_delivery_date || ""),
+      "寄存开始日期": formatAdminCsvExcelText(item.storage_start_date || item.storage_intake_date || ""),
+      "寄存结束日期": formatAdminCsvExcelText(item.storage_end_date || item.expected_storage_end_date || ""),
+      "地址": address || "",
+      "房间 / 公寓": item.room_or_building || "",
+      "邮编": item.postcode || "",
+      "总费用": formatAdminCsvMoney(item.final_price ?? item.estimated_total_price),
+      "会员减免": formatAdminCsvMoney(item.membership_discount_amount),
+      "额外加收": formatAdminCsvMoney(item.extra_charge_amount),
+      "订单状态": item.status || "",
+      "线下记录": item.offline_recorded ? "已记录" : "未记录",
+      "上次操作人": item.last_operated_by || "",
+      "上次操作时间": formatAdminCsvExcelText(formatAdminCsvDateTime(item.last_operated_at))
+    };
+  });
+}
+
+function buildStorageExportColumns(orderType) {
+  const normalizedOrderType = String(orderType || "").trim();
+  const commonColumns = [
+    "提交时间",
+    "订单编号",
+    "服务类型",
+    "姓名",
+    "微信",
+    "电话",
+    "邮箱",
+    "User ID",
+    "服务日期",
+    "时间段",
+    "地址",
+    "房间 / 公寓",
+    "邮编",
+    "总费用",
+    "订单状态",
+    "线下记录",
+    "上次操作人",
+    "上次操作时间"
+  ];
+  if (normalizedOrderType === "all") {
+    return [
+      ...commonColumns.slice(0, 10),
+      "箱子摘要",
+      ...commonColumns.slice(10)
+    ];
+  }
+  if (normalizedOrderType === "box_order") {
+    return [
+      "提交时间",
+      "订单编号",
+      "主订单编号",
+      "买箱编号",
+      "服务类型",
+      "姓名",
+      "微信",
+      "电话",
+      "邮箱",
+      "User ID",
+      "服务日期",
+      "时间段",
+      "箱子摘要",
+      "送箱日期",
+      "地址",
+      "房间 / 公寓",
+      "邮编",
+      "总费用",
+      "订单状态",
+      "线下记录",
+      "上次操作人",
+      "上次操作时间"
+    ];
+  }
+  return commonColumns;
+}
+
 function buildStorageExportFilename(queryParams = {}) {
   const now = new Date();
   const stamp = [
@@ -483,6 +611,140 @@ function buildStorageExportFilename(queryParams = {}) {
   ].join("");
   const orderType = String(queryParams.order_type || "storage").replace(/[^a-z0-9_-]+/gi, "");
   return `storage-orders-${orderType || "all"}-${stamp}.xls`;
+}
+
+function normalizeStorageExportAddressKey(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/[,\s]+/g, " ")
+    .replace(/\s*\/\s*/g, " / ")
+    .trim();
+}
+
+function splitStorageExportAddress(value) {
+  return String(value || "")
+    .split("/")
+    .map(part => part.replace(/\s+/g, " ").trim())
+    .filter(Boolean);
+}
+
+function buildStorageExportAddress(item = {}) {
+  const formJson = isPlainObject(item.customer_form_json) ? item.customer_form_json : {};
+  const serviceDetails = getStorageServiceDetailsFromJson(formJson);
+  const address = firstNonEmptyText(
+    item.address_full,
+    serviceDetails.collectionAddress,
+    serviceDetails.serviceAddress,
+    serviceDetails.returnAddress,
+    serviceDetails.addressFull,
+    serviceDetails.address_full
+  );
+  const parts = [];
+  const pushPart = value => {
+    const text = String(value || "").replace(/\s+/g, " ").trim();
+    if (!text) return;
+    const key = normalizeStorageExportAddressKey(text);
+    if (!parts.some(part => normalizeStorageExportAddressKey(part) === key)) {
+      parts.push(text);
+    }
+  };
+
+  splitStorageExportAddress(address).forEach(pushPart);
+  const addressBlob = normalizeStorageExportAddressKey(parts.join(" "));
+  splitStorageExportAddress(item.room_or_building).forEach(part => {
+    if (!addressBlob.includes(normalizeStorageExportAddressKey(part))) pushPart(part);
+  });
+  splitStorageExportAddress(item.postcode).forEach(part => {
+    if (!addressBlob.includes(normalizeStorageExportAddressKey(part))) pushPart(part);
+  });
+  return parts.join(" / ");
+}
+
+function buildStorageExportRows(items = []) {
+  return items.map(item => ({
+    __highlight: Boolean(item.membership_benefit_claim_id),
+    "提交时间": formatAdminCsvExcelText(formatAdminCsvDateTime(item.created_at)),
+    "订单编号": item.display_order_no || item.order_no || "",
+    "主订单编号": item.parent_order_no || "",
+    "买箱编号": item.box_order_no || "",
+    "服务类型": getStorageExportServiceLabel(item),
+    "姓名": item.customer_name || "",
+    "微信": item.wechat_id || "",
+    "电话": formatAdminCsvExcelText(item.phone || ""),
+    "邮箱": item.student_email || item.linked_user_email || "",
+    "User ID": item.public_user_id || item.site_user_id || "",
+    "服务日期": formatAdminCsvExcelText(item.service_date_unified || item.service_date || ""),
+    "时间段": item.service_time_slot_unified || item.service_time_slot || item.service_time || "",
+    "箱子摘要": storageExportPurchaseQuantity(item) || "",
+    "送箱日期": formatAdminCsvExcelText(item.box_delivery_date || ""),
+    "寄存开始日期": formatAdminCsvExcelText(item.storage_start_date || item.storage_intake_date || ""),
+    "寄存结束日期": formatAdminCsvExcelText(item.storage_end_date || item.expected_storage_end_date || ""),
+    "地址": buildStorageExportAddress(item),
+    "房间 / 公寓": item.room_or_building || "",
+    "邮编": item.postcode || "",
+    "总费用": formatAdminCsvMoney(item.final_price ?? item.estimated_total_price),
+    "会员减免": formatAdminCsvMoney(item.membership_discount_amount),
+    "额外加收": formatAdminCsvMoney(item.extra_charge_amount),
+    "线下记录": item.offline_recorded ? "已记录" : "未记录",
+    "上次操作人": item.last_operated_by || "",
+    "上次操作时间": formatAdminCsvExcelText(formatAdminCsvDateTime(item.last_operated_at))
+  }));
+}
+
+function buildStorageExportColumns(orderType) {
+  const normalizedOrderType = String(orderType || "").trim();
+  const commonColumns = [
+    "提交时间",
+    "订单编号",
+    "服务类型",
+    "姓名",
+    "微信",
+    "电话",
+    "邮箱",
+    "User ID",
+    "服务日期",
+    "时间段",
+    "地址",
+    "房间 / 公寓",
+    "邮编",
+    "总费用",
+    "线下记录",
+    "上次操作人",
+    "上次操作时间"
+  ];
+  if (normalizedOrderType === "all") {
+    return [
+      ...commonColumns.slice(0, 10),
+      "箱子摘要",
+      ...commonColumns.slice(10)
+    ];
+  }
+  if (normalizedOrderType === "box_order") {
+    return [
+      "提交时间",
+      "订单编号",
+      "主订单编号",
+      "买箱编号",
+      "服务类型",
+      "姓名",
+      "微信",
+      "电话",
+      "邮箱",
+      "User ID",
+      "服务日期",
+      "时间段",
+      "箱子摘要",
+      "送箱日期",
+      "地址",
+      "房间 / 公寓",
+      "邮编",
+      "总费用",
+      "线下记录",
+      "上次操作人",
+      "上次操作时间"
+    ];
+  }
+  return commonColumns;
 }
 
 function normalizeOptionalNumber(value) {
@@ -552,6 +814,204 @@ function buildStorageAdminPatch(body) {
   }
 
   return patch;
+}
+
+function resolveAdminDisplayName(adminUser = {}) {
+  return String(adminUser.name || adminUser.username || adminUser.email || "admin").trim() || "admin";
+}
+
+function storageOfflineTrackingMigrationMessage() {
+  return "线下记录字段还没有在数据库上线，请先执行 supabase/20260519_storage_order_offline_tracking.sql 后再进行标记操作。";
+}
+
+function isStorageOfflineTrackingColumn(column) {
+  return ["offline_recorded", "last_operated_by", "last_operated_at"].includes(String(column || ""));
+}
+
+function normalizeStorageOrderKind(value) {
+  const normalized = String(value || "").trim();
+  if (["box_order", "storage_collection", "storage_return"].includes(normalized)) {
+    return normalized;
+  }
+  if (normalized === "box_delivery") {
+    return "box_order";
+  }
+  return "";
+}
+
+function storageOrderKindLabel(kind) {
+  return {
+    box_order: "买箱",
+    storage_collection: "取寄存",
+    storage_return: "送寄存"
+  }[kind] || "寄存";
+}
+
+function storageOrderKindFromRecord(item = {}) {
+  const explicit = normalizeStorageOrderKind(item.order_type);
+  const orderNoText = String(item.storage_pickup_order_no || item.box_order_no || item.order_no || item.parent_order_no || "").toUpperCase();
+  const labelText = String(item.service_label || "");
+  if (explicit) return explicit;
+  if (orderNoText.startsWith("ST-B")) return "box_order";
+  if (orderNoText.startsWith("ST-P") || labelText.includes("取寄存") || labelText.includes("预约寄存")) return "storage_collection";
+  if (orderNoText.startsWith("ST-S") || orderNoText.startsWith("ST-R") || labelText.includes("送寄存") || labelText.includes("取回")) return "storage_return";
+  return "storage_collection";
+}
+
+function storageOrderDisplayNo(item = {}, kind = storageOrderKindFromRecord(item)) {
+  if (kind === "box_order") {
+    return firstNonEmptyText(item.box_order_no, item.order_no, item.parent_order_no);
+  }
+  if (kind === "storage_collection") {
+    return firstNonEmptyText(item.storage_pickup_order_no, item.order_no, item.parent_order_no);
+  }
+  if (kind === "storage_return") {
+    return firstNonEmptyText(item.storage_return_order_no, item.order_no, item.related_order_no, item.parent_order_no);
+  }
+  return firstNonEmptyText(item.order_no, item.storage_pickup_order_no, item.box_order_no, item.parent_order_no);
+}
+
+function storageOrderServiceDate(item = {}, kind = storageOrderKindFromRecord(item)) {
+  if (kind === "box_order") {
+    return firstNonEmptyText(item.box_delivery_date, item.service_date);
+  }
+  if (kind === "storage_return") {
+    return firstNonEmptyText(item.storage_end_date, item.expected_storage_end_date, item.service_date);
+  }
+  return firstNonEmptyText(item.storage_start_date, item.storage_intake_date, item.service_date);
+}
+
+function storageOrderTimeSlot(item = {}, kind = storageOrderKindFromRecord(item)) {
+  if (kind === "box_order") {
+    return firstNonEmptyText(item.box_delivery_time_slot, item.service_time_slot, item.service_time);
+  }
+  return firstNonEmptyText(item.service_time_slot, item.service_time);
+}
+
+function hasStoragePurchasedBoxes(item = {}) {
+  const boxes = Array.isArray(item.purchased_boxes) ? item.purchased_boxes : [];
+  if (boxes.some(entry => Number(entry?.quantity || entry?.purchaseQty || entry?.purchase_quantity || 0) > 0)) {
+    return true;
+  }
+  const summaryItems = Array.isArray(item.estimate_summary_json?.items) ? item.estimate_summary_json.items : [];
+  return summaryItems.some(entry => Number(entry?.purchaseQty || entry?.purchase_quantity || entry?.purchaseQuantity || 0) > 0);
+}
+
+function expandStorageOrderForAdmin(item = {}) {
+  const rows = [];
+  const baseKind = storageOrderKindFromRecord(item);
+  const addKind = kind => {
+    const normalizedKind = normalizeStorageOrderKind(kind);
+    if (!normalizedKind || rows.some(row => row.storage_order_kind === normalizedKind)) {
+      return;
+    }
+    rows.push({
+      ...item,
+      id: `${item.id}:${normalizedKind}`,
+      storage_order_id: item.id,
+      storage_order_kind: normalizedKind,
+      display_order_no: storageOrderDisplayNo(item, normalizedKind),
+      service_type_label: storageOrderKindLabel(normalizedKind),
+      service_date_unified: storageOrderServiceDate(item, normalizedKind),
+      service_time_slot_unified: storageOrderTimeSlot(item, normalizedKind)
+    });
+  };
+
+  if (item.box_order_no || baseKind === "box_order" || hasStoragePurchasedBoxes(item)) {
+    addKind("box_order");
+  }
+  if (baseKind === "storage_collection" || item.storage_pickup_order_no) {
+    addKind("storage_collection");
+  }
+  if (baseKind === "storage_return") {
+    addKind("storage_return");
+  }
+  if (!rows.length) {
+    addKind(baseKind || "storage_collection");
+  }
+  return rows;
+}
+
+function filterExpandedStorageRows(rows, queryParams = {}) {
+  const serviceType = normalizeStorageOrderKind(queryParams.service_type || queryParams.order_type_filter || queryParams.storage_order_kind);
+  const dateStart = String(queryParams.date_start || queryParams.start_date || "").trim();
+  const dateEnd = String(queryParams.date_end || queryParams.end_date || "").trim();
+  return rows.filter(row => {
+    if (serviceType && row.storage_order_kind !== serviceType) {
+      return false;
+    }
+    const serviceDate = String(row.service_date_unified || "").slice(0, 10);
+    if (dateStart && (!serviceDate || serviceDate < dateStart)) {
+      return false;
+    }
+    if (dateEnd && (!serviceDate || serviceDate > dateEnd)) {
+      return false;
+    }
+    return true;
+  });
+}
+
+function sortStorageAdminRows(rows, sortValue) {
+  const sort = String(sortValue || "submitted_latest").trim();
+  const direction = sort.endsWith("_oldest") || sort.endsWith("_low") || sort === "service_date_nearest" ? 1 : -1;
+  const valueFor = row => {
+    if (sort.startsWith("service_date")) return row.service_date_unified || "";
+    if (sort.startsWith("total")) return Number(row.final_price ?? row.estimated_total_price ?? 0) || 0;
+    return row.created_at || "";
+  };
+  return [...rows].sort((a, b) => {
+    const left = valueFor(a);
+    const right = valueFor(b);
+    if (left < right) return -1 * direction;
+    if (left > right) return 1 * direction;
+    return String(b.created_at || "").localeCompare(String(a.created_at || ""));
+  });
+}
+
+function parseStorageBaseIds(value) {
+  const raw = Array.isArray(value) ? value : String(value || "").split(",");
+  return Array.from(new Set(raw
+    .map(item => String(item || "").split(":")[0].trim())
+    .filter(Boolean)));
+}
+
+function parseStorageExpandedRowIds(value) {
+  const raw = Array.isArray(value) ? value : String(value || "").split(",");
+  return new Set(raw
+    .map(item => String(item || "").trim())
+    .filter(Boolean));
+}
+
+function applyStorageOperationalFilters(query, queryParams = {}, supportedColumns = null) {
+  const hasColumn = column => !supportedColumns || supportedColumns.has(column);
+  if (queryParams.offline_recorded === "true" && hasColumn("offline_recorded")) {
+    query.eq("offline_recorded", true);
+  } else if (queryParams.offline_recorded === "false" && hasColumn("offline_recorded")) {
+    query.eq("offline_recorded", false);
+  }
+  const lastOperatedBy = String(queryParams.last_operated_by || "").trim();
+  if (lastOperatedBy && hasColumn("last_operated_by")) {
+    query.eq("last_operated_by", lastOperatedBy);
+  }
+}
+
+async function listStorageOperatorOptions(supabase) {
+  const { data, error } = await supabase
+    .from("storage_orders")
+    .select("last_operated_by, last_operated_at")
+    .not("last_operated_by", "is", null)
+    .order("last_operated_at", { ascending: false, nullsFirst: false })
+    .limit(200);
+  if (error) {
+    const missingColumn = extractMissingColumnName(error, "storage_orders");
+    if (missingColumn === "last_operated_by" || missingColumn === "last_operated_at") {
+      return [];
+    }
+    throw error;
+  }
+  return Array.from(new Set((data || [])
+    .map(item => String(item.last_operated_by || "").trim())
+    .filter(Boolean)));
 }
 
 async function querySiteUsersWithFallback(supabase, { search = "", ids = [] } = {}) {
@@ -850,6 +1310,536 @@ async function handleMe(req, res, supabase, subAction) {
   ok(res, { changed: true, message: "密码修改成功" });
 }
 
+async function safeDashboardQuery(buildQuery) {
+  try {
+    const result = await buildQuery();
+    if (result?.error) {
+      console.warn("[dashboard] optional query failed", result.error.message || result.error);
+      return { data: [], count: 0, error: result.error, unavailable: true };
+    }
+    return {
+      data: Array.isArray(result?.data) ? result.data : [],
+      count: typeof result?.count === "number" ? result.count : (Array.isArray(result?.data) ? result.data.length : 0),
+      error: null,
+      unavailable: false
+    };
+  } catch (error) {
+    console.warn("[dashboard] optional query threw", error.message || error);
+    return { data: [], count: 0, error, unavailable: true };
+  }
+}
+
+function dashboardCount(result) {
+  return Number.isFinite(Number(result?.count)) ? Number(result.count) : 0;
+}
+
+function dashboardRows(result) {
+  return Array.isArray(result?.data) ? result.data : [];
+}
+
+function formatDashboardDateKey(date) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/London",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).formatToParts(date);
+  const values = Object.fromEntries(parts.map(part => [part.type, part.value]));
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
+function getDashboardDayLabel(dateKey) {
+  const [, month, day] = String(dateKey || "").split("-");
+  return month && day ? `${month}/${day}` : dateKey;
+}
+
+function incrementTrendBucket(buckets, dateKey, field) {
+  const bucket = buckets.get(dateKey);
+  if (!bucket) {
+    return;
+  }
+  bucket[field] += 1;
+  bucket.total += 1;
+}
+
+function buildDashboardTrends(dateKeys, transportRows = [], storageRows = []) {
+  const buckets = new Map(dateKeys.map(dateKey => [dateKey, {
+    date: dateKey,
+    label: getDashboardDayLabel(dateKey),
+    transport: 0,
+    storage: 0,
+    box: 0,
+    total: 0
+  }]));
+
+  transportRows.forEach(row => {
+    if (!row.created_at) {
+      return;
+    }
+    incrementTrendBucket(buckets, formatDashboardDateKey(new Date(row.created_at)), "transport");
+  });
+
+  storageRows.forEach(row => {
+    if (!row.created_at) {
+      return;
+    }
+    const field = String(row.order_type || "").trim() === "box_order" ? "box" : "storage";
+    incrementTrendBucket(buckets, formatDashboardDateKey(new Date(row.created_at)), field);
+  });
+
+  return Array.from(buckets.values());
+}
+
+function getTransportServiceLabel(serviceType) {
+  const value = String(serviceType || "").trim();
+  if (value === "airport_dropoff") return "今日送机";
+  if (value === "carpool") return "今日拼车";
+  return "今日接机";
+}
+
+function getStorageOrderTypeLabel(orderType) {
+  const value = String(orderType || "").trim();
+  if (value === "box_order") return "今日送箱";
+  if (value === "storage_return") return "今日送寄存";
+  return "今日取寄存";
+}
+
+function getStorageDashboardOrderNo(item = {}) {
+  return item.box_order_no || item.storage_pickup_order_no || item.order_no || "";
+}
+
+function getStorageDashboardHref(item = {}) {
+  const orderType = String(item.order_type || "").trim();
+  const route = orderType === "box_order" ? "box-orders" : "storage-orders";
+  return `/admin-vue/storage/${route}/${encodeURIComponent(item.id)}`;
+}
+
+function getDashboardOperationType(action) {
+  const value = String(action || "").trim();
+  const labels = {
+    order_status_updated: "订单状态更新",
+    order_contact_updated: "联系方式更新",
+    order_archived: "订单状态维护",
+    order_unarchived: "订单状态维护",
+    orders_bulk_archived: "订单批量维护",
+    storage_order_updated: "寄存订单更新",
+    storage_order_deleted: "寄存订单删除",
+    storage_orders_marked_offline_recorded: "寄存线下记录标记",
+    storage_orders_unmarked_offline_recorded: "寄存线下记录取消",
+    transport_request_updated: "接送机订单更新",
+    transport_request_deleted: "接送机订单删除",
+    transport_group_members_replaced: "拼车成员调整",
+    membership_claim_order_unbound: "会员订单解绑"
+  };
+  return labels[value] || value || "后台操作";
+}
+
+function getDashboardTargetLabel(row = {}, orderNo = "") {
+  const targetType = String(row.target_type || "").trim();
+  if (targetType === "transport_request") return "接送机订单";
+  if (targetType === "transport_group") return "拼车组";
+  if (targetType === "storage_order" || targetType === "storage_orders") return "寄存订单";
+  if (targetType === "membership_claim") return "会员权益";
+  if (targetType === "order") return orderNo ? "订单中心" : "订单";
+  return targetType || "后台记录";
+}
+
+async function enrichDashboardOperations(supabase, rows = []) {
+  if (!rows.length) {
+    return [];
+  }
+
+  const orderIds = Array.from(new Set(rows.map(row => row.order_id).filter(Boolean)));
+  const transportIds = Array.from(new Set(rows
+    .filter(row => String(row.target_type || "") === "transport_request" && row.target_id)
+    .map(row => row.target_id)));
+  const storageIds = Array.from(new Set(rows
+    .filter(row => ["storage_order", "storage_orders"].includes(String(row.target_type || "")) && row.target_id)
+    .map(row => row.target_id)));
+
+  const [ordersResult, transportResult, storageResult] = await Promise.all([
+    orderIds.length
+      ? safeDashboardQuery(() => supabase.from("orders").select("id, order_no").in("id", orderIds))
+      : Promise.resolve({ data: [] }),
+    transportIds.length
+      ? safeDashboardQuery(() => supabase.from("transport_requests").select("id, order_no").in("id", transportIds))
+      : Promise.resolve({ data: [] }),
+    storageIds.length
+      ? safeDashboardQuery(() => supabase.from("storage_orders").select("id, order_no, box_order_no, storage_pickup_order_no").in("id", storageIds))
+      : Promise.resolve({ data: [] })
+  ]);
+
+  const orderNoByOrderId = new Map(dashboardRows(ordersResult).map(item => [String(item.id), item.order_no || ""]));
+  const transportNoById = new Map(dashboardRows(transportResult).map(item => [String(item.id), item.order_no || ""]));
+  const storageNoById = new Map(dashboardRows(storageResult).map(item => [
+    String(item.id),
+    item.box_order_no || item.storage_pickup_order_no || item.order_no || ""
+  ]));
+
+  return rows.map(row => {
+    const admin = row.admin_user || {};
+    const targetId = String(row.target_id || "");
+    const targetType = String(row.target_type || "");
+    const orderNo = orderNoByOrderId.get(String(row.order_id || ""))
+      || (targetType === "transport_request" ? transportNoById.get(targetId) : "")
+      || (["storage_order", "storage_orders"].includes(targetType) ? storageNoById.get(targetId) : "")
+      || "";
+    return {
+      id: row.id,
+      time: row.created_at || null,
+      operator: admin.name || admin.username || admin.email || "未知管理员",
+      target: getDashboardTargetLabel(row, orderNo),
+      action: getDashboardOperationType(row.action),
+      order_no: orderNo,
+      target_id: row.target_id || null,
+      target_type: row.target_type || ""
+    };
+  });
+}
+
+function normalizeDashboardRisk(value) {
+  const risk = String(value || "").trim();
+  return Object.prototype.hasOwnProperty.call(DASHBOARD_RISK_LABELS, risk) ? risk : "";
+}
+
+function getDashboardRiskHref(risk) {
+  return `/admin-vue/orders?risk=${encodeURIComponent(risk)}`;
+}
+
+function buildRiskFallbackOrderFromTransport(item = {}) {
+  return {
+    id: `transport:${item.id}`,
+    source_table: "transport_requests",
+    source_id: item.id,
+    order_no: item.order_no || "",
+    service_type: item.service_type || "pickup",
+    customer_name: item.student_name || "",
+    phone: item.phone || "",
+    wechat_or_whatsapp: item.wechat || "",
+    status: item.status || "",
+    flight_no: item.flight_no || "",
+    pickup_date: item.flight_datetime || "",
+    storage_start_date: null,
+    storage_end_date: null,
+    created_at: item.created_at || null,
+    updated_at: item.updated_at || item.last_operated_at || item.created_at || null,
+    offline_recorded: item.offline_recorded ?? null,
+    last_operated_by: item.last_operated_by || null,
+    last_operated_at: item.last_operated_at || null,
+    source_detail_href: `/admin-vue/transport/requests/${encodeURIComponent(item.id)}`,
+    order_detail_available: false
+  };
+}
+
+function buildRiskFallbackOrderFromStorage(item = {}) {
+  const kind = storageOrderKindFromRecord(item);
+  return {
+    id: `storage:${item.id}`,
+    source_table: "storage_orders",
+    source_id: item.id,
+    order_no: getStorageDashboardOrderNo(item),
+    service_type: "storage",
+    customer_name: item.customer_name || "",
+    phone: item.phone || "",
+    wechat_or_whatsapp: item.wechat_id || "",
+    status: item.status || "",
+    flight_no: "",
+    pickup_date: null,
+    storage_start_date: item.storage_start_date || item.service_date || item.box_delivery_date || null,
+    storage_end_date: item.storage_end_date || item.expected_storage_end_date || null,
+    created_at: item.created_at || null,
+    updated_at: item.updated_at || item.last_operated_at || item.created_at || null,
+    offline_recorded: item.offline_recorded ?? null,
+    last_operated_by: item.last_operated_by || null,
+    last_operated_at: item.last_operated_at || null,
+    source_detail_href: getStorageDashboardHref({ ...item, order_type: kind }),
+    order_detail_available: false
+  };
+}
+
+function mergeOrderWithSourceRiskFields(order = {}, source = {}) {
+  return {
+    ...order,
+    offline_recorded: source.offline_recorded ?? order.offline_recorded ?? null,
+    last_operated_by: source.last_operated_by || order.last_operated_by || null,
+    last_operated_at: source.last_operated_at || order.last_operated_at || null,
+    source_detail_href: order.source_table === "transport_requests"
+      ? `/admin-vue/transport/requests/${encodeURIComponent(order.source_id)}`
+      : getStorageDashboardHref({ ...source, id: order.source_id }),
+    order_detail_available: true
+  };
+}
+
+async function fetchDashboardRiskSources(supabase, risk, options = {}) {
+  const normalizedRisk = normalizeDashboardRisk(risk);
+  if (!normalizedRisk) {
+    return { risk: "", label: "", helper: "", transport: [], storage: [], total: 0 };
+  }
+
+  const cutoff = options.cutoff || new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const limit = Math.min(Math.max(Number(options.limit || 5000), 1), 10000);
+  const transportSelect = "id, order_no, student_name, phone, wechat, service_type, flight_no, flight_datetime, status, created_at, updated_at, offline_recorded, last_operated_by, last_operated_at";
+  const storageSelect = "id, order_no, box_order_no, storage_pickup_order_no, order_type, customer_name, phone, wechat_id, service_date, box_delivery_date, storage_start_date, storage_end_date, expected_storage_end_date, status, created_at, updated_at, offline_recorded, last_operated_by, last_operated_at";
+  let transportQuery = supabase.from("transport_requests").select(transportSelect).limit(limit);
+  let storageQuery = supabase.from("storage_orders").select(storageSelect).limit(limit);
+
+  if (normalizedRisk === "overdue_unprocessed") {
+    transportQuery = transportQuery.in("status", ["published", "matched"]).eq("offline_recorded", false).lt("created_at", cutoff).order("created_at", { ascending: true });
+    storageQuery = storageQuery.in("status", ["pending_confirmation", "confirmed"]).eq("offline_recorded", false).lt("created_at", cutoff).order("created_at", { ascending: true });
+  } else if (normalizedRisk === "no_operator") {
+    transportQuery = transportQuery.in("status", ["published", "matched"]).is("last_operated_by", null).order("created_at", { ascending: false });
+    storageQuery = storageQuery.in("status", ["pending_confirmation", "confirmed"]).is("last_operated_by", null).order("created_at", { ascending: false });
+  } else if (normalizedRisk === "offline_unrecorded") {
+    transportQuery = transportQuery.in("status", ["published", "matched"]).eq("offline_recorded", false).order("created_at", { ascending: false });
+    storageQuery = storageQuery.in("status", ["pending_confirmation", "confirmed"]).eq("offline_recorded", false).order("created_at", { ascending: false });
+  } else if (normalizedRisk === "missing_fields") {
+    transportQuery = transportQuery.or("student_name.is.null,phone.is.null,wechat.is.null,flight_datetime.is.null").order("created_at", { ascending: false });
+    storageQuery = storageQuery.or("customer_name.is.null,phone.is.null,wechat_id.is.null,service_date.is.null").order("created_at", { ascending: false });
+  }
+
+  const [transportResult, storageResult] = await Promise.all([
+    safeDashboardQuery(() => transportQuery),
+    safeDashboardQuery(() => storageQuery)
+  ]);
+  const transport = dashboardRows(transportResult);
+  const storage = dashboardRows(storageResult);
+
+  return {
+    risk: normalizedRisk,
+    label: DASHBOARD_RISK_LABELS[normalizedRisk],
+    helper: DASHBOARD_RISK_HELPERS[normalizedRisk],
+    transport,
+    storage,
+    total: transport.length + storage.length
+  };
+}
+
+async function buildRiskOrderRows(supabase, riskSources) {
+  const transportById = new Map((riskSources.transport || []).map(item => [String(item.id), item]));
+  const storageById = new Map((riskSources.storage || []).map(item => [String(item.id), item]));
+  const transportIds = Array.from(transportById.keys());
+  const storageIds = Array.from(storageById.keys());
+
+  const [transportOrdersResult, storageOrdersResult] = await Promise.all([
+    transportIds.length
+      ? safeDashboardQuery(() => supabase.from("orders").select(ORDER_LIST_COLUMNS).eq("source_table", "transport_requests").in("source_id", transportIds))
+      : Promise.resolve({ data: [] }),
+    storageIds.length
+      ? safeDashboardQuery(() => supabase.from("orders").select(ORDER_LIST_COLUMNS).eq("source_table", "storage_orders").in("source_id", storageIds))
+      : Promise.resolve({ data: [] })
+  ]);
+
+  const rows = [];
+  const usedTransportIds = new Set();
+  const usedStorageIds = new Set();
+
+  dashboardRows(transportOrdersResult).forEach(order => {
+    const source = transportById.get(String(order.source_id));
+    if (!source) return;
+    usedTransportIds.add(String(order.source_id));
+    rows.push(mergeOrderWithSourceRiskFields(order, source));
+  });
+  dashboardRows(storageOrdersResult).forEach(order => {
+    const source = storageById.get(String(order.source_id));
+    if (!source) return;
+    usedStorageIds.add(String(order.source_id));
+    rows.push(mergeOrderWithSourceRiskFields(order, source));
+  });
+
+  (riskSources.transport || []).forEach(item => {
+    if (!usedTransportIds.has(String(item.id))) {
+      rows.push(buildRiskFallbackOrderFromTransport(item));
+    }
+  });
+  (riskSources.storage || []).forEach(item => {
+    if (!usedStorageIds.has(String(item.id))) {
+      rows.push(buildRiskFallbackOrderFromStorage(item));
+    }
+  });
+
+  return rows.sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
+}
+
+function filterDashboardRiskOrderRows(rows = [], queryParams = {}) {
+  const sourceTable = String(queryParams.source_table || "").trim();
+  const serviceType = String(queryParams.service_type || "").trim();
+  const status = String(queryParams.status || "").trim();
+  const offlineRecorded = normalizeOfflineRecordedFilter(queryParams.offline_recorded);
+  const orderNo = String(queryParams.order_no || "").trim().toLowerCase();
+  const customerName = String(queryParams.customer_name || "").trim().toLowerCase();
+  const phone = String(queryParams.phone || "").trim();
+  const createdFrom = String(queryParams.created_from || queryParams.date_from || "").trim();
+  const createdTo = String(queryParams.created_to || queryParams.date_to || "").trim();
+  const sort = String(queryParams.sort || "latest").trim();
+
+  return rows
+    .filter(row => {
+      if (sourceTable && row.source_table !== sourceTable) return false;
+      if (serviceType && row.service_type !== serviceType) return false;
+      if (status && row.status !== status) return false;
+      if (offlineRecorded !== null && Boolean(row.offline_recorded) !== offlineRecorded) return false;
+      if (orderNo && !String(row.order_no || "").toLowerCase().includes(orderNo)) return false;
+      if (customerName && !String(row.customer_name || "").toLowerCase().includes(customerName)) return false;
+      if (phone && !String(row.phone || "").includes(phone)) return false;
+      if (createdFrom && String(row.created_at || "") < `${createdFrom}T00:00:00.000Z`) return false;
+      if (createdTo && String(row.created_at || "") > `${createdTo}T23:59:59.999Z`) return false;
+      return true;
+    })
+    .sort((a, b) => {
+      const left = new Date(a.created_at || 0).getTime();
+      const right = new Date(b.created_at || 0).getTime();
+      return sort === "oldest" ? left - right : right - left;
+    });
+}
+
+function normalizeOfflineRecordedFilter(value) {
+  const normalized = String(value ?? "").trim().toLowerCase();
+  if (["true", "1", "registered", "yes"].includes(normalized)) return true;
+  if (["false", "0", "unregistered", "no"].includes(normalized)) return false;
+  return null;
+}
+
+async function fetchDashboardRegistrationSources(supabase, offlineRecorded) {
+  const transportSelect = "id, order_no, student_name, phone, wechat, service_type, flight_no, flight_datetime, status, created_at, updated_at, offline_recorded, last_operated_by, last_operated_at";
+  const storageSelect = "id, order_no, box_order_no, storage_pickup_order_no, order_type, customer_name, phone, wechat_id, service_date, box_delivery_date, storage_start_date, storage_end_date, expected_storage_end_date, status, created_at, updated_at, offline_recorded, last_operated_by, last_operated_at";
+  const [transportResult, storageResult] = await Promise.all([
+    safeDashboardQuery(() => supabase
+      .from("transport_requests")
+      .select(transportSelect)
+      .eq("offline_recorded", offlineRecorded)
+      .in("status", ["published", "matched"])
+      .order("created_at", { ascending: false })
+      .limit(10000)),
+    safeDashboardQuery(() => supabase
+      .from("storage_orders")
+      .select(storageSelect)
+      .eq("offline_recorded", offlineRecorded)
+      .in("status", ["pending_confirmation", "confirmed"])
+      .order("created_at", { ascending: false })
+      .limit(10000))
+  ]);
+  return {
+    transport: dashboardRows(transportResult),
+    storage: dashboardRows(storageResult)
+  };
+}
+
+function normalizeOrderSelectionItems(body = {}) {
+  const rawItems = Array.isArray(body.items) ? body.items : [];
+  const fromItems = rawItems
+    .map(item => ({
+      source_table: String(item?.source_table || "").trim(),
+      source_id: String(item?.source_id || "").trim()
+    }))
+    .filter(item => ["transport_requests", "storage_orders"].includes(item.source_table) && item.source_id);
+
+  if (fromItems.length) {
+    return fromItems.slice(0, 500);
+  }
+
+  return String(body.ids || body.order_ids || "")
+    .split(",")
+    .map(id => String(id || "").trim())
+    .filter(Boolean)
+    .slice(0, 500)
+    .map(id => {
+      if (id.startsWith("transport:")) return { source_table: "transport_requests", source_id: id.slice("transport:".length) };
+      if (id.startsWith("storage:")) return { source_table: "storage_orders", source_id: id.slice("storage:".length) };
+      return null;
+    })
+    .filter(Boolean);
+}
+
+async function setOrdersOfflineRecorded(supabase, adminUser, body = {}) {
+  const items = normalizeOrderSelectionItems(body);
+  if (!items.length) {
+    throw new Error("请选择需要登记的订单");
+  }
+  const nextOfflineRecorded = body.offline_recorded !== false && body.offline_recorded !== "false";
+  const operatedBy = resolveAdminDisplayName(adminUser);
+  const operatedAt = new Date().toISOString();
+  const grouped = items.reduce((acc, item) => {
+    if (!acc[item.source_table]) acc[item.source_table] = [];
+    acc[item.source_table].push(item.source_id);
+    return acc;
+  }, {});
+
+  const updatedItems = [];
+  if (grouped.transport_requests?.length) {
+    const { data, error } = await supabase
+      .from("transport_requests")
+      .update({
+        offline_recorded: nextOfflineRecorded,
+        last_operated_by: operatedBy,
+        last_operated_at: operatedAt
+      })
+      .in("id", Array.from(new Set(grouped.transport_requests)))
+      .select("id, order_no, offline_recorded, last_operated_by, last_operated_at");
+    if (error) throw error;
+    (data || []).forEach(item => updatedItems.push({ ...item, source_table: "transport_requests", source_id: item.id }));
+  }
+
+  if (grouped.storage_orders?.length) {
+    const { data, error } = await supabase
+      .from("storage_orders")
+      .update({
+        offline_recorded: nextOfflineRecorded,
+        last_operated_by: operatedBy,
+        last_operated_at: operatedAt
+      })
+      .in("id", Array.from(new Set(grouped.storage_orders)))
+      .select("id, order_no, box_order_no, storage_pickup_order_no, offline_recorded, last_operated_by, last_operated_at");
+    if (error) throw error;
+    (data || []).forEach(item => updatedItems.push({ ...item, source_table: "storage_orders", source_id: item.id }));
+  }
+
+  await Promise.all(updatedItems.map(item => logAdminOperation(supabase, {
+    admin_user_id: adminUser.id,
+    target_type: item.source_table === "transport_requests" ? "transport_request" : "storage_order",
+    target_id: item.source_id,
+    action: nextOfflineRecorded ? "order_marked_offline_recorded" : "order_unmarked_offline_recorded",
+    after_data: {
+      offline_recorded: nextOfflineRecorded,
+      last_operated_by: operatedBy,
+      last_operated_at: operatedAt
+    }
+  })));
+
+  return {
+    updated_count: updatedItems.length,
+    offline_recorded: nextOfflineRecorded,
+    items: updatedItems
+  };
+}
+
+async function enrichOrdersWithRiskFields(supabase, rows = []) {
+  const transportIds = rows
+    .filter(row => row.source_table === "transport_requests" && row.source_id)
+    .map(row => row.source_id);
+  const storageIds = rows
+    .filter(row => row.source_table === "storage_orders" && row.source_id)
+    .map(row => row.source_id);
+
+  const [transportResult, storageResult] = await Promise.all([
+    transportIds.length
+      ? safeDashboardQuery(() => supabase.from("transport_requests").select("id, offline_recorded, last_operated_by, last_operated_at").in("id", transportIds))
+      : Promise.resolve({ data: [] }),
+    storageIds.length
+      ? safeDashboardQuery(() => supabase.from("storage_orders").select("id, order_type, box_order_no, storage_pickup_order_no, offline_recorded, last_operated_by, last_operated_at").in("id", storageIds))
+      : Promise.resolve({ data: [] })
+  ]);
+
+  const transportById = new Map(dashboardRows(transportResult).map(item => [String(item.id), item]));
+  const storageById = new Map(dashboardRows(storageResult).map(item => [String(item.id), item]));
+
+  return rows.map(row => {
+    const source = row.source_table === "transport_requests"
+      ? transportById.get(String(row.source_id))
+      : storageById.get(String(row.source_id));
+    return mergeOrderWithSourceRiskFields(row, source || {});
+  });
+}
+
 async function handleDashboard(req, res, supabase) {
   const startedAt = nowMs();
   if (req.method !== "GET") {
@@ -877,6 +1867,12 @@ async function handleDashboard(req, res, supabase) {
     ok(res, {
       viewer: adminUser,
       cards: cached.cards,
+      trends: cached.trends,
+      status_distribution: cached.status_distribution,
+      today_todos: cached.today_todos,
+      risk_alerts: cached.risk_alerts,
+      recent_operations: cached.recent_operations,
+      generated_at: cached.generated_at,
       cache: {
         hit: true,
         ttl_ms: DASHBOARD_CACHE_TTL_MS
@@ -885,42 +1881,237 @@ async function handleDashboard(req, res, supabase) {
     return;
   }
 
+  const now = new Date();
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const overdueCutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const todayKey = formatDashboardDateKey(now);
+  const tomorrowKey = formatDashboardDateKey(new Date(now.getTime() + 24 * 60 * 60 * 1000));
+  const trendKeys = Array.from({ length: 7 }, (_, index) => {
+    const date = new Date(now.getTime() - (6 - index) * 24 * 60 * 60 * 1000);
+    return formatDashboardDateKey(date);
+  });
   const queryStartedAt = nowMs();
-  const [adminsResult, usersResult, loginEventsResult, transportRequestsResult, pendingResult, transportPublishedResult, transportMatchedResult, storagePendingResult, activeOrdersResult, archivedOrdersResult] = await Promise.all([
-    supabase.from("admin_users").select("id", { count: "estimated", head: true }).eq("status", "active"),
-    supabase.from("users").select("id", { count: "estimated", head: true }),
-    supabase.from("user_login_events").select("id", { count: "estimated", head: true }).gte("login_at", sevenDaysAgo),
-    supabase.from("transport_requests").select("id", { count: "estimated", head: true }),
-    supabase.from("transport_requests").select("id", { count: "exact", head: true }).in("status", ["published", "matched"]),
-    supabase.from("transport_requests").select("id", { count: "exact", head: true }).eq("status", "published"),
-    supabase.from("transport_requests").select("id", { count: "exact", head: true }).eq("status", "matched"),
-    supabase.from("storage_orders").select("id", { count: "exact", head: true }).eq("status", "pending_confirmation"),
-    supabase.from("orders").select("id", { count: "estimated", head: true }).eq("archived", false),
-    supabase.from("orders").select("id", { count: "estimated", head: true }).eq("archived", true)
+  const [
+    adminsResult,
+    usersResult,
+    loginEventsResult,
+    transportRequestsResult,
+    pendingResult,
+    transportPublishedResult,
+    transportMatchedResult,
+    storagePendingResult,
+    activeOrdersResult,
+    unarchivedOrdersResult,
+    archivedOrdersResult,
+    transportTrendResult,
+    storageTrendResult,
+    todayTransportResult,
+    todayStorageResult,
+    overdueTransportResult,
+    overdueStorageResult,
+    transportOfflineMissingResult,
+    storageOfflineMissingResult,
+    transportOperatorMissingResult,
+    storageOperatorMissingResult,
+    incompleteTransportResult,
+    incompleteStorageResult,
+    statusTransportPublishedResult,
+    statusTransportMatchedResult,
+    statusTransportClosedResult,
+    statusStoragePendingResult,
+    statusStorageConfirmedResult,
+    statusStorageCancelledResult,
+    statusOrdersArchivedResult,
+    transportDailyAuditResult,
+    storageDailyAuditResult,
+    recentOperationsResult
+  ] = await Promise.all([
+    safeDashboardQuery(() => supabase.from("admin_users").select("id", { count: "estimated", head: true }).eq("status", "active")),
+    safeDashboardQuery(() => supabase.from("users").select("id", { count: "estimated", head: true })),
+    safeDashboardQuery(() => supabase.from("user_login_events").select("id", { count: "estimated", head: true }).gte("login_at", sevenDaysAgo)),
+    safeDashboardQuery(() => supabase.from("transport_requests").select("id", { count: "estimated", head: true })),
+    safeDashboardQuery(() => supabase.from("transport_requests").select("id", { count: "exact", head: true }).in("status", ["published", "matched"])),
+    safeDashboardQuery(() => supabase.from("transport_requests").select("id", { count: "exact", head: true }).eq("status", "published")),
+    safeDashboardQuery(() => supabase.from("transport_requests").select("id", { count: "exact", head: true }).eq("status", "matched")),
+    safeDashboardQuery(() => supabase.from("storage_orders").select("id", { count: "exact", head: true }).eq("status", "pending_confirmation")),
+    safeDashboardQuery(() => supabase.from("orders").select("id", { count: "estimated", head: true }).eq("archived", false)),
+    safeDashboardQuery(() => supabase.from("orders").select("id", { count: "exact", head: true }).eq("archived", false).in("status", ["confirmed", "closed", "cancelled"])),
+    safeDashboardQuery(() => supabase.from("orders").select("id", { count: "estimated", head: true }).eq("archived", true)),
+    safeDashboardQuery(() => supabase.from("transport_requests").select("id, created_at, service_type").gte("created_at", sevenDaysAgo).limit(5000)),
+    safeDashboardQuery(() => supabase.from("storage_orders").select("id, created_at, order_type").gte("created_at", sevenDaysAgo).limit(5000)),
+    safeDashboardQuery(() => supabase.from("transport_requests").select("id, order_no, service_type, flight_datetime, student_name, status").gte("flight_datetime", `${todayKey}T00:00:00.000Z`).lt("flight_datetime", `${tomorrowKey}T00:00:00.000Z`).in("status", ["published", "matched"]).order("flight_datetime", { ascending: true }).limit(6)),
+    safeDashboardQuery(() => supabase.from("storage_orders").select("id, order_no, box_order_no, storage_pickup_order_no, order_type, service_date, box_delivery_date, customer_name, status").or(`service_date.eq.${todayKey},box_delivery_date.eq.${todayKey}`).in("status", ["pending_confirmation", "confirmed"]).order("created_at", { ascending: false }).limit(6)),
+    safeDashboardQuery(() => supabase.from("transport_requests").select("id, order_no, created_at, student_name, status", { count: "exact" }).in("status", ["published", "matched"]).eq("offline_recorded", false).lt("created_at", overdueCutoff).order("created_at", { ascending: true }).limit(5)),
+    safeDashboardQuery(() => supabase.from("storage_orders").select("id, order_no, created_at, customer_name, status", { count: "exact" }).in("status", ["pending_confirmation", "confirmed"]).eq("offline_recorded", false).lt("created_at", overdueCutoff).order("created_at", { ascending: true }).limit(5)),
+    safeDashboardQuery(() => supabase.from("transport_requests").select("id", { count: "exact", head: true }).eq("offline_recorded", false).in("status", ["published", "matched"])),
+    safeDashboardQuery(() => supabase.from("storage_orders").select("id", { count: "exact", head: true }).eq("offline_recorded", false).in("status", ["pending_confirmation", "confirmed"])),
+    safeDashboardQuery(() => supabase.from("transport_requests").select("id", { count: "exact", head: true }).is("last_operated_by", null).in("status", ["published", "matched"])),
+    safeDashboardQuery(() => supabase.from("storage_orders").select("id", { count: "exact", head: true }).is("last_operated_by", null).in("status", ["pending_confirmation", "confirmed"])),
+    safeDashboardQuery(() => supabase.from("transport_requests").select("id", { count: "exact", head: true }).or("student_name.is.null,phone.is.null,wechat.is.null,flight_datetime.is.null")),
+    safeDashboardQuery(() => supabase.from("storage_orders").select("id", { count: "exact", head: true }).or("customer_name.is.null,phone.is.null,wechat_id.is.null,service_date.is.null")),
+    safeDashboardQuery(() => supabase.from("transport_requests").select("id", { count: "exact", head: true }).eq("status", "published")),
+    safeDashboardQuery(() => supabase.from("transport_requests").select("id", { count: "exact", head: true }).eq("status", "matched")),
+    safeDashboardQuery(() => supabase.from("transport_requests").select("id", { count: "exact", head: true }).eq("status", "closed")),
+    safeDashboardQuery(() => supabase.from("storage_orders").select("id", { count: "exact", head: true }).eq("status", "pending_confirmation")),
+    safeDashboardQuery(() => supabase.from("storage_orders").select("id", { count: "exact", head: true }).eq("status", "confirmed")),
+    safeDashboardQuery(() => supabase.from("storage_orders").select("id", { count: "exact", head: true }).eq("status", "cancelled")),
+    safeDashboardQuery(() => supabase.from("orders").select("id", { count: "exact", head: true }).eq("archived", true)),
+    safeDashboardQuery(() => supabase.from("transport_sync_audit_logs").select("mismatch_count, checked_at").gte("checked_at", `${todayKey}T00:00:00.000Z`).lt("checked_at", `${tomorrowKey}T00:00:00.000Z`).limit(100)),
+    safeDashboardQuery(() => supabase.from("storage_sync_audit_logs").select("mismatch_count, checked_at").gte("checked_at", `${todayKey}T00:00:00.000Z`).lt("checked_at", `${tomorrowKey}T00:00:00.000Z`).limit(100)),
+    safeDashboardQuery(() => supabase
+      .from("admin_operation_logs")
+      .select("id, action, target_type, target_id, order_id, created_at, admin_user:admin_users(id, name, username, email)")
+      .order("created_at", { ascending: false })
+      .limit(8))
   ]);
   const queryMs = nowMs() - queryStartedAt;
 
-  const failed = [adminsResult, usersResult, loginEventsResult, transportRequestsResult, pendingResult, transportPublishedResult, transportMatchedResult, storagePendingResult, activeOrdersResult, archivedOrdersResult].find(result => result.error);
-  if (failed) {
-    throw failed.error;
-  }
-
   const cards = {
-    active_admins: adminsResult.count || 0,
-    total_users: usersResult.count || 0,
-    logins_last_7_days: loginEventsResult.count || 0,
-    transport_requests_total: transportRequestsResult.count || 0,
-    transport_requests_pending: pendingResult.count || 0,
-    transport_requests_published: transportPublishedResult.count || 0,
-    transport_requests_matched: transportMatchedResult.count || 0,
-    storage_orders_pending: storagePendingResult.count || 0,
-    active_orders_total: activeOrdersResult.count || 0,
-    archived_orders_total: archivedOrdersResult.count || 0
+    active_admins: dashboardCount(adminsResult),
+    total_users: dashboardCount(usersResult),
+    logins_last_7_days: dashboardCount(loginEventsResult),
+    transport_requests_total: dashboardCount(transportRequestsResult),
+    transport_requests_pending: dashboardCount(pendingResult),
+    transport_requests_published: dashboardCount(transportPublishedResult),
+    transport_requests_matched: dashboardCount(transportMatchedResult),
+    storage_orders_pending: dashboardCount(storagePendingResult),
+    active_orders_total: dashboardCount(activeOrdersResult),
+    unarchived_orders_total: dashboardCount(unarchivedOrdersResult),
+    archived_orders_total: dashboardCount(archivedOrdersResult)
   };
+  const trends = buildDashboardTrends(trendKeys, transportTrendResult.data || [], storageTrendResult.data || []);
+  let statusDistribution = [
+    { key: "pending", label: "待处理", value: dashboardCount(statusTransportPublishedResult) + dashboardCount(statusStoragePendingResult), tone: "warning" },
+    { key: "confirmed", label: "已确认/已成团", value: dashboardCount(statusTransportMatchedResult) + dashboardCount(statusStorageConfirmedResult), tone: "info" },
+    { key: "completed", label: "已完成", value: dashboardCount(statusTransportClosedResult), tone: "success" },
+    { key: "archived", label: "已归档", value: dashboardCount(statusOrdersArchivedResult), tone: "neutral" },
+    { key: "cancelled", label: "已取消", value: dashboardCount(statusStorageCancelledResult), tone: "danger" }
+  ];
+  const todayTodos = [
+    ...dashboardRows(todayTransportResult).map(item => ({
+      id: item.id,
+      type: "transport",
+      title: getTransportServiceLabel(item.service_type),
+      order_no: item.order_no || "",
+      customer: item.student_name || "",
+      due_at: item.flight_datetime || "",
+      status: item.status || "",
+      href: `/admin-vue/transport/requests/${encodeURIComponent(item.id)}`
+    })),
+    ...dashboardRows(todayStorageResult).map(item => ({
+      id: item.id,
+      type: "storage",
+      title: getStorageOrderTypeLabel(item.order_type),
+      order_no: getStorageDashboardOrderNo(item),
+      customer: item.customer_name || "",
+      due_at: item.service_date || item.box_delivery_date || "",
+      status: item.status || "",
+      href: getStorageDashboardHref(item)
+    })),
+    ...dashboardRows(overdueTransportResult).map(item => ({
+      id: item.id,
+      type: "overdue",
+      title: "接送机超过 24 小时未登记",
+      order_no: item.order_no || "",
+      customer: item.student_name || "",
+      due_at: item.created_at || "",
+      status: item.status || "",
+      href: `/admin-vue/transport/requests/${encodeURIComponent(item.id)}`
+    })),
+    ...dashboardRows(overdueStorageResult).map(item => ({
+      id: item.id,
+      type: "overdue",
+      title: "寄存超过 24 小时未登记",
+      order_no: item.order_no || "",
+      customer: item.customer_name || "",
+      due_at: item.created_at || "",
+      status: item.status || "",
+      href: `/admin-vue/storage/storage-orders/${encodeURIComponent(item.id)}`
+    }))
+  ].slice(0, 10);
+  let riskAlerts = [
+    {
+      key: "unarchived_orders",
+      label: "未归档订单",
+      value: cards.unarchived_orders_total,
+      helper: "已结束但仍在活动视图中",
+      href: "/admin-vue/orders?archived=active"
+    },
+    {
+      key: "missing_operator",
+      label: "无最近操作人",
+      value: dashboardCount(transportOperatorMissingResult) + dashboardCount(storageOperatorMissingResult),
+      helper: "需要明确客服责任人",
+      href: "/admin-vue/transport/requests"
+    },
+    {
+      key: "offline_missing",
+      label: "未标记线下记录",
+      value: dashboardCount(transportOfflineMissingResult) + dashboardCount(storageOfflineMissingResult),
+      helper: "可能尚未同步到客服台账",
+      href: "/admin-vue/storage/orders?offline_recorded=false"
+    },
+    {
+      key: "missing_required_fields",
+      label: "关键字段缺失",
+      value: dashboardCount(incompleteTransportResult) + dashboardCount(incompleteStorageResult),
+      helper: "学生已提交但后台信息不完整",
+      href: "/admin-vue/orders"
+    }
+  ];
+  const riskSourcesList = await Promise.all(Object.keys(DASHBOARD_RISK_LABELS).map(risk => fetchDashboardRiskSources(supabase, risk, {
+    cutoff: overdueCutoff,
+    limit: 5000
+  })));
+  const riskByKey = new Map(riskSourcesList.map(item => [item.risk, item]));
+  const overdueSources = riskByKey.get("overdue_unprocessed") || { transport: [], storage: [] };
+  const offlineUnrecordedSources = riskByKey.get("offline_unrecorded") || { transport: [], storage: [] };
+  cards.transport_requests_pending = (offlineUnrecordedSources.transport || []).length;
+  cards.storage_orders_pending = (offlineUnrecordedSources.storage || []).length;
+  const activeSourceOrdersTotal = dashboardCount(transportPublishedResult)
+    + dashboardCount(transportMatchedResult)
+    + dashboardCount(storagePendingResult)
+    + dashboardCount(statusStorageConfirmedResult);
+  const unregisteredOrdersTotal = cards.transport_requests_pending + cards.storage_orders_pending;
+  const dailyInspectionAnomaliesTotal = [
+    ...dashboardRows(transportDailyAuditResult),
+    ...dashboardRows(storageDailyAuditResult)
+  ].reduce((sum, item) => sum + Number(item.mismatch_count || 0), 0);
+  const dailyInspectionRunsTotal = dashboardRows(transportDailyAuditResult).length
+    + dashboardRows(storageDailyAuditResult).length;
+  cards.unregistered_orders_total = unregisteredOrdersTotal;
+  cards.daily_inspection_runs_total = dailyInspectionRunsTotal;
+  cards.daily_inspection_anomalies_total = dailyInspectionAnomaliesTotal;
+  cards.active_orders_total = Math.max(0, activeSourceOrdersTotal - unregisteredOrdersTotal);
+  cards.abnormal_orders_total = riskSourcesList.reduce((sum, item) => sum + Number(item.total || 0), 0);
+  delete cards.unarchived_orders_total;
+  delete cards.archived_orders_total;
+  statusDistribution = [
+    { key: "unregistered", label: "未登记", value: unregisteredOrdersTotal, tone: "warning" },
+    { key: "registered", label: "已登记", value: cards.active_orders_total, tone: "success" }
+  ];
+  riskAlerts = Object.keys(DASHBOARD_RISK_LABELS).map(risk => {
+    const source = riskByKey.get(risk) || { total: 0 };
+    return {
+      key: risk,
+      risk,
+      label: DASHBOARD_RISK_LABELS[risk],
+      value: Number(source.total || 0),
+      helper: DASHBOARD_RISK_HELPERS[risk],
+      href: getDashboardRiskHref(risk)
+    };
+  });
+  const recentOperations = await enrichDashboardOperations(supabase, recentOperationsResult.data || []);
+  const generatedAt = new Date().toISOString();
   dashboardCache = {
     cachedAt: Date.now(),
-    cards
+    generated_at: generatedAt,
+    cards,
+    trends,
+    status_distribution: statusDistribution,
+    today_todos: todayTodos,
+    risk_alerts: riskAlerts,
+    recent_operations: recentOperations
   };
   logPerf("dashboard", {
     cacheHit: false,
@@ -934,6 +2125,12 @@ async function handleDashboard(req, res, supabase) {
   ok(res, {
     viewer: adminUser,
     cards,
+    trends,
+    status_distribution: statusDistribution,
+    today_todos: todayTodos,
+    risk_alerts: riskAlerts,
+    recent_operations: recentOperations,
+    generated_at: generatedAt,
     cache: {
       hit: false,
       ttl_ms: DASHBOARD_CACHE_TTL_MS
@@ -1066,7 +2263,8 @@ async function handleStorageOrders(req, res, supabase) {
         "storage_intake_date",
         "storage_start_date",
         "storage_end_date",
-        "expected_storage_end_date"
+        "expected_storage_end_date",
+        "offline_recorded"
       ];
       const nullableColumns = new Set([
         "service_date",
@@ -1113,6 +2311,18 @@ async function handleStorageOrders(req, res, supabase) {
         const nextCount = Number.parseInt(String(patch.estimated_box_count), 10);
         patch.estimated_box_count = Number.isFinite(nextCount) ? Math.max(0, nextCount) : null;
       }
+      if (patch.offline_recorded !== undefined) {
+        patch.offline_recorded = patch.offline_recorded === true || patch.offline_recorded === "true";
+      }
+
+      if (body.recalculate_pricing === true || body.recalculate_pricing === "true") {
+        const pricingResult = recalculateStorageOrderPricing(existing, patch);
+        if (!pricingResult.ok) {
+          badRequest(res, pricingResult.reason || "storage pricing recalculation failed");
+          return;
+        }
+        Object.assign(patch, pricingResult.patch);
+      }
 
       const adminPatch = buildStorageAdminPatch(body);
       if (Object.keys(adminPatch).length) {
@@ -1126,6 +2336,8 @@ async function handleStorageOrders(req, res, supabase) {
         ok(res, existing);
         return;
       }
+      patch.last_operated_by = resolveAdminDisplayName(adminUser);
+      patch.last_operated_at = new Date().toISOString();
 
       const { data: updateMarker, error: updateError } = await supabase
         .from("storage_orders")
@@ -1135,6 +2347,11 @@ async function handleStorageOrders(req, res, supabase) {
         .single();
 
       if (updateError) {
+        const missingColumn = extractMissingColumnName(updateError, "storage_orders");
+        if (isStorageOfflineTrackingColumn(missingColumn)) {
+          badRequest(res, storageOfflineTrackingMigrationMessage());
+          return;
+        }
         throw updateError;
       }
       if (!updateMarker) {
@@ -1198,6 +2415,15 @@ async function handleStorageOrders(req, res, supabase) {
       throw deleteError;
     }
 
+    const releasedMembershipClaim = await releaseClaimOrderBinding(supabase, {
+      claim_id: existing.membership_benefit_claim_id,
+      order_table: "storage_orders",
+      order_id: existing.id,
+      order_no: existing.order_no,
+      admin_user_id: adminUser.id || null,
+      reason: "storage_order_deleted"
+    });
+
     logAdminOperation(supabase, {
       admin_user_id: adminUser.id,
       target_type: "storage_order",
@@ -1211,19 +2437,100 @@ async function handleStorageOrders(req, res, supabase) {
       console.warn("[admin-storage] failed to write delete operation log", error);
     });
 
-    ok(res, { deleted: true, id: storageOrderId, order_no: existing.order_no || null });
+    ok(res, {
+      deleted: true,
+      id: storageOrderId,
+      order_no: existing.order_no || null,
+      released_membership_claim: releasedMembershipClaim
+    });
+    return;
+  }
+
+  if (req.method === "PATCH") {
+    const body = await parseJsonBody(req);
+    if (body.action !== "set_offline_recorded") {
+      badRequest(res, "Unsupported storage order bulk action");
+      return;
+    }
+    const ids = parseStorageBaseIds(body.ids || body.storage_order_ids);
+    if (!ids.length) {
+      badRequest(res, "storage order ids are required");
+      return;
+    }
+    if (ids.length > 200) {
+      badRequest(res, "Too many storage orders selected");
+      return;
+    }
+
+    const nextOfflineRecorded = body.offline_recorded === true || body.offline_recorded === "true";
+    const operatedAt = new Date().toISOString();
+    const operatedBy = resolveAdminDisplayName(adminUser);
+    const beforeResult = await supabase
+      .from("storage_orders")
+      .select("id, order_no, box_order_no, storage_pickup_order_no, offline_recorded")
+      .in("id", ids);
+    if (beforeResult.error) {
+      const missingColumn = extractMissingColumnName(beforeResult.error, "storage_orders");
+      if (isStorageOfflineTrackingColumn(missingColumn)) {
+        badRequest(res, storageOfflineTrackingMigrationMessage());
+        return;
+      }
+      throw beforeResult.error;
+    }
+
+    const { data: updatedRows, error: updateError } = await supabase
+      .from("storage_orders")
+      .update({
+        offline_recorded: nextOfflineRecorded,
+        last_operated_by: operatedBy,
+        last_operated_at: operatedAt
+      })
+      .in("id", ids)
+      .select("id, order_no, box_order_no, storage_pickup_order_no, offline_recorded, last_operated_by, last_operated_at");
+
+    if (updateError) {
+      const missingColumn = extractMissingColumnName(updateError, "storage_orders");
+      if (isStorageOfflineTrackingColumn(missingColumn)) {
+        badRequest(res, storageOfflineTrackingMigrationMessage());
+        return;
+      }
+      throw updateError;
+    }
+
+    await logAdminOperation(supabase, {
+      admin_user_id: adminUser.id,
+      target_type: "storage_order",
+      target_id: null,
+      action: nextOfflineRecorded ? "storage_orders_marked_offline_recorded" : "storage_orders_unmarked_offline_recorded",
+      before_data: { items: beforeResult.data || [] },
+      after_data: { items: updatedRows || [] },
+      metadata: {
+        ids,
+        updated_count: (updatedRows || []).length,
+        offline_recorded: nextOfflineRecorded
+      }
+    }).catch(error => {
+      console.warn("[admin-storage] failed to write bulk offline operation log", error);
+    });
+
+    ok(res, {
+      updated_count: (updatedRows || []).length,
+      offline_recorded: nextOfflineRecorded,
+      items: updatedRows || []
+    });
     return;
   }
 
   if (req.method !== "GET") {
-    methodNotAllowed(res, ["GET"]);
+    methodNotAllowed(res, ["GET", "PATCH"]);
     return;
   }
 
   const queryParams = req.query || {};
   const page = parsePositiveInteger(queryParams.page, 1);
-  const pageSize = 10;
-  const sort = String(queryParams.sort || "").trim();
+  const pageSize = parsePageSize(queryParams.page_size, 10);
+  const sort = String(queryParams.sort || "service_date_nearest").trim();
+  const allOrdersMode = String(queryParams.order_type || "").trim() === "all";
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
   const searchStartedAt = nowMs();
@@ -1247,20 +2554,42 @@ async function handleStorageOrders(req, res, supabase) {
       .from("storage_orders")
       .select(selectedColumns.join(", "), { count: "exact" });
 
-    if (sort === "created_at_desc") {
+    if (allOrdersMode) {
+      query = query
+        .order("created_at", { ascending: false })
+        .limit(10000);
+    } else if (sort === "created_at_desc" || sort === "submitted_latest") {
       query = query.order("created_at", { ascending: false });
+    } else if (sort === "submitted_oldest") {
+      query = query.order("created_at", { ascending: true });
+    } else if (sort === "service_date_latest") {
+      query = query
+        .order("service_date", { ascending: false, nullsFirst: false })
+        .order("created_at", { ascending: false });
+    } else if (sort === "total_high") {
+      query = query
+        .order("final_price", { ascending: false, nullsFirst: false })
+        .order("estimated_total_price", { ascending: false, nullsFirst: false });
+    } else if (sort === "total_low") {
+      query = query
+        .order("final_price", { ascending: true, nullsFirst: false })
+        .order("estimated_total_price", { ascending: true, nullsFirst: false });
     } else {
       query = query
         .order("service_date", { ascending: true, nullsFirst: false })
         .order("created_at", { ascending: false });
     }
 
-    buildStorageOrderAdminFilters(query, queryParams, {
+    const filterParams = allOrdersMode
+      ? { ...queryParams, order_type: "all", date_scope: "all", date_start: "", date_end: "" }
+      : queryParams;
+
+    buildStorageOrderAdminFilters(query, filterParams, {
       matchingSiteUserIds,
       supportedColumns: new Set(selectedColumns)
     });
 
-    const result = await query.range(from, to);
+    const result = allOrdersMode ? await query : await query.range(from, to);
     data = result.data;
     error = result.error;
     count = result.count || 0;
@@ -1281,6 +2610,8 @@ async function handleStorageOrders(req, res, supabase) {
   if (error) {
     throw error;
   }
+  const storageTrackingReady = ["offline_recorded", "last_operated_by", "last_operated_at"]
+    .every(column => selectedColumns.includes(column));
 
   const enrichmentStartedAt = nowMs();
   const normalizedItems = (data || []).map(item => {
@@ -1294,14 +2625,23 @@ async function handleStorageOrders(req, res, supabase) {
   });
   const enrichedItems = (await enrichStorageOrdersWithPublicUserIds(supabase, normalizedItems))
     .map(normalizeStorageAdminListItem);
+  const operatorOptions = await listStorageOperatorOptions(supabase);
+  let responseItems = enrichedItems;
+  if (allOrdersMode) {
+    const expandedRows = enrichedItems.flatMap(expandStorageOrderForAdmin);
+    const filteredRows = filterExpandedStorageRows(expandedRows, queryParams);
+    const sortedRows = sortStorageAdminRows(filteredRows, sort);
+    count = sortedRows.length;
+    responseItems = sortedRows.slice(from, to + 1);
+  }
   const enrichmentMs = nowMs() - enrichmentStartedAt;
 
   logPerf("storage.list", {
     authMs,
     page,
     pageSize,
-    returned: enrichedItems.length,
-    rows: enrichedItems.length,
+    returned: responseItems.length,
+    rows: responseItems.length,
     total: count || 0,
     searchMs,
     queryMs: listQueryMs,
@@ -1313,7 +2653,10 @@ async function handleStorageOrders(req, res, supabase) {
   });
 
   ok(res, {
-    items: enrichedItems,
+    items: responseItems,
+    operator_options: operatorOptions,
+    storage_tracking_ready: storageTrackingReady,
+    storage_tracking_message: storageTrackingReady ? "" : storageOfflineTrackingMigrationMessage(),
     pagination: {
       page,
       page_size: pageSize,
@@ -1335,9 +2678,14 @@ async function handleStorageOrdersExport(req, res, supabase) {
   }
 
   const queryParams = req.query || {};
-  const sort = String(queryParams.sort || "").trim();
+  const sort = String(queryParams.sort || "service_date_nearest").trim();
+  const allOrdersMode = String(queryParams.order_type || "").trim() === "all";
+  const selectedRowIds = parseStorageExpandedRowIds(queryParams.row_ids || queryParams.selected_row_ids);
+  const selectedBaseIds = parseStorageBaseIds(queryParams.ids || queryParams.storage_order_ids || Array.from(selectedRowIds));
   const searchStartedAt = nowMs();
-  const matchingSiteUserIds = await findStorageSearchSiteUserIds(supabase, queryParams.search);
+  const matchingSiteUserIds = selectedBaseIds.length
+    ? []
+    : await findStorageSearchSiteUserIds(supabase, queryParams.search);
   const searchMs = nowMs() - searchStartedAt;
   const selectColumns = [...STORAGE_ORDER_DETAIL_COLUMNS];
 
@@ -1346,18 +2694,42 @@ async function handleStorageOrdersExport(req, res, supabase) {
     .select(selectColumns.join(", "))
     .limit(5000);
 
-  if (sort === "created_at_desc") {
+  if (selectedBaseIds.length) {
+    query = query.in("id", selectedBaseIds);
+  }
+
+  if (allOrdersMode || sort === "created_at_desc" || sort === "submitted_latest") {
     query = query.order("created_at", { ascending: false });
+  } else if (sort === "submitted_oldest") {
+    query = query.order("created_at", { ascending: true });
+  } else if (sort === "service_date_latest") {
+    query = query
+      .order("service_date", { ascending: false, nullsFirst: false })
+      .order("created_at", { ascending: false });
+  } else if (sort === "total_high") {
+    query = query
+      .order("final_price", { ascending: false, nullsFirst: false })
+      .order("estimated_total_price", { ascending: false, nullsFirst: false });
+  } else if (sort === "total_low") {
+    query = query
+      .order("final_price", { ascending: true, nullsFirst: false })
+      .order("estimated_total_price", { ascending: true, nullsFirst: false });
   } else {
     query = query
       .order("service_date", { ascending: true, nullsFirst: false })
       .order("created_at", { ascending: false });
   }
 
-  buildStorageOrderAdminFilters(query, queryParams, {
-    matchingSiteUserIds,
-    supportedColumns: new Set(selectColumns)
-  });
+  const filterParams = allOrdersMode
+    ? { ...queryParams, order_type: "all", date_scope: "all", date_start: "", date_end: "" }
+    : queryParams;
+
+  if (!selectedBaseIds.length) {
+    buildStorageOrderAdminFilters(query, filterParams, {
+      matchingSiteUserIds,
+      supportedColumns: new Set(selectColumns)
+    });
+  }
 
   const queryStartedAt = nowMs();
   const { data, error } = await query;
@@ -1365,8 +2737,17 @@ async function handleStorageOrdersExport(req, res, supabase) {
     throw error;
   }
 
-  const items = (await enrichStorageOrdersWithPublicUserIds(supabase, data || []))
+  let items = (await enrichStorageOrdersWithPublicUserIds(supabase, data || []))
     .map(normalizeStorageAdminListItem);
+  if (allOrdersMode) {
+    items = sortStorageAdminRows(
+      filterExpandedStorageRows(items.flatMap(expandStorageOrderForAdmin), queryParams),
+      sort
+    );
+    if (selectedRowIds.size) {
+      items = items.filter(item => selectedRowIds.has(String(item.id)));
+    }
+  }
   const rows = buildStorageExportRows(items);
   const columns = buildStorageExportColumns(queryParams.order_type);
   const excelHtml = rowsToExcelHtml(rows, columns);
@@ -1485,8 +2866,8 @@ async function handleUsers(req, res, supabase) {
 
 async function handleOrdersList(req, res, supabase) {
   const startedAt = nowMs();
-  if (req.method !== "GET") {
-    methodNotAllowed(res, ["GET"]);
+  if (!["GET", "PATCH"].includes(req.method)) {
+    methodNotAllowed(res, ["GET", "PATCH"]);
     return;
   }
 
@@ -1497,11 +2878,96 @@ async function handleOrdersList(req, res, supabase) {
     return;
   }
 
+  if (req.method === "PATCH") {
+    const body = await parseJsonBody(req);
+    if (body?.action !== "set_offline_recorded") {
+      badRequest(res, "Unsupported orders bulk action.");
+      return;
+    }
+    const result = await setOrdersOfflineRecorded(supabase, adminUser, body);
+    ok(res, result);
+    return;
+  }
+
   const queryParams = req.query || {};
   const page = parsePositiveInteger(queryParams.page, 1);
   const pageSize = parsePageSize(queryParams.page_size, 20);
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
+  const risk = normalizeDashboardRisk(queryParams.risk);
+  const offlineRecordedFilter = normalizeOfflineRecordedFilter(queryParams.offline_recorded);
+
+  if (risk) {
+    const riskStartedAt = nowMs();
+    const riskSources = await fetchDashboardRiskSources(supabase, risk, { limit: 10000 });
+    const allRiskRows = await buildRiskOrderRows(supabase, riskSources);
+    const riskRows = filterDashboardRiskOrderRows(allRiskRows, queryParams);
+    const responseItems = riskRows.slice(from, to + 1);
+    const queryMs = nowMs() - riskStartedAt;
+
+    logPerf("orders.risk_list", {
+      authMs,
+      queryMs,
+      countMs: queryMs,
+      totalMs: nowMs() - startedAt,
+      rows: responseItems.length,
+      page,
+      pageSize,
+      risk,
+      countMode: "derived",
+      cacheHit: null
+    });
+
+    ok(res, {
+      items: responseItems,
+      risk: {
+        key: risk,
+        label: riskSources.label,
+        helper: riskSources.helper,
+        total: riskRows.length
+      },
+      pagination: {
+        page,
+        page_size: pageSize,
+        total: riskRows.length,
+        total_pages: riskRows.length ? Math.ceil(riskRows.length / pageSize) : 0
+      }
+    });
+    return;
+  }
+
+  if (offlineRecordedFilter !== null) {
+    const registrationStartedAt = nowMs();
+    const registrationSources = await fetchDashboardRegistrationSources(supabase, offlineRecordedFilter);
+    const allRegistrationRows = await buildRiskOrderRows(supabase, registrationSources);
+    const registrationRows = filterDashboardRiskOrderRows(allRegistrationRows, queryParams);
+    const responseItems = registrationRows.slice(from, to + 1);
+    const queryMs = nowMs() - registrationStartedAt;
+
+    logPerf("orders.registration_list", {
+      authMs,
+      queryMs,
+      countMs: queryMs,
+      totalMs: nowMs() - startedAt,
+      rows: responseItems.length,
+      page,
+      pageSize,
+      offline_recorded: offlineRecordedFilter,
+      countMode: "derived",
+      cacheHit: null
+    });
+
+    ok(res, {
+      items: responseItems,
+      pagination: {
+        page,
+        page_size: pageSize,
+        total: registrationRows.length,
+        total_pages: registrationRows.length ? Math.ceil(registrationRows.length / pageSize) : 0
+      }
+    });
+    return;
+  }
 
   const query = buildOrdersListQuery(supabase, queryParams).range(from, to);
   const queryStartedAt = nowMs();
@@ -1525,7 +2991,7 @@ async function handleOrdersList(req, res, supabase) {
   });
 
   ok(res, {
-    items: data || [],
+    items: await enrichOrdersWithRiskFields(supabase, data || []),
     pagination: {
       page,
       page_size: pageSize,
@@ -1664,6 +3130,13 @@ async function handleManagersList(req, res, supabase) {
     return;
   }
 
+  const actionId = String(req.query?.id || req.query?.manager_id || "").trim();
+  const action = String(req.query?.manager_action || req.query?.sub_action || "").trim();
+  if (actionId && (req.method === "PATCH" || req.method === "DELETE" || req.method === "POST")) {
+    await handleManagerDetailWithAdmin(req, res, supabase, adminUser, actionId, action);
+    return;
+  }
+
   if (req.method === "GET") {
     const queryParams = req.query || {};
     const page = parsePositiveInteger(queryParams.page, 1);
@@ -1759,6 +3232,10 @@ async function handleManagerDetail(req, res, supabase, id, subAction) {
     return;
   }
 
+  await handleManagerDetailWithAdmin(req, res, supabase, adminUser, id, subAction);
+}
+
+async function handleManagerDetailWithAdmin(req, res, supabase, adminUser, id, subAction) {
   const { data: target, error: targetError } = await supabase
     .from("admin_users")
     .select("id, username, name, email, phone, role, status, created_at, updated_at, last_login_at")
@@ -1800,11 +3277,27 @@ async function handleManagerDetail(req, res, supabase, id, subAction) {
     const body = await parseJsonBody(req);
     let payload;
     try {
-      payload = mapManagerUpdatePayload(body);
+      payload = mapManagerUpdatePayload(body, { allowUsername: isRootManagerAccount(adminUser) });
       await assertManagerMutationAllowed(supabase, adminUser, target, payload);
     } catch (error) {
       badRequest(res, error.message);
       return;
+    }
+
+    if (payload.username && payload.username !== target.username) {
+      const { data: duplicateByUsername, error: usernameError } = await supabase
+        .from("admin_users")
+        .select("id")
+        .eq("username", payload.username)
+        .neq("id", id)
+        .maybeSingle();
+      if (usernameError) {
+        throw usernameError;
+      }
+      if (duplicateByUsername) {
+        badRequest(res, "璇ヨ处鍙峰凡瀛樺湪锛岃鏇存崲鍚庨噸璇?");
+        return;
+      }
     }
 
     if (payload.email) {
@@ -1931,6 +3424,9 @@ async function handleMemberships(req, res, supabase, subAction = "") {
     .select("*", { count: "exact" })
     .eq("membership_cycle", cycle)
     .order("created_at", { ascending: false });
+  if (entitlementActionId) {
+    query = query.eq("id", entitlementActionId);
+  }
   if (status) {
     query = query.eq("status", status);
   }
@@ -1957,6 +3453,7 @@ async function handleMemberships(req, res, supabase, subAction = "") {
   const userIds = entitlements.map(item => item.site_user_id).filter(Boolean);
   let claims = [];
   let auditLogs = [];
+  let birthdayReminders = [];
   if (entitlementIds.length) {
     let claimsQuery = supabase
       .from("membership_benefit_claims")
@@ -1993,6 +3490,22 @@ async function handleMemberships(req, res, supabase, subAction = "") {
     }
     auditLogs = auditResult.data || [];
   }
+  if (entitlementIds.length) {
+    const reminderResult = await supabase
+      .from("membership_birthday_reminders")
+      .select("id, membership_id, advisor_admin_id, reminder_date, sent_to_email, resend_message_id, status, error_message, created_at")
+      .in("membership_id", entitlementIds)
+      .order("reminder_date", { ascending: false })
+      .order("created_at", { ascending: false });
+    if (reminderResult.error) {
+      const message = `${reminderResult.error.message || ""} ${reminderResult.error.details || ""}`.toLowerCase();
+      if (!message.includes("membership_birthday_reminders")) {
+        throw reminderResult.error;
+      }
+    } else {
+      birthdayReminders = reminderResult.data || [];
+    }
+  }
   const users = userIds.length ? await querySiteUsersWithFallback(supabase, { ids: userIds }) : [];
   const claimByEntitlement = new Map();
   claims.forEach(claim => {
@@ -2012,6 +3525,13 @@ async function handleMemberships(req, res, supabase, subAction = "") {
     }
     auditLogsByEntitlement.get(key).push(log);
   });
+  const birthdayReminderByEntitlement = new Map();
+  birthdayReminders.forEach(reminder => {
+    const key = String(reminder.membership_id || "");
+    if (key && !birthdayReminderByEntitlement.has(key)) {
+      birthdayReminderByEntitlement.set(key, reminder);
+    }
+  });
   const activationCodeIds = Array.from(new Set(entitlements
     .map(entitlement => entitlement.metadata?.activation_code_id)
     .filter(Boolean)
@@ -2020,7 +3540,7 @@ async function handleMemberships(req, res, supabase, subAction = "") {
   if (activationCodeIds.length) {
     const { data: activationCodes, error: activationCodeError } = await supabase
       .from("membership_activation_codes")
-      .select("id, generated_by_admin_id")
+      .select("id, code_prefix, generated_by_admin_id, notes, member_birthday, created_at, redeemed_at")
       .in("id", activationCodeIds);
     if (activationCodeError) {
       throw activationCodeError;
@@ -2031,9 +3551,15 @@ async function handleMemberships(req, res, supabase, subAction = "") {
     .flatMap(entitlement => {
       const activationCodeId = entitlement.metadata?.activation_code_id;
       const activationCode = activationCodeId ? activationCodeById.get(String(activationCodeId)) : null;
+      const entitlementClaims = claims.filter(claim => claim.entitlement_id === entitlement.id);
+      const entitlementLogs = auditLogs.filter(log => log.entitlement_id === entitlement.id);
       return [
+        entitlement.advisor_admin_id,
+        entitlement.created_by_admin_id,
         entitlement.granted_by_admin_id,
-        activationCode?.generated_by_admin_id
+        activationCode?.generated_by_admin_id,
+        ...entitlementClaims.flatMap(claim => [claim.created_by_admin_id, claim.updated_by_admin_id]),
+        ...entitlementLogs.map(log => log.admin_user_id)
       ];
     })
     .filter(Boolean)
@@ -2055,14 +3581,40 @@ async function handleMemberships(req, res, supabase, subAction = "") {
       .map(entitlement => {
         const activationCodeId = entitlement.metadata?.activation_code_id;
         const activationCode = activationCodeId ? activationCodeById.get(String(activationCodeId)) : null;
-        const advisorId = activationCode?.generated_by_admin_id || entitlement.granted_by_admin_id || null;
+        const advisorId = entitlement.advisor_admin_id
+          || entitlement.created_by_admin_id
+          || entitlement.granted_by_admin_id
+          || activationCode?.generated_by_admin_id
+          || null;
+        const enrichedAuditLogs = (auditLogsByEntitlement.get(String(entitlement.id)) || [])
+          .map(log => ({
+            ...log,
+            admin_user: log.admin_user_id ? adminById.get(String(log.admin_user_id)) || null : null
+          }));
+        const lastOperation = enrichedAuditLogs[0] || null;
         return {
           ...entitlement,
           user: userById.get(String(entitlement.site_user_id)) || null,
           claim: claimByEntitlement.get(entitlement.id) || null,
           advisor: advisorId ? adminById.get(String(advisorId)) || null : null,
-          member_birthday: entitlement.metadata?.member_birthday || null,
-          audit_logs: auditLogsByEntitlement.get(String(entitlement.id)) || []
+          advisor_admin_id: advisorId,
+          activation_code: activationCode || null,
+          member_birthday: entitlement.birthday_month && entitlement.birthday_day
+            ? `${String(entitlement.birthday_month).padStart(2, "0")}-${String(entitlement.birthday_day).padStart(2, "0")}`
+            : (entitlement.metadata?.member_birthday || activationCode?.member_birthday || null),
+          birthday_reminder_enabled: entitlement.birthday_reminder_enabled !== false,
+          last_birthday_reminder: birthdayReminderByEntitlement.get(String(entitlement.id)) || null,
+          audit_logs: enrichedAuditLogs,
+          last_operation: lastOperation
+            ? {
+                id: lastOperation.id,
+                action: lastOperation.action,
+                created_at: lastOperation.created_at,
+                admin_user_id: lastOperation.admin_user_id || null,
+                admin_user: lastOperation.admin_user || null,
+                metadata: lastOperation.metadata || {}
+              }
+            : null
         };
       })
       .filter(item => {
@@ -2118,7 +3670,181 @@ async function handleMembershipClaimAction(req, res, supabase, claimId, subActio
     ok(res, { claim: await cancelOrResetClaim(supabase, actionClaimId, adminUser.id, { reset: true, reason: body.reason || body.note }) });
     return;
   }
+  if (action === "unbind-order") {
+    const claim = await releaseClaimOrderBinding(supabase, {
+      claim_id: actionClaimId,
+      admin_user_id: adminUser.id,
+      reason: body.reason || body.note || "admin_unbound_order"
+    });
+    ok(res, { claim });
+    return;
+  }
   methodNotAllowed(res, ["POST"]);
+}
+
+function getUkDateOnly(date = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/London",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).formatToParts(date);
+  const values = Object.fromEntries(parts.map(part => [part.type, part.value]));
+  return new Date(Date.UTC(Number(values.year), Number(values.month) - 1, Number(values.day)));
+}
+
+function birthdayDateForYear(month, day, year) {
+  return new Date(Date.UTC(year, Number(month) - 1, Number(day)));
+}
+
+async function handleMembershipBirthdays(req, res, supabase) {
+  const adminUser = await requireAdminUser(req, res, supabase);
+  if (!adminUser) {
+    return;
+  }
+  if (req.method !== "GET") {
+    methodNotAllowed(res, ["GET"]);
+    return;
+  }
+
+  const queryParams = req.query || {};
+  const cycle = String(queryParams.cycle || getCurrentMembershipCycle()).trim();
+  const days = Math.min(parsePositiveInteger(queryParams.days, 30), 366);
+  const limit = Math.min(parsePageSize(queryParams.limit, 12), 50);
+  const today = getUkDateOnly();
+  const fromDate = new Date(today);
+  fromDate.setUTCDate(today.getUTCDate() - days + 1);
+
+  const { data: entitlements, error } = await supabase
+    .from("membership_entitlements")
+    .select("*")
+    .eq("membership_cycle", cycle)
+    .eq("status", "active")
+    .not("birthday_month", "is", null)
+    .not("birthday_day", "is", null)
+    .order("created_at", { ascending: false })
+    .limit(500);
+  if (error) {
+    throw error;
+  }
+
+  const currentYear = today.getUTCFullYear();
+  const recentEntitlements = (entitlements || [])
+    .map(entitlement => {
+      const thisYearBirthday = birthdayDateForYear(entitlement.birthday_month, entitlement.birthday_day, currentYear);
+      const previousYearBirthday = birthdayDateForYear(entitlement.birthday_month, entitlement.birthday_day, currentYear - 1);
+      const birthdayDate = thisYearBirthday <= today ? thisYearBirthday : previousYearBirthday;
+      return {
+        entitlement,
+        birthdayDate,
+        daysAgo: Math.round((today.getTime() - birthdayDate.getTime()) / 86400000)
+      };
+    })
+    .filter(item => item.birthdayDate >= fromDate && item.birthdayDate <= today)
+    .sort((left, right) => right.birthdayDate - left.birthdayDate || new Date(right.entitlement.created_at) - new Date(left.entitlement.created_at))
+    .slice(0, limit);
+
+  const membershipIds = recentEntitlements.map(item => item.entitlement.id);
+  const userIds = recentEntitlements.map(item => item.entitlement.site_user_id).filter(Boolean);
+  const users = userIds.length ? await querySiteUsersWithFallback(supabase, { ids: userIds }) : [];
+  const userById = new Map(users.map(user => [String(user.id), user]));
+
+  let claims = [];
+  let reminders = [];
+  if (membershipIds.length) {
+    const [claimResult, reminderResult] = await Promise.all([
+      supabase
+        .from("membership_benefit_claims")
+        .select("*")
+        .in("entitlement_id", membershipIds)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("membership_birthday_reminders")
+        .select("id, membership_id, advisor_admin_id, reminder_date, sent_to_email, status, error_message, created_at")
+        .in("membership_id", membershipIds)
+        .order("reminder_date", { ascending: false })
+        .order("created_at", { ascending: false })
+    ]);
+    if (claimResult.error) {
+      throw claimResult.error;
+    }
+    if (reminderResult.error) {
+      throw reminderResult.error;
+    }
+    claims = claimResult.data || [];
+    reminders = reminderResult.data || [];
+  }
+
+  const claimByEntitlement = new Map();
+  claims.forEach(claim => {
+    const key = String(claim.entitlement_id || "");
+    if (key && !claimByEntitlement.has(key)) {
+      claimByEntitlement.set(key, claim);
+    }
+  });
+  const reminderByEntitlement = new Map();
+  reminders.forEach(reminder => {
+    const key = String(reminder.membership_id || "");
+    if (key && !reminderByEntitlement.has(key)) {
+      reminderByEntitlement.set(key, reminder);
+    }
+  });
+
+  const adminIds = Array.from(new Set(recentEntitlements
+    .flatMap(item => {
+      const entitlement = item.entitlement;
+      const reminder = reminderByEntitlement.get(String(entitlement.id));
+      return [
+        entitlement.advisor_admin_id,
+        entitlement.created_by_admin_id,
+        entitlement.granted_by_admin_id,
+        reminder?.advisor_admin_id
+      ];
+    })
+    .filter(Boolean)
+    .map(String)));
+  let adminById = new Map();
+  if (adminIds.length) {
+    const { data: admins, error: adminError } = await supabase
+      .from("admin_users")
+      .select("id, name, username, email")
+      .in("id", adminIds);
+    if (adminError) {
+      throw adminError;
+    }
+    adminById = new Map((admins || []).map(admin => [String(admin.id), admin]));
+  }
+
+  ok(res, {
+    items: recentEntitlements.map(item => {
+      const entitlement = item.entitlement;
+      const reminder = reminderByEntitlement.get(String(entitlement.id)) || null;
+      const advisorId = entitlement.advisor_admin_id
+        || entitlement.created_by_admin_id
+        || entitlement.granted_by_admin_id
+        || reminder?.advisor_admin_id
+        || null;
+      return {
+        id: entitlement.id,
+        membership_id: entitlement.id,
+        membership_cycle: entitlement.membership_cycle,
+        status: entitlement.status,
+        birthday_month: entitlement.birthday_month,
+        birthday_day: entitlement.birthday_day,
+        birthday_date: item.birthdayDate.toISOString().slice(0, 10),
+        days_ago: item.daysAgo,
+        user: userById.get(String(entitlement.site_user_id)) || null,
+        claim: claimByEntitlement.get(String(entitlement.id)) || null,
+        advisor: advisorId ? adminById.get(String(advisorId)) || null : null,
+        last_birthday_reminder: reminder
+      };
+    }),
+    range: {
+      days,
+      cycle,
+      today: today.toISOString().slice(0, 10)
+    }
+  });
 }
 
 async function handleMembershipCodes(req, res, supabase, codeId = "", subAction = "") {
@@ -2138,14 +3864,19 @@ async function handleMembershipCodes(req, res, supabase, codeId = "", subAction 
   if (!actionCodeId && req.method === "POST") {
     const body = await parseJsonBody(req);
     try {
-      const result = await createMembershipActivationCode(supabase, {
+      const count = Number(body.count || body.quantity || 1);
+      const payload = {
         membership_cycle: body.membership_cycle || getCurrentMembershipCycle(),
         bound_email: body.bound_email || null,
         bound_phone: body.bound_phone || null,
         booking_reference: body.booking_reference || null,
+        benefit_type: body.benefit_type || null,
         notes: body.notes || null,
         expires_at: body.expires_at || null
-      }, adminUser.id);
+      };
+      const result = count > 1
+        ? await createMembershipActivationCodes(supabase, { ...payload, count }, adminUser.id)
+        : await createMembershipActivationCode(supabase, payload, adminUser.id);
       created(res, result);
     } catch (error) {
       badRequest(res, error.message);
@@ -2273,7 +4004,6 @@ async function handleCommunityUsers(req, res, supabase) {
   }
 }
 
-
 module.exports = async function handler(req, res) {
   try {
     const supabase = getSupabaseAdmin();
@@ -2338,6 +4068,10 @@ module.exports = async function handler(req, res) {
     }
     if (head === "membership-claims") {
       await handleMembershipClaimAction(req, res, supabase, second || "", third || "");
+      return;
+    }
+    if (head === "membership-birthdays") {
+      await handleMembershipBirthdays(req, res, supabase);
       return;
     }
     if (head === "membership-codes") {

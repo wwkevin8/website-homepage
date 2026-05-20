@@ -168,10 +168,45 @@ async function getOrderById(supabase, orderId) {
   return data;
 }
 
+async function fetchOrderSourceRecord(supabase, order = {}) {
+  if (!order?.source_table || !order?.source_id) {
+    return null;
+  }
+
+  if (order.source_table === "transport_requests") {
+    const { data, error } = await supabase
+      .from("transport_requests")
+      .select("id, order_no, student_name, email, phone, wechat, service_type, status, airport_code, airport_name, terminal, flight_no, flight_datetime, location_from, location_to, preferred_time_start, preferred_time_end, passenger_count, luggage_count, notes, admin_note, offline_recorded, last_operated_by, last_operated_at, created_at, updated_at")
+      .eq("id", order.source_id)
+      .maybeSingle();
+
+    if (error) {
+      throw error;
+    }
+    return data || null;
+  }
+
+  if (order.source_table === "storage_orders") {
+    const { data, error } = await supabase
+      .from("storage_orders")
+      .select("id, order_no, box_order_no, storage_pickup_order_no, order_type, customer_name, student_email, phone, wechat_id, service_label, service_date, service_time, service_time_slot, box_delivery_date, box_delivery_time_slot, storage_start_date, storage_end_date, expected_storage_end_date, address_full, room_or_building, postcode, purchased_boxes, estimated_box_count, estimated_total_price, final_price, notes, status, offline_recorded, last_operated_by, last_operated_at, created_at, updated_at")
+      .eq("id", order.source_id)
+      .maybeSingle();
+
+    if (error) {
+      throw error;
+    }
+    return data || null;
+  }
+
+  return null;
+}
+
 async function fetchOrderDetail(supabase, orderId) {
   const order = await getOrderById(supabase, orderId);
 
-  const [statusLogsResult, notesResult, operationLogsResult, attachmentsResult] = await Promise.all([
+  const [sourceRecord, statusLogsResult, notesResult, operationLogsResult, attachmentsResult] = await Promise.all([
+    fetchOrderSourceRecord(supabase, order),
     supabase
       .from("order_status_logs")
       .select("id, status, previous_status, changed_at, change_source, metadata, changed_by_admin_id, changed_by_admin:admin_users(id, name, username)")
@@ -201,6 +236,7 @@ async function fetchOrderDetail(supabase, orderId) {
 
   return {
     order,
+    source_record: sourceRecord,
     status_logs: statusLogsResult.data || [],
     notes: notesResult.data || [],
     operation_logs: operationLogsResult.data || [],
@@ -315,6 +351,7 @@ module.exports = {
   assertNotePayload,
   logAdminOperation,
   getOrderById,
+  fetchOrderSourceRecord,
   fetchOrderDetail,
   updateOrderSourceRecord,
   createOrderNote,

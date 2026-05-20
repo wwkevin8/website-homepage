@@ -209,7 +209,8 @@ async function enrichGroupsBatch(supabase, groups, metrics = {}) {
         request_id: item.transport_requests?.id || item.request_id,
         order_no: orderNo || "--",
         student_name: studentName || "--",
-        payment_status: paymentStatus
+        payment_status: paymentStatus,
+        admin_note: item.transport_requests?.admin_note || ""
       });
     }
 

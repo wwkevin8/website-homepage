@@ -10702,6 +10702,11 @@ body.storage-receipt-open {
   line-height: 1.45;
 }
 
+.service-card-detail-button {
+  justify-self: start;
+  margin-top: 4px;
+}
+
 .service-card-tag {
   display: inline-flex;
   width: fit-content;
