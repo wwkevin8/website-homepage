@@ -8,9 +8,21 @@
 ## Last Updated Task
 
 - Date: 2026-05-23
-- Scope: Playwright smoke test update for the 2.0 NGN admin route migration
+- Scope: Production read-only smoke checks on `https://ngn.best`
 
 ## Latest Completed Work
+
+- Ran read-only production checks against `https://ngn.best`:
+  - `/`, `/pickup`, `/storage`, `/moving`, `/transport-board.html`, and `/admin-login.html` returned reachable responses;
+  - `/pickup.html` returned the expected canonical redirect to `/pickup`;
+  - `/admin/transport/requests` returned the Vue admin shell HTML, confirming the production route rewrite is active;
+  - unauthenticated `/api/transport-manual-import/preview` returned 401;
+  - unauthenticated `/api/transport-requests` returned 401;
+  - unauthenticated `/api/admin/session` returned `authenticated: false`;
+  - public-only checks did not create or mutate production data.
+- Production admin protected-page caveat from this check:
+  - `PLAYWRIGHT_BASE_URL=https://ngn.best npm run qa:playwright:smoke` could open public pages, but the admin page assertion did not pass because password login still failed with the local bootstrap credentials and the local signed admin-session fallback was rejected by production;
+  - direct debug confirmed the signed cookie attempt redirects to `/admin-login.html?return_to=%2Fadmin%2Ftransport%2Frequests`, so production cannot be fully admin-smoked without a current approved admin login.
 
 - Updated `scripts/playwright-smoke.js` for the 2.0 NGN admin routes:
   - admin smoke login now targets `/admin/transport/requests` instead of the retired `transport-admin-groups.html` path;
@@ -1571,6 +1583,7 @@
 - The transport manual supplement migration `supabase/20260521_transport_manual_import.sql` has been applied to Supabase project `ngn-transport`; refresh `/admin/transport/requests` before retesting the supplement and batch import controls. The two new import/filter indexes may continue to appear as unused in Supabase Advisor until real traffic exercises those queries.
 - Live mutation QA for creating manual supplement orders, joining existing groups, and verifying group payment/person statistics was not run against production data in this pass to avoid inserting test transport orders; run it with an approved real/admin test record before relying on the new manual supplement/import workflow for daily operations.
 - Local `.env` bootstrap admin credentials are no longer accepted by the admin password-login endpoint; the updated smoke test can still verify protected admin pages through a signed local admin session, but use a current approved admin password when specifically testing the login form.
+- Production admin protected-page QA still needs a current approved admin username/password; local signed admin-session fallback is rejected by production and cannot validate live admin internals.
 - Preview env pulled from Vercel differs from local `.env`: local has `ADMIN_BOOTSTRAP_*` and `STORAGE_ORDER_WEBHOOK_URL`; Preview has `ADMIN_ALLOWED_EMAILS`/`ADMIN_PASSWORD` and Vercel/Turbo runtime keys. Confirm this is intentional before release.
 - Source scan found hardcoded `https://ngn.best` fallbacks in email/audit helpers. Confirm `APP_BASE_URL` or equivalent site URL behavior for Preview and Production before relying on email links.
 - The latest sidebar collapse update regenerated the root `admin-vue/` build output. Treat that folder as generated output and rebuild it when committing Vue source changes.
