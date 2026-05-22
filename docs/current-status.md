@@ -7,10 +7,315 @@
 
 ## Last Updated Task
 
-- Date: 2026-05-20
-- Scope: 2.0 NGN admin official path change from `/admin-vue/` to `/admin/`
+- Date: 2026-05-21
+- Scope: 2.0 NGN transport batch manual-import field configuration unification
 
 ## Latest Completed Work
+
+- Fixed the batch manual-import XLSX date-cell parsing path after operator screenshot review:
+  - frontend CSV/XLSX/paste parsing now canonicalizes date-time cells before sending preview rows to the backend;
+  - `航班日期时间` and `服务日期时间` cells that arrive from Excel as `Date` objects, Excel serial numbers, or common object-shaped values are converted to stable `YYYY/MM/DD HH:mm` text before preview;
+  - backend date parsing now also accepts object-shaped date values with `value`, `text`, `result`, `date`, `v`, or `w` fields as a defensive fallback;
+  - screenshot-equivalent rows with `5/22/2026 12:00` / `5/22/2026 10:00` under the correct headers preview as ready in the backend smoke test, while time-only values still fail as required.
+- Verification for this XLSX date-cell fix:
+  - `node --check` passed for `api/_lib/transport-manual-import.js` and the three manual-import API routes;
+  - direct smoke confirmed the screenshot-equivalent row previews as ready, Excel serial date-time values preview as ready, old `航班时间` / `服务时间` aliases still work, empty templates still return the no-order-data message, and time-only values still return red date-time errors;
+  - `npm run build:admin-vue` passed and regenerated the root `admin/` bundle;
+  - `npm run build:prod` passed.
+
+- Unified batch manual-import field definitions around a single shared source of truth:
+  - added `shared/transport-manual-import-columns.json` with the canonical column order, labels, aliases, template notes, and example values;
+  - the Vue admin now derives copy-template headers, Excel workbook headers, sample paste data, template notes, and frontend header parsing from that shared column file;
+  - frontend CSV/XLSX/paste parsing canonicalizes aliases before checking required headers, so old `航班时间` and `服务时间` spreadsheets are accepted as aliases for `航班日期时间` and `服务日期时间`;
+  - newly generated templates only use `航班日期时间` and `服务日期时间`;
+  - backend preview and commit validation now build template-field aliases from the same shared column file before running the existing normalization/validation flow;
+  - uploading the system-generated empty Excel template should now produce `模板已读取，但没有订单数据。请在第二行开始填写订单后重新上传。` rather than reporting missing date-time columns.
+- Required regression checks after this field unification all passed:
+  - downloaded-template header order matches the required 16 fields and does not contain old `航班时间` / `服务时间` labels;
+  - empty downloaded-template simulation returns the no-order-data message instead of missing-field errors;
+  - downloaded-template with one data row previews as ready;
+  - copy-template paste with one data row previews as ready;
+  - old `航班时间` / `服务时间` headers preview as ready through aliases;
+  - time-only `12:00` / `10:00` still returns red date-time errors;
+  - `5/22/2026 12:00` is recognized and normalizes to `2026/05/22 12:00` in the preview display logic.
+- Verification for this pass:
+  - `node --check` passed for `api/_lib/transport-manual-import.js` and the three manual-import API routes;
+  - `npm run build:admin-vue` passed and regenerated the root `admin/` bundle;
+  - `npm run build:prod` passed;
+  - source scan confirmed only the shared alias config retains old time-field labels, while new frontend templates and preview headers use the new date-time labels;
+  - `git diff --check` passed with only existing line-ending warnings.
+
+- Fixed the batch manual-import file upload preview chain in the Vue admin:
+  - uploading `.csv` or `.xlsx` now sets an explicit parsing status, clears stale preview rows, parses the file, stores parsed rows in the import row state, and immediately calls the backend preview flow when data rows exist;
+  - upload states are now visible in the dialog: `正在解析文件……`, `已解析 X 行，正在预览……`, `预览完成：可导入 X 行，警告 X 行，错误 X 行`, unsupported-file errors, parse failures, or empty-template guidance;
+  - empty templates now show `模板已读取，但没有订单数据。请在第二行开始填写订单后重新上传。` instead of silently falling back to the generic paste/upload prompt;
+  - `重新校验预览` now enables when pasted text exists, parsed uploaded rows exist, or preview rows already exist, so uploaded-file preview can be retried without requiring textarea content;
+  - upload and paste remain independent inputs: if the textarea is empty but uploaded rows exist, preview/re-preview uses the uploaded rows instead of asking the operator to paste content;
+  - the batch dialog still renders the full preview table after successful upload preview with status, original row number, parsed fields, editable Group ID, and error/warning reasons.
+- Verification for the upload preview state fix:
+  - source scan confirmed `importStatusMessage`, `canPreviewImport`, the upload parse statuses, empty-template message, and the updated `重新校验预览` disabled condition are present;
+  - `npm run build:admin-vue` passed and regenerated the root `admin/` bundle;
+  - `npm run build:prod` passed.
+
+- Extended batch manual-import datetime parsing for Excel auto-formatted complete dates:
+  - backend import parsing now accepts `2026/05/22 12:00`, `2026-05-22 12:00`, `5/22/2026 12:00`, `05/22/2026 12:00`, XLSX `Date` objects, and Excel serial date-time numbers;
+  - `M/D/YYYY HH:mm` input is interpreted as US-style `MM/DD/YYYY HH:mm`, so `5/22/2026 12:00` previews as the same London-time moment shown in the admin table as `2026/05/22 12:00`;
+  - ambiguous US-style values where both month and day are <= 12, such as `5/6/2026`, now remain importable but receive the yellow warning `检测到美式日期格式，请确认是否为 ...`;
+  - time-only text such as `12:00`, Excel time-only serial values, and Excel default dates in 1899/1900 remain invalid and stay red in preview;
+  - the Excel/template notes now recommend `2026/05/22 12:00` while explicitly noting that Excel's `5/22/2026 12:00` display is supported.
+- Verification for Excel date compatibility:
+  - `node --check` passed for `api/_lib/transport-manual-import.js` and the three manual-import API routes;
+  - direct helper smoke confirmed the four supported string formats, XLSX-style `Date` objects, Excel serial date-time numbers, time-only rejection, and the ambiguous US-date yellow warning;
+  - source scan confirmed the updated template guidance is present;
+  - `npm run build:admin-vue` passed and regenerated the root `admin/` bundle;
+  - `npm run build:prod` passed.
+
+- Fixed batch manual-import datetime handling for Excel time-only values:
+  - template headers, clipboard template, sample paste text, Excel workbook sheets, and preview table now use `航班日期时间` and `服务日期时间` instead of `航班时间` and `服务时间`;
+  - template notes now explicitly require complete date-time values such as `2026/05/24 12:00` or `2026-05-24 12:00`;
+  - backend import parsing now rejects time-only text such as `12:00`, Excel time-only serial values such as `0.5`, and Excel default-date values in 1899/1900 instead of converting them to `1899/12/30`;
+  - backend aliases still accept the old `航班时间` and `服务时间` headers for compatibility, but the generated template now guides operators to the stricter date-time fields;
+  - invalid date-time rows stay red in preview with `请填写完整日期时间，例如 2026/05/24 12:00。`, so they cannot be imported.
+- Verification for this datetime fix:
+  - `node --check api/_lib/transport-manual-import.js` passed;
+  - direct helper smoke confirmed complete date-time values parse, while `12:00`, Excel serial `0.5`, and `1899-12-30` Date values are rejected as red preview errors;
+  - source scan confirmed the new `航班日期时间` / `服务日期时间` template and preview labels are present;
+  - `node --check` passed for the three manual-import API routes;
+  - `npm run build:admin-vue` passed and regenerated the root `admin/` bundle;
+  - `npm run build:prod` passed when rerun after the admin bundle build completed;
+  - `git diff --check` passed with only existing line-ending warnings.
+
+- Fixed batch manual-import file upload preview state:
+  - uploading `.csv` or `.xlsx` now parses the file and immediately enters the backend preview flow instead of only showing the file name;
+  - `.xls` and other unsupported formats are rejected with `当前文件格式不支持，请上传 .xlsx 或 .csv 文件。`, and the file picker now advertises only CSV/XLSX formats;
+  - uploaded template files with only headers now show `已读取模板，但未检测到订单数据行，请填写数据后重新上传`;
+  - successful upload stores parsed rows in `importRows`, so `重新校验预览` becomes available and reuses the uploaded file data;
+  - if paste text is empty but uploaded rows exist, `预览粘贴内容` re-previews the uploaded rows instead of asking the operator to paste content;
+  - the disabled import button now has a visible reason when there is no successful preview, no importable row, or unconfirmed yellow warning rows.
+- Verification for the upload preview fix:
+  - `npm run build:admin-vue` passed and regenerated the root `admin/` bundle;
+  - `npm run build:prod` passed;
+  - `node --check api/_lib/transport-manual-import.js` passed;
+  - source scan confirmed the unsupported-format and empty-template messages, `parseSheetRows`, and the CSV/XLSX-only file accept list are present;
+  - `git diff --check` passed with only existing line-ending warnings;
+  - local helper server on port 3001 returned 200 for `/admin/transport/requests`.
+
+- Added `docs/NGN_2_ADMIN_PREPROD_QA.md` as the local准线上 QA flow for 2.0 NGN admin before Vercel Production:
+  - documents the required Vercel CLI sequence: `vercel link`, `vercel pull --environment=preview`, `vercel build`, and `vercel dev`;
+  - captures automated checks for `npm run build:admin-vue`, `npm run build:prod`, `vercel build`, `vercel dev`, and the four manual-import API `node --check` commands;
+  - includes a source scan procedure for localhost, hardcoded domains, local/Windows paths, and test-account leakage;
+  - records environment-variable presence checks without exposing secret values;
+  - records Supabase migration verification SQL and notes that the implemented creator fields are `created_by_admin_id` and `created_by_admin_name`, not a literal `created_by` column;
+  - provides the Vercel-dev manual workflow checklist for admin login, transport list loading, manual supplement with/without Group ID, paste/CSV/XLSX preview, commit, group passenger/payment sync, import-batch filtering, and public pickup form submission.
+- Verification performed during this QA-process pass:
+  - `vercel link --yes` passed for `wwkevin8s-projects/webside`;
+  - `vercel pull --environment=preview --yes` passed and refreshed `.vercel/.env.preview.local`;
+  - `node --check` passed for `api/transport-manual-import/preview.js`, `commit.js`, `manual.js`, and `api/_lib/transport-manual-import.js`;
+  - `npm run build:admin-vue` passed;
+  - `npm run build:prod` passed;
+  - `vercel build` passed for Preview;
+  - `npm run dev` was blocked by port 3000 already being in use, but the existing local service returned 200 for `/admin/transport/requests`;
+  - `vercel dev --listen 3109` served `/admin/transport/requests` with 200 and returned 401 for unauthenticated `/api/transport-manual-import/preview`;
+  - Supabase project `ngn-transport` was checked for the manual-import fields, constraints, and indexes, and all expected implemented objects were present;
+  - source scan found expected local/QA/official endpoint hits and flagged hardcoded `https://ngn.best` email fallbacks plus Preview/local env differences for release confirmation.
+- Deployment recommendation from this pass:
+  - Preview deployment is reasonable after GitHub commit/push of the intended changes;
+  - Production deployment is not yet recommended until an approved admin account and QA data are used to complete the mutation-heavy Vercel-dev workflow tests.
+
+- Fixed the batch manual-import paste preview parser:
+  - `预览粘贴内容` now reads the current textarea value from the active batch-import panel before parsing, so recently pasted content is not missed by stale state;
+  - pasted content parsing now prioritizes Tab-separated Excel/Google Sheet data, keeps spaces inside fields such as `Nottingham NG1 1AA`, and does not split columns by ordinary spaces;
+  - empty content, missing/invalid header rows, missing required template headers, and space-separated text now show specific operator guidance instead of the generic `请先粘贴表格内容或上传 CSV/XLSX 文件`;
+  - the batch dialog now includes a ready-to-copy sample block with the requested two-line Tab-separated example;
+  - backend datetime parsing now prioritizes unambiguous `YYYY/MM/DD HH:mm` and `YYYY-MM-DD HH:mm` patterns before falling back to `Date`, reducing US/UK slash-date ambiguity.
+- Verification for the paste parser fix:
+  - `node --check api/_lib/transport-manual-import.js` passed;
+  - direct helper smoke confirmed `2026/05/24 22:10` and `2026-05-24 23:00` parse, and `Nottingham NG1 1AA` stays intact;
+  - `npm run build:admin-vue` passed and regenerated the root `admin/` bundle;
+  - `npm run build:prod` passed;
+  - `git diff --check` passed with only existing line-ending warnings;
+  - local helper server on port 3001 returned 200 for `/admin/transport/requests`.
+
+- Refined the transport manual supplement UI and Excel template again:
+  - all confirmation dialogs now keep their footer action area fixed inside the modal, so the single supplement cancel/submit buttons stay visible while the form body scrolls;
+  - the single supplement student section now shows the explicit hint `手机号和微信号至少填写一个。`;
+  - `下载 Excel 模板` now creates a real `.xlsx` workbook without adding dependencies, with two sheets: `导入模板` containing only the header row and `填写示例` containing one auto-new-group example plus one existing-Group-ID example;
+  - the batch preview table now renders separate columns for row status, original row number, student name, phone/WeChat, service type, airport, terminal, flight number, flight time, service time, address, passenger count, luggage quantity, price, payment status, editable Group ID, and error/warning reasons;
+  - import eligibility is still gated by successful preview, red rows remain excluded by backend commit validation, and yellow rows still require admin confirmation.
+- Verification for this refinement:
+  - `node --check api/_lib/transport-manual-import.js` passed;
+  - `npm run build:admin-vue` passed and regenerated the root `admin/` bundle;
+  - `npm run build:prod` passed;
+  - `git diff --check` passed with only existing line-ending warnings;
+  - source scan confirmed `导入模板`, `填写示例`, the phone/WeChat hint, and the requested preview-table columns are present;
+  - local helper server on port 3001 returned 200 for `/admin/transport/requests`.
+
+- Completed the batch manual-import template controls:
+  - the batch supplement dialog now includes both `复制导入模板` and `下载 Excel 模板` actions next to paste preview and CSV/XLSX upload;
+  - the copied template is exactly one tab-separated header row in this order: student name, phone, WeChat, service type, airport, terminal, flight number, flight time, service time, address, passenger count, luggage quantity, price, payment status, Group ID, and notes;
+  - the Excel download uses the same header source as the clipboard copy, includes one sample row plus field notes, and avoids adding the vulnerable `xlsx` package;
+  - backend field aliases were checked against the template headers, with address aliases and text luggage-quantity handling tightened so the template maps consistently during preview/commit.
+- Verification for template controls:
+  - `node --check api/_lib/transport-manual-import.js` passed;
+  - direct helper smoke confirmed the template headers map to pickup, LHR from Heathrow, flight number, flight/service time, unpaid payment status, address, and text luggage notes;
+  - `npm run build:admin-vue` passed and regenerated the root `admin/` bundle;
+  - `npm run build:prod` passed;
+  - `git diff --check` passed with only existing line-ending warnings;
+  - local helper server on port 3001 returned 200 for `/admin/transport/requests`.
+
+- Refined the 2.0 NGN transport manual supplement and batch import operator UI:
+  - the single supplement dialog is now wider and split into student information, trip information, carpool/payment, and notes sections;
+  - required-field warnings no longer show immediately on dialog open, and only appear after the operator clicks submit with missing fields;
+  - field-level required messages now appear below the relevant inputs after submit, and phone/WeChat is presented as an at-least-one contact requirement instead of two separately required fields;
+  - existing Group ID validation still runs through the backend preview path, and the confirmed group summary now exposes Group ID, service type, airport, terminal, date, current passenger count, and destination/pickup location;
+  - the batch preview table now labels the required columns clearly: row status, original row number, parsed fields, error/warning reasons, candidate Group ID, and editable Group ID.
+- Verification for this UI refinement:
+  - `npm run build:admin-vue` passed and regenerated the root `admin/` bundle;
+  - `npm run build:prod` passed;
+  - `node --check api/_lib/transport-manual-import.js` passed;
+  - `git diff --check` passed with only existing line-ending warnings;
+  - local helper server on port 3001 returned 200 for `/admin/transport/requests`.
+
+- Tightened the 2.0 NGN transport manual supplement completion details:
+  - single manual supplement now has front-end required-field marking and blocking validation for service type, student name, phone/WeChat contact, passenger count, airport, terminal, flight number, flight date/time, service time, and address;
+  - the backend manual-import validator now also rejects missing phone/WeChat contact, terminal, flight number, service time, and address instead of relying only on the frontend;
+  - the address label now changes by service type: pickup shows destination address, and dropoff shows pickup/contact address;
+  - entering an existing Group ID in the single supplement dialog now requires a backend preview/validation check and shows the target group summary before submission is allowed;
+  - bulk supplement now keeps the import button disabled until a preview table exists, blocks unconfirmed yellow rows, keeps red rows out of import, and includes a copy-template button;
+  - bulk preview rows continue to show duplicate warnings and candidate group hints, while candidate groups must still be selected manually and are not auto-merged.
+- Verification for this tightening pass:
+  - `node --check api/_lib/transport-manual-import.js` passed;
+  - `node --check` passed for the three manual-import API routes;
+  - direct helper smoke confirmed incomplete rows are marked `error` with missing contact, terminal, flight number, and service time codes;
+  - `npm run build:admin-vue` passed and regenerated the root `admin/` bundle;
+  - `npm run build:prod` passed;
+  - `git diff --check` passed with only existing line-ending warnings;
+  - local helper server on port 3001 returned 200 for `/admin/transport/requests`, and the preview API still returned 401 without an admin session as expected.
+
+- Applied the 2.0 NGN transport manual supplement migration to Supabase project `ngn-transport`:
+  - `supabase/20260521_transport_manual_import.sql` was executed through the Supabase plugin on project ref `brmsymzkmdnxzhrcaghw`;
+  - verified `transport_requests.source`, `created_by_admin_id`, `created_by_admin_name`, `import_batch_id`, `raw_import_payload`, `manual_price_gbp`, and `manual_payment_status` exist with the expected types/defaults;
+  - verified `transport_requests_source_check`, `transport_requests_manual_payment_status_check`, `idx_transport_requests_import_batch_id`, and `idx_transport_requests_source_created_at` exist;
+  - Supabase Security and Performance Advisors were run after the migration; findings are broad existing project advisories plus the two new manual-import indexes being reported as unused before real traffic.
+
+- Hotfixed the transport request list for databases that have not yet applied the manual supplement migration:
+  - `/api/transport-requests` now first attempts to select the new manual-import fields, then automatically retries with the legacy field list if Supabase reports missing manual-import columns such as `transport_requests.source`;
+  - source/import-batch filters are ignored only during this legacy fallback path, so the 2.0 transport list can keep loading before `supabase/20260521_transport_manual_import.sql` is applied;
+  - no public page, database schema, email behavior, deployment config, or transport mutation workflow was changed by this hotfix.
+- Verification for the hotfix:
+  - `node --check api/transport-requests/index.js` passed;
+  - `npm run build:admin-vue` passed and regenerated the root `admin/` bundle;
+  - `npm run build:prod` passed;
+  - `git diff --check` passed.
+
+- Added 2.0 NGN transport manual supplement and bulk import support:
+  - `/admin/transport/requests` now has entry points for single manual supplement and bulk supplement preview/import;
+  - bulk supplement supports pasted spreadsheet rows plus CSV/XLSX upload using `read-excel-file` in the Vue admin only; frontend parsing is only for preview UX;
+  - new admin-only APIs `/api/transport-manual-import/preview`, `/api/transport-manual-import/commit`, and `/api/transport-manual-import/manual` rerun server-side mapping, cleaning, validation, duplicate checks, group warning checks, and permission checks;
+  - new helper `api/_lib/transport-manual-import.js` creates normal `transport_requests`, creates new groups or joins existing `transport_groups` through the existing lifecycle helpers, writes `transport_group_members`, and records admin operation logs;
+  - `supabase/20260521_transport_manual_import.sql` adds additive manual-import fields on `transport_requests`: `source`, `created_by_admin_id`, `created_by_admin_name`, `import_batch_id`, `raw_import_payload`, `manual_price_gbp`, and `manual_payment_status`;
+  - existing `last_operated_by` and `last_operated_at` remain the canonical latest-operator fields; no duplicate `last_operator` field was added;
+  - group payment summaries and group detail payment display now prefer `manual_payment_status` before falling back to the legacy `[payment:paid|unpaid]` marker in `admin_note`;
+  - `public-api-handlers/my-transport-requests.js` now selects an explicit public-safe transport request field list so `raw_import_payload` and admin-only import fields are not returned to ordinary user pages;
+  - no public submit flow, public board route, email behavior, or deployment config was intentionally changed.
+- Verification for the manual supplement work:
+  - `node --check` passed for `api/_lib/transport-manual-import.js`, the three new manual-import API routes, transport request/group routes touched by the change, `public-api-handlers/my-transport-requests.js`, and `dev-server.js`;
+  - `npm --prefix apps/admin-vue audit --audit-level=high` passed with 0 vulnerabilities after replacing the initially tested `xlsx` package with `read-excel-file`;
+  - `npm run build:admin-vue` passed and regenerated the root `admin/` bundle;
+  - `npm run build:prod` passed;
+  - `git diff --check` passed;
+  - local helper server on port 3001 returned 200 for `/admin/transport/requests`, and the new preview API returned 401 without an admin session as expected.
+
+- Refined the storage execution membership label and today worksheet coverage:
+  - `/admin/storage/orders`, `/admin/storage/today-work-orders`, and `GET /api/admin/storage-orders-export` now label member-used storage services as `会员服务` instead of showing a discount amount wording;
+  - `/admin/storage/today-work-orders` now includes same-day buy-box rows as well as storage collection and storage return rows, so same-day buy-box services visible in all-orders also appear in the daily worksheet;
+  - buy-box rows in the daily worksheet open the buy-box detail route, while storage collection/return rows still open the storage-service detail route;
+  - the empty-state and summary copy now describe `寄存服务工单`, not only取送寄存工单;
+  - no database schema, public page, email behavior, API route shape, or storage mutation workflow was changed.
+- Verification after this refinement:
+  - `node --check api/admin/[...action].js` passed;
+  - `npm run build:admin-vue` passed and regenerated the root `admin/` bundle;
+  - `npm run build:prod` passed;
+  - local helper server returned 200 for `/admin/storage/orders` and `/admin/storage/today-work-orders`.
+
+- Added `/admin/storage/today-work-orders` as the storage daily execution worksheet:
+  - the Vue admin sidebar under `寄存管理` now includes `当天工单`;
+  - the page defaults to the current Europe/London date and lists that date's取寄存/送寄存 orders from the existing `/api/admin/storage-orders` endpoint;
+  - the execution table columns are sequence, service date/order number, service time, name, service project, estimated box count, full address/postcode, phone, WeChat, fee/payment note, payment toggle, customer-service remark, and actions;
+  - sortable headers support toggling ascending/descending for service time, name, service project, estimated box count, and payment status;
+  - payment and customer-service remark edits reuse the existing storage order PATCH behavior and do not add database fields;
+  - no public page, database schema, email behavior, API route shape, or deployment config was changed.
+- Verification after adding the worksheet:
+  - `npm run build:admin-vue` passed and regenerated the root `admin/` bundle;
+  - `npm run build:prod` passed;
+  - local helper server returned 200 for `/admin/storage/today-work-orders`;
+  - `git diff --check` passed.
+
+- Refined `/admin/storage/orders` after operator review:
+  - removed the visible `每页数量` control and kept the all-orders execution table fixed at 10 rows per page;
+  - renamed the editable `备注` column to `客服备注`;
+  - the customer-service remark cell now starts from existing admin service notes and appends student-facing notes as `同学备注：...` when present, so the source of each note is clear;
+  - widened the execution table and disabled ellipsis truncation inside this view so zoomed/narrow windows can use horizontal scrolling instead of hiding text behind `...`;
+  - updated `GET /api/admin/storage-orders-export` so the export column is `客服备注` and follows the same admin-note plus labeled student-note rule;
+  - repaired garbled visible Chinese labels and the GBP symbol on the buy-box detail page at `/admin/storage/box-orders/:id`;
+  - no database schema, public page, email behavior, deployment config, or storage mutation workflow was changed.
+- Verification after this cleanup:
+  - `node --check api/admin/[...action].js` passed;
+  - `npm run build:admin-vue` passed and regenerated the root `admin/` bundle;
+  - `npm run build:prod` passed;
+  - local helper server returned 200 for `/admin/storage/orders` and `/admin/storage/box-orders/1`;
+  - `git diff --check` passed.
+
+- Updated the `/admin/storage/orders`收款 button to toggle both directions:
+  - rows that are not marked paid show `已收款`; clicking writes `payment_status=paid` and `payment_note=已收款` into existing admin billing metadata;
+  - rows already marked paid show `未收款`; clicking writes `payment_status=unpaid` and `payment_note=未收款`;
+  - the button is no longer disabled just because an order is already paid, and the fee/payment note column now shows `未收款` instead of becoming blank;
+  - no database schema, API route shape, public page, email behavior, deployment config, or export field layout was changed.
+- Verification after the payment toggle update:
+  - `npm run build:admin-vue` passed and regenerated the root `admin/` bundle;
+  - `npm run build:prod` passed;
+  - local helper server returned 200 for `/admin/storage/orders`;
+  - `git diff --check` passed.
+
+- Moved the visible storage all-orders order number under the `服务日期` cell:
+  - `/admin/storage/orders` now shows the service date on the first line and the order number directly below it in the same cell;
+  - no API behavior, database schema, export fields, payment/remark saving, public pages, email behavior, or deployment config was changed.
+- Verification after moving the order number:
+  - `npm run build:admin-vue` passed and regenerated the root `admin/` bundle;
+  - local helper server returned 200 for `/admin/storage/orders`;
+  - `git diff --check` passed.
+
+- Refined `/admin/storage/orders` execution-view columns and inline operations:
+  - removed the visible `拼音` and `是否收费` columns from the all-orders table;
+  - kept `费用/支付备注` as a read-only scan column, then added a separate `收款` button column immediately to its right;
+  - the `已收款` button writes existing admin billing metadata into `customer_form_json.admin.billing` through the existing storage order PATCH path, without adding database fields;
+  - added a separate editable `备注` column after the `收款` button column; operators can type directly in the list and save, with blur-save plus an explicit save button;
+  - removed extra note text from the service-content column so operational notes live in the dedicated remark column;
+  - updated storage export columns to remove pinyin/charge-status and include remark after payment/fee note;
+  - no Supabase schema, public page, email behavior, deployment config, or old admin page behavior was changed.
+- Verification for the inline payment/remark refinement:
+  - `node --check api/admin/[...action].js` passed;
+  - `npm run build:admin-vue` passed and regenerated the root `admin/` bundle;
+  - `npm run build:prod` passed;
+  - local helper server returned 200 for `/admin/storage/orders`;
+  - Playwright confirmed unauthenticated `/admin/storage/orders` still redirects to the `2.0 NGN管理后台` login boundary.
+
+- Updated `/admin/storage/orders` in `2.0 NGN管理后台` into a compact operator execution view:
+  - the all-orders table now uses Excel-like columns for sequence, service date, time slot, name, pinyin, service content, apartment/address, phone, charge status, price, payment/fee note, and actions;
+  - the row sequence is continuous across pagination based on the current filtered result, while the existing row checkbox is preserved inside the sequence cell for batch operations;
+  - service content is composed from the existing storage order kind and purchased-box/estimated-box fields, with existing concise notes appended when present;
+  - apartment/address display now combines apartment/room, detailed address, and postcode without showing empty/null fragments;
+  - price display is normalized to GBP format and charge/free status is derived from the existing total price/membership signals;
+  - payment/fee notes now prefer existing admin billing payment status/note data when present, then fall back to membership-free/free/pending-fee wording;
+  - existing filters, pagination, details navigation, delete, mark-recorded, selected-row batch actions, and selected-row export remain in place.
+- Updated `GET /api/admin/storage-orders-export` so storage exports use the same execution-view columns: sequence, service date, time slot, name, pinyin, service content, apartment/address, phone, charge status, price, and payment/fee note.
+- Updated `docs/PROJECT_MAP.md` to document the storage export endpoint's execution-view output.
+- Verification for the execution-view change:
+  - `node --check api/admin/[...action].js` passed;
+  - `npm run build:admin-vue` passed and regenerated the root `admin/` bundle;
+  - `npm run build:prod` passed;
+  - Vite preview served `/admin/storage/orders` with HTTP 200 through the SPA fallback and the generated JS/CSS assets returned 200;
+  - Playwright opened the preview route and confirmed unauthenticated access redirects to the admin login boundary.
 
 - Changed the official 2.0 NGN admin access path from `/admin-vue/` to `/admin/`:
   - Vue Router now uses `createWebHistory("/admin/")`;
@@ -1179,6 +1484,7 @@
 
 ## Current Project State
 
+- Storage all-orders control page at `/admin/storage/orders` now presents an operator execution view rather than a system-field table; it includes inline `已收款` and editable remark controls, and export for `order_type=all` follows the same execution data columns without action buttons.
 - Vue admin dashboard today-todo rows now keep the status label as a compact pill and align the order-number/customer block in a consistent right-side column on desktop, while keeping a stacked layout on small screens.
 - `2.0 NGN管理后台` at `/admin/` is now the intended official backend entry after deployment.
 - Vue admin dashboard now uses the expanded `/api/admin/dashboard` aggregate to show operational KPIs, recent trends, real-status distribution, today/overdue work, clickable risk alerts, recent admin operations, quick links, and cache metadata in the main content area; dashboard risk counts align with `/admin/orders?risk=...`.
@@ -1220,6 +1526,7 @@
 - The public community information plaza homepage now uses the short-term Flarum-inspired student-board layout, with service links demoted to the right sidebar, forum categories as primary filters, and no standalone Flarum/PHP/MySQL deployment added.
 - The public carpool request form was intentionally modified to remove the unused share-goal price option.
 - Transport request admin API responses now include `offline_recorded`, `last_operated_by`, and `last_operated_at`; public transport APIs were not intentionally expanded. No email behavior or secrets/env files were modified.
+- Transport manual supplement/import fields have been applied to Supabase project `ngn-transport`; public/ordinary-user transport APIs should continue using explicit safe field lists and must not expose `raw_import_payload` or admin import fields.
 - Personal center display now treats the membership benefit card as the single display location for the currently linked membership order, so the same order is not repeated in ordinary pickup/storage cards or recent records.
 - Personal center pickup membership reservations now show whether the member booking is a September free pickup or a non-September/other-time 100 GBP discount.
 - Personal center pickup cards and bound pickup membership cards now provide direct `查看详情` access, while pickup membership displays hide price/discount amounts.
@@ -1238,6 +1545,11 @@
 - Phase 5A intentionally adds real storage-only operations in Vue: list export, list single-delete, detail service/address saves, detail status changes, detail current-order export, and detail single-delete. Batch delete and all non-storage dangerous operations remain unimplemented.
 - The transport request tracking fields have been applied to Supabase project `ngn-transport`; the 2.0 admin launch deployment has now followed the GitHub-first release order and is live on Vercel production.
 - The storage order tracking migration `supabase/20260519_storage_order_offline_tracking.sql` has been applied to Supabase project `ngn-transport`; refresh `/admin/storage/orders` before testing mark/cancel recorded operations.
+- The transport manual supplement migration `supabase/20260521_transport_manual_import.sql` has been applied to Supabase project `ngn-transport`; refresh `/admin/transport/requests` before retesting the supplement and batch import controls. The two new import/filter indexes may continue to appear as unused in Supabase Advisor until real traffic exercises those queries.
+- Live mutation QA for creating manual supplement orders, joining existing groups, and verifying group payment/person statistics was not run against production data in this pass to avoid inserting test transport orders; run it with an approved real/admin test record before production release.
+- The 2.0 NGN admin pre-production QA report recommends Preview deployment only after GitHub commit/push, and does not recommend Production until Vercel-dev mutation tests pass with approved QA data.
+- Preview env pulled from Vercel differs from local `.env`: local has `ADMIN_BOOTSTRAP_*` and `STORAGE_ORDER_WEBHOOK_URL`; Preview has `ADMIN_ALLOWED_EMAILS`/`ADMIN_PASSWORD` and Vercel/Turbo runtime keys. Confirm this is intentional before release.
+- Source scan found hardcoded `https://ngn.best` fallbacks in email/audit helpers. Confirm `APP_BASE_URL` or equivalent site URL behavior for Preview and Production before relying on email links.
 - The latest sidebar collapse update regenerated the root `admin-vue/` build output. Treat that folder as generated output and rebuild it when committing Vue source changes.
 - Existing unrelated dirty changes were present before this checkpoint and were not reverted:
   - `admin-api.js`;
@@ -1248,6 +1560,7 @@
 
 ## Recommended Next Steps
 
+- Complete `docs/NGN_2_ADMIN_PREPROD_QA.md` manual Vercel-dev workflow with an approved admin account and QA records: admin login, transport list, single supplement with/without Group ID, paste/CSV/XLSX preview, commit, group passenger/payment sync, import-batch filtering, and public pickup form submission.
 - After committing/pushing and deploying, verify `/admin/transport/requests` filters, offline-recorded toggles, and filtered export against real admin data.
 - Verify `/admin/transport/requests/:id` with a real admin session to confirm field saves and group replacements write readable operation-log entries.
 - Next Vue phase should verify storage export/delete and storage detail price recalculation in the browser, then continue with the next explicitly approved low-risk operation only after server-side permission boundaries are reviewed.

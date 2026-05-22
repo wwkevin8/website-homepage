@@ -89,6 +89,19 @@ const operatorSelectOptions = computed(() => {
       <input v-model="model.dateFrom" type="date" />
     </label>
     <label class="field">
+      <span>导入批次</span>
+      <input v-model="model.importBatchId" type="search" placeholder="TMI-..." />
+    </label>
+    <label class="field">
+      <span>订单来源</span>
+      <select v-model="model.source">
+        <option value="">全部</option>
+        <option value="public_form">前台提交</option>
+        <option value="admin_manual">后台补录</option>
+        <option value="sheet_import">批量导入</option>
+      </select>
+    </label>
+    <label class="field">
       <span>结束日期</span>
       <input v-model="model.dateTo" type="date" />
     </label>

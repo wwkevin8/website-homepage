@@ -5,6 +5,33 @@ const { closeExpiredRequests, deriveRequestDisplayFlags } = require("../api/_lib
 const { backfillMissingPickupGroups } = require("../api/_lib/transport-group-lifecycle");
 const { loadGroupStatsMap } = require("../api/_lib/transport-group-stats");
 
+const MY_TRANSPORT_REQUEST_SELECT = [
+  "id",
+  "order_no",
+  "student_name",
+  "email",
+  "phone",
+  "wechat",
+  "site_user_id",
+  "service_type",
+  "airport_code",
+  "airport_name",
+  "terminal",
+  "flight_no",
+  "flight_datetime",
+  "location_from",
+  "location_to",
+  "preferred_time_start",
+  "preferred_time_end",
+  "passenger_count",
+  "luggage_count",
+  "shareable",
+  "status",
+  "notes",
+  "created_at",
+  "transport_group_members(*)"
+].join(", ");
+
 module.exports = async function handler(req, res) {
   if (req.method !== "GET") {
     methodNotAllowed(res, ["GET"]);
@@ -24,7 +51,7 @@ module.exports = async function handler(req, res) {
 
     const { data, error } = await supabase
       .from("transport_requests")
-      .select("*, transport_group_members(*)")
+      .select(MY_TRANSPORT_REQUEST_SELECT)
       .eq("site_user_id", siteUser.id)
       .order("created_at", { ascending: false })
       .limit(10);

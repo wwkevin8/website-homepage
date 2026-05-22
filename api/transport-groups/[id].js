@@ -4,9 +4,9 @@ const { ok, badRequest, parseJsonBody, methodNotAllowed, serverError } = require
 const { applyEffectiveGroupCounts, mapGroupPayload, getGroupPassengerCount, deriveDisplayGroupId } = require("../_lib/transport");
 const { createGroupForRequest } = require("../_lib/transport-group-lifecycle");
 
-const GROUP_DETAIL_MEMBER_SELECT = "id,group_id,request_id,passenger_count_snapshot,luggage_count_snapshot,created_at,transport_requests(id,order_no,student_name,site_user_id,phone,wechat,email,service_type,status,passenger_count,luggage_count,terminal,flight_datetime,airport_code,flight_no,location_from,location_to,admin_note,notes)";
+const GROUP_DETAIL_MEMBER_SELECT = "id,group_id,request_id,passenger_count_snapshot,luggage_count_snapshot,created_at,transport_requests(id,order_no,student_name,site_user_id,phone,wechat,email,service_type,status,passenger_count,luggage_count,terminal,flight_datetime,airport_code,flight_no,location_from,location_to,admin_note,manual_payment_status,notes)";
 
-const GROUP_DELETE_MEMBER_SELECT = "request_id,transport_requests(id,site_user_id,student_name,email,phone,wechat,service_type,passenger_count,luggage_count,airport_code,airport_name,terminal,flight_no,flight_datetime,location_from,location_to,preferred_time_start,preferred_time_end,shareable,status,notes,admin_note,closed_at,closed_reason,created_at)";
+const GROUP_DELETE_MEMBER_SELECT = "request_id,transport_requests(id,site_user_id,student_name,email,phone,wechat,service_type,passenger_count,luggage_count,airport_code,airport_name,terminal,flight_no,flight_datetime,location_from,location_to,preferred_time_start,preferred_time_end,shareable,status,notes,admin_note,manual_payment_status,closed_at,closed_reason,created_at)";
 
 function isMissingColumnError(error, marker) {
   return Boolean(error?.message && error.message.includes(marker));
@@ -94,7 +94,11 @@ function getPricingSeason(referenceDate) {
   return date.getUTCMonth() === 8 ? "peak" : "normal";
 }
 
-function parsePaymentStatus(adminNote) {
+function parsePaymentStatus(adminNote, structuredStatus) {
+  const normalized = String(structuredStatus || "").trim().toLowerCase();
+  if (["paid", "unpaid", "pending", "waived"].includes(normalized)) {
+    return normalized === "paid" || normalized === "waived" ? "paid" : "unpaid";
+  }
   const text = String(adminNote || "");
   const match = text.match(/\[payment:(paid|unpaid)\]/i);
   return match ? match[1].toLowerCase() : "unpaid";
@@ -137,7 +141,7 @@ function computeGroupViewModel(group, members) {
     const request = member.transport_requests || {};
     const terminal = request.terminal || "";
     const surcharge = hasCrossTerminal && request.status !== "closed" ? 15 : 0;
-    const paymentStatus = parsePaymentStatus(request.admin_note);
+    const paymentStatus = parsePaymentStatus(request.admin_note, request.manual_payment_status);
     return {
       ...member,
       member_surcharge_gbp: surcharge,

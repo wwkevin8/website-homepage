@@ -24,7 +24,11 @@ function isMissingColumnError(error, marker) {
   return Boolean(error?.message && error.message.includes(marker));
 }
 
-function parsePaymentStatus(adminNote) {
+function parsePaymentStatus(adminNote, structuredStatus) {
+  const normalized = String(structuredStatus || "").trim().toLowerCase();
+  if (["paid", "unpaid", "pending", "waived"].includes(normalized)) {
+    return normalized === "paid" || normalized === "waived" ? "paid" : "unpaid";
+  }
   const text = String(adminNote || "");
   const match = text.match(/\[payment:(paid|unpaid)\]/i);
   return match ? match[1].toLowerCase() : "unpaid";
@@ -159,7 +163,7 @@ async function enrichGroupsBatch(supabase, groups, metrics = {}) {
   const memberQueryStartedAt = nowMs();
   const { data: memberRows, error: memberRowsError } = await supabase
     .from("transport_group_members")
-    .select("group_id, request_id, passenger_count_snapshot, created_at, transport_requests(id, order_no, student_name, site_user_id, service_type, passenger_count, status, terminal, flight_datetime, airport_code, flight_no, notes, luggage_count, admin_note)")
+    .select("group_id, request_id, passenger_count_snapshot, created_at, transport_requests(id, order_no, student_name, site_user_id, service_type, passenger_count, status, terminal, flight_datetime, airport_code, flight_no, notes, luggage_count, admin_note, manual_payment_status)")
     .in("group_id", groupIds)
     .order("created_at", { ascending: true });
   metrics.memberQueryMs = (metrics.memberQueryMs || 0) + (nowMs() - memberQueryStartedAt);
@@ -186,7 +190,7 @@ async function enrichGroupsBatch(supabase, groups, metrics = {}) {
     const orderNo = item.transport_requests?.order_no || null;
     const studentName = item.transport_requests?.student_name || null;
     const siteUserId = item.transport_requests?.site_user_id || null;
-    const paymentStatus = parsePaymentStatus(item.transport_requests?.admin_note);
+    const paymentStatus = parsePaymentStatus(item.transport_requests?.admin_note, item.transport_requests?.manual_payment_status);
 
     if (orderNo) {
       orderNos.push(orderNo);

@@ -137,7 +137,6 @@ const STORAGE_ORDER_DETAIL_COLUMNS = [
   "final_readable_message",
   "customer_form_json",
   "service_flags_json",
-  "estimate_summary_json",
   "calculator_snapshot_json"
 ];
 
@@ -356,7 +355,7 @@ function storageExportPurchaseQuantity(item = {}) {
 
 function formatAdminCsvMoney(value) {
   const number = Number(value);
-  return Number.isFinite(number) && number > 0 ? `£${number.toFixed(2)}` : "";
+  return Number.isFinite(number) ? `£${Math.max(0, number).toFixed(2)}` : "";
 }
 
 function escapeExcelHtml(value) {
@@ -660,91 +659,153 @@ function buildStorageExportAddress(item = {}) {
   return parts.join(" / ");
 }
 
+function storageExportPositiveQuantity(value) {
+  const number = Number(value);
+  return Number.isFinite(number) && number > 0 ? number : 0;
+}
+
+function storageExportBoxLabel(entry = {}) {
+  const raw = entry.label || entry.boxLabel || entry.box_label || entry.boxType || entry.box_type || entry.type;
+  const text = String(raw || "").trim();
+  if (!text) return "箱型";
+  return /^\d+$/.test(text) ? `${text}号箱` : text;
+}
+
+function storageExportBoxQuantity(entry = {}) {
+  return storageExportPositiveQuantity(
+    entry.quantity ?? entry.purchaseQty ?? entry.purchase_quantity ?? entry.purchaseQuantity ?? entry.count ?? entry.qty
+  );
+}
+
+function storageExportPurchasedBoxItems(item = {}) {
+  const direct = Array.isArray(item.purchased_boxes) ? item.purchased_boxes : [];
+  const summary = isPlainObject(item.estimate_summary_json) && Array.isArray(item.estimate_summary_json.items)
+    ? item.estimate_summary_json.items
+    : [];
+  const source = direct.length ? direct : summary;
+  return source
+    .map(entry => isPlainObject(entry) ? entry : {})
+    .map(entry => ({ label: storageExportBoxLabel(entry), quantity: storageExportBoxQuantity(entry) }))
+    .filter(entry => entry.quantity > 0);
+}
+
+function storageExportBoxSummaryLines(item = {}) {
+  const items = storageExportPurchasedBoxItems(item);
+  if (items.length) {
+    return items.map(entry => `${entry.label} × ${entry.quantity}`);
+  }
+  const fallback = storageExportPositiveQuantity(item.estimated_box_count);
+  return fallback ? [`箱子 × ${fallback}`] : [];
+}
+
+function storageExportTotalAmount(item = {}) {
+  const summary = isPlainObject(item.estimate_summary_json) ? item.estimate_summary_json : {};
+  const amount = Number(item.final_price ?? item.estimated_total_price ?? summary.finalTotal ?? summary.grandTotal ?? summary.total ?? 0);
+  return Number.isFinite(amount) ? Math.max(0, amount) : 0;
+}
+
+function buildStorageExecutionServiceContent(item = {}) {
+  const label = getStorageExportServiceLabel(item);
+  const boxLines = storageExportBoxSummaryLines(item);
+  const lines = [];
+  if (boxLines.length) {
+    lines.push(`${label}｜${boxLines.join("，")}`);
+  } else if (item.storage_order_kind === "storage_return" && storageExportPositiveQuantity(item.estimated_box_count)) {
+    lines.push(`送${storageExportPositiveQuantity(item.estimated_box_count)}个箱子`);
+  } else if (item.storage_order_kind === "storage_collection") {
+    lines.push("取件寄存");
+  } else {
+    lines.push(label);
+  }
+  return lines.filter(Boolean).join("\n");
+}
+
+function storageExportBillingInfo(item = {}) {
+  const formJson = isPlainObject(item.customer_form_json) ? item.customer_form_json : {};
+  const admin = isPlainObject(formJson.admin) ? formJson.admin : {};
+  return {
+    ...(isPlainObject(formJson.billing) ? formJson.billing : {}),
+    ...(isPlainObject(admin.billing) ? admin.billing : {})
+  };
+}
+
+function storageExportPaymentStatusLabel(status) {
+  return {
+    unpaid: "待付",
+    pending: "待确认",
+    paid: "已支付",
+    refunded: "已退款",
+    waived: "免费"
+  }[String(status || "").trim()] || "";
+}
+
+function storageExportMembershipPaymentNote(item = {}) {
+  return (Number(item.membership_discount_amount || 0) > 0 || item.membership_benefit_claim_id)
+    ? "会员服务"
+    : "";
+}
+
+function buildStorageExecutionPaymentNote(item = {}) {
+  const billing = storageExportBillingInfo(item);
+  const note = firstNonEmptyText(billing.payment_note, billing.note, billing.remark, billing.paymentRemark);
+  const status = storageExportPaymentStatusLabel(billing.payment_status || billing.status);
+  const membershipNote = storageExportMembershipPaymentNote(item);
+  const lines = [];
+  if (membershipNote) lines.push(membershipNote);
+  if (status) lines.push(status);
+  if (note && note !== status) lines.push(note);
+  if (lines.length) return lines.join("｜");
+  return storageExportTotalAmount(item) > 0 ? "寄存费用待付" : "免费";
+}
+
+function buildStorageExecutionRemark(item = {}) {
+  const formJson = isPlainObject(item.customer_form_json) ? item.customer_form_json : {};
+  const admin = isPlainObject(formJson.admin) ? formJson.admin : {};
+  const customerServiceRemark = firstNonEmptyText(admin.service_notes);
+  const studentRemark = firstNonEmptyText(item.item_description, item.notes);
+  const lines = [];
+  if (customerServiceRemark) {
+    lines.push(customerServiceRemark);
+  }
+  if (
+    studentRemark
+    && !customerServiceRemark.includes(studentRemark)
+    && !customerServiceRemark.includes(`同学备注：${studentRemark}`)
+  ) {
+    lines.push(`同学备注：${studentRemark}`);
+  }
+  return lines.join("\n");
+}
+
 function buildStorageExportRows(items = []) {
-  return items.map(item => ({
+  return items.map((item, index) => ({
     __highlight: Boolean(item.membership_benefit_claim_id),
-    "提交时间": formatAdminCsvExcelText(formatAdminCsvDateTime(item.created_at)),
-    "订单编号": item.display_order_no || item.order_no || "",
-    "主订单编号": item.parent_order_no || "",
-    "买箱编号": item.box_order_no || "",
-    "服务类型": getStorageExportServiceLabel(item),
-    "姓名": item.customer_name || "",
-    "微信": item.wechat_id || "",
-    "电话": formatAdminCsvExcelText(item.phone || ""),
-    "邮箱": item.student_email || item.linked_user_email || "",
-    "User ID": item.public_user_id || item.site_user_id || "",
+    "序号": index + 1,
     "服务日期": formatAdminCsvExcelText(item.service_date_unified || item.service_date || ""),
-    "时间段": item.service_time_slot_unified || item.service_time_slot || item.service_time || "",
-    "箱子摘要": storageExportPurchaseQuantity(item) || "",
-    "送箱日期": formatAdminCsvExcelText(item.box_delivery_date || ""),
-    "寄存开始日期": formatAdminCsvExcelText(item.storage_start_date || item.storage_intake_date || ""),
-    "寄存结束日期": formatAdminCsvExcelText(item.storage_end_date || item.expected_storage_end_date || ""),
-    "地址": buildStorageExportAddress(item),
-    "房间 / 公寓": item.room_or_building || "",
-    "邮编": item.postcode || "",
-    "总费用": formatAdminCsvMoney(item.final_price ?? item.estimated_total_price),
-    "会员减免": formatAdminCsvMoney(item.membership_discount_amount),
-    "额外加收": formatAdminCsvMoney(item.extra_charge_amount),
-    "线下记录": item.offline_recorded ? "已记录" : "未记录",
-    "上次操作人": item.last_operated_by || "",
-    "上次操作时间": formatAdminCsvExcelText(formatAdminCsvDateTime(item.last_operated_at))
+    "时间段": item.service_time_slot_unified || item.service_time_slot || item.service_time || "--",
+    "名字": item.customer_name || "",
+    "服务内容": buildStorageExecutionServiceContent(item),
+    "公寓（详细地址）": buildStorageExportAddress(item),
+    "电话": formatAdminCsvExcelText(item.phone || ""),
+    "价格": formatAdminCsvMoney(storageExportTotalAmount(item)),
+    "费用/支付备注": buildStorageExecutionPaymentNote(item),
+    "客服备注": buildStorageExecutionRemark(item)
   }));
 }
 
 function buildStorageExportColumns(orderType) {
-  const normalizedOrderType = String(orderType || "").trim();
-  const commonColumns = [
-    "提交时间",
-    "订单编号",
-    "服务类型",
-    "姓名",
-    "微信",
-    "电话",
-    "邮箱",
-    "User ID",
+  return [
+    "序号",
     "服务日期",
     "时间段",
-    "地址",
-    "房间 / 公寓",
-    "邮编",
-    "总费用",
-    "线下记录",
-    "上次操作人",
-    "上次操作时间"
+    "名字",
+    "服务内容",
+    "公寓（详细地址）",
+    "电话",
+    "价格",
+    "费用/支付备注",
+    "客服备注"
   ];
-  if (normalizedOrderType === "all") {
-    return [
-      ...commonColumns.slice(0, 10),
-      "箱子摘要",
-      ...commonColumns.slice(10)
-    ];
-  }
-  if (normalizedOrderType === "box_order") {
-    return [
-      "提交时间",
-      "订单编号",
-      "主订单编号",
-      "买箱编号",
-      "服务类型",
-      "姓名",
-      "微信",
-      "电话",
-      "邮箱",
-      "User ID",
-      "服务日期",
-      "时间段",
-      "箱子摘要",
-      "送箱日期",
-      "地址",
-      "房间 / 公寓",
-      "邮编",
-      "总费用",
-      "线下记录",
-      "上次操作人",
-      "上次操作时间"
-    ];
-  }
-  return commonColumns;
 }
 
 function normalizeOptionalNumber(value) {
@@ -2536,7 +2597,9 @@ async function handleStorageOrders(req, res, supabase) {
   const searchStartedAt = nowMs();
   const matchingSiteUserIds = await findStorageSearchSiteUserIds(supabase, queryParams.search);
   const searchMs = nowMs() - searchStartedAt;
-  const storageOrderColumns = STORAGE_ORDER_LIST_COLUMNS;
+  const storageOrderColumns = allOrdersMode
+    ? [...STORAGE_ORDER_LIST_COLUMNS, "estimated_box_count", "item_description", "notes", "customer_form_json"]
+    : STORAGE_ORDER_LIST_COLUMNS;
   const nullableStorageOrderColumns = new Set(storageOrderColumns);
   let selectedColumns = cachedStorageOrderAdminColumns
     ? cachedStorageOrderAdminColumns.filter(column => storageOrderColumns.includes(column))

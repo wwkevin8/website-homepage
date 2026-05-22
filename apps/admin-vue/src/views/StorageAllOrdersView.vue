@@ -14,24 +14,22 @@ import EmptyState from "@/components/EmptyState.vue";
 import ErrorState from "@/components/ErrorState.vue";
 import LoadingState from "@/components/LoadingState.vue";
 import Pagination from "@/components/Pagination.vue";
-import StatusBadge from "@/components/StatusBadge.vue";
+
+const FIXED_PAGE_SIZE = 10;
 
 const columns = [
-  { key: "selected", label: "选择", width: "54px" },
-  { key: "created_at", label: "提交时间", width: "9%" },
-  { key: "order_no", label: "订单编号", width: "10%" },
-  { key: "service_type", label: "服务类型", width: "7%" },
-  { key: "customer_name", label: "姓名", width: "7%" },
-  { key: "wechat_id", label: "微信", width: "8%" },
-  { key: "phone", label: "电话", width: "8%" },
-  { key: "service_date", label: "服务日期", width: "8%" },
-  { key: "service_time_slot", label: "时间段", width: "8%" },
-  { key: "address_summary", label: "地址 / 公寓 / 楼栋 / 房间", width: "14%" },
-  { key: "box_summary", label: "箱子摘要", width: "8%" },
-  { key: "total_fee", label: "总费用", width: "7%" },
-  { key: "offline_recorded", label: "线下记录", width: "7%" },
-  { key: "last_operation", label: "上次操作", width: "10%" },
-  { key: "actions", label: "操作", width: "160px", className: "is-actions", sticky: "end" }
+  { key: "row_index", label: "序号", width: "74px" },
+  { key: "service_date", label: "服务日期", width: "9%" },
+  { key: "service_time_slot", label: "时间段", width: "9%" },
+  { key: "customer_name", label: "名字", width: "8%" },
+  { key: "service_content", label: "服务内容", width: "17%", className: "is-wrap" },
+  { key: "address_summary", label: "公寓（详细地址）", width: "21%", className: "is-wrap" },
+  { key: "phone", label: "电话", width: "9%" },
+  { key: "total_fee", label: "价格", width: "8%", className: "is-number" },
+  { key: "payment_note", label: "费用/支付备注", width: "16%", className: "is-wrap" },
+  { key: "payment_action", label: "收款", width: "8%" },
+  { key: "remark", label: "客服备注", width: "14%", className: "is-wrap" },
+  { key: "actions", label: "操作", width: "190px", className: "is-actions", sticky: "end" }
 ];
 
 const defaultFilters = {
@@ -41,19 +39,21 @@ const defaultFilters = {
   lastOperatedBy: "",
   dateStart: "",
   dateEnd: "",
-  sort: "submitted_latest",
-  pageSize: 10
+  sort: "submitted_latest"
 };
 
 const filters = reactive({ ...defaultFilters });
 const orders = ref([]);
-const pagination = ref({ page: 1, page_size: defaultFilters.pageSize, total: 0, total_pages: 0 });
+const pagination = ref({ page: 1, page_size: FIXED_PAGE_SIZE, total: 0, total_pages: 0 });
 const operatorOptions = ref([]);
 const selectedIds = ref([]);
+const remarkDrafts = reactive({});
 const loading = ref(false);
 const exporting = ref(false);
 const bulkSaving = ref(false);
 const togglingId = ref("");
+const paymentSavingId = ref("");
+const remarkSavingId = ref("");
 const deletingId = ref("");
 const deleteCandidate = ref(null);
 const storageTrackingReady = ref(true);
@@ -79,6 +79,17 @@ function displayValue(value) {
   return value === null || value === undefined || value === "" ? "--" : String(value);
 }
 
+function firstText(...values) {
+  for (const value of values) {
+    if (value === null || value === undefined) continue;
+    const text = String(value).replace(/\s+/g, " ").trim();
+    if (text && text !== "--" && text !== "null" && text !== "undefined") {
+      return text;
+    }
+  }
+  return "";
+}
+
 function formatDate(value) {
   const text = String(value || "").slice(0, 10);
   if (!text) return "--";
@@ -89,21 +100,6 @@ function formatDate(value) {
     year: "numeric",
     month: "2-digit",
     day: "2-digit"
-  }).format(date);
-}
-
-function formatDateTime(value) {
-  if (!value) return "--";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return displayValue(value);
-  return new Intl.DateTimeFormat("zh-CN", {
-    timeZone: "Europe/London",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false
   }).format(date);
 }
 
@@ -119,12 +115,6 @@ function serviceTypeLabel(order) {
     storage_collection: "取寄存",
     storage_return: "送寄存"
   }[order.storage_order_kind] || "--";
-}
-
-function serviceTypeTone(kind) {
-  if (kind === "box_order") return "warning";
-  if (kind === "storage_return") return "success";
-  return "neutral";
 }
 
 function rowOrderNo(order) {
@@ -179,8 +169,8 @@ function pushAddressPart(parts, value) {
 
 function rowAddress(order) {
   const parts = [];
-  splitAddressText(order.address_full).forEach(part => pushAddressPart(parts, part));
   splitAddressText(order.room_or_building).forEach(part => pushAddressPart(parts, part));
+  splitAddressText(order.address_full).forEach(part => pushAddressPart(parts, part));
   splitAddressText(order.postcode).forEach(part => pushAddressPart(parts, part));
   return parts.join(" / ") || "--";
 }
@@ -226,13 +216,138 @@ function rowBoxSummaryLines(order) {
   return items.map(entry => `${normalizeBoxLabel(entry)} × ${entry.quantity}`);
 }
 
-function rowBoxSummary(order) {
-  const lines = rowBoxSummaryLines(order);
-  return lines.length ? lines.join("\n") : "--";
-}
-
 function rowTotalFee(order) {
   return order.final_price ?? order.estimated_total_price ?? estimateSummary(order).finalTotal ?? estimateSummary(order).grandTotal ?? estimateSummary(order).total;
+}
+
+function rowTotalAmount(order) {
+  const amount = Number(rowTotalFee(order));
+  return Number.isFinite(amount) ? Math.max(0, amount) : 0;
+}
+
+function rowDisplayIndex(order) {
+  const localIndex = orders.value.findIndex(row => String(row.id) === String(order?.id));
+  const page = Number(pagination.value.page || 1);
+  const pageSize = Number(pagination.value.page_size || FIXED_PAGE_SIZE);
+  return (page - 1) * pageSize + Math.max(localIndex, 0) + 1;
+}
+
+function rowDraftKey(order) {
+  return rowActionId(order);
+}
+
+function rowServiceContentLines(order) {
+  const boxLines = rowBoxSummaryLines(order);
+  const label = serviceTypeLabel(order);
+  const lines = [];
+  if (boxLines.length) {
+    lines.push(`${label}｜${boxLines.join("，")}`);
+  } else if (order.storage_order_kind === "storage_return" && positiveQuantity(order.estimated_box_count)) {
+    lines.push(`送${positiveQuantity(order.estimated_box_count)}个箱子`);
+  } else if (order.storage_order_kind === "storage_collection") {
+    lines.push("取件寄存");
+  } else {
+    lines.push(label);
+  }
+
+  return lines.filter(Boolean);
+}
+
+function billingInfo(order) {
+  const formJson = asObject(order.customer_form_json);
+  const admin = asObject(formJson.admin);
+  return {
+    ...asObject(formJson.billing),
+    ...asObject(admin.billing)
+  };
+}
+
+function rowPaymentStatus(order) {
+  const billing = billingInfo(order);
+  return String(billing.payment_status || billing.status || "").trim();
+}
+
+function isPaymentReceived(order) {
+  return rowPaymentStatus(order) === "paid";
+}
+
+function paymentStatusLabel(status) {
+  return {
+    unpaid: "未收款",
+    pending: "待确认",
+    paid: "已收款",
+    refunded: "已退款",
+    waived: "免费"
+  }[String(status || "").trim()] || "";
+}
+
+function membershipPaymentNote(order) {
+  return (Number(order.membership_discount_amount || 0) > 0 || order.membership_benefit_claim_id)
+    ? "会员服务"
+    : "";
+}
+
+function rowPaymentNote(order) {
+  const billing = billingInfo(order);
+  const note = firstText(billing.payment_note, billing.note, billing.remark, billing.paymentRemark);
+  const status = paymentStatusLabel(billing.payment_status || billing.status);
+  const membershipNote = membershipPaymentNote(order);
+  const lines = [];
+  if (membershipNote) lines.push(membershipNote);
+  if (status) lines.push(status);
+  if (note && note !== status) lines.push(note);
+  if (lines.length) return lines.join("｜");
+  return rowTotalAmount(order) > 0 ? "未收款" : "免费";
+}
+
+function isPaymentAttention(order) {
+  return /未收款|待付|待确认|未付|unpaid|pending/i.test(rowPaymentNote(order));
+}
+
+function rowCustomerServiceRemarkText(order) {
+  const formJson = asObject(order.customer_form_json);
+  const admin = asObject(formJson.admin);
+  return firstText(admin.service_notes);
+}
+
+function rowStudentRemarkText(order) {
+  return firstText(order.item_description, order.notes);
+}
+
+function rowRemarkText(order) {
+  const customerServiceRemark = rowCustomerServiceRemarkText(order);
+  const studentRemark = rowStudentRemarkText(order);
+  const lines = [];
+  if (customerServiceRemark) {
+    lines.push(customerServiceRemark);
+  }
+  if (
+    studentRemark
+    && !customerServiceRemark.includes(studentRemark)
+    && !customerServiceRemark.includes(`同学备注：${studentRemark}`)
+  ) {
+    lines.push(`同学备注：${studentRemark}`);
+  }
+  return lines.join("\n");
+}
+
+function rowRemark(order) {
+  return rowRemarkText(order) || "--";
+}
+
+function syncRemarkDrafts(items = orders.value) {
+  const activeKeys = new Set();
+  items.forEach(order => {
+    const key = rowDraftKey(order);
+    if (!key) return;
+    activeKeys.add(key);
+    remarkDrafts[key] = rowRemarkText(order);
+  });
+  Object.keys(remarkDrafts).forEach(key => {
+    if (!activeKeys.has(key)) {
+      delete remarkDrafts[key];
+    }
+  });
 }
 
 function baseStorageOrderId(order) {
@@ -271,7 +386,7 @@ function buildFilterQuery() {
 function buildQuery(page) {
   return {
     page,
-    page_size: filters.pageSize,
+    page_size: FIXED_PAGE_SIZE,
     ...buildFilterQuery()
   };
 }
@@ -283,13 +398,14 @@ async function loadOrders(page = pagination.value.page || 1) {
   try {
     const payload = await fetchStorageOrders(buildQuery(page));
     orders.value = Array.isArray(payload?.items) ? payload.items : [];
+    syncRemarkDrafts(orders.value);
     operatorOptions.value = Array.isArray(payload?.operator_options) ? payload.operator_options : [];
     storageTrackingReady.value = payload?.storage_tracking_ready !== false;
     storageTrackingMessage.value = payload?.storage_tracking_message || "";
     selectedIds.value = selectedIds.value.filter(id => orders.value.some(row => String(row.id) === id));
     pagination.value = payload?.pagination || {
       page,
-      page_size: filters.pageSize,
+      page_size: FIXED_PAGE_SIZE,
       total: orders.value.length,
       total_pages: orders.value.length ? 1 : 0
     };
@@ -437,6 +553,62 @@ async function toggleOfflineRecorded(order) {
   }
 }
 
+async function togglePaymentReceived(order) {
+  const id = baseStorageOrderId(order);
+  if (!id || paymentSavingId.value) {
+    notice.value = "未找到可更新的寄存订单 ID。";
+    return;
+  }
+  paymentSavingId.value = rowActionId(order);
+  notice.value = "";
+  error.value = "";
+  try {
+    const nextReceived = !isPaymentReceived(order);
+    await updateStorageOrder(id, {
+      customer_form_admin: {
+        billing: {
+          payment_status: nextReceived ? "paid" : "unpaid",
+          payment_note: nextReceived ? "已收款" : "未收款"
+        }
+      }
+    });
+    notice.value = `已标记 ${displayValue(rowOrderNo(order))} 为${nextReceived ? "已收款" : "未收款"}。`;
+    await loadOrders(pagination.value.page || 1);
+  } catch (err) {
+    notice.value = err.message || "收款状态保存失败。";
+  } finally {
+    paymentSavingId.value = "";
+  }
+}
+
+async function saveRemark(order) {
+  const id = baseStorageOrderId(order);
+  const key = rowDraftKey(order);
+  if (!id || !key || remarkSavingId.value) {
+    return;
+  }
+  const nextRemark = String(remarkDrafts[key] || "").trim();
+  if (nextRemark === rowRemarkText(order)) {
+    return;
+  }
+  remarkSavingId.value = key;
+  notice.value = "";
+  error.value = "";
+  try {
+    await updateStorageOrder(id, {
+      customer_form_admin: {
+        service_notes: nextRemark
+      }
+    });
+    notice.value = `已保存 ${displayValue(rowOrderNo(order))} 的备注。`;
+    await loadOrders(pagination.value.page || 1);
+  } catch (err) {
+    notice.value = err.message || "备注保存失败。";
+  } finally {
+    remarkSavingId.value = "";
+  }
+}
+
 function openDeleteDialog(order) {
   if (!baseStorageOrderId(order)) {
     notice.value = `未找到可删除的寄存订单 ID：${displayValue(rowOrderNo(order))}`;
@@ -543,14 +715,6 @@ onMounted(() => {
           <option value="total_low">总费用：低到高</option>
         </select>
       </label>
-      <label class="field field--compact">
-        <span>每页数量</span>
-        <select v-model.number="filters.pageSize" @change="loadOrders(1)">
-          <option :value="10">10</option>
-          <option :value="20">20</option>
-          <option :value="50">50</option>
-        </select>
-      </label>
       <div class="filter-actions storage-order-filter-panel__actions">
         <button class="primary-button" type="submit">查询</button>
         <button class="secondary-button" type="reset">重置</button>
@@ -580,62 +744,82 @@ onMounted(() => {
       />
 
       <AdminTable :columns="columns" :rows="orders" :row-class="storageRowClass">
-        <template #cell-selected="{ row }">
-          <input
-            type="checkbox"
-            :checked="selectedIds.includes(String(row.id))"
-            :aria-label="`选择订单 ${displayValue(rowOrderNo(row))}`"
-            @change="toggleRowSelection(row)"
-          />
-        </template>
-        <template #cell-created_at="{ row }">
-          <span class="cell-truncate" :title="formatDateTime(row.created_at)">{{ formatDateTime(row.created_at) }}</span>
-        </template>
-        <template #cell-order_no="{ row }">
-          <strong class="cell-truncate" :title="displayValue(rowOrderNo(row))">{{ displayValue(rowOrderNo(row)) }}</strong>
-        </template>
-        <template #cell-service_type="{ row }">
-          <StatusBadge :tone="serviceTypeTone(row.storage_order_kind)">{{ serviceTypeLabel(row) }}</StatusBadge>
-        </template>
-        <template #cell-customer_name="{ row }">
-          <strong class="cell-truncate" :title="displayValue(row.customer_name)">{{ displayValue(row.customer_name) }}</strong>
-        </template>
-        <template #cell-wechat_id="{ row }">
-          <span class="cell-truncate" :title="displayValue(row.wechat_id)">{{ displayValue(row.wechat_id) }}</span>
-        </template>
-        <template #cell-phone="{ row }">
-          <span class="cell-truncate" :title="displayValue(row.phone)">{{ displayValue(row.phone) }}</span>
+        <template #cell-row_index="{ row }">
+          <label class="execution-index-cell">
+            <input
+              type="checkbox"
+              :checked="selectedIds.includes(String(row.id))"
+              :aria-label="`选择订单 ${displayValue(rowOrderNo(row))}`"
+              @change="toggleRowSelection(row)"
+            />
+            <span>{{ rowDisplayIndex(row) }}</span>
+          </label>
         </template>
         <template #cell-service_date="{ row }">
-          <span class="cell-truncate" :title="formatDate(rowServiceDate(row))">{{ formatDate(rowServiceDate(row)) }}</span>
+          <span class="cell-stack service-date-order-cell" :title="[formatDate(rowServiceDate(row)), displayValue(rowOrderNo(row))].join(' / ')">
+            <strong class="cell-truncate">{{ formatDate(rowServiceDate(row)) }}</strong>
+            <small class="cell-truncate">{{ displayValue(rowOrderNo(row)) }}</small>
+          </span>
         </template>
         <template #cell-service_time_slot="{ row }">
           <span class="cell-truncate" :title="displayValue(rowTimeSlot(row))">{{ displayValue(rowTimeSlot(row)) }}</span>
         </template>
+        <template #cell-customer_name="{ row }">
+          <strong class="cell-truncate" :title="displayValue(row.customer_name)">{{ displayValue(row.customer_name) }}</strong>
+        </template>
+        <template #cell-service_content="{ row }">
+          <span class="cell-stack cell-stack--wrap execution-text-cell" :title="rowServiceContentLines(row).join('\n')">
+            <strong v-for="line in rowServiceContentLines(row)" :key="line">{{ line }}</strong>
+          </span>
+        </template>
         <template #cell-address_summary="{ row }">
-          <span class="cell-stack cell-stack--wrap" :title="rowAddress(row)">
+          <span class="cell-stack cell-stack--wrap execution-text-cell" :title="rowAddress(row)">
             <strong>{{ rowAddress(row) }}</strong>
           </span>
         </template>
-        <template #cell-box_summary="{ row }">
-          <span class="cell-stack cell-stack--wrap" :title="rowBoxSummary(row)">
-            <strong v-for="line in rowBoxSummaryLines(row)" :key="line">{{ line }}</strong>
-            <strong v-if="!rowBoxSummaryLines(row).length">--</strong>
-          </span>
+        <template #cell-phone="{ row }">
+          <span class="cell-truncate" :title="displayValue(row.phone)">{{ displayValue(row.phone) }}</span>
         </template>
         <template #cell-total_fee="{ row }">
-          <span class="cell-truncate price-cell" :title="formatMoney(rowTotalFee(row))">{{ formatMoney(rowTotalFee(row)) }}</span>
+          <span class="cell-truncate price-cell" :title="formatMoney(rowTotalAmount(row))">{{ formatMoney(rowTotalAmount(row)) }}</span>
         </template>
-        <template #cell-offline_recorded="{ row }">
-          <StatusBadge :tone="row.offline_recorded ? 'success' : 'neutral'">
-            {{ row.offline_recorded ? "已记录" : "未记录" }}
-          </StatusBadge>
-        </template>
-        <template #cell-last_operation="{ row }">
-          <span class="cell-stack" :title="[row.last_operated_by, formatDateTime(row.last_operated_at)].filter(Boolean).join(' / ') || '--'">
-            <strong class="cell-truncate">{{ displayValue(row.last_operated_by) }}</strong>
-            <small class="cell-truncate">{{ formatDateTime(row.last_operated_at) }}</small>
+        <template #cell-payment_note="{ row }">
+          <span
+            :class="['cell-stack', 'cell-stack--wrap', 'execution-text-cell', { 'payment-note-attention': isPaymentAttention(row) }]"
+            :title="rowPaymentNote(row)"
+          >
+            <strong>{{ rowPaymentNote(row) }}</strong>
           </span>
+        </template>
+        <template #cell-payment_action="{ row }">
+          <button
+            :class="['table-action-button', isPaymentReceived(row) ? 'table-action-button--unpaid' : 'table-action-button--paid']"
+            type="button"
+            :disabled="paymentSavingId === rowActionId(row)"
+            @click="togglePaymentReceived(row)"
+          >
+            {{ paymentSavingId === rowActionId(row) ? "保存中..." : (isPaymentReceived(row) ? "未收款" : "已收款") }}
+          </button>
+        </template>
+        <template #cell-remark="{ row }">
+          <div class="remark-editor">
+            <textarea
+              v-model="remarkDrafts[rowDraftKey(row)]"
+              :disabled="remarkSavingId === rowDraftKey(row)"
+              :aria-label="`客服备注 ${displayValue(rowOrderNo(row))}`"
+              rows="2"
+              placeholder="填写客服备注"
+              @blur="saveRemark(row)"
+            />
+            <button
+              class="table-action-button table-action-button--mini"
+              type="button"
+              :disabled="remarkSavingId === rowDraftKey(row)"
+              @click="saveRemark(row)"
+            >
+              {{ remarkSavingId === rowDraftKey(row) ? "保存中..." : "保存" }}
+            </button>
+          </div>
         </template>
         <template #cell-actions="{ row }">
           <div class="table-action-group table-action-group--compact">

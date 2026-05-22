@@ -9,9 +9,10 @@
     "preview": "vite preview --host 127.0.0.1 --port 4174"
   },
   "dependencies": {
+    "pinia": "^3.0.3",
+    "read-excel-file": "^5.8.8",
     "vue": "^3.5.22",
-    "vue-router": "^4.6.3",
-    "pinia": "^3.0.3"
+    "vue-router": "^4.6.3"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^6.0.1",

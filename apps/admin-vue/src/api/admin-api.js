@@ -204,6 +204,42 @@ export function fetchTransportRequests(filters = {}) {
   return request(`/api/transport-requests${query ? `?${query}` : ""}`);
 }
 
+export function previewTransportManualImport(rows = []) {
+  return request("/api/transport-manual-import/preview", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ rows })
+  });
+}
+
+export function commitTransportManualImport(rows = [], confirmedWarnings = {}) {
+  return request("/api/transport-manual-import/commit", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      rows,
+      confirmed_warnings: confirmedWarnings
+    })
+  });
+}
+
+export function createManualTransportRequest(row = {}, confirmWarnings = false) {
+  return request("/api/transport-manual-import/manual", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      row,
+      confirm_warnings: confirmWarnings
+    })
+  });
+}
+
 export function fetchTransportRequest(id) {
   return request(`/api/transport-requests/${encodeURIComponent(id)}`);
 }

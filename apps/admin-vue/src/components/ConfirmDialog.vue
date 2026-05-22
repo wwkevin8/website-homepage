@@ -20,6 +20,14 @@ defineProps({
     type: Boolean,
     default: false
   },
+  panelClass: {
+    type: String,
+    default: ""
+  },
+  confirmDisabled: {
+    type: Boolean,
+    default: false
+  },
   tone: {
     type: String,
     default: "danger"
@@ -33,7 +41,7 @@ defineEmits(["confirm", "cancel"]);
   <Teleport to="body">
     <div v-if="open" class="confirm-dialog">
       <div class="confirm-dialog__backdrop" aria-hidden="true"></div>
-      <section class="confirm-dialog__panel" role="dialog" aria-modal="true" :aria-label="title">
+      <section class="confirm-dialog__panel" :class="panelClass" role="dialog" aria-modal="true" :aria-label="title">
         <header class="confirm-dialog__header">
           <h3>{{ title }}</h3>
         </header>
@@ -48,7 +56,7 @@ defineEmits(["confirm", "cancel"]);
             class="table-action-button"
             :class="{ 'table-action-button--danger': tone === 'danger' }"
             type="button"
-            :disabled="loading"
+            :disabled="loading || confirmDisabled"
             @click="$emit('confirm')"
           >
             {{ loading ? "处理中..." : confirmLabel }}

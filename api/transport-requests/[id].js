@@ -39,7 +39,11 @@ const DATE_TIME_AUDIT_FIELDS = new Set([
   "closed_at"
 ]);
 
-function parsePaymentStatus(adminNote) {
+function parsePaymentStatus(adminNote, structuredStatus) {
+  const normalized = String(structuredStatus || "").trim().toLowerCase();
+  if (["paid", "unpaid", "pending", "waived"].includes(normalized)) {
+    return normalized === "paid" || normalized === "waived" ? "paid" : "unpaid";
+  }
   const match = String(adminNote || "").match(/\[payment:(paid|unpaid)\]/i);
   return match ? match[1].toLowerCase() : "unpaid";
 }
@@ -84,6 +88,21 @@ function buildChangedFields(existing = {}, payload = {}) {
           };
     })
     .filter(Boolean);
+}
+
+function normalizeManualPaymentStatus(value) {
+  const normalized = String(value || "").trim().toLowerCase();
+  return ["paid", "unpaid", "pending", "waived"].includes(normalized) ? normalized : null;
+}
+
+function replacePaymentMarker(adminNote, paymentStatus) {
+  const compatibleStatus = paymentStatus === "paid" || paymentStatus === "waived" ? "paid" : "unpaid";
+  const marker = `[payment:${compatibleStatus}]`;
+  const text = String(adminNote || "").trim();
+  if (/\[payment:(paid|unpaid)\]/i.test(text)) {
+    return text.replace(/\[payment:(paid|unpaid)\]/i, marker);
+  }
+  return [marker, text].filter(Boolean).join(" ");
 }
 
 async function fetchRequestOperationLogs(supabase, requestId) {
@@ -217,13 +236,40 @@ module.exports = async function handler(req, res) {
         payload.closed_at = null;
         payload.closed_reason = null;
       }
+      const manualPaymentStatus = normalizeManualPaymentStatus(body.manual_payment_status);
+      if (manualPaymentStatus) {
+        payload.manual_payment_status = manualPaymentStatus;
+        payload.admin_note = replacePaymentMarker(payload.admin_note, manualPaymentStatus);
+      }
+      if (body.manual_price_gbp !== undefined && body.manual_price_gbp !== null && body.manual_price_gbp !== "") {
+        const parsedPrice = Number(body.manual_price_gbp);
+        if (!Number.isNaN(parsedPrice)) {
+          payload.manual_price_gbp = Math.round(parsedPrice * 100) / 100;
+        }
+      }
       payload.last_operated_by = resolveAdminDisplayName(adminUser);
       payload.last_operated_at = new Date().toISOString();
       const changedFields = buildChangedFields(existing, payload);
+      if (payload.manual_payment_status !== undefined && normalizeAuditValue("manual_payment_status", existing.manual_payment_status) !== normalizeAuditValue("manual_payment_status", payload.manual_payment_status)) {
+        changedFields.push({
+          field: "manual_payment_status",
+          label: "结构化付款状态",
+          before: normalizeAuditValue("manual_payment_status", existing.manual_payment_status),
+          after: normalizeAuditValue("manual_payment_status", payload.manual_payment_status)
+        });
+      }
+      if (payload.manual_price_gbp !== undefined && normalizeAuditValue("manual_price_gbp", existing.manual_price_gbp) !== normalizeAuditValue("manual_price_gbp", payload.manual_price_gbp)) {
+        changedFields.push({
+          field: "manual_price_gbp",
+          label: "补录价格",
+          before: normalizeAuditValue("manual_price_gbp", existing.manual_price_gbp),
+          after: normalizeAuditValue("manual_price_gbp", payload.manual_price_gbp)
+        });
+      }
 
       const shouldClose = payload.status === "closed" && existing.status !== "closed";
-      const wasPaid = parsePaymentStatus(existing.admin_note) === "paid";
-      const isPaid = parsePaymentStatus(payload.admin_note) === "paid";
+      const wasPaid = parsePaymentStatus(existing.admin_note, existing.manual_payment_status) === "paid";
+      const isPaid = parsePaymentStatus(payload.admin_note, payload.manual_payment_status) === "paid";
       const { error } = await supabase
         .from("transport_requests")
         .update(payload)

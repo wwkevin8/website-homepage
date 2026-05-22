@@ -120,6 +120,18 @@ function toApiModulePath(urlPathname) {
     return path.join(ROOT, "api", "transport-requests", "export.js");
   }
 
+  if (urlPathname === "/api/transport-manual-import/preview") {
+    return path.join(ROOT, "api", "transport-manual-import", "preview.js");
+  }
+
+  if (urlPathname === "/api/transport-manual-import/commit") {
+    return path.join(ROOT, "api", "transport-manual-import", "commit.js");
+  }
+
+  if (urlPathname === "/api/transport-manual-import/manual") {
+    return path.join(ROOT, "api", "transport-manual-import", "manual.js");
+  }
+
   if (/^\/api\/transport-requests\/[^/]+$/.test(urlPathname)) {
     return path.join(ROOT, "api", "transport-requests", "[id].js");
   }

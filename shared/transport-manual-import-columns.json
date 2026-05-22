@@ -1,0 +1,130 @@
+[
+  {
+    "key": "student_name",
+    "label": "学生姓名",
+    "aliases": ["student_name", "姓名", "学生姓名", "name", "student name"],
+    "note": "学生姓名：必填",
+    "example_auto_group": "张三",
+    "example_existing_group": "李四"
+  },
+  {
+    "key": "phone",
+    "label": "手机号",
+    "aliases": ["phone", "手机号", "手机", "电话", "联系电话", "mobile"],
+    "note": "手机号 / 微信号：至少填写一个",
+    "example_auto_group": "07123456789",
+    "example_existing_group": ""
+  },
+  {
+    "key": "wechat",
+    "label": "微信号",
+    "aliases": ["wechat", "微信号", "微信", "wechat id"],
+    "note": "微信号 / 手机号：至少填写一个",
+    "example_auto_group": "wechat_zhang",
+    "example_existing_group": "wechat_li"
+  },
+  {
+    "key": "service_type",
+    "label": "服务类型",
+    "aliases": ["service_type", "本次拼车类型", "服务类型", "类型", "接送机"],
+    "note": "服务类型：接机 / 送机",
+    "example_auto_group": "接机",
+    "example_existing_group": "送机"
+  },
+  {
+    "key": "airport_code",
+    "label": "机场",
+    "aliases": ["airport_code", "airport", "英国机场", "机场"],
+    "note": "机场：LHR / LGW / MAN，也可填 Heathrow / Gatwick / 希思罗 / 盖特维克",
+    "example_auto_group": "LHR",
+    "example_existing_group": "LGW"
+  },
+  {
+    "key": "terminal",
+    "label": "航站楼",
+    "aliases": ["terminal", "航站楼"],
+    "note": "航站楼：T1 / T2 / T3 / T4 / North / South",
+    "example_auto_group": "T2",
+    "example_existing_group": "North"
+  },
+  {
+    "key": "flight_no",
+    "label": "航班号",
+    "aliases": ["flight_no", "航班号", "航班"],
+    "note": "航班号：必填，例如 CZ304",
+    "example_auto_group": "CZ304",
+    "example_existing_group": "BA888"
+  },
+  {
+    "key": "flight_datetime",
+    "label": "航班日期时间",
+    "aliases": ["flight_datetime", "抵达/起飞日期和时间", "抵达日期和时间", "起飞日期和时间", "航班日期时间", "航班时间"],
+    "note": "航班日期时间：必填，推荐格式 2026/05/22 12:00；系统也兼容 Excel 自动显示的 5/22/2026 12:00",
+    "example_auto_group": "2026/05/22 12:00",
+    "example_existing_group": "2026/05/25 12:30"
+  },
+  {
+    "key": "service_time",
+    "label": "服务日期时间",
+    "aliases": ["service_time", "接送期待时间", "服务日期时间", "服务时间", "接送时间"],
+    "note": "服务日期时间：必填，接机填期望接到时间，送机填上车/出发时间；推荐格式 2026/05/22 10:00",
+    "example_auto_group": "2026/05/22 10:00",
+    "example_existing_group": "2026/05/25 08:30"
+  },
+  {
+    "key": "address",
+    "label": "地址",
+    "aliases": ["address", "地址", "目的地", "目的地地址", "上车地址", "接人地址"],
+    "note": "地址：必填，接机为目的地地址，送机为上车地址",
+    "example_auto_group": "Nottingham NG1 1AA",
+    "example_existing_group": "Nottingham NG7 2RD"
+  },
+  {
+    "key": "passenger_count",
+    "label": "人数",
+    "aliases": ["passenger_count", "人数", "乘车人数", "乘客数"],
+    "note": "人数：默认 1",
+    "example_auto_group": "1",
+    "example_existing_group": "2"
+  },
+  {
+    "key": "luggage_count",
+    "label": "行李数量",
+    "aliases": ["luggage_count", "行李数量"],
+    "note": "行李数量：可填数字，也可填文字备注",
+    "example_auto_group": "2",
+    "example_existing_group": "2大1小"
+  },
+  {
+    "key": "price",
+    "label": "价格",
+    "aliases": ["price", "价格", "费用"],
+    "note": "价格：可选，不填则按系统默认逻辑",
+    "example_auto_group": "",
+    "example_existing_group": "120"
+  },
+  {
+    "key": "payment_status",
+    "label": "付款状态",
+    "aliases": ["payment_status", "付款状态", "支付状态"],
+    "note": "付款状态：未付款 / 已付款",
+    "example_auto_group": "未付款",
+    "example_existing_group": "已付款"
+  },
+  {
+    "key": "group_id",
+    "label": "Group ID",
+    "aliases": ["group_id", "Group ID", "已有 Group ID", "是否加入已有 Group ID"],
+    "note": "Group ID：可选，填了则尝试加入已有拼车组，不填则默认新建组",
+    "example_auto_group": "",
+    "example_existing_group": "GRP-260525-0001"
+  },
+  {
+    "key": "notes",
+    "label": "备注",
+    "aliases": ["notes", "备注"],
+    "note": "备注：可选，保存客服补充信息",
+    "example_auto_group": "不填 Group ID，导入后自动新建组",
+    "example_existing_group": "填写已有 Group ID，导入后尝试加入已有组"
+  }
+]

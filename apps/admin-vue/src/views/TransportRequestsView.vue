@@ -1,10 +1,14 @@
 <script setup>
-import { computed, onMounted, reactive, ref } from "vue";
+import { computed, onMounted, reactive, ref, watch } from "vue";
+import readXlsxFile from "read-excel-file";
 import {
   bulkSetTransportRequestsOfflineRecorded,
+  commitTransportManualImport,
+  createManualTransportRequest,
   deleteTransportRequest,
   exportTransportRequests,
   fetchTransportRequests,
+  previewTransportManualImport,
   updateTransportRequest
 } from "@/api/admin-api";
 import AdminBulkActionBar from "@/components/AdminBulkActionBar.vue";
@@ -16,6 +20,7 @@ import LoadingState from "@/components/LoadingState.vue";
 import Pagination from "@/components/Pagination.vue";
 import StatusBadge from "@/components/StatusBadge.vue";
 import TransportRequestFilters from "@/components/TransportRequestFilters.vue";
+import importColumns from "../../../../shared/transport-manual-import-columns.json";
 
 const columns = [
   { key: "selected", label: "选择", width: "54px" },
@@ -42,6 +47,8 @@ const defaultFilters = {
   status: "active",
   offlineRecorded: "",
   lastOperatedBy: "",
+  importBatchId: "",
+  source: "",
   dateFrom: "",
   dateTo: "",
   sort: "submitted_latest",
@@ -61,9 +68,125 @@ const deletingId = ref("");
 const deleteCandidate = ref(null);
 const error = ref("");
 const notice = ref("");
+const showManualDialog = ref(false);
+const showBatchDialog = ref(false);
+const manualSaving = ref(false);
+const manualConfirmWarnings = ref(false);
+const manualPreview = ref(null);
+const manualGroupChecking = ref(false);
+const manualGroupConfirmedId = ref("");
+const manualGroupMessage = ref("");
+const manualSubmitAttempted = ref(false);
+const importPreviewing = ref(false);
+const importCommitting = ref(false);
+const importPasteText = ref("");
+const importRows = ref([]);
+const importPreviewRows = ref([]);
+const confirmedWarningRows = ref({});
+const importFileName = ref("");
+const importStatusMessage = ref("");
+
+const IMPORT_COLUMNS = importColumns;
+const IMPORT_TEMPLATE_HEADERS = IMPORT_COLUMNS.map(column => column.label);
+const IMPORT_TEMPLATE_NOTES = IMPORT_COLUMNS.map(column => column.note);
+const IMPORT_TEMPLATE_EXAMPLES = [
+  IMPORT_COLUMNS.map(column => column.example_auto_group ?? ""),
+  IMPORT_COLUMNS.map(column => column.example_existing_group ?? "")
+];
+const IMPORT_HEADER_ALIAS_MAP = IMPORT_COLUMNS.reduce((map, column) => {
+  [column.label, ...(column.aliases || [])].forEach(alias => {
+    map.set(normalizeImportHeader(alias), column.label);
+  });
+  return map;
+}, new Map());
+
+const IMPORT_TEMPLATE_SAMPLE_TEXT = [
+  IMPORT_TEMPLATE_HEADERS.join("\t"),
+  ["张三", "07123456789", "wechat_id", "接机", "LHR", "T2", "CZ304", "2026/05/22 12:00", "2026/05/22 10:00", "Nottingham NG1 1AA", "1", "2", "", "未付款", "", "客服备注"].join("\t")
+].join("\n");
+
+const manualForm = reactive({
+  service_type: "pickup",
+  student_name: "",
+  english_name: "",
+  phone: "",
+  wechat: "",
+  email: "",
+  passenger_count: 1,
+  luggage_count: 0,
+  luggage_note: "",
+  airport_code: "LHR",
+  terminal: "",
+  flight_no: "",
+  flight_datetime: "",
+  service_time: "",
+  address: "",
+  shareable: true,
+  price: "",
+  payment_status: "unpaid",
+  notes: "",
+  group_id: ""
+});
 
 const hasRequests = computed(() => requests.value.length > 0);
 const selectedRows = computed(() => requests.value.filter(row => selectedIds.value.includes(String(row.id))));
+const manualAddressLabel = computed(() => manualForm.service_type === "dropoff" ? "上车地址 / 接人地址" : "目的地地址");
+const manualRequiredErrors = computed(() => {
+  const errors = [];
+  if (!manualForm.service_type) errors.push("服务类型必填");
+  if (!String(manualForm.student_name || "").trim()) errors.push("学生姓名必填");
+  if (!String(manualForm.phone || "").trim() && !String(manualForm.wechat || "").trim()) errors.push("手机号/微信号至少填一个");
+  if (!Number(manualForm.passenger_count || 0)) errors.push("人数必填");
+  if (!String(manualForm.airport_code || "").trim()) errors.push("机场必填");
+  if (!String(manualForm.terminal || "").trim()) errors.push("航站楼必填");
+  if (!String(manualForm.flight_no || "").trim()) errors.push("航班号必填");
+  if (!manualForm.flight_datetime) errors.push("航班日期时间必填");
+  if (!manualForm.service_time) errors.push("服务时间必填");
+  if (!String(manualForm.address || "").trim()) errors.push(`${manualAddressLabel.value}必填`);
+  return errors;
+});
+const manualFieldErrors = computed(() => {
+  if (!manualSubmitAttempted.value) return {};
+  const errors = {};
+  if (!manualForm.service_type) errors.service_type = "请选择服务类型";
+  if (!String(manualForm.student_name || "").trim()) errors.student_name = "请填写学生姓名";
+  if (!String(manualForm.phone || "").trim() && !String(manualForm.wechat || "").trim()) {
+    errors.contact = "手机号和微信号至少填写一个";
+  }
+  if (!Number(manualForm.passenger_count || 0)) errors.passenger_count = "请填写人数";
+  if (!String(manualForm.airport_code || "").trim()) errors.airport_code = "请填写机场";
+  if (!String(manualForm.terminal || "").trim()) errors.terminal = "请填写航站楼";
+  if (!String(manualForm.flight_no || "").trim()) errors.flight_no = "请填写航班号";
+  if (!manualForm.flight_datetime) errors.flight_datetime = "请选择航班日期时间";
+  if (!manualForm.service_time) errors.service_time = "请选择服务时间";
+  if (!String(manualForm.address || "").trim()) errors.address = `请填写${manualAddressLabel.value}`;
+  return errors;
+});
+const manualGroupNeedsConfirmation = computed(() => {
+  const groupId = String(manualForm.group_id || "").trim();
+  return Boolean(groupId) && manualGroupConfirmedId.value !== groupId;
+});
+const hasImportPasteText = computed(() => Boolean(String(importPasteText.value || "").trim()));
+const canPreviewImport = computed(() => hasImportPasteText.value || importRows.value.length > 0 || importPreviewRows.value.length > 0);
+const canCommitImport = computed(() => {
+  if (!importPreviewRows.value.length) return false;
+  return importPreviewRows.value.some(row => row.status !== "error")
+    && importPreviewRows.value.every(row => row.status !== "warning" || confirmedWarningRows.value[row.row_index]);
+});
+const importCommitBlockReason = computed(() => {
+  if (importCommitting.value || importPreviewing.value) return "";
+  if (importStatusMessage.value && !canPreviewImport.value) return "";
+  if (!importPreviewRows.value.length) {
+    return canPreviewImport.value
+      ? "已有文件/粘贴内容，请先完成预览。"
+      : "请先粘贴表格内容或上传 .xlsx / .csv 文件并完成预览。";
+  }
+  const importableRows = importPreviewRows.value.filter(row => row.status !== "error");
+  if (!importableRows.length) return "预览结果没有可导入行，请修正红色错误后重新预览。";
+  const unconfirmedRows = importPreviewRows.value.filter(row => row.status === "warning" && !confirmedWarningRows.value[row.row_index]);
+  if (unconfirmedRows.length) return "黄色警告行需要管理员勾选确认后才可导入。";
+  return "";
+});
 const allCurrentPageSelected = computed(() => {
   const ids = requests.value.map(row => String(row.id)).filter(Boolean);
   return ids.length > 0 && ids.every(id => selectedIds.value.includes(id));
@@ -86,6 +209,41 @@ function formatDateTime(value) {
     minute: "2-digit",
     hour12: false
   }).format(date);
+}
+
+function formatImportDateTimeValue(value) {
+  const date = value instanceof Date
+    ? value
+    : typeof value === "number" && Number.isFinite(value) && value >= 1
+      ? new Date(Date.UTC(1899, 11, 30) + value * 86400000)
+      : null;
+  if (!date || Number.isNaN(date.getTime()) || date.getUTCFullYear() <= 1900) return value;
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/London",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false
+  }).formatToParts(date).reduce((acc, part) => {
+    if (part.type !== "literal") acc[part.type] = part.value;
+    return acc;
+  }, {});
+  return `${parts.year}/${parts.month}/${parts.day} ${parts.hour}:${parts.minute}`;
+}
+
+function normalizeImportCellValue(header, value) {
+  if (value === undefined || value === null) return "";
+  if (typeof value === "object" && !(value instanceof Date)) {
+    const nested = value.value ?? value.text ?? value.result ?? value.v ?? value.w;
+    return nested === undefined ? String(value) : normalizeImportCellValue(header, nested);
+  }
+  if (header === "航班日期时间" || header === "服务日期时间") {
+    return formatImportDateTimeValue(value);
+  }
+  if (value instanceof Date) return value.toISOString();
+  return value;
 }
 
 function serviceLabel(serviceType) {
@@ -139,6 +297,8 @@ function buildFilterQuery() {
     status: filters.status,
     offline_recorded: filters.offlineRecorded,
     last_operated_by: filters.lastOperatedBy,
+    import_batch_id: filters.importBatchId.trim(),
+    source: filters.source,
     date_from: filters.dateFrom,
     date_to: filters.dateTo,
     sort: filters.sort
@@ -272,6 +432,612 @@ function toggleRowSelection(row) {
     : [...selectedIds.value, id];
 }
 
+function resetManualForm() {
+  Object.assign(manualForm, {
+    service_type: "pickup",
+    student_name: "",
+    english_name: "",
+    phone: "",
+    wechat: "",
+    email: "",
+    passenger_count: 1,
+    luggage_count: 0,
+    luggage_note: "",
+    airport_code: "LHR",
+    terminal: "",
+    flight_no: "",
+    flight_datetime: "",
+    service_time: "",
+    address: "",
+    shareable: true,
+    price: "",
+    payment_status: "unpaid",
+    notes: "",
+    group_id: ""
+  });
+  manualPreview.value = null;
+  manualConfirmWarnings.value = false;
+  manualGroupConfirmedId.value = "";
+  manualGroupMessage.value = "";
+  manualSubmitAttempted.value = false;
+}
+
+function openManualDialog() {
+  resetManualForm();
+  showManualDialog.value = true;
+  notice.value = "";
+}
+
+function closeManualDialog() {
+  if (!manualSaving.value) {
+    showManualDialog.value = false;
+  }
+}
+
+function buildManualRow() {
+  return {
+    服务类型: manualForm.service_type === "dropoff" ? "送机" : "接机",
+    学生姓名: manualForm.student_name,
+    "拼音/英文名": manualForm.english_name,
+    手机号: manualForm.phone,
+    微信号: manualForm.wechat,
+    邮箱: manualForm.email,
+    人数: manualForm.passenger_count,
+    行李数量: manualForm.luggage_count,
+    行李备注: manualForm.luggage_note,
+    英国机场: manualForm.airport_code,
+    航站楼: manualForm.terminal,
+    航班号: manualForm.flight_no,
+    航班日期时间: manualForm.flight_datetime,
+    服务时间: manualForm.service_time,
+    地址: manualForm.address,
+    是否愿意拼车: manualForm.shareable ? "是" : "否",
+    价格: manualForm.price,
+    付款状态: manualForm.payment_status,
+    备注: manualForm.notes,
+    "Group ID": manualForm.group_id
+  };
+}
+
+async function checkManualGroup() {
+  const groupId = String(manualForm.group_id || "").trim();
+  manualGroupConfirmedId.value = "";
+  manualGroupMessage.value = "";
+  manualPreview.value = null;
+  manualConfirmWarnings.value = false;
+  if (!groupId) {
+    manualGroupMessage.value = "未填写 Group ID，提交后会自动创建新组。";
+    return;
+  }
+  if (manualRequiredErrors.value.length) {
+    manualGroupMessage.value = "请先补齐必填项，再校验 Group ID。";
+    return;
+  }
+  manualGroupChecking.value = true;
+  try {
+    const payload = await previewTransportManualImport([{ row_index: 1, raw: buildManualRow() }]);
+    const row = Array.isArray(payload?.items) ? payload.items[0] : null;
+    manualPreview.value = row || null;
+    if (!row || row.errors?.length) {
+      manualGroupMessage.value = "Group ID 校验未通过，请检查下方红色提示。";
+      return;
+    }
+    manualGroupConfirmedId.value = groupId;
+    manualGroupMessage.value = row.warnings?.length
+      ? "已找到该 Group，但存在黄色提示；提交时需要再次确认。"
+      : "已找到并确认该 Group，可加入。";
+  } catch (err) {
+    manualGroupMessage.value = err.message || "Group ID 校验失败。";
+  } finally {
+    manualGroupChecking.value = false;
+  }
+}
+
+async function submitManualForm() {
+  if (manualSaving.value) return;
+  manualSubmitAttempted.value = true;
+  if (manualRequiredErrors.value.length) {
+    notice.value = `请先补齐必填项：${manualRequiredErrors.value.join("、")}`;
+    return;
+  }
+  if (manualGroupNeedsConfirmation.value) {
+    notice.value = "请先点击“校验并确认 Group”后再提交。";
+    return;
+  }
+  manualSaving.value = true;
+  notice.value = "";
+  error.value = "";
+  try {
+    const result = await createManualTransportRequest(buildManualRow(), manualConfirmWarnings.value);
+    notice.value = `补录订单已创建：${displayValue(result?.request?.order_no)}，Group ID：${displayValue(result?.group_id)}`;
+    showManualDialog.value = false;
+    resetManualForm();
+    await loadRequests(1);
+  } catch (err) {
+    manualPreview.value = err.body?.error?.details || null;
+    if (manualPreview.value?.warnings?.length) {
+      notice.value = "存在黄色提示，确认后可再次提交。";
+      manualConfirmWarnings.value = true;
+    } else {
+      notice.value = err.message || "补录失败，请检查字段后重试。";
+    }
+  } finally {
+    manualSaving.value = false;
+  }
+}
+
+function normalizeImportHeader(value) {
+  return String(value || "").trim().toLowerCase().replace(/\s+/g, "");
+}
+
+function normalizeImportHeaders(headers = []) {
+  const canonicalHeaders = [];
+  const unknownHeaders = [];
+  headers.forEach((header, index) => {
+    const normalized = normalizeImportHeader(header);
+    if (!normalized) {
+      canonicalHeaders.push(`列${index + 1}`);
+      return;
+    }
+    const canonical = IMPORT_HEADER_ALIAS_MAP.get(normalized);
+    if (!canonical) unknownHeaders.push(header);
+    canonicalHeaders.push(canonical || header);
+  });
+  if (unknownHeaders.length === headers.length) {
+    return {
+      headers: canonicalHeaders,
+      error: "未识别表头。请使用导入模板，或从 Excel/Google Sheet 复制 Tab 分隔表格，不要用空格分隔。"
+    };
+  }
+  return { headers: canonicalHeaders, error: "" };
+}
+
+function parseDelimitedText(text) {
+  const rawText = String(text || "");
+  const lines = rawText.split(/\r?\n/).map(line => line.replace(/\r/g, "")).filter(line => line.trim());
+  if (!rawText.trim()) {
+    return { rows: [], error: "请先粘贴表格内容或上传 CSV/XLSX 文件。" };
+  }
+  const headerLine = lines[0];
+  let delimiter = "\t";
+  if (headerLine.includes("\t")) {
+    delimiter = "\t";
+  } else if (headerLine.includes(",")) {
+    delimiter = ",";
+  } else {
+    return {
+      rows: [],
+      error: "未识别表头。请使用导入模板，或从 Excel/Google Sheet 复制 Tab 分隔表格，不要用空格分隔。"
+    };
+  }
+  const headers = headerLine.split(delimiter).map(item => item.trim());
+  const normalizedHeaders = normalizeImportHeaders(headers);
+  if (normalizedHeaders.error) {
+    return { rows: [], error: normalizedHeaders.error };
+  }
+  const canonicalHeaders = normalizedHeaders.headers;
+  const missingHeaders = IMPORT_TEMPLATE_HEADERS.filter(header => !canonicalHeaders.includes(header));
+  if (missingHeaders.length) {
+    return {
+      rows: [],
+      error: `缺少必填字段：${missingHeaders.join("、")}。请使用导入模板。`
+    };
+  }
+  if (lines.length < 2) {
+    return {
+      rows: [],
+      error: "模板已读取，但没有订单数据。请在第二行开始填写订单后重新上传。"
+    };
+  }
+  const rows = lines.slice(1).map((line, index) => {
+    const values = line.split(delimiter);
+    const raw = {};
+    canonicalHeaders.forEach((header, headerIndex) => {
+      raw[header || `列${headerIndex + 1}`] = normalizeImportCellValue(header, values[headerIndex]);
+    });
+    return { row_index: index + 1, raw };
+  });
+  return { rows, error: "" };
+}
+
+function parseSheetRows(sheetRows = []) {
+  const headers = (sheetRows[0] || []).map((value, index) => String(value || `列${index + 1}`).trim());
+  if (!headers.length || headers.every(header => !header)) {
+    return { rows: [], error: "未识别表头，请使用导入模板。" };
+  }
+  const normalizedHeaders = normalizeImportHeaders(headers);
+  if (normalizedHeaders.error) {
+    return { rows: [], error: normalizedHeaders.error };
+  }
+  const canonicalHeaders = normalizedHeaders.headers;
+  const missingHeaders = IMPORT_TEMPLATE_HEADERS.filter(header => !canonicalHeaders.includes(header));
+  if (missingHeaders.length) {
+    return {
+      rows: [],
+      error: `缺少必填字段：${missingHeaders.join("、")}。请使用导入模板。`
+    };
+  }
+  const dataRows = sheetRows.slice(1).filter(values => (values || []).some(value => String(value ?? "").trim()));
+  if (!dataRows.length) {
+    return {
+      rows: [],
+      error: "模板已读取，但没有订单数据。请在第二行开始填写订单后重新上传。"
+    };
+  }
+  const rows = dataRows.map((values, index) => {
+    const raw = {};
+    canonicalHeaders.forEach((header, headerIndex) => {
+      raw[header] = normalizeImportCellValue(header, values[headerIndex]);
+    });
+    return { row_index: index + 1, raw };
+  });
+  return { rows, error: "" };
+}
+
+function openBatchDialog() {
+  showBatchDialog.value = true;
+  importPasteText.value = "";
+  importRows.value = [];
+  importPreviewRows.value = [];
+  confirmedWarningRows.value = {};
+  importFileName.value = "";
+  importStatusMessage.value = "";
+  notice.value = "";
+}
+
+function closeBatchDialog() {
+  if (!importPreviewing.value && !importCommitting.value) {
+    showBatchDialog.value = false;
+  }
+}
+
+function importPreviewSummary(rows = importPreviewRows.value) {
+  const ready = rows.filter(row => row.status === "ready").length;
+  const warning = rows.filter(row => row.status === "warning").length;
+  const failed = rows.filter(row => row.status === "error").length;
+  return `预览完成：可导入 ${ready} 行，警告 ${warning} 行，错误 ${failed} 行`;
+}
+
+async function previewImportRows(rows, options = {}) {
+  if (!rows.length || importPreviewing.value) {
+    importStatusMessage.value = rows.length ? "正在预览，请稍候。" : "请先粘贴表格内容或上传 .xlsx / .csv 文件。";
+    return;
+  }
+  importPreviewing.value = true;
+  importStatusMessage.value = options.statusMessage || `已解析 ${rows.length} 行，正在预览……`;
+  notice.value = "";
+  error.value = "";
+  try {
+    importRows.value = rows;
+    const payload = await previewTransportManualImport(rows);
+    importPreviewRows.value = Array.isArray(payload?.items) ? payload.items : [];
+    confirmedWarningRows.value = {};
+    importStatusMessage.value = importPreviewRows.value.length
+      ? importPreviewSummary()
+      : "预览完成，但没有返回可展示的订单行。请检查模板内容后重新预览。";
+  } catch (err) {
+    importPreviewRows.value = [];
+    confirmedWarningRows.value = {};
+    importStatusMessage.value = err.message || "预览失败，请检查导入内容。";
+  } finally {
+    importPreviewing.value = false;
+  }
+}
+
+function previewPastedRows(event) {
+  const text = event?.currentTarget?.closest(".batch-import-panel")?.querySelector("textarea")?.value ?? importPasteText.value;
+  importPasteText.value = text;
+  if (!String(text || "").trim() && importRows.value.length) {
+    previewImportRows(importRows.value, { statusMessage: `已解析 ${importRows.value.length} 行，正在预览……` });
+    return;
+  }
+  const parsed = parseDelimitedText(text);
+  if (parsed.error) {
+    importStatusMessage.value = parsed.error;
+    notice.value = "";
+    importRows.value = [];
+    importPreviewRows.value = [];
+    confirmedWarningRows.value = {};
+    return;
+  }
+  importFileName.value = "";
+  previewImportRows(parsed.rows, { statusMessage: `已解析 ${parsed.rows.length} 行，正在预览……` });
+}
+
+async function copyImportTemplate() {
+  const template = IMPORT_TEMPLATE_HEADERS.join("\t");
+  try {
+    await navigator.clipboard.writeText(template);
+    notice.value = "导入模板表头已复制。";
+  } catch (error) {
+    importPasteText.value = template;
+    notice.value = "浏览器不允许直接复制，已放入粘贴框。";
+  }
+}
+
+function escapeExcelCell(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function columnName(index) {
+  let name = "";
+  let current = index + 1;
+  while (current > 0) {
+    const remainder = (current - 1) % 26;
+    name = String.fromCharCode(65 + remainder) + name;
+    current = Math.floor((current - 1) / 26);
+  }
+  return name;
+}
+
+function sheetXml(rows) {
+  const rowXml = rows.map((row, rowIndex) => {
+    const cells = row.map((value, columnIndex) => {
+      const ref = `${columnName(columnIndex)}${rowIndex + 1}`;
+      return `<c r="${ref}" t="inlineStr"><is><t>${escapeExcelCell(value)}</t></is></c>`;
+    }).join("");
+    return `<row r="${rowIndex + 1}">${cells}</row>`;
+  }).join("");
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>${rowXml}</sheetData></worksheet>`;
+}
+
+function crc32(bytes) {
+  let crc = -1;
+  for (const byte of bytes) {
+    crc ^= byte;
+    for (let index = 0; index < 8; index += 1) {
+      crc = (crc >>> 1) ^ (0xedb88320 & -(crc & 1));
+    }
+  }
+  return (crc ^ -1) >>> 0;
+}
+
+function writeUint16(target, offset, value) {
+  target[offset] = value & 0xff;
+  target[offset + 1] = (value >>> 8) & 0xff;
+}
+
+function writeUint32(target, offset, value) {
+  target[offset] = value & 0xff;
+  target[offset + 1] = (value >>> 8) & 0xff;
+  target[offset + 2] = (value >>> 16) & 0xff;
+  target[offset + 3] = (value >>> 24) & 0xff;
+}
+
+function concatBytes(parts) {
+  const total = parts.reduce((sum, part) => sum + part.length, 0);
+  const output = new Uint8Array(total);
+  let offset = 0;
+  parts.forEach(part => {
+    output.set(part, offset);
+    offset += part.length;
+  });
+  return output;
+}
+
+function createZip(files) {
+  const encoder = new TextEncoder();
+  const localParts = [];
+  const centralParts = [];
+  let offset = 0;
+  const dosTime = 0;
+  const dosDate = 0x5b75;
+
+  files.forEach(file => {
+    const nameBytes = encoder.encode(file.name);
+    const dataBytes = encoder.encode(file.content);
+    const checksum = crc32(dataBytes);
+
+    const local = new Uint8Array(30 + nameBytes.length);
+    writeUint32(local, 0, 0x04034b50);
+    writeUint16(local, 4, 20);
+    writeUint16(local, 6, 0x0800);
+    writeUint16(local, 8, 0);
+    writeUint16(local, 10, dosTime);
+    writeUint16(local, 12, dosDate);
+    writeUint32(local, 14, checksum);
+    writeUint32(local, 18, dataBytes.length);
+    writeUint32(local, 22, dataBytes.length);
+    writeUint16(local, 26, nameBytes.length);
+    local.set(nameBytes, 30);
+    localParts.push(local, dataBytes);
+
+    const central = new Uint8Array(46 + nameBytes.length);
+    writeUint32(central, 0, 0x02014b50);
+    writeUint16(central, 4, 20);
+    writeUint16(central, 6, 20);
+    writeUint16(central, 8, 0x0800);
+    writeUint16(central, 10, 0);
+    writeUint16(central, 12, dosTime);
+    writeUint16(central, 14, dosDate);
+    writeUint32(central, 16, checksum);
+    writeUint32(central, 20, dataBytes.length);
+    writeUint32(central, 24, dataBytes.length);
+    writeUint16(central, 28, nameBytes.length);
+    writeUint32(central, 42, offset);
+    central.set(nameBytes, 46);
+    centralParts.push(central);
+    offset += local.length + dataBytes.length;
+  });
+
+  const centralDirectory = concatBytes(centralParts);
+  const end = new Uint8Array(22);
+  writeUint32(end, 0, 0x06054b50);
+  writeUint16(end, 8, files.length);
+  writeUint16(end, 10, files.length);
+  writeUint32(end, 12, centralDirectory.length);
+  writeUint32(end, 16, offset);
+  return concatBytes([...localParts, centralDirectory, end]);
+}
+
+function buildXlsxTemplate() {
+  return createZip([
+    {
+      name: "[Content_Types].xml",
+      content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/worksheets/sheet2.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>`
+    },
+    {
+      name: "_rels/.rels",
+      content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`
+    },
+    {
+      name: "xl/workbook.xml",
+      content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="导入模板" sheetId="1" r:id="rId1"/><sheet name="填写示例" sheetId="2" r:id="rId2"/></sheets></workbook>`
+    },
+    {
+      name: "xl/_rels/workbook.xml.rels",
+      content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"/></Relationships>`
+    },
+    { name: "xl/worksheets/sheet1.xml", content: sheetXml([IMPORT_TEMPLATE_HEADERS]) },
+    { name: "xl/worksheets/sheet2.xml", content: sheetXml([IMPORT_TEMPLATE_HEADERS, ...IMPORT_TEMPLATE_EXAMPLES]) }
+  ]);
+}
+
+function downloadExcelTemplate() {
+  downloadBlob(new Blob([buildXlsxTemplate()], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }), "transport-manual-import-template.xlsx");
+  notice.value = "Excel 导入模板已下载。";
+}
+
+async function handleImportFile(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  importFileName.value = file.name;
+  importRows.value = [];
+  importPreviewRows.value = [];
+  confirmedWarningRows.value = {};
+  importStatusMessage.value = "正在解析文件……";
+  notice.value = "";
+  error.value = "";
+  let rows = [];
+  try {
+    if (/\.xls$/i.test(file.name) && !/\.xlsx$/i.test(file.name)) {
+      importStatusMessage.value = "当前文件格式不支持，请上传 .xlsx 或 .csv 文件。";
+      event.target.value = "";
+      return;
+    }
+    if (/\.csv$/i.test(file.name)) {
+      const parsed = parseDelimitedText(await file.text());
+      if (parsed.error) {
+        importStatusMessage.value = parsed.error;
+        event.target.value = "";
+        return;
+      }
+      rows = parsed.rows;
+    } else if (/\.xlsx$/i.test(file.name)) {
+      const parsed = parseSheetRows(await readXlsxFile(file));
+      if (parsed.error) {
+        importStatusMessage.value = parsed.error;
+        event.target.value = "";
+        return;
+      }
+      rows = parsed.rows;
+    } else {
+      importStatusMessage.value = "当前文件格式不支持，请上传 .xlsx 或 .csv 文件。";
+      event.target.value = "";
+      return;
+    }
+  } catch (err) {
+    importStatusMessage.value = err.message || "文件解析失败，请确认上传的是 .xlsx 或 .csv 文件。";
+    event.target.value = "";
+    return;
+  }
+  importRows.value = rows;
+  await previewImportRows(rows, { statusMessage: `已解析 ${rows.length} 行，正在预览……` });
+  event.target.value = "";
+}
+
+function rowTone(row) {
+  if (row.status === "error") return "danger";
+  if (row.status === "warning") return "warning";
+  return "success";
+}
+
+function groupDestination(group) {
+  if (!group) return "--";
+  return displayValue(group.location_to || group.location_from);
+}
+
+function groupSummaryText(group) {
+  if (!group) return "";
+  return [
+    serviceLabel(group.service_type),
+    group.airport_code,
+    group.terminal,
+    group.group_date || formatDateTime(group.preferred_time_start),
+    `当前人数 ${displayValue(group.current_passenger_count)}`,
+    groupDestination(group)
+  ].filter(Boolean).join(" / ");
+}
+
+function rowStatusLabel(row) {
+  if (row.status === "error") return "不可导入";
+  if (row.status === "warning") return "警告";
+  return "可导入";
+}
+
+async function setPreviewGroupId(row, value) {
+  const source = importRows.value.find(item => Number(item.row_index) === Number(row.row_index));
+  if (source) {
+    source.raw = { ...(source.raw || {}), "Group ID": value };
+  }
+  if (importRows.value.length) {
+    await refreshImportPreview();
+  }
+}
+
+async function refreshImportPreview() {
+  if (importRows.value.length) {
+    await previewImportRows(importRows.value, { statusMessage: `已解析 ${importRows.value.length} 行，正在预览……` });
+    return;
+  }
+  if (hasImportPasteText.value) {
+    previewPastedRows();
+    return;
+  }
+  if (importPreviewRows.value.length) {
+    importStatusMessage.value = importPreviewSummary();
+    return;
+  }
+  importStatusMessage.value = "请先粘贴表格内容或上传 .xlsx / .csv 文件。";
+}
+
+function toggleWarningConfirmation(row) {
+  confirmedWarningRows.value = {
+    ...confirmedWarningRows.value,
+    [row.row_index]: !confirmedWarningRows.value[row.row_index]
+  };
+}
+
+async function commitImportRows() {
+  if (importCommitting.value || !importRows.value.length) return;
+  if (!importPreviewRows.value.length) {
+    notice.value = "请先完成预览，确认每一行状态后再导入。";
+    return;
+  }
+  if (!canCommitImport.value) {
+    notice.value = "没有可导入行，或仍有黄色提示未确认。红色错误行不会导入。";
+    return;
+  }
+  importCommitting.value = true;
+  notice.value = "";
+  error.value = "";
+  try {
+    const result = await commitTransportManualImport(importRows.value, confirmedWarningRows.value);
+    notice.value = `批量补录完成：导入 ${Number(result?.imported_count || 0)} 条，批次 ${displayValue(result?.import_batch_id)}。`;
+    filters.importBatchId = result?.import_batch_id || "";
+    showBatchDialog.value = false;
+    await loadRequests(1);
+  } catch (err) {
+    notice.value = err.message || "批量导入失败，请重新预览后再提交。";
+  } finally {
+    importCommitting.value = false;
+  }
+}
+
 async function handleExportFiltered() {
   if (exporting.value) return;
   exporting.value = true;
@@ -354,6 +1120,25 @@ async function toggleOfflineRecorded(row) {
 onMounted(() => {
   loadRequests(1);
 });
+
+watch(
+  () => [
+    manualForm.group_id,
+    manualForm.service_type,
+    manualForm.airport_code,
+    manualForm.terminal,
+    manualForm.service_time,
+    manualForm.flight_datetime,
+    manualForm.address,
+    manualForm.passenger_count
+  ],
+  () => {
+    manualGroupConfirmedId.value = "";
+    manualGroupMessage.value = "";
+    manualPreview.value = null;
+    manualConfirmWarnings.value = false;
+  }
+);
 </script>
 
 <template>
@@ -362,6 +1147,10 @@ onMounted(() => {
       <div>
         <p class="view-heading__eyebrow">Phase 5 transport list migration</p>
         <h2>登记接送机订单</h2>
+      </div>
+      <div class="view-heading__actions">
+        <button class="secondary-button" type="button" @click="openBatchDialog">批量补录</button>
+        <button class="primary-button" type="button" @click="openManualDialog">补录接送机订单</button>
       </div>
     </div>
 
@@ -479,6 +1268,282 @@ onMounted(() => {
       </AdminTable>
       <Pagination :pagination="pagination" @change="handlePageChange" />
     </template>
+
+    <ConfirmDialog
+      :open="showManualDialog"
+      title="补录接送机订单"
+      :confirm-label="manualConfirmWarnings ? '确认黄色提示并补录' : '提交补录'"
+      :loading="manualSaving"
+      panel-class="confirm-dialog__panel--wide"
+      :confirm-disabled="false"
+      @cancel="closeManualDialog"
+      @confirm="submitManualForm"
+    >
+      <div v-if="manualSubmitAttempted && manualRequiredErrors.length" class="import-error-box">
+        <strong>必填项未完成</strong>
+        <ul>
+          <li v-for="item in manualRequiredErrors" :key="item">{{ item }}</li>
+        </ul>
+      </div>
+      <div class="manual-import-sections">
+        <section class="manual-import-section">
+          <h4>学生信息</h4>
+          <p class="manual-section-hint">手机号和微信号至少填写一个。</p>
+          <div class="manual-import-grid">
+            <label class="field">
+              <span>学生姓名 *</span>
+              <input v-model="manualForm.student_name" required />
+              <small v-if="manualFieldErrors.student_name" class="field-error">{{ manualFieldErrors.student_name }}</small>
+            </label>
+            <label class="field"><span>拼音/英文名</span><input v-model="manualForm.english_name" /></label>
+            <label class="field">
+              <span>手机号</span>
+              <input v-model="manualForm.phone" placeholder="手机号/微信号至少填一个" />
+              <small v-if="manualFieldErrors.contact" class="field-error">{{ manualFieldErrors.contact }}</small>
+            </label>
+            <label class="field">
+              <span>微信号</span>
+              <input v-model="manualForm.wechat" placeholder="手机号/微信号至少填一个" />
+              <small v-if="manualFieldErrors.contact" class="field-error">{{ manualFieldErrors.contact }}</small>
+            </label>
+            <label class="field"><span>邮箱</span><input v-model="manualForm.email" type="email" /></label>
+            <label class="field">
+              <span>人数 *</span>
+              <input v-model.number="manualForm.passenger_count" min="1" required type="number" />
+              <small v-if="manualFieldErrors.passenger_count" class="field-error">{{ manualFieldErrors.passenger_count }}</small>
+            </label>
+          </div>
+        </section>
+
+        <section class="manual-import-section">
+          <h4>行程信息</h4>
+          <div class="manual-import-grid">
+            <label class="field">
+              <span>服务类型 *</span>
+              <select v-model="manualForm.service_type" required>
+                <option value="pickup">接机</option>
+                <option value="dropoff">送机</option>
+              </select>
+              <small v-if="manualFieldErrors.service_type" class="field-error">{{ manualFieldErrors.service_type }}</small>
+            </label>
+            <label class="field">
+              <span>机场 *</span>
+              <input v-model="manualForm.airport_code" placeholder="LHR / LGW" required />
+              <small v-if="manualFieldErrors.airport_code" class="field-error">{{ manualFieldErrors.airport_code }}</small>
+            </label>
+            <label class="field">
+              <span>航站楼 *</span>
+              <input v-model="manualForm.terminal" required />
+              <small v-if="manualFieldErrors.terminal" class="field-error">{{ manualFieldErrors.terminal }}</small>
+            </label>
+            <label class="field">
+              <span>航班号 *</span>
+              <input v-model="manualForm.flight_no" required />
+              <small v-if="manualFieldErrors.flight_no" class="field-error">{{ manualFieldErrors.flight_no }}</small>
+            </label>
+            <label class="field">
+              <span>航班日期时间 *</span>
+              <input v-model="manualForm.flight_datetime" required type="datetime-local" />
+              <small v-if="manualFieldErrors.flight_datetime" class="field-error">{{ manualFieldErrors.flight_datetime }}</small>
+            </label>
+            <label class="field">
+              <span>服务时间 *</span>
+              <input v-model="manualForm.service_time" required type="datetime-local" />
+              <small v-if="manualFieldErrors.service_time" class="field-error">{{ manualFieldErrors.service_time }}</small>
+            </label>
+            <label class="field manual-import-grid__wide">
+              <span>{{ manualAddressLabel }} *</span>
+              <input v-model="manualForm.address" required />
+              <small v-if="manualFieldErrors.address" class="field-error">{{ manualFieldErrors.address }}</small>
+            </label>
+            <label class="field"><span>行李数量</span><input v-model.number="manualForm.luggage_count" min="0" type="number" /></label>
+            <label class="field manual-import-grid__wide"><span>行李备注</span><input v-model="manualForm.luggage_note" /></label>
+          </div>
+        </section>
+
+        <section class="manual-import-section">
+          <h4>拼车与付款</h4>
+          <div class="manual-import-grid">
+            <label class="field">
+              <span>是否愿意拼车</span>
+              <select v-model="manualForm.shareable">
+                <option :value="true">是</option>
+                <option :value="false">否</option>
+              </select>
+            </label>
+            <label class="field"><span>价格</span><input v-model="manualForm.price" inputmode="decimal" /></label>
+            <label class="field">
+              <span>付款状态</span>
+              <select v-model="manualForm.payment_status">
+                <option value="unpaid">未付款</option>
+                <option value="paid">已付款</option>
+                <option value="pending">待确认</option>
+                <option value="waived">免付</option>
+              </select>
+            </label>
+            <label class="field manual-import-grid__wide"><span>已有 Group ID</span><input v-model="manualForm.group_id" placeholder="可留空自动建组" /></label>
+            <div class="manual-import-grid__wide group-check-panel">
+              <div class="batch-import-actions">
+                <button class="secondary-button" type="button" :disabled="manualGroupChecking || !manualForm.group_id" @click="checkManualGroup">
+                  {{ manualGroupChecking ? "校验中..." : "校验并确认 Group" }}
+                </button>
+                <span v-if="manualForm.group_id && manualGroupConfirmedId === manualForm.group_id" class="import-success-text">已确认可加入</span>
+                <span v-else-if="manualForm.group_id" class="import-warning-text">填写已有 Group ID 后必须先校验确认</span>
+              </div>
+              <p v-if="manualGroupMessage" class="muted-line">{{ manualGroupMessage }}</p>
+              <article v-if="manualPreview?.target_group" class="group-summary-card">
+                <div><span>Group ID</span><strong>{{ manualPreview.target_group.group_id }}</strong></div>
+                <div><span>服务类型</span><strong>{{ serviceLabel(manualPreview.target_group.service_type) }}</strong></div>
+                <div><span>机场</span><strong>{{ displayValue(manualPreview.target_group.airport_code) }}</strong></div>
+                <div><span>航站楼</span><strong>{{ displayValue(manualPreview.target_group.terminal) }}</strong></div>
+                <div><span>日期</span><strong>{{ displayValue(manualPreview.target_group.group_date || formatDateTime(manualPreview.target_group.preferred_time_start)) }}</strong></div>
+                <div><span>当前人数</span><strong>{{ displayValue(manualPreview.target_group.current_passenger_count) }}</strong></div>
+                <div class="group-summary-card__wide"><span>目的地/上车地</span><strong>{{ groupDestination(manualPreview.target_group) }}</strong></div>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        <section class="manual-import-section">
+          <h4>备注</h4>
+          <label class="field"><span>备注</span><textarea v-model="manualForm.notes" rows="3"></textarea></label>
+        </section>
+      </div>
+      <div v-if="manualPreview?.warnings?.length" class="import-warning-box">
+        <strong>黄色提示</strong>
+        <ul>
+          <li v-for="warning in manualPreview.warnings" :key="warning.code + warning.message">{{ warning.message }}</li>
+        </ul>
+      </div>
+      <div v-if="manualPreview?.errors?.length" class="import-error-box">
+        <strong>不可提交</strong>
+        <ul>
+          <li v-for="item in manualPreview.errors" :key="item.code + item.message">{{ item.message }}</li>
+        </ul>
+      </div>
+    </ConfirmDialog>
+
+    <ConfirmDialog
+      :open="showBatchDialog"
+      title="批量补录接送机订单"
+      confirm-label="导入可导入行"
+      :loading="importCommitting"
+      :confirm-disabled="!canCommitImport"
+      @cancel="closeBatchDialog"
+      @confirm="commitImportRows"
+    >
+      <div class="batch-import-panel">
+        <label class="field">
+          <span>粘贴 Excel / Google Sheet 内容</span>
+          <textarea v-model="importPasteText" rows="6" placeholder="第一行为表头，下面每行一条订单"></textarea>
+        </label>
+        <div class="batch-import-actions">
+          <button class="secondary-button" type="button" @click="copyImportTemplate">复制导入模板</button>
+          <button class="secondary-button" type="button" @click="downloadExcelTemplate">下载 Excel 模板</button>
+          <button class="secondary-button" type="button" :disabled="importPreviewing" @click="previewPastedRows">预览粘贴内容</button>
+          <label class="secondary-button batch-import-file">
+            上传 CSV / XLSX
+            <input accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" type="file" @change="handleImportFile" />
+          </label>
+          <button class="secondary-button" type="button" :disabled="importPreviewing || !canPreviewImport" @click="refreshImportPreview">重新校验预览</button>
+        </div>
+        <p v-if="importStatusMessage" class="muted-line">{{ importStatusMessage }}</p>
+        <p v-if="importCommitBlockReason" class="muted-line">{{ importCommitBlockReason }}</p>
+        <details class="import-template-help">
+          <summary>模板字段说明</summary>
+          <ol>
+            <li v-for="item in IMPORT_TEMPLATE_NOTES" :key="item">{{ item }}</li>
+          </ol>
+        </details>
+        <details class="import-template-help">
+          <summary>可直接测试的粘贴示例</summary>
+          <textarea class="template-sample-textarea" readonly rows="3" :value="IMPORT_TEMPLATE_SAMPLE_TEXT"></textarea>
+        </details>
+        <p v-if="importFileName" class="muted-line">已读取文件：{{ importFileName }}</p>
+        <div v-if="importPreviewRows.length" class="import-preview-table-wrap">
+          <table class="import-preview-table">
+            <thead>
+              <tr>
+                <th>原始行号</th>
+                <th>行状态</th>
+                <th>学生姓名</th>
+                <th>手机号/微信号</th>
+                <th>服务类型</th>
+                <th>机场</th>
+                <th>航站楼</th>
+                <th>航班号</th>
+                <th>航班日期时间</th>
+                <th>服务日期时间</th>
+                <th>地址</th>
+                <th>人数</th>
+                <th>行李数量</th>
+                <th>价格</th>
+                <th>付款状态</th>
+                <th>Group ID</th>
+                <th>错误/警告原因</th>
+                <th>确认</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="row in importPreviewRows" :key="row.row_index" :class="`is-${row.status}`">
+                <td>{{ row.row_index }}</td>
+                <td><StatusBadge :tone="rowTone(row)">{{ rowStatusLabel(row) }}</StatusBadge></td>
+                <td>{{ displayValue(row.clean?.student_name) }}</td>
+                <td>{{ displayValue(row.clean?.phone || row.clean?.wechat) }}</td>
+                <td>{{ serviceLabel(row.clean?.service_type) }}</td>
+                <td>{{ displayValue(row.clean?.airport_code) }}</td>
+                <td>{{ displayValue(row.clean?.terminal) }}</td>
+                <td>{{ displayValue(row.clean?.flight_no) }}</td>
+                <td>{{ formatDateTime(row.clean?.flight_datetime) }}</td>
+                <td>{{ formatDateTime(row.clean?.service_time) }}</td>
+                <td>{{ displayValue(row.clean?.address) }}</td>
+                <td>{{ displayValue(row.clean?.passenger_count) }}</td>
+                <td>{{ displayValue(row.clean?.luggage_note || row.clean?.luggage_count) }}</td>
+                <td>{{ displayValue(row.clean?.price) }}</td>
+                <td>{{ displayValue(row.clean?.payment_status) }}</td>
+                <td>
+                  <input
+                    class="import-group-input"
+                    :value="row.clean?.group_id || ''"
+                    placeholder="留空新建组"
+                    @change="setPreviewGroupId(row, $event.target.value)"
+                  />
+                  <small v-if="row.target_group" class="muted-line">{{ groupSummaryText(row.target_group) }}</small>
+                  <div v-if="row.candidate_groups?.length" class="candidate-group-list">
+                    <button
+                      v-for="group in row.candidate_groups || []"
+                      :key="group.group_id"
+                      class="table-action-button"
+                      type="button"
+                      @click="setPreviewGroupId(row, group.group_id)"
+                    >
+                      {{ group.group_id }}
+                    </button>
+                  </div>
+                </td>
+                <td>
+                  <ul class="import-issues">
+                    <li v-for="item in row.errors" :key="item.code + item.message" class="is-error">{{ item.message }}</li>
+                    <li v-for="item in row.warnings" :key="item.code + item.message" class="is-warning">{{ item.message }}</li>
+                  </ul>
+                </td>
+                <td>
+                  <label v-if="row.warnings?.length && row.status !== 'error'" class="checkbox-line">
+                    <input
+                      type="checkbox"
+                      :checked="Boolean(confirmedWarningRows[row.row_index])"
+                      @change="toggleWarningConfirmation(row)"
+                    />
+                    确认
+                  </label>
+                  <span v-else>--</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </ConfirmDialog>
 
     <ConfirmDialog
       :open="Boolean(deleteCandidate)"

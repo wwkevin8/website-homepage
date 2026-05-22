@@ -30,6 +30,7 @@ const sections = [
     title: "寄存管理",
     links: [
       { label: "全部订单", route: { name: "storage-all-orders" } },
+      { label: "当天工单", route: { name: "storage-today-work-orders" } },
       { label: "买箱订单", route: { name: "storage-box-orders" } },
       { label: "取寄存订单", route: { name: "storage-collections" } },
       { label: "送寄存订单", route: { name: "storage-returns" } },

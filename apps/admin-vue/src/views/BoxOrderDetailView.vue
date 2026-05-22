@@ -89,7 +89,7 @@ function formatDateTime(value) {
 function formatMoney(value) {
   if (!isMeaningfulValue(value)) return "未填写";
   const amount = Number(value);
-  return Number.isFinite(amount) ? `拢${amount.toFixed(2)}` : displayValue(value);
+  return Number.isFinite(amount) ? `£${amount.toFixed(2)}` : displayValue(value);
 }
 
 function boolLabel(value) {
@@ -151,8 +151,8 @@ function statusTone(status) {
 function normalizeBoxLabel(entry) {
   const raw = firstValue(entry?.label, entry?.boxLabel, entry?.box_label, entry?.name, entry?.boxName, entry?.box_name, entry?.boxType, entry?.box_type, entry?.type);
   const text = String(raw || "").trim();
-  if (!text) return "绠卞瀷";
-  return /^\d+$/.test(text) ? `${text}鍙风` : text;
+  if (!text) return "箱型";
+  return /^\d+$/.test(text) ? `${text}号箱` : text;
 }
 
 function normalizeBoxQuantity(entry) {
@@ -396,27 +396,27 @@ onMounted(loadOrder);
     <template v-else>
       <div class="detail-summary-bar">
         <div>
-          <span>璁㈠崟缂栧彿</span>
+          <span>订单编号</span>
           <strong>{{ boxOrderNo() }}</strong>
         </div>
         <StatusBadge :tone="statusTone(order.status)">{{ statusLabel(order.status) }}</StatusBadge>
       </div>
 
-      <DetailSection title="鐢ㄦ埛淇℃伅" description="瀹㈡湇鏍稿鑱旂郴浜哄拰璐﹀彿淇℃伅銆">
+      <DetailSection title="用户信息" description="客服核对联系人和账号信息。">
         <div class="readonly-field-grid">
           <ReadonlyField v-for="item in userFields" :key="item.label" v-bind="item" />
         </div>
       </DetailSection>
 
-      <DetailSection title="涔扮鏄庣粏" description="鍙睍绀轰拱绠辩被鍨嬨€佹暟閲忋€佸崟浠峰拰灏忚锛屼笉娣峰叆瀵勫瓨鍛ㄦ湡瀛楁銆">
+      <DetailSection title="买箱明细" description="只展示买箱类型、数量、单价和小计，不混入寄存周期字段。">
         <div class="detail-table-wrap">
           <table class="admin-table detail-table">
             <thead>
               <tr>
-                <th>绠卞瀷</th>
-                <th>鏁伴噺</th>
-                <th>鍗曚环</th>
-                <th>灏忚</th>
+                <th>箱型</th>
+                <th>数量</th>
+                <th>单价</th>
+                <th>小计</th>
               </tr>
             </thead>
             <tbody>
@@ -446,13 +446,13 @@ onMounted(loadOrder);
         </div>
       </DetailSection>
 
-      <DetailSection title="鍚庡彴澶勭悊淇℃伅" description="鐘舵€併€佸綊妗ｅ拰鏈€杩戝鐞嗕俊鎭€">
+      <DetailSection title="后台处理信息" description="状态、归档和最近处理信息。">
         <div class="readonly-field-grid">
           <ReadonlyField v-for="item in processingFields" :key="item.label" v-bind="item" />
         </div>
       </DetailSection>
 
-      <DetailSection title="鍐呴儴澶囨敞 / 鎿嶄綔璁板綍">
+      <DetailSection title="内部备注 / 操作记录">
         <div class="readonly-field-grid">
           <ReadonlyField v-for="item in noteFields" :key="item.label" v-bind="item" />
         </div>
@@ -461,11 +461,11 @@ onMounted(loadOrder);
       <DetailSection title="操作区" description="买箱订单操作只作用于当前订单，删除和状态修改会先确认。">
         <div class="detail-action-row">
           <button class="table-action-button" type="button" :disabled="exporting" @click="exportCurrentOrder">
-            {{ exporting ? "瀵煎嚭涓?.." : "瀵煎嚭褰撳墠璁㈠崟 Excel" }}
+            {{ exporting ? "导出中..." : "导出当前订单 Excel" }}
           </button>
-          <button class="table-action-button" type="button" :disabled="savingStatus" @click="openStatusDialog">鐘舵€佷慨鏀</button>
+          <button class="table-action-button" type="button" :disabled="savingStatus" @click="openStatusDialog">状态修改</button>
           <button class="table-action-button table-action-button--danger" type="button" :disabled="deleting" @click="openDeleteDialog">
-            {{ deleting ? "鍒犻櫎涓?.." : "鍒犻櫎璁㈠崟" }}
+            {{ deleting ? "删除中..." : "删除订单" }}
           </button>
         </div>
       </DetailSection>
@@ -473,24 +473,24 @@ onMounted(loadOrder);
 
     <ConfirmDialog
       :open="deleteDialogOpen"
-      title="纭鍒犻櫎涔扮璁㈠崟"
-      confirm-label="纭鍒犻櫎"
+      title="确认删除买箱订单"
+      confirm-label="确认删除"
       :loading="deleting"
       @cancel="closeDeleteDialog"
       @confirm="confirmDelete"
     >
-      <p class="confirm-dialog__warning">鍒犻櫎鍚庝笉鍙仮澶嶏紝璇风‘璁よ繖鏄鍒犻櫎鐨勫崟鏉′拱绠辫鍗曘€</p>
+      <p class="confirm-dialog__warning">删除后不可恢复，请确认这是要删除的单条买箱订单。</p>
       <div class="readonly-field-grid">
         <article class="readonly-field">
-          <span>璁㈠崟缂栧彿</span>
+          <span>订单编号</span>
           <strong>{{ boxOrderNo() }}</strong>
         </article>
         <article class="readonly-field">
-          <span>鏈嶅姟绫诲瀷</span>
-          <strong>涔扮璁㈠崟</strong>
+          <span>服务类型</span>
+          <strong>买箱订单</strong>
         </article>
         <article class="readonly-field">
-          <span>鐢ㄦ埛濮撳悕</span>
+          <span>用户姓名</span>
           <strong>{{ displayValue(order?.customer_name) }}</strong>
         </article>
       </div>
@@ -507,24 +507,24 @@ onMounted(loadOrder);
     >
       <p>请选择新的买箱订单状态。</p>
       <label class="field">
-        <span>璁㈠崟鐘舵€</span>
+        <span>订单状态</span>
         <select v-model="statusDraft">
-          <option value="pending_confirmation">寰呯‘璁</option>
-          <option value="confirmed">宸茬‘璁</option>
-          <option value="cancelled">宸插彇娑</option>
+          <option value="pending_confirmation">待确认</option>
+          <option value="confirmed">已确认</option>
+          <option value="cancelled">已取消</option>
         </select>
       </label>
       <div class="readonly-field-grid">
         <article class="readonly-field">
-          <span>璁㈠崟缂栧彿</span>
+          <span>订单编号</span>
           <strong>{{ boxOrderNo() }}</strong>
         </article>
         <article class="readonly-field">
-          <span>褰撳墠鐘舵€</span>
+          <span>当前状态</span>
           <strong>{{ statusLabel(order?.status) }}</strong>
         </article>
         <article class="readonly-field">
-          <span>灏嗕慨鏀逛负</span>
+          <span>将修改为</span>
           <strong>{{ statusLabel(statusDraft) }}</strong>
         </article>
       </div>

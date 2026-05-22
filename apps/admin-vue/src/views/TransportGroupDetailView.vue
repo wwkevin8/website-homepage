@@ -163,8 +163,8 @@ function statusTone(status) {
 }
 
 function paymentStatus(row) {
-  const direct = String(row.payment_status || row.request?.payment_status || "").trim().toLowerCase();
-  if (direct) return direct;
+  const direct = String(row.payment_status || row.request?.manual_payment_status || row.request?.payment_status || "").trim().toLowerCase();
+  if (direct) return direct === "waived" ? "paid" : direct;
   const match = String(row.request?.admin_note || "").match(/\[payment:(paid|unpaid)\]/i);
   return match ? match[1].toLowerCase() : "unpaid";
 }
@@ -431,7 +431,8 @@ async function markPayment(row, status) {
   notice.value = "";
   try {
     await updateTransportRequest(id, {
-      admin_note: withPaymentMarker(row.request?.admin_note, status)
+      admin_note: withPaymentMarker(row.request?.admin_note, status),
+      manual_payment_status: status
     });
     await loadGroup();
     notice.value = status === "paid" ? "已标记付款。" : "已取消付款标记。";

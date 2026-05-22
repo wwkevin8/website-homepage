@@ -16,6 +16,7 @@ import StorageAllOrdersView from "@/views/StorageAllOrdersView.vue";
 import StorageOrderDetailView from "@/views/StorageOrderDetailView.vue";
 import StorageOrdersView from "@/views/StorageOrdersView.vue";
 import StorageSyncLogsView from "@/views/StorageSyncLogsView.vue";
+import StorageTodayWorkOrdersView from "@/views/StorageTodayWorkOrdersView.vue";
 import TransportGroupDetailView from "@/views/TransportGroupDetailView.vue";
 import TransportGroupsView from "@/views/TransportGroupsView.vue";
 import TransportRequestDetailView from "@/views/TransportRequestDetailView.vue";
@@ -145,6 +146,12 @@ const router = createRouter({
           name: "storage-all-orders",
           component: StorageAllOrdersView,
           meta: { title: "全部订单" }
+        },
+        {
+          path: "storage/today-work-orders",
+          name: "storage-today-work-orders",
+          component: StorageTodayWorkOrdersView,
+          meta: { title: "当天工单" }
         },
         {
           path: "storage/box-orders",

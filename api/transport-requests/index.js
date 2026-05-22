@@ -3,6 +3,7 @@ const { requireAdminUser } = require("../_lib/admin-auth");
 const { ok, created, badRequest, parseJsonBody, methodNotAllowed, serverError } = require("../_lib/http");
 const { applyRequestFilters, mapRequestPayload, deriveRequestDisplayFlags } = require("../_lib/transport");
 const { createPickupRequestWithGroup } = require("../_lib/transport-group-lifecycle");
+const { logAdminOperation } = require("../_lib/orders");
 
 function isPerfLogEnabled() {
   return process.env.NODE_ENV !== "production";
@@ -39,6 +40,11 @@ const REQUEST_LIST_SELECT = [
   "offline_recorded",
   "last_operated_by",
   "last_operated_at",
+  "source",
+  "created_by_admin_name",
+  "import_batch_id",
+  "manual_price_gbp",
+  "manual_payment_status",
   "membership_benefit_claim_id",
   "membership_discount_amount",
   "created_at",
@@ -61,11 +67,43 @@ const REQUEST_COMPACT_SELECT = [
   "offline_recorded",
   "last_operated_by",
   "last_operated_at",
+  "source",
+  "import_batch_id",
+  "manual_payment_status",
   "membership_benefit_claim_id",
   "membership_discount_amount",
   "created_at",
   "transport_group_members(group_id,is_initiator,request_id)"
 ].join(", ");
+
+const MANUAL_IMPORT_COLUMNS = new Set([
+  "source",
+  "created_by_admin_name",
+  "import_batch_id",
+  "manual_price_gbp",
+  "manual_payment_status"
+]);
+
+const REQUEST_LIST_SELECT_LEGACY = REQUEST_LIST_SELECT
+  .split(", ")
+  .filter(column => !MANUAL_IMPORT_COLUMNS.has(column))
+  .join(", ");
+
+const REQUEST_COMPACT_SELECT_LEGACY = REQUEST_COMPACT_SELECT
+  .split(", ")
+  .filter(column => !MANUAL_IMPORT_COLUMNS.has(column))
+  .join(", ");
+
+function isMissingManualImportColumnError(error) {
+  const message = String(error?.message || "");
+  return [
+    "transport_requests.source",
+    "transport_requests.created_by_admin_name",
+    "transport_requests.import_batch_id",
+    "transport_requests.manual_price_gbp",
+    "transport_requests.manual_payment_status"
+  ].some(marker => message.includes(marker));
+}
 
 function resolveAdminDisplayName(adminUser = {}) {
   return String(adminUser.name || adminUser.username || adminUser.email || "admin").trim() || "admin";
@@ -124,6 +162,39 @@ async function listOperatorOptions(supabase) {
     });
 }
 
+async function logOfflineRecordedChanges(supabase, adminUser, rows, nextOfflineRecorded) {
+  const adminName = resolveAdminDisplayName(adminUser);
+  for (const row of rows || []) {
+    try {
+      await logAdminOperation(supabase, {
+        admin_user_id: adminUser.id || null,
+        target_type: "transport_request",
+        target_id: row.id,
+        action: "set_transport_request_offline_recorded",
+        before_data: null,
+        after_data: { offline_recorded: nextOfflineRecorded },
+        metadata: {
+          order_no: row.order_no,
+          admin_name: adminName,
+          changed_fields: [
+            {
+              field: "offline_recorded",
+              label: "线下记录",
+              before: null,
+              after: nextOfflineRecorded
+            }
+          ]
+        }
+      });
+    } catch (error) {
+      console.warn("transport_request_offline_operation_log_failed", {
+        request_id: row.id,
+        message: error?.message || String(error)
+      });
+    }
+  }
+}
+
 async function attachDuplicateFutureFlags(supabase, items) {
   const siteUserIds = Array.from(
     new Set(
@@ -178,6 +249,50 @@ async function attachDuplicateFutureFlags(supabase, items) {
   });
 }
 
+function applyRequestFiltersCompat(query, queryParams, includeManualImportColumns) {
+  const nextQueryParams = includeManualImportColumns
+    ? queryParams
+    : {
+        ...queryParams,
+        source: "",
+        import_batch_id: ""
+      };
+  applyRequestFilters(query, nextQueryParams);
+}
+
+async function runListQuery(supabase, queryParams, options = {}) {
+  const includeManualImportColumns = options.includeManualImportColumns !== false;
+  const compact = options.compact === true;
+  const paginate = options.paginate === true;
+  const page = options.page || 1;
+  const pageSize = options.pageSize || 10;
+  const selectColumns = compact
+    ? (includeManualImportColumns ? REQUEST_COMPACT_SELECT : REQUEST_COMPACT_SELECT_LEGACY)
+    : (includeManualImportColumns ? REQUEST_LIST_SELECT : REQUEST_LIST_SELECT_LEGACY);
+
+  let query = supabase
+    .from("transport_requests")
+    .select(selectColumns, paginate ? { count: "exact" } : undefined);
+
+  applyRequestFiltersCompat(query, queryParams, includeManualImportColumns);
+  applyRequestSort(query, queryParams.sort);
+
+  if (queryParams.grouped === "true") {
+    query.not("transport_group_members", "is", null);
+  }
+  if (queryParams.grouped === "false") {
+    query.is("transport_group_members", null);
+  }
+
+  if (paginate) {
+    const from = (page - 1) * pageSize;
+    const to = from + pageSize - 1;
+    query.range(from, to);
+  }
+
+  return query;
+}
+
 module.exports = async function handler(req, res) {
   const startedAt = nowMs();
   const supabase = getSupabaseAdmin();
@@ -196,31 +311,22 @@ module.exports = async function handler(req, res) {
       const page = Math.max(Number.parseInt(queryParams.page, 10) || 1, 1);
       const pageSize = Math.min(Math.max(Number.parseInt(queryParams.page_size, 10) || 10, 1), 100);
 
-      let query = supabase
-        .from("transport_requests")
-        .select(compact ? REQUEST_COMPACT_SELECT : REQUEST_LIST_SELECT, paginate ? { count: "exact" } : undefined);
-
-      applyRequestFilters(query, queryParams);
-      applyRequestSort(query, queryParams.sort);
-
-      if (queryParams.grouped === "true") {
-        query.not("transport_group_members", "is", null);
-      }
-      if (queryParams.grouped === "false") {
-        query.is("transport_group_members", null);
-      }
-
-      if (paginate) {
-        const from = (page - 1) * pageSize;
-        const to = from + pageSize - 1;
-        query.range(from, to);
-      }
-
       const queryStartedAt = nowMs();
-      const [listResult, operatorOptions] = await Promise.all([
-        query,
+      let [listResult, operatorOptions] = await Promise.all([
+        runListQuery(supabase, queryParams, { compact, paginate, page, pageSize, includeManualImportColumns: true }),
         compact ? Promise.resolve([]) : listOperatorOptions(supabase)
       ]);
+      let manualImportColumnsAvailable = true;
+      if (listResult.error && isMissingManualImportColumnError(listResult.error)) {
+        manualImportColumnsAvailable = false;
+        listResult = await runListQuery(supabase, queryParams, {
+          compact,
+          paginate,
+          page,
+          pageSize,
+          includeManualImportColumns: false
+        });
+      }
       const { data, error, count } = listResult;
       const baseQueryMs = nowMs() - queryStartedAt;
       if (error) {
@@ -245,6 +351,7 @@ module.exports = async function handler(req, res) {
         page: paginate ? page : null,
         pageSize: paginate ? pageSize : null,
         compact,
+        manualImportColumnsAvailable,
         countMode: paginate ? "exact" : "none",
         cacheHit: null
       });
@@ -291,6 +398,8 @@ module.exports = async function handler(req, res) {
           throw error;
         }
 
+        await logOfflineRecordedChanges(supabase, adminUser, data || [], nextOfflineRecorded);
+
         ok(res, {
           updated_count: Array.isArray(data) ? data.length : 0,
           offline_recorded: nextOfflineRecorded,
@@ -327,6 +436,8 @@ module.exports = async function handler(req, res) {
       if (error) {
         throw error;
       }
+
+      await logOfflineRecordedChanges(supabase, adminUser, data || [], true);
 
       ok(res, {
         updated_count: Array.isArray(data) ? data.length : 0,

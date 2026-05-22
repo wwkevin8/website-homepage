@@ -350,6 +350,12 @@ function applyRequestFilters(query, reqQuery) {
   if (reqQuery.last_operated_by) {
     query.eq("last_operated_by", String(reqQuery.last_operated_by).trim());
   }
+  if (reqQuery.import_batch_id) {
+    query.eq("import_batch_id", String(reqQuery.import_batch_id).trim());
+  }
+  if (reqQuery.source) {
+    query.eq("source", String(reqQuery.source).trim());
+  }
   if (reqQuery.date_from) {
     query.gte("flight_datetime", `${reqQuery.date_from}T00:00:00.000Z`);
   }
