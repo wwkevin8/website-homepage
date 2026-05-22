@@ -8,9 +8,22 @@
 ## Last Updated Task
 
 - Date: 2026-05-23
-- Scope: Production read-only smoke checks on `https://ngn.best`
+- Scope: Fix manager-create validation and garbled admin error text
 
 ## Latest Completed Work
+
+- Fixed the Vue admin manager-create error shown after entering an email address in the `账号` field:
+  - backend manager validation messages in `api/_lib/admin-managers.js` now return readable Chinese instead of mojibake;
+  - manager create/update success and duplicate-account messages in `api/admin/[...action].js` were cleaned up for the manager endpoints;
+  - `/admin/managers` now validates the account format before submitting and tells operators that the account must be 4-32 characters using lowercase letters, numbers, `.`, `_`, or `-`, and cannot be an email address;
+  - the manager edit modal uses the app's own validation message instead of a browser-native pattern bubble, so the error appears in the same inline red notice area as other admin errors.
+- Verification for this fix:
+  - `node --check api/_lib/admin-managers.js` passed;
+  - `node --check api/admin/[...action].js` passed;
+  - direct helper smoke confirmed `test-admin@ngn.best` as `username` returns the readable account-format message;
+  - local browser smoke opened `/admin/managers`, clicked `新增管理员`, entered the screenshot-equivalent email-format account, and confirmed the inline readable validation message appears without creating data;
+  - `npm run build:admin-vue` passed and regenerated the root `admin/` bundle;
+  - `npm run build:prod` passed.
 
 - Ran read-only production checks against `https://ngn.best`:
   - `/`, `/pickup`, `/storage`, `/moving`, `/transport-board.html`, and `/admin-login.html` returned reachable responses;

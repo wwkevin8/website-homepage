@@ -23,21 +23,21 @@ function isRootManagerAccount(admin) {
 function assertRequiredText(value, label) {
   const text = String(value || "").trim();
   if (!text) {
-    throw new Error(`${label}涓嶈兘涓虹┖`);
+    throw new Error(`请填写${label}`);
   }
   return text;
 }
 
 function assertRole(value) {
   if (!Object.prototype.hasOwnProperty.call(ADMIN_ROLES, value)) {
-    throw new Error("瑙掕壊鏃犳晥");
+    throw new Error("请选择有效的管理员角色");
   }
   return value;
 }
 
 function assertStatus(value) {
   if (!Object.prototype.hasOwnProperty.call(ADMIN_STATUSES, value)) {
-    throw new Error("鐘舵€佹棤鏁?");
+    throw new Error("请选择有效的账号状态");
   }
   return value;
 }
@@ -45,15 +45,15 @@ function assertStatus(value) {
 function assertPassword(value) {
   const text = String(value || "").trim();
   if (text.length < 8) {
-    throw new Error("瀵嗙爜闀垮害涓嶈兘灏戜簬 8 浣?");
+    throw new Error("密码至少需要 8 位");
   }
   return text;
 }
 
 function assertUsername(value) {
-  const username = normalizeUsername(assertRequiredText(value, "璐﹀彿"));
+  const username = normalizeUsername(assertRequiredText(value, "账号"));
   if (!/^[a-z0-9._-]{4,32}$/.test(username)) {
-    throw new Error("璐﹀彿闇€涓?4 鍒?32 浣嶅瓧姣嶃€佹暟瀛楁垨 . _ -");
+    throw new Error("账号需为 4-32 位，只能包含小写字母、数字、点号、下划线或短横线，不能使用邮箱格式");
   }
   return username;
 }
@@ -63,7 +63,7 @@ function mapManagerCreatePayload(body) {
 
   return {
     username,
-    name: assertRequiredText(body.name, "濮撳悕"),
+    name: assertRequiredText(body.name, "姓名"),
     email: normalizeEmail(body.email) || null,
     phone: normalizePhone(body.phone) || null,
     role: assertRole(body.role),
@@ -74,7 +74,7 @@ function mapManagerCreatePayload(body) {
 
 function mapManagerUpdatePayload(body, options = {}) {
   const payload = {
-    name: assertRequiredText(body.name, "濮撳悕"),
+    name: assertRequiredText(body.name, "姓名"),
     email: normalizeEmail(body.email) || null,
     phone: normalizePhone(body.phone) || null,
     role: assertRole(body.role),
@@ -113,7 +113,7 @@ async function getActiveSuperAdminCount(supabase, excludeId) {
 
 async function assertManagerMutationAllowed(supabase, actor, target, nextPayload) {
   if (!actor || actor.role !== "super_admin") {
-    throw new Error("鍙湁瓒呯骇绠＄悊鍛樺彲浠ョ鐞嗙鐞嗗憳璐﹀彿");
+    throw new Error("只有超级管理员可以管理后台管理员账号");
   }
 
   if (!target) {
@@ -126,17 +126,17 @@ async function assertManagerMutationAllowed(supabase, actor, target, nextPayload
   const actorIsRootManager = isRootManagerAccount(actor);
 
   if (deleting && target.role === "super_admin" && !actorIsRootManager) {
-    throw new Error("瓒呯骇绠＄悊鍛樿处鍙蜂笉鑳藉垹闄?");
+    throw new Error("只有 Wkevin 可以删除其他超级管理员");
   }
 
   if (actor.id === target.id && (nextStatus === "disabled" || deleting)) {
-    throw new Error(deleting ? "褰撳墠璐﹀彿涓嶈兘鍒犻櫎鑷繁" : "褰撳墠璐﹀彿涓嶈兘鍋滅敤鑷繁");
+    throw new Error(deleting ? "当前账号不能删除自己" : "当前账号不能停用自己");
   }
 
   if (target.role === "super_admin" && target.status === "active" && (deleting || nextRole !== "super_admin" || nextStatus !== "active")) {
     const remaining = await getActiveSuperAdminCount(supabase, target.id);
     if (remaining < 1) {
-      throw new Error("鑷冲皯淇濈暀涓€鍚嶈秴绾х鐞嗗憳");
+      throw new Error("至少需要保留一个启用中的超级管理员");
     }
   }
 }

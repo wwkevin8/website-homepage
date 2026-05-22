@@ -51,6 +51,8 @@ const editForm = reactive({
   status: "active"
 });
 
+const usernamePattern = /^[a-z0-9._-]{4,32}$/;
+
 const hasManagers = computed(() => managers.value.length > 0);
 const currentAdmin = computed(() => sessionStore.admin || {});
 const isRootManager = computed(() => normalizeEmail(currentAdmin.value.email) === "haoranw44@gmail.com");
@@ -192,6 +194,20 @@ function resetEditForm(manager = null) {
   editForm.status = manager?.status || "active";
 }
 
+function validateManagerForm() {
+  const username = String(editForm.username || "").trim().toLowerCase();
+  if (!usernamePattern.test(username)) {
+    return "账号需为 4-32 位，只能包含小写字母、数字、点号、下划线或短横线，不能使用邮箱格式";
+  }
+  if (isCreateMode.value && String(editForm.password || "").trim().length < 8) {
+    return "初始密码至少需要 8 位";
+  }
+  if (!isCreateMode.value && String(editForm.password || "").trim() && String(editForm.password || "").trim().length < 8) {
+    return "新密码至少需要 8 位";
+  }
+  return "";
+}
+
 function openCreate() {
   selectedManager.value = null;
   editMode.value = "create";
@@ -223,6 +239,11 @@ async function submitEdit() {
   }
   if (isCreateMode.value && !editForm.password.trim()) {
     actionError.value = "新增管理员必须设置初始密码";
+    return;
+  }
+  const validationMessage = validateManagerForm();
+  if (validationMessage) {
+    actionError.value = validationMessage;
     return;
   }
   actionLoading.value = true;
@@ -424,14 +445,21 @@ onMounted(() => {
             <button class="secondary-button" type="button" :disabled="actionLoading" @click="closeEdit">关闭</button>
           </header>
 
-          <form class="admin-filter-panel manager-edit-form" @submit.prevent="submitEdit">
+          <form class="admin-filter-panel manager-edit-form" novalidate @submit.prevent="submitEdit">
             <label class="field">
               <span>姓名</span>
               <input v-model.trim="editForm.name" type="text" required />
             </label>
             <label class="field">
               <span>账号</span>
-              <input v-model.trim="editForm.username" type="text" required :disabled="!isCreateMode && !canEditUsername" />
+              <input
+                v-model.trim="editForm.username"
+                type="text"
+                required
+                pattern="[a-z0-9._-]{4,32}"
+                placeholder="例如 test-admin，不能填写邮箱"
+                :disabled="!isCreateMode && !canEditUsername"
+              />
             </label>
             <label class="field">
               <span>邮箱</span>

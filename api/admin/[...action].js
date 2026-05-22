@@ -3282,7 +3282,7 @@ async function handleManagersList(req, res, supabase) {
     if (error) {
       throw error;
     }
-    created(res, { manager: serializeAdmin(data), message: "閺傛澘顤冮幋鎰" });
+    created(res, { manager: serializeAdmin(data), message: "管理员已创建" });
     return;
   }
 
@@ -3328,7 +3328,7 @@ async function handleManagerDetailWithAdmin(req, res, supabase, adminUser, id, s
       }
 
       clearAdminSessionCacheForAdmin(id);
-      ok(res, { deleted: true, id, message: "閸掔娀娅庨幋鎰" });
+      ok(res, { deleted: true, id, message: "管理员已删除" });
       return;
     }
 
@@ -3358,7 +3358,7 @@ async function handleManagerDetailWithAdmin(req, res, supabase, adminUser, id, s
         throw usernameError;
       }
       if (duplicateByUsername) {
-        badRequest(res, "璇ヨ处鍙峰凡瀛樺湪锛岃鏇存崲鍚庨噸璇?");
+        badRequest(res, "该账号已存在，请更换后重试");
         return;
       }
     }
@@ -3390,7 +3390,7 @@ async function handleManagerDetailWithAdmin(req, res, supabase, adminUser, id, s
       throw error;
     }
     clearAdminSessionCacheForAdmin(id);
-    ok(res, { manager: serializeAdmin(data), message: "娣囨繂鐡ㄩ幋鎰" });
+    ok(res, { manager: serializeAdmin(data), message: "管理员信息已保存" });
     return;
   }
 
