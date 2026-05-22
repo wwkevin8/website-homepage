@@ -7,10 +7,25 @@
 
 ## Last Updated Task
 
-- Date: 2026-05-21
-- Scope: 2.0 NGN transport batch manual-import field configuration unification
+- Date: 2026-05-23
+- Scope: Production deployment and smoke verification for the 2.0 NGN admin transport/manual-import backend updates
 
 ## Latest Completed Work
+
+- Deployed the current 2.0 NGN admin transport/manual-import backend update to Vercel Production:
+  - GitHub-first release order was followed: commit `9812e98` (`Launch transport manual import admin updates`) was pushed to `origin/codex/membership-v1` before deployment;
+  - Vercel Production deployment `dpl_BNSMhvzh9jbnTUjSgWnxV44Mzf3u` completed with ready URL `https://webside-llnbfzh8h-wwkevin8s-projects.vercel.app`;
+  - production alias `https://ngn.best` was updated to the deployment.
+- Verification for this production release:
+  - `node --check` passed for `api/_lib/transport.js`, `api/_lib/transport-manual-import.js`, `api/admin/[...action].js`, transport request/group API routes, and the three manual-import API routes;
+  - `npm --prefix apps/admin-vue audit` returned 0 vulnerabilities;
+  - `npm run build:admin-vue` passed and regenerated the root `admin/` bundle;
+  - `npm run build:prod` passed for the production target;
+  - `git diff --check` passed with only existing line-ending warnings;
+  - local fallback checks returned 200 for `/admin/transport/requests`, 200 for `/transport-board.html`, and 401 for unauthenticated `/api/transport-manual-import/preview`;
+  - production checks on `https://ngn.best` returned 200 for `/admin/transport/requests`, 200 for `/transport-board.html`, and 401 for unauthenticated `/api/transport-manual-import/preview`.
+- Test caveat:
+  - `npm run qa:playwright:smoke` currently fails because `scripts/playwright-smoke.js` still waits for the old `transport-admin-groups.html` route after login; the current official backend entry is `/admin/`, so the script should be updated before being used as a release gate again.
 
 - Fixed the batch manual-import XLSX date-cell parsing path after operator screenshot review:
   - frontend CSV/XLSX/paste parsing now canonicalizes date-time cells before sending preview rows to the backend;
@@ -1546,8 +1561,8 @@
 - The transport request tracking fields have been applied to Supabase project `ngn-transport`; the 2.0 admin launch deployment has now followed the GitHub-first release order and is live on Vercel production.
 - The storage order tracking migration `supabase/20260519_storage_order_offline_tracking.sql` has been applied to Supabase project `ngn-transport`; refresh `/admin/storage/orders` before testing mark/cancel recorded operations.
 - The transport manual supplement migration `supabase/20260521_transport_manual_import.sql` has been applied to Supabase project `ngn-transport`; refresh `/admin/transport/requests` before retesting the supplement and batch import controls. The two new import/filter indexes may continue to appear as unused in Supabase Advisor until real traffic exercises those queries.
-- Live mutation QA for creating manual supplement orders, joining existing groups, and verifying group payment/person statistics was not run against production data in this pass to avoid inserting test transport orders; run it with an approved real/admin test record before production release.
-- The 2.0 NGN admin pre-production QA report recommends Preview deployment only after GitHub commit/push, and does not recommend Production until Vercel-dev mutation tests pass with approved QA data.
+- Live mutation QA for creating manual supplement orders, joining existing groups, and verifying group payment/person statistics was not run against production data in this pass to avoid inserting test transport orders; run it with an approved real/admin test record before relying on the new manual supplement/import workflow for daily operations.
+- `npm run qa:playwright:smoke` is stale for the 2.0 admin launch because it still waits for `transport-admin-groups.html` after login; update it to target `/admin/` routes before using it as a release gate.
 - Preview env pulled from Vercel differs from local `.env`: local has `ADMIN_BOOTSTRAP_*` and `STORAGE_ORDER_WEBHOOK_URL`; Preview has `ADMIN_ALLOWED_EMAILS`/`ADMIN_PASSWORD` and Vercel/Turbo runtime keys. Confirm this is intentional before release.
 - Source scan found hardcoded `https://ngn.best` fallbacks in email/audit helpers. Confirm `APP_BASE_URL` or equivalent site URL behavior for Preview and Production before relying on email links.
 - The latest sidebar collapse update regenerated the root `admin-vue/` build output. Treat that folder as generated output and rebuild it when committing Vue source changes.
@@ -1565,4 +1580,4 @@
 - Verify `/admin/transport/requests/:id` with a real admin session to confirm field saves and group replacements write readable operation-log entries.
 - Next Vue phase should verify storage export/delete and storage detail price recalculation in the browser, then continue with the next explicitly approved low-risk operation only after server-side permission boundaries are reviewed.
 - Do not implement real dangerous operations until the corresponding detail/read-only flow is accepted and server-side permission boundaries are reviewed.
-- For deployment later, follow the fixed release order: commit and push the intended changes to GitHub first, then deploy to Vercel.
+- Keep following the fixed release order for future changes: commit and push intended changes to GitHub first, then deploy to Vercel.
