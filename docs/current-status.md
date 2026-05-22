@@ -8,9 +8,20 @@
 ## Last Updated Task
 
 - Date: 2026-05-23
-- Scope: Production deployment and smoke verification for the 2.0 NGN admin transport/manual-import backend updates
+- Scope: Playwright smoke test update for the 2.0 NGN admin route migration
 
 ## Latest Completed Work
+
+- Updated `scripts/playwright-smoke.js` for the 2.0 NGN admin routes:
+  - admin smoke login now targets `/admin/transport/requests` instead of the retired `transport-admin-groups.html` path;
+  - the admin assertion now waits for the Vue transport request view and its `批量补录` action instead of old HTML backend copy;
+  - the admin screenshot output is now `output/playwright/smoke-admin-transport-requests.png`;
+  - when the local bootstrap password has been changed in the database and password login returns `账号或密码错误`, the smoke test now uses the existing local signed admin-session QA pattern to verify the protected Vue admin page.
+- Verification for this smoke-test update:
+  - `node --check scripts/playwright-smoke.js` passed;
+  - `npm run qa:playwright:smoke` passed against `http://localhost:3000`;
+  - the run produced screenshots for pickup home, transport board, and the Vue admin transport request page;
+  - the run reported that local password login did not reach `/admin/transport/requests` and used the signed admin session fallback because the current local bootstrap credentials are no longer accepted.
 
 - Deployed the current 2.0 NGN admin transport/manual-import backend update to Vercel Production:
   - GitHub-first release order was followed: commit `9812e98` (`Launch transport manual import admin updates`) was pushed to `origin/codex/membership-v1` before deployment;
@@ -24,9 +35,6 @@
   - `git diff --check` passed with only existing line-ending warnings;
   - local fallback checks returned 200 for `/admin/transport/requests`, 200 for `/transport-board.html`, and 401 for unauthenticated `/api/transport-manual-import/preview`;
   - production checks on `https://ngn.best` returned 200 for `/admin/transport/requests`, 200 for `/transport-board.html`, and 401 for unauthenticated `/api/transport-manual-import/preview`.
-- Test caveat:
-  - `npm run qa:playwright:smoke` currently fails because `scripts/playwright-smoke.js` still waits for the old `transport-admin-groups.html` route after login; the current official backend entry is `/admin/`, so the script should be updated before being used as a release gate again.
-
 - Fixed the batch manual-import XLSX date-cell parsing path after operator screenshot review:
   - frontend CSV/XLSX/paste parsing now canonicalizes date-time cells before sending preview rows to the backend;
   - `航班日期时间` and `服务日期时间` cells that arrive from Excel as `Date` objects, Excel serial numbers, or common object-shaped values are converted to stable `YYYY/MM/DD HH:mm` text before preview;
@@ -1562,7 +1570,7 @@
 - The storage order tracking migration `supabase/20260519_storage_order_offline_tracking.sql` has been applied to Supabase project `ngn-transport`; refresh `/admin/storage/orders` before testing mark/cancel recorded operations.
 - The transport manual supplement migration `supabase/20260521_transport_manual_import.sql` has been applied to Supabase project `ngn-transport`; refresh `/admin/transport/requests` before retesting the supplement and batch import controls. The two new import/filter indexes may continue to appear as unused in Supabase Advisor until real traffic exercises those queries.
 - Live mutation QA for creating manual supplement orders, joining existing groups, and verifying group payment/person statistics was not run against production data in this pass to avoid inserting test transport orders; run it with an approved real/admin test record before relying on the new manual supplement/import workflow for daily operations.
-- `npm run qa:playwright:smoke` is stale for the 2.0 admin launch because it still waits for `transport-admin-groups.html` after login; update it to target `/admin/` routes before using it as a release gate.
+- Local `.env` bootstrap admin credentials are no longer accepted by the admin password-login endpoint; the updated smoke test can still verify protected admin pages through a signed local admin session, but use a current approved admin password when specifically testing the login form.
 - Preview env pulled from Vercel differs from local `.env`: local has `ADMIN_BOOTSTRAP_*` and `STORAGE_ORDER_WEBHOOK_URL`; Preview has `ADMIN_ALLOWED_EMAILS`/`ADMIN_PASSWORD` and Vercel/Turbo runtime keys. Confirm this is intentional before release.
 - Source scan found hardcoded `https://ngn.best` fallbacks in email/audit helpers. Confirm `APP_BASE_URL` or equivalent site URL behavior for Preview and Production before relying on email links.
 - The latest sidebar collapse update regenerated the root `admin-vue/` build output. Treat that folder as generated output and rebuild it when committing Vue source changes.

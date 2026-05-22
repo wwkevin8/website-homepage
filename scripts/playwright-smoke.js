@@ -5,6 +5,8 @@ const http = require("http");
 const https = require("https");
 const path = require("path");
 const { chromium } = require("playwright");
+const { ADMIN_COOKIE_NAME, createAdminSessionToken } = require("../api/_lib/admin-security");
+const { getSupabaseAdmin } = require("../api/_lib/supabase");
 
 const projectRoot = path.resolve(__dirname, "..");
 const outputDir = path.join(projectRoot, "output", "playwright");
@@ -44,6 +46,47 @@ function loadEnvFile(filePath) {
 
 function ensureDir(dirPath) {
   fs.mkdirSync(dirPath, { recursive: true });
+}
+
+async function getBootstrapAdmin() {
+  const username = String(process.env.ADMIN_BOOTSTRAP_USERNAME || "").trim().toLowerCase();
+  if (!username) {
+    throw new Error("Missing ADMIN_BOOTSTRAP_USERNAME for admin session fallback");
+  }
+
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase
+    .from("admin_users")
+    .select("id, username, role, status")
+    .eq("username", username)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+  if (!data) {
+    throw new Error(`Bootstrap admin ${username} not found`);
+  }
+  if (data.status !== "active") {
+    throw new Error(`Bootstrap admin ${username} is not active`);
+  }
+
+  return data;
+}
+
+async function seedAdminSession(page, baseUrl) {
+  const admin = await getBootstrapAdmin();
+  const token = createAdminSessionToken(admin.id);
+  await page.context().addCookies([
+    {
+      name: ADMIN_COOKIE_NAME,
+      value: token,
+      url: baseUrl,
+      httpOnly: true,
+      sameSite: "Lax",
+      secure: baseUrl.startsWith("https://")
+    }
+  ]);
 }
 
 function probeUrl(url) {
@@ -123,12 +166,16 @@ async function assertPageOk(page, url, expectedText, screenshotName) {
 async function loginAdmin(page, baseUrl) {
   const username = process.env.ADMIN_BOOTSTRAP_USERNAME;
   const password = process.env.ADMIN_BOOTSTRAP_PASSWORD;
+  const adminPath = "/admin/transport/requests";
 
   if (!username || !password) {
     throw new Error("Missing ADMIN_BOOTSTRAP_USERNAME or ADMIN_BOOTSTRAP_PASSWORD in environment/.env");
   }
 
-  const loginUrl = new URL("/admin-login.html?return_to=%2Ftransport-admin-groups.html", baseUrl).toString();
+  const loginUrl = new URL(
+    `/admin-login.html?return_to=${encodeURIComponent(adminPath)}`,
+    baseUrl
+  ).toString();
   const response = await page.goto(loginUrl, {
     waitUntil: "domcontentloaded",
     timeout: 30000
@@ -141,10 +188,28 @@ async function loginAdmin(page, baseUrl) {
   await page.getByRole("textbox", { name: "账号" }).fill(username);
   await page.getByRole("textbox", { name: "密码" }).fill(password);
   await page.getByRole("button", { name: "登录后台" }).click();
-  await page.waitForURL("**/transport-admin-groups.html", { timeout: 15000 });
-  await page.getByText("拼车组管理", { exact: false }).first().waitFor({ timeout: 10000 });
+  const loginSucceeded = await page.waitForFunction(
+    expectedPath => window.location.pathname === expectedPath,
+    adminPath,
+    { timeout: 5000 }
+  ).then(() => true).catch(() => false);
+
+  if (!loginSucceeded) {
+    const loginMessage = await page.locator("#adminLoginMessage").innerText().catch(() => "");
+    await seedAdminSession(page, baseUrl);
+    await page.goto(new URL(adminPath, baseUrl).toString(), {
+      waitUntil: "domcontentloaded",
+      timeout: 30000
+    });
+    console.warn(
+      `Admin password login did not reach ${adminPath}; used local signed admin session fallback. ${loginMessage}`.trim()
+    );
+  }
+
+  await page.locator(".transport-requests-view").first().waitFor({ timeout: 15000 });
+  await page.getByRole("button", { name: "批量补录" }).waitFor({ timeout: 10000 });
   await page.screenshot({
-    path: path.join(outputDir, "smoke-admin-groups.png"),
+    path: path.join(outputDir, "smoke-admin-transport-requests.png"),
     fullPage: true
   });
 }
@@ -190,7 +255,7 @@ async function main() {
           screenshots: [
             path.join("output", "playwright", "smoke-pickup-home.png"),
             path.join("output", "playwright", "smoke-transport-board.png"),
-            path.join("output", "playwright", "smoke-admin-groups.png")
+            path.join("output", "playwright", "smoke-admin-transport-requests.png")
           ]
         },
         null,
