@@ -140,20 +140,49 @@ function isInvalidExcelDefaultDate(date) {
   return Number.isNaN(date.getTime()) || date.getUTCFullYear() <= 1900;
 }
 
+function getLondonTimeZoneParts(date) {
+  return new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/London",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+    hourCycle: "h23"
+  }).formatToParts(date).reduce((parts, part) => {
+    if (part.type !== "literal") parts[part.type] = Number(part.value);
+    return parts;
+  }, {});
+}
+
+function getLondonOffsetMs(date) {
+  const parts = getLondonTimeZoneParts(date);
+  const localAsUtc = Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second, date.getUTCMilliseconds());
+  return localAsUtc - date.getTime();
+}
+
 function buildLocalIso(year, month, day, hour, minute) {
-  const parsed = new Date(Number(year), Number(month) - 1, Number(day), Number(hour), Number(minute), 0);
+  const parsed = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day), Number(hour), Number(minute), 0));
   if (
     Number.isNaN(parsed.getTime())
-    || parsed.getFullYear() !== Number(year)
-    || parsed.getMonth() !== Number(month) - 1
-    || parsed.getDate() !== Number(day)
-    || parsed.getHours() !== Number(hour)
-    || parsed.getMinutes() !== Number(minute)
+    || parsed.getUTCFullYear() !== Number(year)
+    || parsed.getUTCMonth() !== Number(month) - 1
+    || parsed.getUTCDate() !== Number(day)
+    || parsed.getUTCHours() !== Number(hour)
+    || parsed.getUTCMinutes() !== Number(minute)
     || isInvalidExcelDefaultDate(parsed)
   ) {
     return null;
   }
-  return parsed.toISOString();
+  let utcTime = parsed.getTime();
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const nextUtcTime = parsed.getTime() - getLondonOffsetMs(new Date(utcTime));
+    if (nextUtcTime === utcTime) break;
+    utcTime = nextUtcTime;
+  }
+  return new Date(utcTime).toISOString();
 }
 
 function normalizeDateTimeText(value) {
