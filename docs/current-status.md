@@ -12,6 +12,14 @@
 
 ## Latest Completed Work
 
+- Preview deployment completed for the admin transport workbench display polish:
+  - GitHub commit deployed: `0fd35b3` (`fix(admin): improve transport workbench table display`);
+  - Vercel preview URL: `https://webside-9xgz5aq2u-wwkevin8s-projects.vercel.app`;
+  - Vercel deployment id: `dpl_J3Dyw4XnUaZgJjqBiDq7qjArGzwg`;
+  - Vercel ready state: `READY`;
+  - CLI deployment output showed build completed and deployment ready, with no build error reported; `vercel inspect` confirmed target `preview` and status `Ready`.
+  - Preview validation passed after user review: the backend workbench route was accessible in Preview and the admin transport workbench display polish was accepted; production deployment has not been run.
+
 - Completed a small admin transport workbench display polish pass:
   - `/admin/transport/requests` workbench now includes a `是否已记录` column between `定金` and `客服备注`, using the existing `transport_requests.offline_recorded` value and the existing `已记录` / `未记录` labels;
   - the existing top `线下记录状态` filter logic was not changed;
