@@ -24,6 +24,11 @@
   - local browser smoke opened `/admin/managers`, clicked `新增管理员`, entered the screenshot-equivalent email-format account, and confirmed the inline readable validation message appears without creating data;
   - `npm run build:admin-vue` passed and regenerated the root `admin/` bundle;
   - `npm run build:prod` passed.
+- Release for this fix:
+  - GitHub commit `7de8e27` (`Fix manager validation error text`) was pushed to `origin/codex/membership-v1`;
+  - Vercel Production deployment `dpl_DXG3bUpJaZE73R4FY7K2uE6v3ocw` completed and was aliased to `https://ngn.best`;
+  - production `/admin/` now references `admin/assets/index-re9AUhRU.js`, and that asset contains the new `4-32` account-format validation copy;
+  - unauthenticated production `/api/admin/session` still returns `authenticated: false`.
 
 - Ran read-only production checks against `https://ngn.best`:
   - `/`, `/pickup`, `/storage`, `/moving`, `/transport-board.html`, and `/admin-login.html` returned reachable responses;
