@@ -46,7 +46,7 @@ const columns = [
   { key: "wb_deposit_amount_gbp", label: "定金", width: "98px" },
   { key: "wb_admin_note", label: "客服备注", width: "220px" },
   { key: "wb_last_operation", label: "最后操作", width: "132px" },
-  { key: "wb_actions", label: "操作", width: "178px", className: "is-actions", sticky: "end" }
+  { key: "wb_actions", label: "操作", width: "230px", className: "is-actions", sticky: "end" }
 ];
 
 const legacyColumns = [
@@ -64,7 +64,7 @@ const legacyColumns = [
   { key: "status", label: "状态", width: "7%" },
   { key: "offline_recorded", label: "线下记录", width: "8%" },
   { key: "last_operation", label: "上次操作", width: "11%" },
-  { key: "actions", label: "操作", width: "180px", className: "is-actions", sticky: "end" }
+  { key: "actions", label: "操作", width: "220px", className: "is-actions", sticky: "end" }
 ];
 
 const defaultFilters = {
@@ -93,6 +93,7 @@ const bulkSaving = ref(false);
 const togglingId = ref("");
 const deletingId = ref("");
 const deleteCandidate = ref(null);
+const deleteActionKind = ref("close_order");
 const error = ref("");
 const notice = ref("");
 const showManualDialog = ref(false);
@@ -173,6 +174,12 @@ const manualForm = reactive({
 
 const hasRequests = computed(() => requests.value.length > 0);
 const selectedRows = computed(() => requests.value.filter(row => selectedIds.value.includes(String(row.id))));
+const deleteDialogIsTestDelete = computed(() => deleteActionKind.value === "delete_test");
+const deleteDialogTitle = computed(() => deleteDialogIsTestDelete.value ? "确认删除测试订单" : "确认关闭接送机订单");
+const deleteDialogConfirmLabel = computed(() => deleteDialogIsTestDelete.value ? "确认删除测试单" : "确认关闭订单");
+const deleteDialogWarning = computed(() => deleteDialogIsTestDelete.value
+  ? "仅明显 P2A/临时测试订单会物理删除，并会同步清理相关拼车组成员关系。请确认这是测试数据。"
+  : "真实订单将被关闭并从拼车组中移出，不会物理删除数据库记录。请确认客服已完成必要沟通。");
 const manualAddressLabel = computed(() => manualForm.service_type === "dropoff" ? "上车地址 / 接人地址" : "目的地地址");
 const manualRequiredErrors = computed(() => {
   const errors = [];
@@ -664,6 +671,20 @@ function requestActionId(row) {
   return row?.id || row?.request_id || row?.transport_request_id || row?.legacy_id || "";
 }
 
+function isTestTransportRequest(row) {
+  const text = [
+    row?.student_name,
+    row?.wechat,
+    row?.admin_note,
+    row?.order_no
+  ].filter(Boolean).join(" ").toLowerCase();
+  return /p2a|p2aui|test p2a|move regression|ui old date safe|ui old mate safe|predeploy/.test(text);
+}
+
+function requestDangerActionLabel(row) {
+  return isTestTransportRequest(row) ? "删除测试单" : "关闭订单";
+}
+
 function openRequestDetail(row) {
   const href = requestDetailHref(row);
   if (href) {
@@ -675,9 +696,10 @@ function openRequestDetail(row) {
 
 function openDeleteDialog(row) {
   if (!requestActionId(row)) {
-    notice.value = `未找到可删除的接送机订单 ID：${displayValue(row?.order_no || row?.id)}`;
+    notice.value = `未找到可处理的接送机订单 ID：${displayValue(row?.order_no || row?.id)}`;
     return;
   }
+  deleteActionKind.value = isTestTransportRequest(row) ? "delete_test" : "close_order";
   deleteCandidate.value = row;
   notice.value = "";
 }
@@ -685,6 +707,7 @@ function openDeleteDialog(row) {
 function closeDeleteDialog() {
   if (!deletingId.value) {
     deleteCandidate.value = null;
+    deleteActionKind.value = "close_order";
   }
 }
 
@@ -696,13 +719,19 @@ async function confirmDelete() {
   notice.value = "";
   error.value = "";
   try {
-    await deleteTransportRequest(id);
-    notice.value = `已删除订单 ${displayValue(target?.order_no || id)}。`;
+    if (deleteActionKind.value === "delete_test") {
+      await deleteTransportRequest(id);
+      notice.value = `已删除测试订单 ${displayValue(target?.order_no || id)}。`;
+    } else {
+      await updateTransportRequest(id, { status: "closed" });
+      notice.value = `已关闭订单 ${displayValue(target?.order_no || id)}。`;
+    }
     deleteCandidate.value = null;
+    deleteActionKind.value = "close_order";
     selectedIds.value = selectedIds.value.filter(item => item !== String(id));
     await loadRequests(pagination.value.page || 1);
   } catch (err) {
-    notice.value = err.message || "删除失败，请稍后重试。";
+    notice.value = err.message || "操作失败，请稍后重试。";
   } finally {
     deletingId.value = "";
   }
@@ -1710,7 +1739,7 @@ watch(
               :disabled="deletingId === String(requestActionId(row))"
               @click="openDeleteDialog(row)"
             >
-              {{ deletingId === String(requestActionId(row)) ? "删除中..." : "删除" }}
+              {{ deletingId === String(requestActionId(row)) ? "处理中..." : requestDangerActionLabel(row) }}
             </button>
             <button
               class="table-action-button"
@@ -1814,6 +1843,14 @@ watch(
             <button class="table-action-button" type="button" @click="resetWorkbenchDraft(row)">还原</button>
             <button class="table-action-button" type="button" @click="openTimeAdjustDialog(row)">调整时间</button>
             <button class="table-action-button" type="button" @click="openRequestDetail(row)">详情</button>
+            <button
+              class="table-action-button table-action-button--danger"
+              type="button"
+              :disabled="deletingId === String(requestActionId(row))"
+              @click="openDeleteDialog(row)"
+            >
+              {{ deletingId === String(requestActionId(row)) ? "处理中..." : requestDangerActionLabel(row) }}
+            </button>
             <small v-if="isWorkbenchRowDirty(row)" class="workbench-dirty-label">未保存</small>
             <small v-if="rowErrorMessages[draftKey(row)]" class="workbench-error-label">{{ rowErrorMessages[draftKey(row)] }}</small>
           </div>
@@ -2200,13 +2237,13 @@ watch(
 
     <ConfirmDialog
       :open="Boolean(deleteCandidate)"
-      title="确认删除接送机订单"
-      confirm-label="确认删除"
+      :title="deleteDialogTitle"
+      :confirm-label="deleteDialogConfirmLabel"
       :loading="Boolean(deletingId)"
       @cancel="closeDeleteDialog"
       @confirm="confirmDelete"
     >
-      <p class="confirm-dialog__warning">删除后不可恢复，并会同步清理相关拼车组成员关系。请确认这是要删除的单条接送机订单。</p>
+      <p class="confirm-dialog__warning">{{ deleteDialogWarning }}</p>
       <div class="readonly-field-grid">
         <article class="readonly-field">
           <span>订单编号</span>

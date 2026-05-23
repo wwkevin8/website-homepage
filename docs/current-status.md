@@ -8,9 +8,18 @@
 ## Last Updated Task
 
 - Date: 2026-05-23
-- Scope: P2a transport request time-adjustment transfer to existing group
+- Scope: P2a transport workbench cleanup and cancel/delete entry hardening
 
 ## Latest Completed Work
+
+- Completed the P2a wrap-up patch before deployment:
+  - queried Supabase for obvious P2/P2a test transport requests matching P2A/regression/test markers in `student_name`, `wechat`, or `admin_note`; no persistent matching rows remained in the database before the patch verification;
+  - verified the old P2a UI test names such as `P2A Move Regression`, `P2A UI Old Mate Safe`, `TEST P2A UI`, `p2aui_target`, and `p2aui_current` no longer appear on `/admin/transport/requests`;
+  - restored the workbench operation-column dangerous action as a safe split action: normal/real rows show `关闭订单`, while rows with obvious P2A/predeploy test markers show `删除测试单`;
+  - real rows use the existing `PATCH /api/transport-requests/:id` close behavior, preserving the transport request row and letting the existing lifecycle remove membership and sync affected groups;
+  - test rows still use the existing `DELETE /api/transport-requests/:id` path, with a clearer second-confirmation dialog that says physical deletion is only for obvious P2A/temporary test data;
+  - local UI verification on `http://localhost:3000/admin/transport/requests` created temporary test order `PU260523-0100` in group `GRP-260523-WZVD`, confirmed `删除测试单` and the confirmation dialog were visible, then deleted the temporary request, its membership, and the now-empty test group through the UI;
+  - the same UI check confirmed real rows show `关闭订单`, the workbench headers still exclude pinyin, safe-field inputs remain visible, and the time-adjust modal still shows the P1/P2a options including `transfer_existing_group`.
 
 - Implemented P2a for the admin transport request time-adjustment flow:
   - added `GET /api/transport-requests/:id/time-adjust-candidate-groups` for admin-only candidate group lookup;
