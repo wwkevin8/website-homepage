@@ -268,6 +268,17 @@ export function adjustTransportRequestTime(id, payload = {}) {
   });
 }
 
+export function fetchTimeAdjustCandidateGroups(id, params = {}) {
+  const search = new URLSearchParams();
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== "") {
+      search.set(key, value);
+    }
+  });
+  const query = search.toString();
+  return request(`/api/transport-requests/${encodeURIComponent(id)}/time-adjust-candidate-groups${query ? `?${query}` : ""}`);
+}
+
 export function deleteTransportRequest(id) {
   return request(`/api/transport-requests/${encodeURIComponent(id)}`, {
     method: "DELETE"

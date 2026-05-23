@@ -136,6 +136,10 @@ function toApiModulePath(urlPathname) {
     return path.join(ROOT, "api", "transport-requests", "[id].js");
   }
 
+  if (/^\/api\/transport-requests\/[^/]+\/time-adjust-candidate-groups$/.test(urlPathname)) {
+    return path.join(ROOT, "api", "transport-requests", "[id]", "time-adjust-candidate-groups.js");
+  }
+
   if (/^\/api\/transport-requests\/[^/]+\/recreate$/.test(urlPathname)) {
     return path.join(ROOT, "api", "transport-requests", "[id]", "recreate.js");
   }
@@ -193,6 +197,11 @@ function applyRouteParams(req, urlPathname) {
 
   if (/^\/api\/transport-requests\/[^/]+$/.test(urlPathname)) {
     req.query = { ...(req.query || {}), id: urlPathname.split("/").pop() };
+  }
+
+  const timeAdjustCandidateMatch = urlPathname.match(/^\/api\/transport-requests\/([^/]+)\/time-adjust-candidate-groups$/);
+  if (timeAdjustCandidateMatch) {
+    req.query = { ...(req.query || {}), id: timeAdjustCandidateMatch[1] };
   }
 
   const recreateMatch = urlPathname.match(/^\/api\/transport-requests\/([^/]+)\/recreate$/);

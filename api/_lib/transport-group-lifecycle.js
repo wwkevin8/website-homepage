@@ -9,6 +9,20 @@ const GROUP_STATUS = {
   CANCELLED: "cancelled"
 };
 
+const JOINABLE_GROUP_STATUSES = new Set([
+  GROUP_STATUS.SINGLE_MEMBER,
+  GROUP_STATUS.ACTIVE,
+  "open"
+]);
+
+const BLOCKED_JOIN_GROUP_STATUSES = new Set([
+  GROUP_STATUS.FULL,
+  GROUP_STATUS.CLOSED,
+  GROUP_STATUS.CANCELLED
+]);
+
+const MAX_TIME_ADJUST_CANDIDATE_HOURS = 3;
+
 function isMissingColumnError(error, marker) {
   return Boolean(error?.message && error.message.includes(marker));
 }
@@ -46,6 +60,74 @@ function normalizeGroupRecord(group, requestLike) {
 
 function getIsoDatePart(value) {
   return new Date(value).toISOString().slice(0, 10);
+}
+
+function buildTransportLifecycleError(message, statusCode = 400, details = null) {
+  const error = new Error(message);
+  error.statusCode = statusCode;
+  error.details = details;
+  return error;
+}
+
+function normalizeText(value) {
+  return String(value || "").trim();
+}
+
+function sameNormalizedText(left, right) {
+  return normalizeText(left).toLowerCase() === normalizeText(right).toLowerCase();
+}
+
+function hoursApart(left, right) {
+  const leftDate = new Date(left);
+  const rightDate = new Date(right);
+  if (Number.isNaN(leftDate.getTime()) || Number.isNaN(rightDate.getTime())) {
+    return null;
+  }
+  return Math.abs(leftDate.getTime() - rightDate.getTime()) / (60 * 60 * 1000);
+}
+
+function deriveServiceDateFromTimes(times = {}) {
+  const source = times.preferred_time_start || times.flight_datetime;
+  if (!source) {
+    throw buildTransportLifecycleError("preferred_time_start or flight_datetime is required", 400);
+  }
+  const parsed = new Date(source);
+  if (Number.isNaN(parsed.getTime())) {
+    throw buildTransportLifecycleError("time adjustment datetime is invalid", 400);
+  }
+  return parsed.toISOString().slice(0, 10);
+}
+
+function getGroupJoinRef(group, fallback) {
+  return group?.group_id || group?.group_ref || fallback || group?.id || null;
+}
+
+function getGroupDisplayId(group, fallback) {
+  return group?.group_id || deriveDisplayGroupId(group?.group_ref || group?.id || fallback, group?.group_date || group?.preferred_time_start);
+}
+
+function buildCandidateWarning(code, message) {
+  return { code, message };
+}
+
+function summarizeCandidateGroup(group, stats, warnings = []) {
+  return {
+    group_id: getGroupDisplayId(group),
+    group_ref: group.group_ref || group.id || group.group_id,
+    status: normalizeGroupStatus(group.status),
+    service_type: group.service_type,
+    airport_code: group.airport_code,
+    airport_name: group.airport_name,
+    terminal: group.terminal,
+    group_date: group.group_date,
+    preferred_time_start: group.preferred_time_start,
+    flight_time_reference: group.flight_time_reference,
+    current_passenger_count: stats.current_passenger_count,
+    remaining_passenger_count: stats.remaining_passenger_count,
+    max_passengers: stats.max_passengers,
+    member_order_nos: stats.member_order_nos,
+    warnings
+  };
 }
 
 function getGroupDateFromRequest(request) {
@@ -220,6 +302,180 @@ async function getGroupMembersWithRequests(supabase, groupId) {
 
 function getActiveMembers(members) {
   return (members || []).filter(member => member.transport_requests && member.transport_requests.status !== "closed");
+}
+
+async function getGroupCapacityStats(supabase, groupId, group = null) {
+  const members = await getGroupMembersWithRequests(supabase, groupId);
+  const activeMembers = getActiveMembers(members);
+  const currentPassengerCount = activeMembers.reduce((sum, member) => {
+    return sum + Number(member.transport_requests?.passenger_count || member.passenger_count_snapshot || 0);
+  }, 0);
+  const maxPassengers = Number(group?.max_passengers || DEFAULT_GROUP_MAX_PASSENGERS);
+
+  return {
+    members,
+    active_members: activeMembers,
+    current_passenger_count: currentPassengerCount,
+    remaining_passenger_count: Math.max(maxPassengers - currentPassengerCount, 0),
+    max_passengers: maxPassengers,
+    member_order_nos: activeMembers
+      .map(member => member.transport_requests?.order_no)
+      .filter(Boolean)
+  };
+}
+
+function validateGroupJoinShape(request, group, stats, times = {}, options = {}) {
+  const currentGroupIds = new Set((options.currentGroupIds || []).filter(Boolean));
+  const requestedPassengerCount = Number(request.passenger_count || 0);
+  const serviceDate = deriveServiceDateFromTimes(times);
+  const groupId = getGroupJoinRef(group);
+  const displayGroupId = getGroupDisplayId(group);
+  const status = normalizeGroupStatus(group.status);
+  const rawStatus = group.status;
+  const warnings = [];
+
+  if (!requestedPassengerCount || requestedPassengerCount < 1) {
+    throw buildTransportLifecycleError("request passenger_count is invalid", 400);
+  }
+  if (currentGroupIds.has(groupId) || currentGroupIds.has(displayGroupId)) {
+    throw buildTransportLifecycleError("target group is the current group", 400);
+  }
+  if (BLOCKED_JOIN_GROUP_STATUSES.has(status) || BLOCKED_JOIN_GROUP_STATUSES.has(rawStatus)) {
+    throw buildTransportLifecycleError("target group is not joinable", 400);
+  }
+  if (!JOINABLE_GROUP_STATUSES.has(status) && !JOINABLE_GROUP_STATUSES.has(rawStatus)) {
+    throw buildTransportLifecycleError("target group status is not joinable", 400);
+  }
+  if (group.service_type !== request.service_type) {
+    throw buildTransportLifecycleError("target group service_type does not match", 400);
+  }
+  if (group.airport_code !== request.airport_code) {
+    throw buildTransportLifecycleError("target group airport_code does not match", 400);
+  }
+  if (group.group_date !== serviceDate) {
+    throw buildTransportLifecycleError("target group date does not match", 400);
+  }
+  if (!stats.active_members.length) {
+    throw buildTransportLifecycleError("target group has no active members", 400);
+  }
+  if (stats.remaining_passenger_count < requestedPassengerCount) {
+    throw buildTransportLifecycleError("target group capacity is not enough", 409);
+  }
+
+  const targetGroupTime = group.preferred_time_start || group.flight_time_reference;
+  const referenceTime = times.preferred_time_start || times.flight_datetime;
+  const distance = hoursApart(referenceTime, targetGroupTime);
+  if (distance === null || distance > MAX_TIME_ADJUST_CANDIDATE_HOURS) {
+    throw buildTransportLifecycleError("target group time is outside the allowed window", 400);
+  }
+
+  const requestTerminal = normalizeText(request.terminal);
+  const groupTerminal = normalizeText(group.terminal);
+  if (requestTerminal && groupTerminal && !sameNormalizedText(requestTerminal, groupTerminal)) {
+    throw buildTransportLifecycleError("target group terminal does not match", 400);
+  }
+  if (!requestTerminal || !groupTerminal) {
+    warnings.push(buildCandidateWarning("terminal_partial", "订单或目标组航站楼为空，请客服确认航站楼兼容。"));
+  }
+
+  return {
+    service_date: serviceDate,
+    warnings
+  };
+}
+
+async function validateRequestCanJoinGroup(supabase, request, targetGroupId, times = {}, options = {}) {
+  const group = await getGroupByBusinessId(supabase, targetGroupId);
+  const groupRef = getGroupJoinRef(group, targetGroupId);
+
+  const duplicate = await supabase
+    .from("transport_group_members")
+    .select("id")
+    .eq("group_id", groupRef)
+    .eq("request_id", request.id)
+    .limit(1);
+
+  if (duplicate.error) {
+    throw duplicate.error;
+  }
+  if ((duplicate.data || []).length) {
+    throw buildTransportLifecycleError("request is already in target group", 400);
+  }
+
+  const stats = await getGroupCapacityStats(supabase, groupRef, group);
+  const validation = validateGroupJoinShape(request, group, stats, times, options);
+
+  return {
+    group,
+    group_ref: groupRef,
+    stats,
+    warnings: validation.warnings
+  };
+}
+
+async function findTimeAdjustCandidateGroups(supabase, request, times = {}, options = {}) {
+  const serviceDate = deriveServiceDateFromTimes(times);
+  const currentGroupIds = new Set((options.currentGroupIds || []).filter(Boolean));
+  const passengerCount = Number(request.passenger_count || 0);
+  if (!passengerCount || passengerCount < 1) {
+    throw buildTransportLifecycleError("request passenger_count is invalid", 400);
+  }
+
+  const { data, error } = await supabase
+    .from("transport_groups_public_view")
+    .select("group_id, service_type, group_date, airport_code, terminal, location_from, location_to, preferred_time_start, current_passenger_count, remaining_passenger_count, status")
+    .eq("service_type", request.service_type)
+    .eq("airport_code", request.airport_code)
+    .eq("group_date", serviceDate)
+    .in("status", [GROUP_STATUS.SINGLE_MEMBER, GROUP_STATUS.ACTIVE, "open"])
+    .gte("remaining_passenger_count", passengerCount)
+    .order("preferred_time_start", { ascending: true, nullsFirst: false })
+    .limit(options.limit || 20);
+
+  if (error) {
+    throw error;
+  }
+
+  const candidates = [];
+  for (const rawGroup of data || []) {
+    const fullGroup = await getGroupByBusinessId(supabase, rawGroup.group_id);
+    const group = normalizeGroupRecord({
+      ...(fullGroup || {}),
+      current_passenger_count: rawGroup.current_passenger_count,
+      remaining_passenger_count: rawGroup.remaining_passenger_count,
+      status: rawGroup.status || fullGroup?.status
+    });
+    const groupRef = getGroupJoinRef(group, rawGroup.group_id);
+    const displayId = getGroupDisplayId(group, rawGroup.group_id);
+    if (currentGroupIds.has(groupRef) || currentGroupIds.has(displayId)) {
+      continue;
+    }
+
+    try {
+      const stats = await getGroupCapacityStats(supabase, groupRef, group);
+      const validation = validateGroupJoinShape(request, group, stats, times, {
+        currentGroupIds: Array.from(currentGroupIds)
+      });
+      candidates.push({
+        ...summarizeCandidateGroup(group, stats, validation.warnings),
+        time_distance_hours: hoursApart(times.preferred_time_start || times.flight_datetime, group.preferred_time_start || group.flight_time_reference)
+      });
+    } catch (candidateError) {
+      if (candidateError.statusCode >= 500) {
+        throw candidateError;
+      }
+    }
+  }
+
+  return candidates
+    .sort((left, right) => {
+      const leftDistance = Number(left.time_distance_hours || 0);
+      const rightDistance = Number(right.time_distance_hours || 0);
+      if (leftDistance !== rightDistance) return leftDistance - rightDistance;
+      if (left.status !== right.status) return left.status === GROUP_STATUS.ACTIVE ? -1 : 1;
+      return Number(left.remaining_passenger_count || 0) - Number(right.remaining_passenger_count || 0);
+    })
+    .map(({ time_distance_hours, ...group }) => group);
 }
 
 async function setRequestStatuses(supabase, requestIds, status) {
@@ -406,6 +662,196 @@ async function addRequestToGroup(supabase, groupId, request) {
   return syncGroupState(supabase, memberGroupId);
 }
 
+async function insertGroupMembership(supabase, payload) {
+  const result = await supabase
+    .from("transport_group_members")
+    .insert(payload)
+    .select("*")
+    .single();
+
+  if (result.error && isMissingColumnError(result.error, "transport_group_members.is_initiator")) {
+    const { is_initiator, ...legacyPayload } = payload;
+    const retry = await supabase
+      .from("transport_group_members")
+      .insert(legacyPayload)
+      .select("*")
+      .single();
+    if (retry.error) {
+      throw retry.error;
+    }
+    return retry.data;
+  }
+
+  if (result.error) {
+    throw result.error;
+  }
+  return result.data;
+}
+
+async function safeSyncGroupState(supabase, groupId) {
+  if (!groupId) {
+    return null;
+  }
+  try {
+    return await syncGroupState(supabase, groupId);
+  } catch (error) {
+    return {
+      group_id: groupId,
+      sync_failed: true,
+      message: error?.message || String(error)
+    };
+  }
+}
+
+async function transferRequestToExistingGroup(supabase, request, targetGroupId, times = {}, options = {}) {
+  const { data: memberships, error: membershipError } = await supabase
+    .from("transport_group_members")
+    .select("id, group_id, request_id, passenger_count_snapshot, luggage_count_snapshot, is_initiator")
+    .eq("request_id", request.id);
+
+  if (membershipError) {
+    throw membershipError;
+  }
+  if (!memberships || memberships.length === 0) {
+    throw buildTransportLifecycleError("request is not in a group", 400);
+  }
+  if (memberships.length > 1) {
+    throw buildTransportLifecycleError("request has multiple active group memberships; please inspect manually", 409);
+  }
+
+  const oldMembership = memberships[0];
+  const oldGroupId = oldMembership.group_id;
+  const validation = await validateRequestCanJoinGroup(supabase, request, targetGroupId, times, {
+    currentGroupIds: [oldGroupId]
+  });
+  const newGroupId = validation.group_ref;
+  const operatedAt = options.operatedAt || new Date().toISOString();
+  const requestUpdatePayload = {
+    flight_datetime: times.flight_datetime,
+    preferred_time_start: times.preferred_time_start,
+    last_operated_by: options.operatedBy || request.last_operated_by || null,
+    last_operated_at: operatedAt
+  };
+  const restorePayload = {
+    flight_datetime: request.flight_datetime,
+    preferred_time_start: request.preferred_time_start,
+    last_operated_by: request.last_operated_by,
+    last_operated_at: request.last_operated_at
+  };
+
+  let insertedTargetMembership = null;
+  let oldMembershipDeleted = false;
+  let requestUpdated = false;
+  const compensation = [];
+
+  try {
+    const update = await supabase
+      .from("transport_requests")
+      .update(requestUpdatePayload)
+      .eq("id", request.id);
+    if (update.error) {
+      throw update.error;
+    }
+    requestUpdated = true;
+
+    const deleteOld = await supabase
+      .from("transport_group_members")
+      .delete()
+      .eq("id", oldMembership.id);
+    if (deleteOld.error) {
+      throw deleteOld.error;
+    }
+    oldMembershipDeleted = true;
+
+    insertedTargetMembership = await insertGroupMembership(supabase, {
+      group_id: newGroupId,
+      request_id: request.id,
+      passenger_count_snapshot: request.passenger_count,
+      luggage_count_snapshot: request.luggage_count,
+      is_initiator: false
+    });
+
+    const oldGroup = await syncGroupState(supabase, oldGroupId);
+    const newGroup = await syncGroupState(supabase, newGroupId);
+
+    return {
+      old_group_id: oldGroupId,
+      new_group_id: getGroupDisplayId(validation.group, newGroupId),
+      new_group_ref: newGroupId,
+      old_group: oldGroup,
+      new_group: newGroup,
+      target_group: summarizeCandidateGroup(validation.group, validation.stats, validation.warnings),
+      inserted_membership: insertedTargetMembership
+    };
+  } catch (error) {
+    if (insertedTargetMembership?.id) {
+      const cleanup = await supabase
+        .from("transport_group_members")
+        .delete()
+        .eq("id", insertedTargetMembership.id);
+      compensation.push({
+        step: "delete_target_membership",
+        ok: !cleanup.error,
+        message: cleanup.error?.message || null
+      });
+    } else {
+      const cleanup = await supabase
+        .from("transport_group_members")
+        .delete()
+        .eq("group_id", newGroupId)
+        .eq("request_id", request.id);
+      compensation.push({
+        step: "delete_target_membership_by_request",
+        ok: !cleanup.error,
+        message: cleanup.error?.message || null
+      });
+    }
+
+    if (oldMembershipDeleted) {
+      try {
+        await insertGroupMembership(supabase, {
+          group_id: oldGroupId,
+          request_id: request.id,
+          passenger_count_snapshot: oldMembership.passenger_count_snapshot,
+          luggage_count_snapshot: oldMembership.luggage_count_snapshot,
+          is_initiator: oldMembership.is_initiator !== false
+        });
+        compensation.push({ step: "restore_old_membership", ok: true, message: null });
+      } catch (restoreError) {
+        compensation.push({
+          step: "restore_old_membership",
+          ok: false,
+          message: restoreError?.message || String(restoreError)
+        });
+      }
+    }
+
+    if (requestUpdated) {
+      const restoreRequest = await supabase
+        .from("transport_requests")
+        .update(restorePayload)
+        .eq("id", request.id);
+      compensation.push({
+        step: "restore_request_times",
+        ok: !restoreRequest.error,
+        message: restoreRequest.error?.message || null
+      });
+    }
+
+    compensation.push({
+      step: "sync_old_group",
+      result: await safeSyncGroupState(supabase, oldGroupId)
+    });
+    compensation.push({
+      step: "sync_target_group",
+      result: await safeSyncGroupState(supabase, newGroupId)
+    });
+
+    error.compensation = compensation;
+    throw error;
+  }
+}
+
 async function removeRequestFromGroup(supabase, requestId, options = {}) {
   const { data: request, error: requestError } = await supabase
     .from("transport_requests")
@@ -501,5 +947,8 @@ module.exports = {
   getGroupMembersWithRequests,
   syncGroupState,
   addRequestToGroup,
+  findTimeAdjustCandidateGroups,
+  validateRequestCanJoinGroup,
+  transferRequestToExistingGroup,
   removeRequestFromGroup
 };

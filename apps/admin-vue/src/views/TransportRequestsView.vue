@@ -7,6 +7,7 @@ import {
   createManualTransportRequest,
   deleteTransportRequest,
   exportTransportRequests,
+  fetchTimeAdjustCandidateGroups,
   fetchTransportRequests,
   previewTransportManualImport,
   adjustTransportRequestTime,
@@ -117,11 +118,15 @@ const rowErrorMessages = reactive({});
 const timeAdjustTarget = ref(null);
 const timeAdjustSaving = ref(false);
 const timeAdjustError = ref("");
+const timeAdjustCandidateLoading = ref(false);
+const timeAdjustCandidateError = ref("");
+const timeAdjustCandidateGroups = ref([]);
 const timeAdjustForm = reactive({
   flight_datetime: "",
   preferred_time_start: "",
   reason: "",
-  handling_method: "direct"
+  handling_method: "direct",
+  target_group_id: ""
 });
 
 const IMPORT_COLUMNS = importColumns;
@@ -230,12 +235,14 @@ const allCurrentPageSelected = computed(() => {
   return ids.length > 0 && ids.every(id => selectedIds.value.includes(id));
 });
 const isTimeAdjustGrouped = computed(() => isRequestGrouped(timeAdjustTarget.value));
+const isTimeAdjustTransfer = computed(() => timeAdjustForm.handling_method === "transfer_existing_group");
 const timeAdjustConfirmDisabled = computed(() => {
   if (timeAdjustSaving.value) return true;
   if (!timeAdjustTarget.value) return true;
   if (!timeAdjustForm.flight_datetime || !timeAdjustForm.preferred_time_start) return true;
   if (!String(timeAdjustForm.reason || "").trim()) return true;
-  if (isTimeAdjustGrouped.value && !["keep_group", "move_out"].includes(timeAdjustForm.handling_method)) return true;
+  if (isTimeAdjustGrouped.value && !["keep_group", "move_out", "transfer_existing_group"].includes(timeAdjustForm.handling_method)) return true;
+  if (isTimeAdjustTransfer.value && (!timeAdjustForm.target_group_id || timeAdjustCandidateLoading.value || timeAdjustCandidateError.value)) return true;
   return false;
 });
 
@@ -367,6 +374,18 @@ function groupStatusLabel(row) {
   return "未入组";
 }
 
+function statusLabel(status) {
+  const labels = {
+    single_member: "single_member",
+    active: "active",
+    open: "open",
+    full: "full",
+    closed: "closed",
+    cancelled: "cancelled"
+  };
+  return labels[status] || displayValue(status);
+}
+
 function isRequestGrouped(row) {
   if (!row) return false;
   if (row.group_id || row.group_ref || row.matched_group_id) return true;
@@ -380,6 +399,28 @@ function groupInfoText(row) {
   if (!groupId) return "未加入拼车组";
   const role = membership?.is_initiator ? "发起人" : "成员";
   return `当前拼车组：${groupId}（${role}）`;
+}
+
+function candidateGroupTitle(group) {
+  return [
+    displayValue(group.group_id),
+    statusLabel(group.status),
+    formatDate(group.group_date),
+    formatDateTime(group.preferred_time_start || group.flight_time_reference),
+    group.airport_code,
+    group.terminal ? `航站楼 ${group.terminal}` : ""
+  ].filter(Boolean).join(" · ");
+}
+
+function candidateGroupMeta(group) {
+  const members = Array.isArray(group.member_order_nos) && group.member_order_nos.length
+    ? `成员 ${group.member_order_nos.join(", ")}`
+    : "成员 --";
+  return [
+    `当前人数 ${displayValue(group.current_passenger_count)}`,
+    `剩余座位 ${displayValue(group.remaining_passenger_count)}`,
+    members
+  ].join(" · ");
 }
 
 function rowNumber(row) {
@@ -1418,16 +1459,52 @@ async function saveWorkbenchRow(row) {
 function openTimeAdjustDialog(row) {
   timeAdjustTarget.value = row;
   timeAdjustError.value = "";
+  timeAdjustCandidateError.value = "";
+  timeAdjustCandidateGroups.value = [];
   timeAdjustForm.flight_datetime = toDateTimeLocalValue(row.flight_datetime);
   timeAdjustForm.preferred_time_start = toDateTimeLocalValue(row.preferred_time_start || row.flight_datetime);
   timeAdjustForm.reason = "";
   timeAdjustForm.handling_method = isRequestGrouped(row) ? "keep_group" : "direct";
+  timeAdjustForm.target_group_id = "";
 }
 
 function closeTimeAdjustDialog() {
   if (timeAdjustSaving.value) return;
   timeAdjustTarget.value = null;
   timeAdjustError.value = "";
+  timeAdjustCandidateError.value = "";
+  timeAdjustCandidateGroups.value = [];
+  timeAdjustForm.target_group_id = "";
+}
+
+async function loadTimeAdjustCandidateGroups() {
+  const row = timeAdjustTarget.value;
+  const id = requestActionId(row);
+  if (!row || !id || !isTimeAdjustTransfer.value) return;
+
+  const flightDatetime = fromDateTimeLocalValue(timeAdjustForm.flight_datetime);
+  const preferredTimeStart = fromDateTimeLocalValue(timeAdjustForm.preferred_time_start);
+  timeAdjustForm.target_group_id = "";
+  timeAdjustCandidateGroups.value = [];
+  timeAdjustCandidateError.value = "";
+
+  if (!flightDatetime || !preferredTimeStart) {
+    timeAdjustCandidateError.value = "请先填写有效的新航班时间和接机时间。";
+    return;
+  }
+
+  timeAdjustCandidateLoading.value = true;
+  try {
+    const payload = await fetchTimeAdjustCandidateGroups(id, {
+      flight_datetime: flightDatetime,
+      preferred_time_start: preferredTimeStart
+    });
+    timeAdjustCandidateGroups.value = Array.isArray(payload?.candidate_groups) ? payload.candidate_groups : [];
+  } catch (err) {
+    timeAdjustCandidateError.value = err.message || "候选拼车组加载失败，请稍后重试。";
+  } finally {
+    timeAdjustCandidateLoading.value = false;
+  }
 }
 
 async function saveTimeAdjustment() {
@@ -1447,12 +1524,16 @@ async function saveTimeAdjustment() {
   notice.value = "";
   error.value = "";
   try {
-    const updated = await adjustTransportRequestTime(id, {
+    const payload = {
       flight_datetime: flightDatetime,
       preferred_time_start: preferredTimeStart,
       reason: String(timeAdjustForm.reason || "").trim(),
       handling_method: timeAdjustForm.handling_method
-    });
+    };
+    if (timeAdjustForm.handling_method === "transfer_existing_group") {
+      payload.target_group_id = timeAdjustForm.target_group_id;
+    }
+    const updated = await adjustTransportRequestTime(id, payload);
     const nextRow = updated?.request || updated?.item || updated;
     requests.value = requests.value.map(item => (item.id === row.id ? { ...item, ...nextRow } : item));
     resetWorkbenchDraft({ ...row, ...nextRow });
@@ -1485,6 +1566,24 @@ watch(
     manualGroupMessage.value = "";
     manualPreview.value = null;
     manualConfirmWarnings.value = false;
+  }
+);
+
+watch(
+  () => [
+    timeAdjustForm.handling_method,
+    timeAdjustForm.flight_datetime,
+    timeAdjustForm.preferred_time_start,
+    timeAdjustTarget.value?.id
+  ],
+  () => {
+    if (isTimeAdjustTransfer.value) {
+      loadTimeAdjustCandidateGroups();
+      return;
+    }
+    timeAdjustForm.target_group_id = "";
+    timeAdjustCandidateGroups.value = [];
+    timeAdjustCandidateError.value = "";
   }
 );
 </script>
@@ -1772,6 +1871,39 @@ watch(
               <small>适用于时间变化较大；会同步原组人数，并给该订单保留新的单人拼车组容器。</small>
             </span>
           </label>
+          <label class="time-adjust-option">
+            <input v-model="timeAdjustForm.handling_method" type="radio" value="transfer_existing_group" />
+            <span>
+              <strong>转移到其他已有合适拼车组</strong>
+              <small>系统会按新时间、机场、服务类型、座位和拼车状态筛选候选组；客服只能从候选组中选择，不能手动输入 group_id。</small>
+            </span>
+          </label>
+          <div v-if="isTimeAdjustTransfer" class="time-adjust-candidates">
+            <div class="time-adjust-candidates__header">
+              <strong>候选拼车组</strong>
+              <button class="table-action-button" type="button" :disabled="timeAdjustCandidateLoading" @click="loadTimeAdjustCandidateGroups">刷新</button>
+            </div>
+            <p v-if="timeAdjustCandidateLoading" class="time-adjust-hint">正在加载候选拼车组...</p>
+            <p v-else-if="timeAdjustCandidateError" class="workbench-error-label">{{ timeAdjustCandidateError }}</p>
+            <p v-else-if="!timeAdjustCandidateGroups.length" class="time-adjust-hint">没有符合条件的已有拼车组，可选择移出并新建单人待匹配组。</p>
+            <div v-else class="time-adjust-candidate-list">
+              <label
+                v-for="group in timeAdjustCandidateGroups"
+                :key="group.group_id"
+                class="time-adjust-candidate"
+                :class="{ 'is-selected': timeAdjustForm.target_group_id === group.group_id }"
+              >
+                <input v-model="timeAdjustForm.target_group_id" type="radio" :value="group.group_id" />
+                <span>
+                  <strong>{{ candidateGroupTitle(group) }}</strong>
+                  <small>{{ candidateGroupMeta(group) }}</small>
+                  <small v-if="Array.isArray(group.warnings) && group.warnings.length" class="time-adjust-candidate__warning">
+                    {{ group.warnings.map(item => item.message || item.code).join("；") }}
+                  </small>
+                </span>
+              </label>
+            </div>
+          </div>
         </div>
         <p v-else class="time-adjust-hint">该订单未加入拼车组，保存后只更新本订单时间，不创建拼车组、不自动匹配。</p>
         <p v-if="timeAdjustError" class="workbench-error-label">{{ timeAdjustError }}</p>

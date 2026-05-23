@@ -1,8 +1,8 @@
 const { getSupabaseAdmin } = require("../_lib/supabase");
 const { requireAdminUser } = require("../_lib/admin-auth");
-const { ok, badRequest, parseJsonBody, methodNotAllowed, serverError } = require("../_lib/http");
+const { ok, badRequest, parseJsonBody, methodNotAllowed, serverError, sendJson } = require("../_lib/http");
 const { mapRequestPayload, deriveRequestDisplayFlags, closeExpiredRequests, syncGroupStatus } = require("../_lib/transport");
-const { removeRequestFromGroup, backfillMissingPickupGroups } = require("../_lib/transport-group-lifecycle");
+const { removeRequestFromGroup, backfillMissingPickupGroups, transferRequestToExistingGroup } = require("../_lib/transport-group-lifecycle");
 const { logAdminOperation } = require("../_lib/orders");
 const { releaseClaimOrderBinding } = require("../_lib/membership");
 
@@ -69,13 +69,14 @@ const HIGH_RISK_SAFE_UPDATE_FIELDS = new Set([
 
 const CONTACT_STATUSES = new Set(["uncontacted", "contacted"]);
 const PAYMENT_COLLECTION_STATUSES = new Set(["unpaid", "deposit_paid", "fully_paid"]);
-const TIME_ADJUSTMENT_HANDLING_METHODS = new Set(["keep_group", "move_out"]);
+const TIME_ADJUSTMENT_HANDLING_METHODS = new Set(["keep_group", "move_out", "transfer_existing_group"]);
 const TIME_ADJUSTMENT_ALLOWED_FIELDS = new Set([
   "action",
   "flight_datetime",
   "preferred_time_start",
   "reason",
-  "handling_method"
+  "handling_method",
+  "target_group_id"
 ]);
 
 function parsePaymentStatus(adminNote, structuredStatus) {
@@ -244,7 +245,7 @@ function normalizeTimeAdjustmentPayload(body = {}, existing = {}) {
 function normalizeTimeAdjustmentHandling(value, isGrouped) {
   const next = String(value || "").trim();
   if (!isGrouped) {
-    if (next && !TIME_ADJUSTMENT_HANDLING_METHODS.has(next) && next !== "direct") {
+    if (next && next !== "direct") {
       throw new Error("handling_method is invalid");
     }
     return "direct";
@@ -253,6 +254,32 @@ function normalizeTimeAdjustmentHandling(value, isGrouped) {
     throw new Error("handling_method is required for grouped requests");
   }
   return next;
+}
+
+function normalizeTargetGroupId(value, handlingMethod) {
+  const next = String(value || "").trim();
+  if (handlingMethod !== "transfer_existing_group") {
+    return null;
+  }
+  if (!next) {
+    throw new Error("target_group_id is required");
+  }
+  return next;
+}
+
+function respondError(res, error) {
+  const statusCode = Number(error?.statusCode || error?.status || 500);
+  if (statusCode >= 400 && statusCode < 500) {
+    sendJson(res, statusCode, {
+      data: null,
+      error: {
+        message: error?.message || "Request failed",
+        details: error?.details || error?.compensation || null
+      }
+    });
+    return;
+  }
+  serverError(res, error);
 }
 
 function normalizeManualPaymentStatus(value) {
@@ -471,10 +498,12 @@ module.exports = async function handler(req, res) {
         let reason;
         let timePayload;
         let handlingMethod;
+        let targetGroupId;
         try {
           reason = normalizeTimeAdjustmentReason(body.reason);
           timePayload = normalizeTimeAdjustmentPayload(body, existing);
           handlingMethod = normalizeTimeAdjustmentHandling(body.handling_method, isGrouped);
+          targetGroupId = normalizeTargetGroupId(body.target_group_id, handlingMethod);
         } catch (error) {
           badRequest(res, error.message);
           return;
@@ -496,19 +525,38 @@ module.exports = async function handler(req, res) {
           flight_datetime: normalizeAuditValue("flight_datetime", payload.flight_datetime),
           preferred_time_start: normalizeAuditValue("preferred_time_start", payload.preferred_time_start),
           handling_method: handlingMethod,
+          target_group_id: targetGroupId,
           reason
         };
 
-        const { error: updateError } = await supabase
-          .from("transport_requests")
-          .update(payload)
-          .eq("id", existing.id);
+        let groupLifecycle = null;
+        if (isGrouped && handlingMethod === "transfer_existing_group") {
+          try {
+            groupLifecycle = await transferRequestToExistingGroup(supabase, existing, targetGroupId, timePayload, {
+              operatedBy,
+              operatedAt
+            });
+          } catch (transferError) {
+            console.warn("transport_request_time_adjustment_transfer_failed", {
+              request_id: existing.id,
+              target_group_id: targetGroupId,
+              message: transferError?.message || String(transferError),
+              compensation: transferError?.compensation || null
+            });
+            respondError(res, transferError);
+            return;
+          }
+        } else {
+          const { error: updateError } = await supabase
+            .from("transport_requests")
+            .update(payload)
+            .eq("id", existing.id);
 
-        if (updateError) {
-          throw updateError;
+          if (updateError) {
+            throw updateError;
+          }
         }
 
-        let groupLifecycle = null;
         if (isGrouped && handlingMethod === "move_out") {
           try {
             groupLifecycle = await removeRequestFromGroup(supabase, existing.id, {
@@ -549,7 +597,8 @@ module.exports = async function handler(req, res) {
             before_data: beforeTimes,
             after_data: {
               ...afterTimes,
-              new_group_id: groupLifecycle?.replacement_group?.group_id || null,
+              old_group_id: groupLifecycle?.old_group_id || null,
+              new_group_id: groupLifecycle?.new_group_id || groupLifecycle?.replacement_group?.group_id || null,
               group_lifecycle: groupLifecycle
             },
             metadata: {
@@ -557,7 +606,9 @@ module.exports = async function handler(req, res) {
               admin_name: operatedBy,
               was_grouped: isGrouped,
               group_ids: beforeTimes.group_ids,
-              new_group_id: groupLifecycle?.replacement_group?.group_id || null,
+              old_group_id: groupLifecycle?.old_group_id || null,
+              new_group_id: groupLifecycle?.new_group_id || groupLifecycle?.replacement_group?.group_id || null,
+              target_group_id: targetGroupId,
               handling_method: handlingMethod,
               reason
             }
