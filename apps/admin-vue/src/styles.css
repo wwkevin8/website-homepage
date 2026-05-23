@@ -1336,12 +1336,6 @@ textarea {
   cursor: help;
 }
 
-.locked-cell::before {
-  color: #94a3b8;
-  content: "锁 ";
-  font-size: 11px;
-}
-
 .workbench-row-number {
   color: #475569;
   font-variant-numeric: tabular-nums;

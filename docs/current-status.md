@@ -8,9 +8,31 @@
 ## Last Updated Task
 
 - Date: 2026-05-23
-- Scope: P2a transport workbench cleanup and cancel/delete entry hardening
+- Scope: Admin transport workbench display polish
 
 ## Latest Completed Work
+
+- Completed a small admin transport workbench display polish pass:
+  - `/admin/transport/requests` workbench now includes a `是否已记录` column between `定金` and `客服备注`, using the existing `transport_requests.offline_recorded` value and the existing `已记录` / `未记录` labels;
+  - the existing top `线下记录状态` filter logic was not changed;
+  - locked high-risk fields still render as read-only cells with the existing tooltip styling, but the visible `锁` prefix was removed from cell content;
+  - no backend API, database field, transport group lifecycle, automatic matching, or public-facing page logic was changed.
+- Verification for this display polish:
+  - `npm run build:admin-vue` passed and regenerated the root `admin/` bundle;
+  - local admin UI check on `http://localhost:3000/admin/transport/requests` using the existing signed admin-session QA pattern confirmed headers include `是否已记录`, exclude `拼音`, show `已记录` / `未记录` values, keep the top offline-record filter, keep safe-field inputs/selects/notes visible, keep the time-adjust button visible, and show no locked cells whose visible text starts with `锁`.
+  - safe-field save regression used temporary order `PU260524-0001` in group `GRP-260524-BWS9`; `update_safe_fields` saved contact/payment/deposit/admin-note values successfully, and the temporary request, membership, and group were deleted after the check.
+
+- Preview deployment completed for the P0/P1/P2a transport workbench release candidate:
+  - GitHub commit deployed: `c8f8b14` (`fix(admin): clean up P2a test data controls`);
+  - Vercel preview URL: `https://webside-c1o3k0kpi-wwkevin8s-projects.vercel.app`;
+  - Vercel deployment id: `dpl_Ba71dPadvSV7dHnY7uEnCDPncWmy`;
+  - Vercel ready state: `READY`;
+  - CLI deployment output showed build completed and deployment ready, with no build error reported.
+- Preview environment acceptance is currently blocked in the normal browser by Vercel Deployment Protection:
+  - opening `https://webside-c1o3k0kpi-wwkevin8s-projects.vercel.app/admin/transport/requests` redirects to the Vercel login page before the NGN admin app loads;
+  - authenticated `vercel curl` can reach the protected deployment and returned HTTP 200 for `/admin/transport/requests`, so the deployment exists and serves the admin bundle behind protection;
+  - no Vercel bypass secret/cookie is present locally, and the available local/preview bootstrap password check did not produce a working app admin login;
+  - full Preview UI acceptance still needs either a browser session logged into the Vercel team with access or an approved Deployment Protection bypass URL/token; production deployment should wait until that Preview UI check is completed.
 
 - Completed the P2a wrap-up patch before deployment:
   - queried Supabase for obvious P2/P2a test transport requests matching P2A/regression/test markers in `student_name`, `wechat`, or `admin_note`; no persistent matching rows remained in the database before the patch verification;

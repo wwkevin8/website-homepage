@@ -44,6 +44,7 @@ const columns = [
   { key: "wb_contact_status", label: "联系状态", width: "112px" },
   { key: "wb_payment_collection_status", label: "收款状态", width: "120px" },
   { key: "wb_deposit_amount_gbp", label: "定金", width: "98px" },
+  { key: "wb_offline_recorded", label: "是否已记录", width: "104px" },
   { key: "wb_admin_note", label: "客服备注", width: "220px" },
   { key: "wb_last_operation", label: "最后操作", width: "132px" },
   { key: "wb_actions", label: "操作", width: "230px", className: "is-actions", sticky: "end" }
@@ -1820,6 +1821,11 @@ watch(
         </template>
         <template #cell-wb_deposit_amount_gbp="{ row }">
           <input v-model="ensureWorkbenchDraft(row).deposit_amount_gbp" class="workbench-input" min="0" step="0.01" type="number" />
+        </template>
+        <template #cell-wb_offline_recorded="{ row }">
+          <StatusBadge :tone="row.offline_recorded ? 'success' : 'neutral'">
+            {{ offlineRecordedLabel(row.offline_recorded) }}
+          </StatusBadge>
         </template>
         <template #cell-wb_admin_note="{ row }">
           <textarea v-model="ensureWorkbenchDraft(row).admin_note" class="workbench-input workbench-note" rows="2"></textarea>
