@@ -276,7 +276,16 @@ export function fetchTimeAdjustCandidateGroups(id, params = {}) {
     }
   });
   const query = search.toString();
-  return request(`/api/transport-requests/${encodeURIComponent(id)}/time-adjust-candidate-groups${query ? `?${query}` : ""}`);
+  const encodedId = encodeURIComponent(id);
+  const primaryPath = `/api/transport-requests/${encodedId}/time-adjust-candidate-groups${query ? `?${query}` : ""}`;
+  return request(primaryPath).catch(error => {
+    if (error?.status !== 404) {
+      throw error;
+    }
+    const fallbackSearch = new URLSearchParams(search);
+    fallbackSearch.set("action", "time_adjust_candidate_groups");
+    return request(`/api/transport-requests/${encodedId}?${fallbackSearch.toString()}`);
+  });
 }
 
 export function deleteTransportRequest(id) {

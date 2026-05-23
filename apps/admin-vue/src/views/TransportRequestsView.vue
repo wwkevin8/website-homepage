@@ -236,14 +236,24 @@ const allCurrentPageSelected = computed(() => {
 });
 const isTimeAdjustGrouped = computed(() => isRequestGrouped(timeAdjustTarget.value));
 const isTimeAdjustTransfer = computed(() => timeAdjustForm.handling_method === "transfer_existing_group");
+const timeAdjustDisableReason = computed(() => {
+  if (timeAdjustSaving.value || !timeAdjustTarget.value) return "";
+  if (!fromDateTimeLocalValue(timeAdjustForm.flight_datetime) || !fromDateTimeLocalValue(timeAdjustForm.preferred_time_start)) {
+    return "请填写新的航班时间和接机时间";
+  }
+  if (!String(timeAdjustForm.reason || "").trim()) return "请填写调整原因";
+  if (isTimeAdjustGrouped.value && !["keep_group", "move_out", "transfer_existing_group"].includes(timeAdjustForm.handling_method)) {
+    return "请选择处理方式";
+  }
+  if (isTimeAdjustTransfer.value && timeAdjustCandidateLoading.value) return "候选拼车组加载中，请稍候";
+  if (isTimeAdjustTransfer.value && timeAdjustCandidateError.value) return "请先重新加载候选拼车组";
+  if (isTimeAdjustTransfer.value && !timeAdjustForm.target_group_id) return "请先选择目标拼车组";
+  return "";
+});
 const timeAdjustConfirmDisabled = computed(() => {
   if (timeAdjustSaving.value) return true;
   if (!timeAdjustTarget.value) return true;
-  if (!timeAdjustForm.flight_datetime || !timeAdjustForm.preferred_time_start) return true;
-  if (!String(timeAdjustForm.reason || "").trim()) return true;
-  if (isTimeAdjustGrouped.value && !["keep_group", "move_out", "transfer_existing_group"].includes(timeAdjustForm.handling_method)) return true;
-  if (isTimeAdjustTransfer.value && (!timeAdjustForm.target_group_id || timeAdjustCandidateLoading.value || timeAdjustCandidateError.value)) return true;
-  return false;
+  return Boolean(timeAdjustDisableReason.value);
 });
 
 function displayValue(value) {
@@ -1906,6 +1916,7 @@ watch(
           </div>
         </div>
         <p v-else class="time-adjust-hint">该订单未加入拼车组，保存后只更新本订单时间，不创建拼车组、不自动匹配。</p>
+        <p v-if="timeAdjustDisableReason" class="workbench-error-label">{{ timeAdjustDisableReason }}</p>
         <p v-if="timeAdjustError" class="workbench-error-label">{{ timeAdjustError }}</p>
       </div>
     </ConfirmDialog>

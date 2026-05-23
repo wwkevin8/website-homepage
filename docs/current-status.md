@@ -45,6 +45,23 @@
   - after save, `PU260523-0079` had only target membership `GRP-260523-PZBV`; old group `GRP-260523-VE5C` changed from 2 passengers / 3 remaining seats to 1 passenger / 4 remaining seats, and target group `GRP-260523-PZBV` changed from 1 passenger / 4 remaining seats to 2 passengers / 3 remaining seats;
   - `admin_operation_logs` recorded old group, new group, before/after times, reason, and `handling_method: transfer_existing_group`;
   - no-candidate UI showed the friendly empty-state message, a genuinely unknown id returned 404 JSON, P0 `update_safe_fields` returned 200, P1 `keep_group` kept membership/counts unchanged, P1 `move_out` created a replacement single-member group, and sidebar widths remained 248px expanded / 64px collapsed.
+- P2a 404 recheck after commit:
+  - rechecked `localhost:3107` and a fresh `localhost:3111` helper server plus `vercel dev` at `localhost:3001`; all returned 200 for a real request id on `GET /api/transport-requests/:id/time-adjust-candidate-groups` with both time query parameters;
+  - captured the real UI request URL as `http://localhost:3107/api/transport-requests/d0c8b4be-c05f-48fa-b994-2ab6ae678160/time-adjust-candidate-groups?...`; the id used by the Vue UI was the `transport_requests.id` UUID, not order number, group id, or `undefined`;
+  - temporary test orders `PU260523-0090` / `PU260523-0091` showed one candidate card for target group `GRP-260523-9UST`, then a no-candidate time showed the friendly empty-state message with 200 + empty array; the temporary requests and groups were cleaned up after verification;
+  - conclusion: the observed `Request failed with 404` is consistent with a stale local helper server or stale browser/bundle that had not loaded the committed route; the current source and rebuilt local routes no longer reproduce the 404 for real orders.
+- P2a candidate-route hardening after the 404 persisted in UI:
+  - `apps/admin-vue/src/api/admin-api.js` still tries the required canonical path `/api/transport-requests/{request.id}/time-adjust-candidate-groups` first, but if that specific call returns 404 it retries the existing hot-reloaded detail route `/api/transport-requests/{request.id}?action=time_adjust_candidate_groups...`;
+  - `/api/transport-requests/:id` now supports GET `action=time_adjust_candidate_groups`, which avoids stale local dev-server route tables without adding a second flat candidate API route;
+  - `dev-server.js` maps the canonical nested candidate route for local testing;
+  - direct API verification on `localhost:3112` returned 200 for both canonical and fallback routes using request id `210a4902-9ffc-482a-9e73-db5955831f47`, while an invalid fallback `request_id` still returned 404 JSON;
+  - direct API verification on the already-running stale `localhost:3000` server returned 200 for `/api/transport-requests/210a4902-9ffc-482a-9e73-db5955831f47?action=time_adjust_candidate_groups...`;
+  - a Playwright test on `localhost:3000` forced the canonical route to return 404 and confirmed the Vue UI retried the existing detail-route fallback and showed the friendly empty-state message instead of `request not found`.
+- P2a time-adjust modal disabled-save hint follow-up:
+  - `/admin/transport/requests` now shows the current reason why `保存调整` is disabled instead of only greying out the button;
+  - disabled reasons cover missing new flight/pickup times, missing adjustment reason, missing grouped handling method, candidate loading/error states, and missing target group for `transfer_existing_group`;
+  - local UI verification on `localhost:3000` used temporary orders `PU260523-0092` through `PU260523-0094`: after selecting `transfer_existing_group` and target group `GRP-260523-AN55` while the reason was empty, the modal displayed `请填写调整原因` and kept save disabled; after filling a reason, the prompt cleared and save became enabled;
+  - save verification moved `PU260523-0093` from old group `GRP-260523-KHVB` to target group `GRP-260523-AN55`; the old group became empty and was removed by the existing lifecycle cleanup, the target group held two passengers with three remaining seats, and the temporary requests/groups were cleaned up after verification.
 
 - Implemented the narrow P1 transport request workbench update:
   - `/admin/transport/requests` no longer shows the `student_pinyin` column and no longer includes pinyin in the row draft/save payload;

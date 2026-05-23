@@ -2,7 +2,7 @@ const { getSupabaseAdmin } = require("../_lib/supabase");
 const { requireAdminUser } = require("../_lib/admin-auth");
 const { ok, badRequest, parseJsonBody, methodNotAllowed, serverError, sendJson } = require("../_lib/http");
 const { mapRequestPayload, deriveRequestDisplayFlags, closeExpiredRequests, syncGroupStatus } = require("../_lib/transport");
-const { removeRequestFromGroup, backfillMissingPickupGroups, transferRequestToExistingGroup } = require("../_lib/transport-group-lifecycle");
+const { removeRequestFromGroup, backfillMissingPickupGroups, transferRequestToExistingGroup, findTimeAdjustCandidateGroups } = require("../_lib/transport-group-lifecycle");
 const { logAdminOperation } = require("../_lib/orders");
 const { releaseClaimOrderBinding } = require("../_lib/membership");
 
@@ -90,6 +90,10 @@ function parsePaymentStatus(adminNote, structuredStatus) {
 
 function isInvalidUuidError(error) {
   return Boolean(error?.message && error.message.includes("invalid input syntax for type uuid"));
+}
+
+function firstQueryValue(value) {
+  return Array.isArray(value) ? value[0] : value;
 }
 
 function resolveAdminDisplayName(adminUser = {}) {
@@ -403,6 +407,34 @@ async function getRequestGroupMemberships(supabase, requestId) {
   return Array.isArray(data) ? data : [];
 }
 
+function normalizeCandidateDateTime(value, fallback, field) {
+  const source = firstQueryValue(value) || fallback;
+  if (!source) {
+    throw new Error(`${field} is required`);
+  }
+  const parsed = new Date(source);
+  if (Number.isNaN(parsed.getTime())) {
+    throw new Error(`${field} is invalid`);
+  }
+  return parsed.toISOString();
+}
+
+async function getTimeAdjustCandidateGroups(supabase, request, query = {}) {
+  const times = {
+    flight_datetime: normalizeCandidateDateTime(query.flight_datetime, request.flight_datetime, "flight_datetime"),
+    preferred_time_start: normalizeCandidateDateTime(
+      query.preferred_time_start,
+      request.preferred_time_start || request.flight_datetime,
+      "preferred_time_start"
+    )
+  };
+  const memberships = Array.isArray(request.transport_group_members) ? request.transport_group_members : [];
+  const currentGroupIds = memberships.map(member => member.group_id).filter(Boolean);
+  return findTimeAdjustCandidateGroups(supabase, request, times, {
+    currentGroupIds
+  });
+}
+
 module.exports = async function handler(req, res) {
   const supabase = getSupabaseAdmin();
   const adminUser = await requireAdminUser(req, res, supabase);
@@ -414,6 +446,15 @@ module.exports = async function handler(req, res) {
 
   try {
     if (req.method === "GET") {
+      if (firstQueryValue(req.query?.action) === "time_adjust_candidate_groups") {
+        const request = await getRequestWithContext(supabase, id);
+        const candidateGroups = await getTimeAdjustCandidateGroups(supabase, request, req.query || {});
+        ok(res, {
+          request_id: request.id,
+          candidate_groups: candidateGroups
+        });
+        return;
+      }
       await backfillMissingPickupGroups(supabase);
       await closeExpiredRequests(supabase);
       ok(res, await getRequestDetailWithLogs(supabase, id));
