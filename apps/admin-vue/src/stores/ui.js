@@ -1,8 +1,22 @@
 import { ref } from "vue";
 import { defineStore } from "pinia";
 
+const SIDEBAR_COLLAPSED_KEY = "ngn-admin-sidebar-collapsed";
+
+function readStoredSidebarCollapsed() {
+  if (typeof window === "undefined") {
+    return false;
+  }
+  try {
+    return window.localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
+
 export const useUiStore = defineStore("ui", () => {
-  const sidebarOpen = ref(true);
+  const sidebarCollapsed = ref(readStoredSidebarCollapsed());
+  const mobileSidebarOpen = ref(false);
   const pageTitle = ref("Dashboard");
   const toastMessage = ref("");
 
@@ -10,8 +24,27 @@ export const useUiStore = defineStore("ui", () => {
     pageTitle.value = title || "Dashboard";
   }
 
-  function toggleSidebar() {
-    sidebarOpen.value = !sidebarOpen.value;
+  function setSidebarCollapsed(value) {
+    sidebarCollapsed.value = Boolean(value);
+    if (typeof window !== "undefined") {
+      try {
+        window.localStorage.setItem(SIDEBAR_COLLAPSED_KEY, sidebarCollapsed.value ? "true" : "false");
+      } catch {
+        // Keep the UI responsive even if browser storage is unavailable.
+      }
+    }
+  }
+
+  function toggleSidebarCollapsed() {
+    setSidebarCollapsed(!sidebarCollapsed.value);
+  }
+
+  function openMobileSidebar() {
+    mobileSidebarOpen.value = true;
+  }
+
+  function closeMobileSidebar() {
+    mobileSidebarOpen.value = false;
   }
 
   function showToast(message) {
@@ -24,11 +57,15 @@ export const useUiStore = defineStore("ui", () => {
   }
 
   return {
-    sidebarOpen,
+    sidebarCollapsed,
+    mobileSidebarOpen,
     pageTitle,
     toastMessage,
     setPageTitle,
-    toggleSidebar,
+    setSidebarCollapsed,
+    toggleSidebarCollapsed,
+    openMobileSidebar,
+    closeMobileSidebar,
     showToast
   };
 });
