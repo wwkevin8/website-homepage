@@ -254,6 +254,20 @@ export function updateTransportRequest(id, payload = {}) {
   });
 }
 
+export function updateTransportRequestSafeFields(id, payload = {}) {
+  return updateTransportRequest(id, {
+    action: "update_safe_fields",
+    ...payload
+  });
+}
+
+export function adjustTransportRequestTime(id, payload = {}) {
+  return updateTransportRequest(id, {
+    action: "adjust_flight_time",
+    ...payload
+  });
+}
+
 export function deleteTransportRequest(id) {
   return request(`/api/transport-requests/${encodeURIComponent(id)}`, {
     method: "DELETE"

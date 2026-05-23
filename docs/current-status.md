@@ -8,9 +8,75 @@
 ## Last Updated Task
 
 - Date: 2026-05-23
-- Scope: Fix production admin transport QA findings
+- Scope: P1 transport request time-adjustment guardrail
 
 ## Latest Completed Work
+
+- Implemented the narrow P1 transport request workbench update:
+  - `/admin/transport/requests` no longer shows the `student_pinyin` column and no longer includes pinyin in the row draft/save payload;
+  - each workbench row now has an `调整时间` action that opens a modal showing current flight time, current pickup time, current group information, editable new flight/pickup times, required adjustment reason, and handling method for grouped orders;
+  - `/api/transport-requests/:id` now has an independent `action: "adjust_flight_time"` branch separate from `update_safe_fields`;
+  - the P1 time branch updates `transport_requests.flight_datetime` and `transport_requests.preferred_time_start`, plus `last_operated_by` and `last_operated_at`, and writes `admin_operation_logs` with before/after times, reason, group ids, and handling method;
+  - ungrouped orders save the new times directly and do not create groups, auto-match, or touch other orders;
+  - grouped orders using `keep_group` keep their existing `transport_group_members` relationship and do not call group sync/backfill/remove helpers;
+  - grouped orders using `move_out` call the existing `removeRequestFromGroup` helper with replacement regroup enabled, so the request is removed from the old group, the old group is resynced, and the request receives a new single-member group container without auto-matching to any existing group;
+  - no database fields were added or removed in P1, and no public-facing pages, automatic matching flow, or transport group table schema was changed.
+- Verification for the P1 implementation:
+  - `node --check api/transport-requests/[id].js` passed;
+  - `npm run build:admin-vue` passed and regenerated the root `admin/` bundle;
+  - `npm run build:prod` passed without deployment.
+- P1 real acceptance passed:
+  - ran against Supabase project `ngn-transport` using temporary `TEST P1` orders and the local signed admin-session QA fallback;
+  - ungrouped order `PU260523-0052` adjusted successfully with no membership before or after, updated only `flight_datetime` / `preferred_time_start`, wrote `last_operated_by` / `last_operated_at`, and wrote operation log `b88a32b8-3bc7-476e-81f6-40a721c5bc17`;
+  - grouped keep-group order `PU260523-0053` in group `GRP-260523-ALCF` adjusted successfully: membership stayed unchanged, group stayed `single_member`, passenger count stayed `1`, remaining seats stayed `4`, missing reason returned 400, missing grouped handling method returned 400, and operation log `866e5998-af62-444f-9837-695e2c7194f1` recorded before/after time, reason, and `keep_group`;
+  - grouped move-out order `PU260523-0054` moved from old group `GRP-260523-9GRG` to new single-member group `GRP-260523-23XN`; old group changed from 2 passengers / 3 remaining seats to 1 passenger / 4 remaining seats, the new group had 1 passenger / 4 remaining seats with status `single_member`, and operation log `2ab387b0-d957-400f-800c-9d1849736fb2` recorded old group, new group, before/after time, reason, and `move_out`;
+  - temporary test requests/groups were cleaned after verification; admin operation logs remain as audit evidence;
+  - local UI verification passed: `/admin/transport/requests` has no pinyin column, the time-adjust modal opens, radio options are left-aligned with descriptions, and the save button is disabled while reason is empty.
+
+- Implemented the P0 Vue transport request customer-service workbench:
+  - added `supabase/20260523_transport_request_workbench_fields.sql` for `student_pinyin`, `contact_status`, `payment_collection_status`, and `deposit_amount_gbp` on `transport_requests`; the migration is now strictly additive, using `add column if not exists` plus `pg_constraint` existence checks before adding check constraints, with no drop/rebuild statements;
+  - `/api/transport-requests/:id` now has an `action: "update_safe_fields"` branch limited to student/contact/payment-note fields and rejects airport, flight, time, passenger, luggage, shareable, and group fields with a 400 before saving;
+  - the safe-field PATCH branch skips transport group backfill, close-expired cleanup, group-member removal, group status sync, and payment-confirmation email logic; existing GET, legacy PATCH, and DELETE behavior retains the pre-existing lifecycle handling;
+  - `/api/transport-requests` now returns the workbench fields needed by the Vue list while preserving the existing legacy fallback when the migration has not been applied yet;
+  - `/admin/transport/requests` now renders a dense customer-service table with per-row drafts, per-row save buttons, dirty-row marking, error preservation, and locked high-risk fields;
+  - this pass did not modify public pages, transport group tables, group-member tables, automatic matching, or transport group lifecycle logic.
+- Verification for the P0 workbench:
+  - `node --check api/transport-requests/[id].js` passed;
+  - `node --check api/transport-requests/index.js` passed;
+  - `npm run build:admin-vue` passed and regenerated the root `admin/` bundle;
+  - `npm run build:prod` passed;
+  - local browser check reached `/admin/transport/requests` and correctly showed the protected admin login gate when unauthenticated;
+  - Supabase migration `transport_request_workbench_fields` was applied to project `ngn-transport` and verified: the four new columns and three check constraints exist on `public.transport_requests`;
+  - local password login with the current `.env` bootstrap credentials returned 401, so the real password-login portion of acceptance still needs a current approved admin password;
+  - using the existing local signed admin-session QA fallback, `/admin/transport/requests` opened and showed the workbench table headers and row save controls;
+  - using the same local signed admin-session QA fallback, `action: "update_safe_fields"` saved a grouped order's `admin_note`, a follow-up GET returned the saved value, and the test restored the original `admin_note`;
+  - high-risk fields `airport_code`, `flight_datetime`, `passenger_count`, and `group_id` each returned 400 when included in an `update_safe_fields` request, and the blocked requests did not change the saved note;
+  - the tested grouped order stayed in group `GRP-260508-8HBV`; group status, member count, max passengers, and remaining seats were unchanged before save, after blocked-field tests, and after restoration;
+  - full safe-field acceptance then saved `student_name`, `student_pinyin`, `phone`, `wechat`, `contact_status`, `payment_collection_status`, `deposit_amount_gbp`, and `admin_note` on grouped order `PU260508-0027`, verified the saved values through direct GET and refreshed list-by-order-number reads, confirmed the four high-risk fields still returned 400, and restored the original safe-field values;
+  - Supabase advisors were checked after the migration; they reported existing project-wide RLS/no-policy, function search path, extension, unused-index, and duplicate-index notices, but no new workbench-specific table or constraint failure was found.
+
+- Implemented the 2.0 NGN admin collapsible sidebar:
+  - desktop sidebar now toggles between the existing 248px expanded layout and a 64px icon-only collapsed layout;
+  - collapsed state is stored in `localStorage` as `ngn-admin-sidebar-collapsed`, so refresh preserves the operator's last sidebar state;
+  - existing menu-group expanded/collapsed state stays separate from the sidebar collapsed state and is restored when expanding the sidebar again;
+  - collapsed navigation uses simple icon-only links with native title tooltips and no flyout interaction;
+  - sidebar account/footer adapts between full username/logout controls and compact user/logout icons;
+  - small screens now hide the sidebar by default and expose a basic left drawer through a mobile menu button and overlay.
+- Verification for the sidebar update:
+  - `npm run build:admin-vue` passed and regenerated the root `admin/` bundle;
+  - Playwright checked `/admin/transport/requests`, `/admin/storage/orders`, `/admin/storage/box-orders`, and `/admin/managers`;
+  - each checked page expanded from 1192px main content width to 1376px after sidebar collapse at a 1440px viewport;
+  - focused checks found no body-level horizontal overflow and no filter, pagination, or top/action toolbar overflow after collapse;
+  - refresh persistence, menu-group state preservation, mobile drawer open, and overlay close all passed;
+  - `npm run build:prod` passed after clearing stale `.vercel/output/`.
+
+- Completed the final production regression acceptance against `https://ngn.best`; the current production version is ready for boss demo:
+  - admin login, session refresh persistence, and logout-protected API behavior passed;
+  - pickup/dropoff manual supplement import, Excel template download, CSV template download, copy-template action, date recognition, CSV/XLSX preview, import commit/list/filter/detail workflow, detail editing, and export all passed;
+  - supported import date formats verified in production included `13/09/2026 14:30`, `13-09-2026 14:30`, `2026/09/13 14:30`, `2026-09-13 14:30`, and Excel serial dates;
+  - carpool full-group display rules passed: full groups are hidden from the student public list, full groups remain visible in the admin backend, and underfull groups remain publicly visible;
+  - no P0 or P1 issue was found during the final regression;
+  - all production `TEST_` temporary test orders were cleaned up, and the final remaining count was 0.
 
 - Fixed the production 2.0 admin transport QA findings:
   - transport manual import date parsing now supports Excel serial dates, `YYYY/MM/DD HH:mm`, `YYYY-MM-DD HH:mm`, `DD/MM/YYYY HH:mm`, `DD-MM-YYYY HH:mm`, date-only `DD/MM/YYYY`, `YYYY/MM/DD`, and `YYYY-MM-DD`, with UK/China-style day/month parsing by default;
@@ -1573,7 +1639,7 @@
 - Vue admin dashboard today-todo rows now keep the status label as a compact pill and align the order-number/customer block in a consistent right-side column on desktop, while keeping a stacked layout on small screens.
 - `2.0 NGN管理后台` at `/admin/` is now the intended official backend entry after deployment.
 - Vue admin dashboard now uses the expanded `/api/admin/dashboard` aggregate to show operational KPIs, recent trends, real-status distribution, today/overdue work, clickable risk alerts, recent admin operations, quick links, and cache metadata in the main content area; dashboard risk counts align with `/admin/orders?risk=...`.
-- Vue admin sidebar groups are collapsible, including the transport and storage operation groups.
+- Vue admin sidebar groups are collapsible, and the whole sidebar can now be collapsed to a 64px icon-only desktop rail without resetting each group's own open/closed state.
 - Old admin HTML files remain in the repo only as emergency rollback assets; normal visits to old backend URLs redirect to the matching `/admin/` route.
 - Detailed edit workflows should stay inside 2.0 NGN admin going forward; do not add new normal-path links back to old admin pages.
 - Storage order details now have separate Vue routes: buy-box details live at `/admin/storage/box-orders/:id`, and storage collection/return details live at `/admin/storage/storage-orders/:id`.
@@ -1636,7 +1702,6 @@
 - Production admin protected-page QA still needs a current approved admin username/password; local signed admin-session fallback is rejected by production and cannot validate live admin internals.
 - Preview env pulled from Vercel differs from local `.env`: local has `ADMIN_BOOTSTRAP_*` and `STORAGE_ORDER_WEBHOOK_URL`; Preview has `ADMIN_ALLOWED_EMAILS`/`ADMIN_PASSWORD` and Vercel/Turbo runtime keys. Confirm this is intentional before release.
 - Source scan found hardcoded `https://ngn.best` fallbacks in email/audit helpers. Confirm `APP_BASE_URL` or equivalent site URL behavior for Preview and Production before relying on email links.
-- The latest sidebar collapse update regenerated the root `admin-vue/` build output. Treat that folder as generated output and rebuild it when committing Vue source changes.
 - Existing unrelated dirty changes were present before this checkpoint and were not reverted:
   - `admin-api.js`;
   - `admin-managers.html`;

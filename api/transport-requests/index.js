@@ -24,6 +24,7 @@ const REQUEST_LIST_SELECT = [
   "id",
   "order_no",
   "student_name",
+  "student_pinyin",
   "email",
   "phone",
   "wechat",
@@ -34,9 +35,16 @@ const REQUEST_LIST_SELECT = [
   "terminal",
   "flight_no",
   "flight_datetime",
+  "preferred_time_start",
+  "passenger_count",
   "location_to",
   "luggage_count",
+  "shareable",
   "status",
+  "admin_note",
+  "contact_status",
+  "payment_collection_status",
+  "deposit_amount_gbp",
   "offline_recorded",
   "last_operated_by",
   "last_operated_at",
@@ -56,14 +64,21 @@ const REQUEST_COMPACT_SELECT = [
   "id",
   "order_no",
   "student_name",
+  "student_pinyin",
   "service_type",
   "airport_code",
   "terminal",
   "flight_datetime",
+  "preferred_time_start",
   "location_to",
   "passenger_count",
   "luggage_count",
+  "shareable",
   "status",
+  "admin_note",
+  "contact_status",
+  "payment_collection_status",
+  "deposit_amount_gbp",
   "offline_recorded",
   "last_operated_by",
   "last_operated_at",
@@ -84,14 +99,25 @@ const MANUAL_IMPORT_COLUMNS = new Set([
   "manual_payment_status"
 ]);
 
+const WORKBENCH_COLUMNS = new Set([
+  "student_pinyin",
+  "preferred_time_start",
+  "passenger_count",
+  "shareable",
+  "admin_note",
+  "contact_status",
+  "payment_collection_status",
+  "deposit_amount_gbp"
+]);
+
 const REQUEST_LIST_SELECT_LEGACY = REQUEST_LIST_SELECT
   .split(", ")
-  .filter(column => !MANUAL_IMPORT_COLUMNS.has(column))
+  .filter(column => !MANUAL_IMPORT_COLUMNS.has(column) && !WORKBENCH_COLUMNS.has(column))
   .join(", ");
 
 const REQUEST_COMPACT_SELECT_LEGACY = REQUEST_COMPACT_SELECT
   .split(", ")
-  .filter(column => !MANUAL_IMPORT_COLUMNS.has(column))
+  .filter(column => !MANUAL_IMPORT_COLUMNS.has(column) && !WORKBENCH_COLUMNS.has(column))
   .join(", ");
 
 function isMissingManualImportColumnError(error) {
@@ -101,7 +127,15 @@ function isMissingManualImportColumnError(error) {
     "transport_requests.created_by_admin_name",
     "transport_requests.import_batch_id",
     "transport_requests.manual_price_gbp",
-    "transport_requests.manual_payment_status"
+    "transport_requests.manual_payment_status",
+    "transport_requests.student_pinyin",
+    "transport_requests.contact_status",
+    "transport_requests.payment_collection_status",
+    "transport_requests.deposit_amount_gbp",
+    "transport_requests.preferred_time_start",
+    "transport_requests.passenger_count",
+    "transport_requests.shareable",
+    "transport_requests.admin_note"
   ].some(marker => message.includes(marker));
 }
 

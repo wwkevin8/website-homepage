@@ -9,7 +9,9 @@ import {
   exportTransportRequests,
   fetchTransportRequests,
   previewTransportManualImport,
-  updateTransportRequest
+  adjustTransportRequestTime,
+  updateTransportRequest,
+  updateTransportRequestSafeFields
 } from "@/api/admin-api";
 import AdminBulkActionBar from "@/components/AdminBulkActionBar.vue";
 import AdminTable from "@/components/AdminTable.vue";
@@ -23,6 +25,30 @@ import TransportRequestFilters from "@/components/TransportRequestFilters.vue";
 import importColumns from "../../../../shared/transport-manual-import-columns.json";
 
 const columns = [
+  { key: "wb_selected", label: "选择", width: "46px" },
+  { key: "wb_row_index", label: "序号", width: "58px" },
+  { key: "wb_service_date", label: "服务日期", width: "104px" },
+  { key: "wb_service_time", label: "时间段", width: "92px" },
+  { key: "wb_student_name", label: "学生姓名", width: "140px" },
+  { key: "wb_phone", label: "电话", width: "128px" },
+  { key: "wb_wechat", label: "微信", width: "128px" },
+  { key: "wb_service_type", label: "服务类型", width: "86px" },
+  { key: "wb_airport", label: "机场", width: "82px" },
+  { key: "wb_terminal", label: "航站楼", width: "82px" },
+  { key: "wb_flight_no", label: "航班号", width: "100px" },
+  { key: "wb_flight_datetime", label: "航班时间", width: "142px" },
+  { key: "wb_passenger_count", label: "人数", width: "68px" },
+  { key: "wb_luggage_count", label: "行李", width: "68px" },
+  { key: "wb_group_status", label: "拼车状态/组", width: "138px" },
+  { key: "wb_contact_status", label: "联系状态", width: "112px" },
+  { key: "wb_payment_collection_status", label: "收款状态", width: "120px" },
+  { key: "wb_deposit_amount_gbp", label: "定金", width: "98px" },
+  { key: "wb_admin_note", label: "客服备注", width: "220px" },
+  { key: "wb_last_operation", label: "最后操作", width: "132px" },
+  { key: "wb_actions", label: "操作", width: "178px", className: "is-actions", sticky: "end" }
+];
+
+const legacyColumns = [
   { key: "selected", label: "选择", width: "54px" },
   { key: "created_at", label: "提交时间", width: "9%" },
   { key: "order_no", label: "订单编号", width: "10%" },
@@ -85,6 +111,18 @@ const importPreviewRows = ref([]);
 const confirmedWarningRows = ref({});
 const importFileName = ref("");
 const importStatusMessage = ref("");
+const workbenchDrafts = reactive({});
+const rowSavingIds = ref([]);
+const rowErrorMessages = reactive({});
+const timeAdjustTarget = ref(null);
+const timeAdjustSaving = ref(false);
+const timeAdjustError = ref("");
+const timeAdjustForm = reactive({
+  flight_datetime: "",
+  preferred_time_start: "",
+  reason: "",
+  handling_method: "direct"
+});
 
 const IMPORT_COLUMNS = importColumns;
 const IMPORT_TEMPLATE_HEADERS = IMPORT_COLUMNS.map(column => column.label);
@@ -191,9 +229,66 @@ const allCurrentPageSelected = computed(() => {
   const ids = requests.value.map(row => String(row.id)).filter(Boolean);
   return ids.length > 0 && ids.every(id => selectedIds.value.includes(id));
 });
+const isTimeAdjustGrouped = computed(() => isRequestGrouped(timeAdjustTarget.value));
+const timeAdjustConfirmDisabled = computed(() => {
+  if (timeAdjustSaving.value) return true;
+  if (!timeAdjustTarget.value) return true;
+  if (!timeAdjustForm.flight_datetime || !timeAdjustForm.preferred_time_start) return true;
+  if (!String(timeAdjustForm.reason || "").trim()) return true;
+  if (isTimeAdjustGrouped.value && !["keep_group", "move_out"].includes(timeAdjustForm.handling_method)) return true;
+  return false;
+});
 
 function displayValue(value) {
   return value === null || value === undefined || value === "" ? "--" : String(value);
+}
+
+function displayInputValue(value) {
+  return value === null || value === undefined ? "" : String(value);
+}
+
+function normalizeDraftText(value) {
+  const next = String(value ?? "").trim();
+  return next || null;
+}
+
+function normalizeDraftRequiredText(value) {
+  return String(value ?? "").trim();
+}
+
+function normalizeDraftDeposit(value) {
+  const next = String(value ?? "").trim();
+  if (!next) return null;
+  const parsed = Number(next);
+  return Number.isFinite(parsed) && parsed >= 0 ? Math.round(parsed * 100) / 100 : next;
+}
+
+function rawDate(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/London",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).format(date);
+}
+
+function formatDate(value) {
+  return rawDate(value) || "--";
+}
+
+function formatTime(value) {
+  if (!value) return "--";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return displayValue(value);
+  return new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/London",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false
+  }).format(date);
 }
 
 function formatDateTime(value) {
@@ -209,6 +304,156 @@ function formatDateTime(value) {
     minute: "2-digit",
     hour12: false
   }).format(date);
+}
+
+function toDateTimeLocalValue(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/London",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false
+  }).formatToParts(date).reduce((result, part) => {
+    if (part.type !== "literal") result[part.type] = part.value;
+    return result;
+  }, {});
+  return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}`;
+}
+
+function fromDateTimeLocalValue(value) {
+  if (!value) return null;
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
+}
+
+function rowServiceTime(row) {
+  return row.preferred_time_start || row.flight_datetime || null;
+}
+
+function rowServiceDate(row) {
+  return formatDate(rowServiceTime(row));
+}
+
+function rowServiceTimeRange(row) {
+  const start = row.preferred_time_start || row.flight_datetime;
+  return start ? formatTime(start) : "--";
+}
+
+function lockTitle() {
+  return "涉及拼车逻辑，暂不可直接编辑。";
+}
+
+function contactStatusLabel(value) {
+  return value === "contacted" ? "已联系" : "未联系";
+}
+
+function paymentCollectionStatusLabel(value) {
+  const labels = {
+    unpaid: "未收款",
+    deposit_paid: "已付定金",
+    fully_paid: "已付全款"
+  };
+  return labels[value] || labels.unpaid;
+}
+
+function groupStatusLabel(row) {
+  if (row.group_id) return "已入组";
+  if (row.matching_status_code === "matched") return "已匹配";
+  return "未入组";
+}
+
+function isRequestGrouped(row) {
+  if (!row) return false;
+  if (row.group_id || row.group_ref || row.matched_group_id) return true;
+  return Array.isArray(row.transport_group_members) && row.transport_group_members.length > 0;
+}
+
+function groupInfoText(row) {
+  if (!row) return "--";
+  const membership = Array.isArray(row.transport_group_members) ? row.transport_group_members[0] : null;
+  const groupId = row.group_id || row.group_ref || row.matched_group_id || membership?.group_id;
+  if (!groupId) return "未加入拼车组";
+  const role = membership?.is_initiator ? "发起人" : "成员";
+  return `当前拼车组：${groupId}（${role}）`;
+}
+
+function rowNumber(row) {
+  const page = Number(pagination.value.page || 1);
+  const pageSize = Number(pagination.value.page_size || defaultFilters.pageSize || 10);
+  const index = requests.value.findIndex(item => item.id === row.id);
+  return index >= 0 ? (page - 1) * pageSize + index + 1 : "--";
+}
+
+function createWorkbenchDraft(row = {}) {
+  return {
+    student_name: displayInputValue(row.student_name),
+    phone: displayInputValue(row.phone),
+    wechat: displayInputValue(row.wechat),
+    contact_status: row.contact_status || "uncontacted",
+    payment_collection_status: row.payment_collection_status || "unpaid",
+    deposit_amount_gbp: displayInputValue(row.deposit_amount_gbp),
+    admin_note: displayInputValue(row.admin_note)
+  };
+}
+
+function draftKey(row) {
+  return String(row?.id || row?.request_id || row?.order_no || "");
+}
+
+function resetWorkbenchDraft(row) {
+  const key = draftKey(row);
+  if (!key) return;
+  workbenchDrafts[key] = createWorkbenchDraft(row);
+  delete rowErrorMessages[key];
+}
+
+function ensureWorkbenchDraft(row) {
+  const key = draftKey(row);
+  if (!key) return createWorkbenchDraft(row);
+  if (!workbenchDrafts[key]) {
+    workbenchDrafts[key] = createWorkbenchDraft(row);
+  }
+  return workbenchDrafts[key];
+}
+
+function normalizedDraftPayload(row) {
+  const draft = ensureWorkbenchDraft(row);
+  return {
+    student_name: normalizeDraftRequiredText(draft.student_name),
+    phone: normalizeDraftText(draft.phone),
+    wechat: normalizeDraftText(draft.wechat),
+    contact_status: draft.contact_status || "uncontacted",
+    payment_collection_status: draft.payment_collection_status || "unpaid",
+    deposit_amount_gbp: normalizeDraftDeposit(draft.deposit_amount_gbp),
+    admin_note: normalizeDraftText(draft.admin_note)
+  };
+}
+
+function normalizedRowPayload(row = {}) {
+  return {
+    student_name: normalizeDraftRequiredText(row.student_name),
+    phone: normalizeDraftText(row.phone),
+    wechat: normalizeDraftText(row.wechat),
+    contact_status: row.contact_status || "uncontacted",
+    payment_collection_status: row.payment_collection_status || "unpaid",
+    deposit_amount_gbp: normalizeDraftDeposit(row.deposit_amount_gbp),
+    admin_note: normalizeDraftText(row.admin_note)
+  };
+}
+
+function isWorkbenchRowDirty(row) {
+  const draft = normalizedDraftPayload(row);
+  const source = normalizedRowPayload(row);
+  return Object.keys(source).some(field => String(draft[field] ?? "") !== String(source[field] ?? ""));
+}
+
+function isRowSaving(row) {
+  return rowSavingIds.value.includes(draftKey(row));
 }
 
 function formatImportDateTimeValue(value) {
@@ -277,7 +522,11 @@ function isMembershipRequest(row) {
 }
 
 function requestRowClass(row) {
-  return isMembershipRequest(row) ? "is-member-order" : "";
+  return [
+    isMembershipRequest(row) ? "is-member-order" : "",
+    isWorkbenchRowDirty(row) ? "is-workbench-dirty" : "",
+    rowErrorMessages[draftKey(row)] ? "is-workbench-error" : ""
+  ].filter(Boolean).join(" ");
 }
 
 function studentTitle(row) {
@@ -321,6 +570,7 @@ async function loadRequests(page = pagination.value.page || 1) {
   try {
     const payload = await fetchTransportRequests(buildQuery(page));
     requests.value = Array.isArray(payload?.items) ? payload.items : [];
+    requests.value.forEach(row => resetWorkbenchDraft(row));
     operatorOptions.value = Array.isArray(payload?.operator_options) ? payload.operator_options : [];
     selectedIds.value = selectedIds.value.filter(id => requests.value.some(row => String(row.id) === id));
     pagination.value = payload?.pagination || {
@@ -1132,6 +1382,89 @@ async function toggleOfflineRecorded(row) {
   }
 }
 
+async function saveWorkbenchRow(row) {
+  const id = requestActionId(row);
+  const key = draftKey(row);
+  if (!id || !key || isRowSaving(row)) return;
+
+  const payload = normalizedDraftPayload(row);
+  if (!payload.student_name) {
+    rowErrorMessages[key] = "学生姓名不能为空。";
+    return;
+  }
+  if (payload.deposit_amount_gbp !== null && typeof payload.deposit_amount_gbp !== "number") {
+    rowErrorMessages[key] = "定金金额必须是 0 或以上的数字。";
+    return;
+  }
+
+  rowSavingIds.value = [...rowSavingIds.value, key];
+  delete rowErrorMessages[key];
+  notice.value = "";
+  error.value = "";
+  try {
+    const updated = await updateTransportRequestSafeFields(id, payload);
+    const nextRow = updated?.request || updated?.item || updated;
+    requests.value = requests.value.map(item => (item.id === row.id ? { ...item, ...nextRow } : item));
+    resetWorkbenchDraft({ ...row, ...nextRow });
+    notice.value = `订单 ${displayValue(row.order_no)} 的客服工作台字段已保存。`;
+  } catch (err) {
+    rowErrorMessages[key] = err.message || "保存失败，请检查后重试。";
+    notice.value = rowErrorMessages[key];
+  } finally {
+    rowSavingIds.value = rowSavingIds.value.filter(item => item !== key);
+  }
+}
+
+function openTimeAdjustDialog(row) {
+  timeAdjustTarget.value = row;
+  timeAdjustError.value = "";
+  timeAdjustForm.flight_datetime = toDateTimeLocalValue(row.flight_datetime);
+  timeAdjustForm.preferred_time_start = toDateTimeLocalValue(row.preferred_time_start || row.flight_datetime);
+  timeAdjustForm.reason = "";
+  timeAdjustForm.handling_method = isRequestGrouped(row) ? "keep_group" : "direct";
+}
+
+function closeTimeAdjustDialog() {
+  if (timeAdjustSaving.value) return;
+  timeAdjustTarget.value = null;
+  timeAdjustError.value = "";
+}
+
+async function saveTimeAdjustment() {
+  const row = timeAdjustTarget.value;
+  const id = requestActionId(row);
+  if (!row || !id || timeAdjustConfirmDisabled.value) return;
+
+  const flightDatetime = fromDateTimeLocalValue(timeAdjustForm.flight_datetime);
+  const preferredTimeStart = fromDateTimeLocalValue(timeAdjustForm.preferred_time_start);
+  if (!flightDatetime || !preferredTimeStart) {
+    timeAdjustError.value = "请填写有效的新航班时间和接机时间。";
+    return;
+  }
+
+  timeAdjustSaving.value = true;
+  timeAdjustError.value = "";
+  notice.value = "";
+  error.value = "";
+  try {
+    const updated = await adjustTransportRequestTime(id, {
+      flight_datetime: flightDatetime,
+      preferred_time_start: preferredTimeStart,
+      reason: String(timeAdjustForm.reason || "").trim(),
+      handling_method: timeAdjustForm.handling_method
+    });
+    const nextRow = updated?.request || updated?.item || updated;
+    requests.value = requests.value.map(item => (item.id === row.id ? { ...item, ...nextRow } : item));
+    resetWorkbenchDraft({ ...row, ...nextRow });
+    notice.value = `订单 ${displayValue(row.order_no)} 的接机/航班时间已保存。`;
+    timeAdjustTarget.value = null;
+  } catch (err) {
+    timeAdjustError.value = err.message || "时间调整保存失败，请检查后重试。";
+  } finally {
+    timeAdjustSaving.value = false;
+  }
+}
+
 onMounted(() => {
   loadRequests(1);
 });
@@ -1280,9 +1613,170 @@ watch(
             </button>
           </div>
         </template>
+        <template #cell-wb_selected="{ row }">
+          <input
+            type="checkbox"
+            :checked="selectedIds.includes(String(row.id))"
+            :aria-label="`选择订单 ${displayValue(row.order_no)}`"
+            @change="toggleRowSelection(row)"
+          />
+        </template>
+        <template #cell-wb_row_index="{ row }">
+          <span class="workbench-row-number">{{ rowNumber(row) }}</span>
+        </template>
+        <template #cell-wb_service_date="{ row }">
+          <span class="locked-cell" :title="lockTitle()">{{ rowServiceDate(row) }}</span>
+        </template>
+        <template #cell-wb_service_time="{ row }">
+          <span class="locked-cell" :title="lockTitle()">{{ rowServiceTimeRange(row) }}</span>
+        </template>
+        <template #cell-wb_student_name="{ row }">
+          <input v-model="ensureWorkbenchDraft(row).student_name" class="workbench-input" />
+        </template>
+        <template #cell-wb_phone="{ row }">
+          <input v-model="ensureWorkbenchDraft(row).phone" class="workbench-input" />
+        </template>
+        <template #cell-wb_wechat="{ row }">
+          <input v-model="ensureWorkbenchDraft(row).wechat" class="workbench-input" />
+        </template>
+        <template #cell-wb_service_type="{ row }">
+          <span class="locked-cell" :title="lockTitle()">{{ serviceLabel(row.service_type) }}</span>
+        </template>
+        <template #cell-wb_airport="{ row }">
+          <span class="locked-cell" :title="lockTitle()">{{ displayValue(row.airport_code || row.airport_name) }}</span>
+        </template>
+        <template #cell-wb_terminal="{ row }">
+          <span class="locked-cell" :title="lockTitle()">{{ displayValue(row.terminal) }}</span>
+        </template>
+        <template #cell-wb_flight_no="{ row }">
+          <span class="locked-cell" :title="lockTitle()">{{ displayValue(row.flight_no) }}</span>
+        </template>
+        <template #cell-wb_flight_datetime="{ row }">
+          <span class="locked-cell" :title="lockTitle()">{{ formatDateTime(row.flight_datetime) }}</span>
+        </template>
+        <template #cell-wb_passenger_count="{ row }">
+          <span class="locked-cell" :title="lockTitle()">{{ displayValue(row.passenger_count) }}</span>
+        </template>
+        <template #cell-wb_luggage_count="{ row }">
+          <span class="locked-cell" :title="lockTitle()">{{ displayValue(row.luggage_count) }}</span>
+        </template>
+        <template #cell-wb_group_status="{ row }">
+          <span class="cell-stack" :title="lockTitle()">
+            <strong class="cell-truncate locked-cell">{{ groupStatusLabel(row) }}</strong>
+            <a v-if="groupHref(row)" class="table-link cell-truncate" :href="groupHref(row)">{{ displayValue(row.group_id) }}</a>
+            <small v-else class="cell-truncate">--</small>
+          </span>
+        </template>
+        <template #cell-wb_contact_status="{ row }">
+          <select v-model="ensureWorkbenchDraft(row).contact_status" class="workbench-input">
+            <option value="uncontacted">未联系</option>
+            <option value="contacted">已联系</option>
+          </select>
+        </template>
+        <template #cell-wb_payment_collection_status="{ row }">
+          <select v-model="ensureWorkbenchDraft(row).payment_collection_status" class="workbench-input">
+            <option value="unpaid">未收款</option>
+            <option value="deposit_paid">已付定金</option>
+            <option value="fully_paid">已付全款</option>
+          </select>
+        </template>
+        <template #cell-wb_deposit_amount_gbp="{ row }">
+          <input v-model="ensureWorkbenchDraft(row).deposit_amount_gbp" class="workbench-input" min="0" step="0.01" type="number" />
+        </template>
+        <template #cell-wb_admin_note="{ row }">
+          <textarea v-model="ensureWorkbenchDraft(row).admin_note" class="workbench-input workbench-note" rows="2"></textarea>
+        </template>
+        <template #cell-wb_last_operation="{ row }">
+          <span class="cell-stack" :title="[row.last_operated_by, formatDateTime(row.last_operated_at)].filter(Boolean).join(' / ') || '--'">
+            <strong class="cell-truncate">{{ displayValue(row.last_operated_by) }}</strong>
+            <small class="cell-truncate">{{ formatDateTime(row.last_operated_at) }}</small>
+          </span>
+        </template>
+        <template #cell-wb_actions="{ row }">
+          <div class="table-action-group table-action-group--compact workbench-actions">
+            <button
+              class="table-action-button table-action-button--paid"
+              type="button"
+              :disabled="isRowSaving(row) || !isWorkbenchRowDirty(row)"
+              @click="saveWorkbenchRow(row)"
+            >
+              {{ isRowSaving(row) ? "保存中..." : isWorkbenchRowDirty(row) ? "保存" : "已保存" }}
+            </button>
+            <button class="table-action-button" type="button" @click="resetWorkbenchDraft(row)">还原</button>
+            <button class="table-action-button" type="button" @click="openTimeAdjustDialog(row)">调整时间</button>
+            <button class="table-action-button" type="button" @click="openRequestDetail(row)">详情</button>
+            <small v-if="isWorkbenchRowDirty(row)" class="workbench-dirty-label">未保存</small>
+            <small v-if="rowErrorMessages[draftKey(row)]" class="workbench-error-label">{{ rowErrorMessages[draftKey(row)] }}</small>
+          </div>
+        </template>
       </AdminTable>
       <Pagination :pagination="pagination" @change="handlePageChange" />
     </template>
+
+    <ConfirmDialog
+      :open="Boolean(timeAdjustTarget)"
+      title="调整接机/航班时间"
+      confirm-label="保存调整"
+      cancel-label="取消"
+      :loading="timeAdjustSaving"
+      panel-class="confirm-dialog__panel--wide"
+      :confirm-disabled="timeAdjustConfirmDisabled"
+      tone="neutral"
+      @cancel="closeTimeAdjustDialog"
+      @confirm="saveTimeAdjustment"
+    >
+      <div class="time-adjust-dialog">
+        <div class="time-adjust-readonly-grid">
+          <div>
+            <span>当前航班时间</span>
+            <strong>{{ formatDateTime(timeAdjustTarget?.flight_datetime) }}</strong>
+          </div>
+          <div>
+            <span>当前接机时间</span>
+            <strong>{{ formatDateTime(timeAdjustTarget?.preferred_time_start || timeAdjustTarget?.flight_datetime) }}</strong>
+          </div>
+          <div class="time-adjust-readonly-grid__wide">
+            <span>当前拼车组信息</span>
+            <strong>{{ groupInfoText(timeAdjustTarget) }}</strong>
+          </div>
+        </div>
+
+        <div class="manual-import-grid">
+          <label class="field">
+            <span>新航班时间 *</span>
+            <input v-model="timeAdjustForm.flight_datetime" required type="datetime-local" />
+          </label>
+          <label class="field">
+            <span>新接机时间 *</span>
+            <input v-model="timeAdjustForm.preferred_time_start" required type="datetime-local" />
+          </label>
+          <label class="field manual-import-grid__wide">
+            <span>调整原因 *</span>
+            <textarea v-model="timeAdjustForm.reason" rows="3" placeholder="请填写客服确认的调整原因"></textarea>
+          </label>
+        </div>
+
+        <div v-if="isTimeAdjustGrouped" class="time-adjust-options">
+          <span class="time-adjust-options__title">处理方式 *</span>
+          <label class="time-adjust-option">
+            <input v-model="timeAdjustForm.handling_method" type="radio" value="keep_group" />
+            <span>
+              <strong>保留在当前拼车组</strong>
+              <small>适用于轻微延误且客服确认仍可同行；不改拼车组成员、人数和剩余座位。</small>
+            </span>
+          </label>
+          <label class="time-adjust-option">
+            <input v-model="timeAdjustForm.handling_method" type="radio" value="move_out" />
+            <span>
+              <strong>移出当前拼车组并新建单人待匹配组</strong>
+              <small>适用于时间变化较大；会同步原组人数，并给该订单保留新的单人拼车组容器。</small>
+            </span>
+          </label>
+        </div>
+        <p v-else class="time-adjust-hint">该订单未加入拼车组，保存后只更新本订单时间，不创建拼车组、不自动匹配。</p>
+        <p v-if="timeAdjustError" class="workbench-error-label">{{ timeAdjustError }}</p>
+      </div>
+    </ConfirmDialog>
 
     <ConfirmDialog
       :open="showManualDialog"
