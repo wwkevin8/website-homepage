@@ -25,6 +25,11 @@
   - `npm run build:admin-vue` passed and regenerated the root `admin/` bundle;
   - `npm run build:prod` passed;
   - `npm run qa:playwright:smoke` passed locally, using the existing local signed admin-session fallback because local password login still does not accept the bootstrap password.
+- Release and production smoke for this fix:
+  - GitHub commit `ff0a888` (`Fix transport import smoke findings`) was pushed to `origin/codex/membership-v1`;
+  - follow-up GitHub commit `cfdbc39` (`Use London time for import date parsing`) was pushed to ensure import datetime construction is fixed to `Europe/London` semantics on Vercel;
+  - Vercel Production deployment `dpl_FS4dfZ7YfHr12NpfoijkGDQzCeq3` completed with ready URL `https://webside-o4fly0d8k-wwkevin8s-projects.vercel.app` and was aliased to `https://ngn.best`;
+  - production smoke confirmed the admin bundle contains `transport-manual-import-template.csv`, the batch dialog shows `下载 CSV 模板`, `/api/transport-manual-import/preview` accepts `13/09/2026 14:30` as `2026-09-13T13:30:00.000Z`, a temporary full group reached `full` at 5/5, public `/api/public/transport-groups` and `/api/public/transport-board` no longer returned that full group, and all `TEST Fix Full Group 2` smoke orders were deleted with 0 remaining.
 
 - Ran a production 2.0 NGN admin transport smoke QA against `https://ngn.best` using the approved temporary test admin account without storing credentials in code:
   - admin login to `/admin/`, navigation to `/admin/transport/requests`, session persistence after refresh, and logout API blocking all passed;
