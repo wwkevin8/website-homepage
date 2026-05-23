@@ -755,6 +755,21 @@ async function copyImportTemplate() {
   }
 }
 
+function escapeCsvCell(value) {
+  const text = String(value ?? "");
+  return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+}
+
+function buildCsvTemplate() {
+  const rows = [IMPORT_TEMPLATE_HEADERS, ...IMPORT_TEMPLATE_EXAMPLES];
+  return `\uFEFF${rows.map(row => row.map(escapeCsvCell).join(",")).join("\r\n")}\r\n`;
+}
+
+function downloadCsvTemplate() {
+  downloadBlob(new Blob([buildCsvTemplate()], { type: "text/csv;charset=utf-8" }), "transport-manual-import-template.csv");
+  notice.value = "CSV 导入模板已下载。";
+}
+
 function escapeExcelCell(value) {
   return String(value ?? "")
     .replace(/&/g, "&amp;")
@@ -1439,6 +1454,7 @@ watch(
         </label>
         <div class="batch-import-actions">
           <button class="secondary-button" type="button" @click="copyImportTemplate">复制导入模板</button>
+          <button class="secondary-button" type="button" @click="downloadCsvTemplate">下载 CSV 模板</button>
           <button class="secondary-button" type="button" @click="downloadExcelTemplate">下载 Excel 模板</button>
           <button class="secondary-button" type="button" :disabled="importPreviewing" @click="previewPastedRows">预览粘贴内容</button>
           <label class="secondary-button batch-import-file">

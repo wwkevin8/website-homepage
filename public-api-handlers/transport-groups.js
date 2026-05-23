@@ -100,7 +100,11 @@ async function enrichPublicGroupsBatch(supabase, groups) {
 }
 
 function filterRenderablePublicGroups(groups) {
-  return (groups || []).filter(group => Number(group.current_passenger_count || 0) > 0);
+  return (groups || []).filter(group => (
+    Number(group.current_passenger_count || 0) > 0
+    && Number(group.remaining_passenger_count ?? 1) > 0
+    && String(group.status || "").toLowerCase() !== "full"
+  ));
 }
 
 function filterPublicGroupsByGroupId(groups, groupIdKeyword) {

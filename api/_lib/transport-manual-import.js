@@ -34,6 +34,11 @@ const FIELD_ALIASES = {
   shareable: ["shareable", "是否愿意拼车", "愿意拼车"]
 };
 
+FIELD_ALIASES.flight_date = ["flight_date", "flight date", "arrival date", "departure date", "航班日期", "抵达日期", "起飞日期"];
+FIELD_ALIASES.flight_time = ["flight_time", "flight time", "arrival time", "departure time", "航班时间", "抵达时间", "起飞时间"];
+FIELD_ALIASES.service_date = ["service_date", "service date", "pickup date", "dropoff date", "服务日期", "接送日期", "接机日期", "送机日期"];
+FIELD_ALIASES.service_time_only = ["service_time_only", "service clock", "pickup time", "dropoff time", "服务具体时间", "接机时间", "送机时间", "上车时间"];
+
 const WARNING_CODES = {
   GROUP_DATE: "group_date_mismatch",
   GROUP_TERMINAL: "group_terminal_mismatch",
@@ -151,6 +156,79 @@ function buildLocalIso(year, month, day, hour, minute) {
   return parsed.toISOString();
 }
 
+function normalizeDateTimeText(value) {
+  return String(value || "")
+    .replace(/[年.]/g, "-")
+    .replace(/月/g, "-")
+    .replace(/[日号]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function parseClockParts(value) {
+  if (value instanceof Date) {
+    if (isInvalidExcelDefaultDate(value)) return null;
+    return { hour: value.getHours(), minute: value.getMinutes() };
+  }
+  if (typeof value === "number" && Number.isFinite(value)) {
+    if (value >= 0 && value < 1) {
+      const totalMinutes = Math.round(value * 24 * 60);
+      return { hour: Math.floor(totalMinutes / 60) % 24, minute: totalMinutes % 60 };
+    }
+    const textNumber = String(value);
+    if (/^\d{3,4}$/.test(textNumber)) {
+      return { hour: Number(textNumber.slice(0, -2)), minute: Number(textNumber.slice(-2)) };
+    }
+  }
+  const text = normalizeText(value);
+  if (!text) return null;
+  const match = text.match(/^(\d{1,2})(?::|：)(\d{2})(?::\d{2})?$/)
+    || text.match(/^(\d{1,2})\s*[点時时]\s*(\d{1,2})?/);
+  if (!match) return null;
+  const hour = Number(match[1]);
+  const minute = Number(match[2] || 0);
+  if (hour < 0 || hour > 23 || minute < 0 || minute > 59) return null;
+  return { hour, minute };
+}
+
+function parseDateTimeParts(value) {
+  const text = normalizeText(value);
+  if (!text) return null;
+  const normalized = normalizeDateTimeText(text);
+  const isoMatch = normalized.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})(?:[ T]+(\d{1,2})(?::|：)(\d{2})(?::\d{2})?)?$/);
+  if (isoMatch) {
+    const [, year, month, day, hour = "0", minute = "0"] = isoMatch;
+    return { year: Number(year), month: Number(month), day: Number(day), hour: Number(hour), minute: Number(minute) };
+  }
+
+  const localMatch = normalized.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})(?:[ T]+(\d{1,2})(?::|：)(\d{2})(?::\d{2})?)?$/);
+  if (!localMatch) return null;
+  const [, first, second, year, hour = "0", minute = "0"] = localMatch;
+  const firstNumber = Number(first);
+  const secondNumber = Number(second);
+  let day = firstNumber;
+  let month = secondNumber;
+
+  if (secondNumber > 12 && firstNumber <= 12) {
+    day = secondNumber;
+    month = firstNumber;
+  }
+
+  return { year: Number(year), month, day, hour: Number(hour), minute: Number(minute) };
+}
+
+function buildIsoFromParts(parts) {
+  if (!parts) return null;
+  return buildLocalIso(parts.year, parts.month, parts.day, parts.hour ?? 0, parts.minute ?? 0);
+}
+
+function combineDateAndClock(dateValue, timeValue) {
+  const dateParts = parseDateTimeParts(dateValue);
+  const clockParts = parseClockParts(timeValue);
+  if (!dateParts || !clockParts) return null;
+  return buildLocalIso(dateParts.year, dateParts.month, dateParts.day, clockParts.hour, clockParts.minute);
+}
+
 function formatParsedDateLabel(value) {
   if (!value) return "";
   const date = new Date(value);
@@ -200,34 +278,8 @@ function parseDateTimeDetailed(value) {
   if (/^\d{1,2}:\d{2}(?::\d{2})?$/.test(text)) return { value: null, warnings: [] };
   if (/^\d+(?:\.\d+)?$/.test(text)) return parseDateTimeDetailed(Number(text));
 
-  const normalized = text
-    .replace(/[年/.]/g, "-")
-    .replace(/[月]/g, "-")
-    .replace(/[日]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-
-  const match = normalized.match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[ T]+(\d{1,2}):(\d{2})(?::\d{2})?)?$/);
-  if (match) {
-    const [, year, month, day, hour, minute] = match;
-    if (hour === undefined || minute === undefined) return { value: null, warnings: [] };
-    return { value: buildLocalIso(year, month, day, hour, minute), warnings: [] };
-  }
-
-  const usMatch = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:[ T]+(\d{1,2}):(\d{2})(?::\d{2})?)?$/);
-  if (usMatch) {
-    const [, month, day, year, hour, minute] = usMatch;
-    if (hour === undefined || minute === undefined) return { value: null, warnings: [] };
-    const parsedValue = buildLocalIso(year, month, day, hour, minute);
-    const warnings = parsedValue && Number(month) <= 12 && Number(day) <= 12
-      ? [{ code: "us_date_format_confirmation", message: `检测到美式日期格式，请确认是否为 ${formatParsedDateLabel(parsedValue)}。` }]
-      : [];
-    return { value: parsedValue, warnings };
-  }
-
-  if (!/^\d{4}/.test(normalized)) return { value: null, warnings: [] };
-  const date = new Date(normalized);
-  return isInvalidExcelDefaultDate(date) ? { value: null, warnings: [] } : { value: date.toISOString(), warnings: [] };
+  const parsedParts = parseDateTimeParts(text);
+  return { value: buildIsoFromParts(parsedParts), warnings: [] };
 }
 
 function parseDateTime(value) {
@@ -269,8 +321,16 @@ function buildAdminNote(clean) {
 function normalizeRow(rawRow = {}) {
   const serviceType = normalizeServiceType(pickField(rawRow, "service_type"));
   const airport = normalizeAirport(pickField(rawRow, "airport_code"));
-  const flightDatetime = parseDateTimeDetailed(pickField(rawRow, "flight_datetime"));
-  const serviceTime = parseDateTimeDetailed(pickField(rawRow, "service_time"));
+  const flightDateTimeRaw = pickField(rawRow, "flight_datetime");
+  const serviceTimeRaw = pickField(rawRow, "service_time");
+  const flightDatetimeCombined = combineDateAndClock(pickField(rawRow, "flight_date"), pickField(rawRow, "flight_time"));
+  const serviceTimeCombined = combineDateAndClock(pickField(rawRow, "service_date"), pickField(rawRow, "service_time_only"));
+  const flightDatetime = flightDatetimeCombined
+    ? { value: flightDatetimeCombined, warnings: [] }
+    : parseDateTimeDetailed(flightDateTimeRaw);
+  const serviceTime = serviceTimeCombined
+    ? { value: serviceTimeCombined, warnings: [] }
+    : parseDateTimeDetailed(serviceTimeRaw);
   const address = normalizeText(pickField(rawRow, "address"));
   const rawLuggageCount = pickField(rawRow, "luggage_count");
   const rawLuggageNote = pickField(rawRow, "luggage_note");
@@ -698,6 +758,7 @@ async function createManualRequest(supabase, adminUser, row = {}, options = {}) 
 
 module.exports = {
   normalizeRow,
+  parseDateTimeDetailed,
   previewRows,
   commitRows,
   createManualRequest,

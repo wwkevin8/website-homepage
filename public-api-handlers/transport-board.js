@@ -98,6 +98,11 @@ function mapBoardItem(item, membersByGroup, groupStats) {
   };
 }
 
+function isFullBoardItem(item) {
+  return String(item?.group_status || "").toLowerCase() === "full"
+    || Number(item?.remaining_passenger_count || 0) <= 0;
+}
+
 module.exports = async function handler(req, res) {
   if (req.method !== "GET") {
     methodNotAllowed(res, ["GET"]);
@@ -140,12 +145,6 @@ module.exports = async function handler(req, res) {
     applySort(query, sort);
 
     const hasGroupSearch = Boolean(String(queryParams.group_id || "").trim());
-
-    if (limit && !hasGroupSearch) {
-      const from = (page - 1) * limit;
-      const to = from + limit - 1;
-      query.range(from, to);
-    }
 
     const { data, error } = await query;
     if (error) {
@@ -245,9 +244,11 @@ module.exports = async function handler(req, res) {
       rows = rows.filter(item => String(item.group_id || "").toUpperCase().includes(groupKeyword));
     }
 
-    const total = rows.length;
-    const pagedRows = limit ? rows.slice((page - 1) * limit, (page - 1) * limit + limit) : rows;
-    const items = pagedRows.map(item => mapBoardItem(item, membersByGroup, groupStatsById.get(item.group_id)));
+    const publicItems = rows
+      .map(item => mapBoardItem(item, membersByGroup, groupStatsById.get(item.group_id)))
+      .filter(item => !isFullBoardItem(item));
+    const total = publicItems.length;
+    const items = limit ? publicItems.slice((page - 1) * limit, (page - 1) * limit + limit) : publicItems;
 
     ok(res, {
       items,

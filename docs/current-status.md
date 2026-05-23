@@ -8,9 +8,36 @@
 ## Last Updated Task
 
 - Date: 2026-05-23
-- Scope: Fix manager-create validation and garbled admin error text
+- Scope: Fix production admin transport QA findings
 
 ## Latest Completed Work
+
+- Fixed the production 2.0 admin transport QA findings:
+  - transport manual import date parsing now supports Excel serial dates, `YYYY/MM/DD HH:mm`, `YYYY-MM-DD HH:mm`, `DD/MM/YYYY HH:mm`, `DD-MM-YYYY HH:mm`, date-only `DD/MM/YYYY`, `YYYY/MM/DD`, and `YYYY-MM-DD`, with UK/China-style day/month parsing by default;
+  - manual import can combine split date/time columns through aliases such as `flight_date` + `flight_time` and `service_date` + `service_time_only`;
+  - added `scripts/verify-transport-manual-import-dates.js` covering `13/09/2026 14:30`, date-only values, Excel serial dates, and split date/time columns;
+  - the Vue admin batch-import dialog now has a separate `下载 CSV 模板` button using the same shared import headers/examples as the existing template controls;
+  - public transport board/group list responses now filter out full groups, while admin group/request views remain unchanged.
+- Verification before release:
+  - `node --check api/_lib/transport-manual-import.js` passed;
+  - `node --check public-api-handlers/transport-board.js` and `node --check public-api-handlers/transport-groups.js` passed;
+  - `node scripts/verify-transport-manual-import-dates.js` passed;
+  - `npm run build:admin-vue` passed and regenerated the root `admin/` bundle;
+  - `npm run build:prod` passed;
+  - `npm run qa:playwright:smoke` passed locally, using the existing local signed admin-session fallback because local password login still does not accept the bootstrap password.
+
+- Ran a production 2.0 NGN admin transport smoke QA against `https://ngn.best` using the approved temporary test admin account without storing credentials in code:
+  - admin login to `/admin/`, navigation to `/admin/transport/requests`, session persistence after refresh, and logout API blocking all passed;
+  - transport request list loading, published status filtering, offline-recorded filtering, current-filter export, and single-order detail loading passed;
+  - created a production test order named `TEST Transport Smoke`, confirmed it appeared in the list, edited detail fields, refetched persistence, and confirmed filtered export included it;
+  - CSV upload entered the batch-import preview table, XLSX template download worked, and a filled XLSX upload entered preview with one importable row;
+  - manual pickup test order received a `group_id`, joining an existing group worked, passenger count synced to full at 5/5, the public board showed full groups as not joinable, and removing one member resynced the group count;
+  - unauthenticated `/api/transport-requests` and `/api/transport-manual-import/preview` returned 401, and unauthenticated `/admin/transport/requests` redirected to login without exposing test/order data;
+  - all production test orders with names containing `TEST Transport Smoke` created during the run were deleted, and the follow-up search returned 0 remaining rows.
+- Production QA findings from this pass:
+  - P1: batch preview did not accept the requested UK-style datetime `13/09/2026 14:30`; that row stayed red with missing datetime errors while `2026/9/13 14:30` and Excel serial datetime rows were importable with duplicate warnings;
+  - P2: the batch dialog has `复制导入模板` and `下载 Excel 模板`, but no separate `下载 CSV 模板` action, so the explicit CSV-template-download requirement is not currently met;
+  - no P0 issue was found, so no business code was changed or deployed during this task.
 
 - Fixed the Vue admin manager-create error shown after entering an email address in the `账号` field:
   - backend manager validation messages in `api/_lib/admin-managers.js` now return readable Chinese instead of mojibake;
