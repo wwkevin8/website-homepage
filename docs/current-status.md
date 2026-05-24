@@ -12,6 +12,18 @@
 
 ## Latest Completed Work
 
+- Completed a read-only production post-cleanup audit after manual empty-group cleanup:
+  - no production data was inserted, updated, deleted, restored, or deployed during this audit;
+  - `transport_groups` currently has 9 rows with status distribution `active=1`, `closed=3`, `single_member=5`;
+  - `transport_group_members` remains at 10 rows;
+  - all 9 remaining groups have members/current passengers and each group detail API opens successfully;
+  - no `transport_group_members.group_id` points to a missing `transport_groups.group_id`;
+  - production `transport_requests` currently has no direct `group_id` column, so direct request-to-missing-group references are not present;
+  - active/published/grouped/matched member orders have no orphan group references;
+  - no paid/deposit/non-unpaid orphan member orders were found;
+  - admin transport group list, admin transport request list, group detail APIs, and public carpool board API returned successfully; public board still does not expose `shareable=false` rows;
+  - current cleanup result is acceptable from a referential-integrity and active-order-impact perspective; no restore is required based on this audit.
+
 - Planned the 0-member orphan transport-group automatic cleanup mechanism; this is a design record only and no production data was changed:
   - goal: if a transport group becomes a true orphan empty group and remains orphaned for more than 10 minutes, the system may delete it automatically while keeping an `admin_operation_logs` audit trail;
   - this must not be implemented as `current_passenger_count=0 for 10 minutes => delete`; every cleanup candidate must satisfy all orphan checks at deletion time;
