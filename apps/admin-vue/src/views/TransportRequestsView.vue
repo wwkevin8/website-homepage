@@ -136,6 +136,23 @@ const timeAdjustForm = reactive({
 
 const IMPORT_COLUMNS = importColumns;
 const IMPORT_TEMPLATE_HEADERS = IMPORT_COLUMNS.map(column => column.label);
+const REQUIRED_IMPORT_KEYS = [
+  "student_name",
+  "phone",
+  "wechat",
+  "service_type",
+  "airport_code",
+  "terminal",
+  "flight_no",
+  "flight_datetime",
+  "service_time",
+  "address",
+  "passenger_count",
+  "luggage_count"
+];
+const REQUIRED_IMPORT_HEADERS = IMPORT_COLUMNS
+  .filter(column => REQUIRED_IMPORT_KEYS.includes(column.key))
+  .map(column => column.label);
 const IMPORT_TEMPLATE_NOTES = IMPORT_COLUMNS.map(column => column.note);
 const IMPORT_TEMPLATE_EXAMPLES = [
   IMPORT_COLUMNS.map(column => column.example_auto_group ?? ""),
@@ -150,7 +167,7 @@ const IMPORT_HEADER_ALIAS_MAP = IMPORT_COLUMNS.reduce((map, column) => {
 
 const IMPORT_TEMPLATE_SAMPLE_TEXT = [
   IMPORT_TEMPLATE_HEADERS.join("\t"),
-  ["张三", "07123456789", "wechat_id", "接机", "LHR", "T2", "CZ304", "2026/05/22 12:00", "2026/05/22 10:00", "Nottingham NG1 1AA", "1", "2", "", "未付款", "", "客服备注"].join("\t")
+  IMPORT_TEMPLATE_EXAMPLES[0].join("\t")
 ].join("\n");
 
 const manualForm = reactive({
@@ -937,6 +954,31 @@ function normalizeImportHeaders(headers = []) {
   return { headers: canonicalHeaders, error: "" };
 }
 
+function splitDelimitedLine(line, delimiter) {
+  if (delimiter !== ",") return line.split(delimiter);
+  const values = [];
+  let current = "";
+  let quoted = false;
+  for (let index = 0; index < line.length; index += 1) {
+    const char = line[index];
+    if (char === "\"") {
+      if (quoted && line[index + 1] === "\"") {
+        current += "\"";
+        index += 1;
+      } else {
+        quoted = !quoted;
+      }
+    } else if (char === "," && !quoted) {
+      values.push(current);
+      current = "";
+    } else {
+      current += char;
+    }
+  }
+  values.push(current);
+  return values;
+}
+
 function parseDelimitedText(text) {
   const rawText = String(text || "");
   const lines = rawText.split(/\r?\n/).map(line => line.replace(/\r/g, "")).filter(line => line.trim());
@@ -955,13 +997,13 @@ function parseDelimitedText(text) {
       error: "未识别表头。请使用导入模板，或从 Excel/Google Sheet 复制 Tab 分隔表格，不要用空格分隔。"
     };
   }
-  const headers = headerLine.split(delimiter).map(item => item.trim());
+  const headers = splitDelimitedLine(headerLine, delimiter).map(item => item.trim());
   const normalizedHeaders = normalizeImportHeaders(headers);
   if (normalizedHeaders.error) {
     return { rows: [], error: normalizedHeaders.error };
   }
   const canonicalHeaders = normalizedHeaders.headers;
-  const missingHeaders = IMPORT_TEMPLATE_HEADERS.filter(header => !canonicalHeaders.includes(header));
+  const missingHeaders = REQUIRED_IMPORT_HEADERS.filter(header => !canonicalHeaders.includes(header));
   if (missingHeaders.length) {
     return {
       rows: [],
@@ -975,7 +1017,7 @@ function parseDelimitedText(text) {
     };
   }
   const rows = lines.slice(1).map((line, index) => {
-    const values = line.split(delimiter);
+    const values = splitDelimitedLine(line, delimiter);
     const raw = {};
     canonicalHeaders.forEach((header, headerIndex) => {
       raw[header || `列${headerIndex + 1}`] = normalizeImportCellValue(header, values[headerIndex]);
@@ -995,7 +1037,7 @@ function parseSheetRows(sheetRows = []) {
     return { rows: [], error: normalizedHeaders.error };
   }
   const canonicalHeaders = normalizedHeaders.headers;
-  const missingHeaders = IMPORT_TEMPLATE_HEADERS.filter(header => !canonicalHeaders.includes(header));
+  const missingHeaders = REQUIRED_IMPORT_HEADERS.filter(header => !canonicalHeaders.includes(header));
   if (missingHeaders.length) {
     return {
       rows: [],
@@ -1316,37 +1358,10 @@ function rowTone(row) {
   return "success";
 }
 
-function groupDestination(group) {
-  if (!group) return "--";
-  return displayValue(group.location_to || group.location_from);
-}
-
-function groupSummaryText(group) {
-  if (!group) return "";
-  return [
-    serviceLabel(group.service_type),
-    group.airport_code,
-    group.terminal,
-    group.group_date || formatDateTime(group.preferred_time_start),
-    `当前人数 ${displayValue(group.current_passenger_count)}`,
-    groupDestination(group)
-  ].filter(Boolean).join(" / ");
-}
-
 function rowStatusLabel(row) {
   if (row.status === "error") return "不可导入";
   if (row.status === "warning") return "警告";
   return "可导入";
-}
-
-async function setPreviewGroupId(row, value) {
-  const source = importRows.value.find(item => Number(item.row_index) === Number(row.row_index));
-  if (source) {
-    source.raw = { ...(source.raw || {}), "Group ID": value };
-  }
-  if (importRows.value.length) {
-    await refreshImportPreview();
-  }
 }
 
 async function refreshImportPreview() {
@@ -2209,9 +2224,11 @@ watch(
                 <th>地址</th>
                 <th>人数</th>
                 <th>行李数量</th>
-                <th>价格</th>
-                <th>付款状态</th>
-                <th>Group ID</th>
+                <th>联系状态</th>
+                <th>收款状态</th>
+                <th>定金 GBP</th>
+                <th>是否愿意拼车</th>
+                <th>客服备注</th>
                 <th>错误/警告原因</th>
                 <th>确认</th>
               </tr>
@@ -2231,28 +2248,11 @@ watch(
                 <td>{{ displayValue(row.clean?.address) }}</td>
                 <td>{{ displayValue(row.clean?.passenger_count) }}</td>
                 <td>{{ displayValue(row.clean?.luggage_note || row.clean?.luggage_count) }}</td>
-                <td>{{ displayValue(row.clean?.price) }}</td>
-                <td>{{ displayValue(row.clean?.payment_status) }}</td>
-                <td>
-                  <input
-                    class="import-group-input"
-                    :value="row.clean?.group_id || ''"
-                    placeholder="留空新建组"
-                    @change="setPreviewGroupId(row, $event.target.value)"
-                  />
-                  <small v-if="row.target_group" class="muted-line">{{ groupSummaryText(row.target_group) }}</small>
-                  <div v-if="row.candidate_groups?.length" class="candidate-group-list">
-                    <button
-                      v-for="group in row.candidate_groups || []"
-                      :key="group.group_id"
-                      class="table-action-button"
-                      type="button"
-                      @click="setPreviewGroupId(row, group.group_id)"
-                    >
-                      {{ group.group_id }}
-                    </button>
-                  </div>
-                </td>
+                <td>{{ displayValue(row.clean?.contact_status) }}</td>
+                <td>{{ displayValue(row.clean?.payment_collection_status) }}</td>
+                <td>{{ displayValue(row.clean?.deposit_amount_gbp) }}</td>
+                <td>{{ row.clean?.shareable ? "是" : "否" }}</td>
+                <td>{{ displayValue(row.clean?.admin_note || row.clean?.notes) }}</td>
                 <td>
                   <ul class="import-issues">
                     <li v-for="item in row.errors" :key="item.code + item.message" class="is-error">{{ item.message }}</li>

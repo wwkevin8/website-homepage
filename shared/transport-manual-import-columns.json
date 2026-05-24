@@ -13,7 +13,7 @@
     "aliases": ["phone", "手机号", "手机", "电话", "联系电话", "mobile"],
     "note": "手机号 / 微信号：至少填写一个",
     "example_auto_group": "07123456789",
-    "example_existing_group": ""
+    "example_existing_group": "+447700900123"
   },
   {
     "key": "wechat",
@@ -59,14 +59,14 @@
     "key": "flight_datetime",
     "label": "航班日期时间",
     "aliases": ["flight_datetime", "抵达/起飞日期和时间", "抵达日期和时间", "起飞日期和时间", "航班日期时间", "航班时间"],
-    "note": "航班日期时间：必填，推荐格式 2026/05/22 12:00；系统也兼容 Excel 自动显示的 5/22/2026 12:00",
+    "note": "航班日期时间：必填，推荐格式 2026/05/22 12:00；系统也兼容 Excel 自动日期格式",
     "example_auto_group": "2026/05/22 12:00",
     "example_existing_group": "2026/05/25 12:30"
   },
   {
     "key": "service_time",
     "label": "服务日期时间",
-    "aliases": ["service_time", "接送期待时间", "服务日期时间", "服务时间", "接送时间"],
+    "aliases": ["service_time", "接送期望时间", "服务日期时间", "服务时间", "接送时间"],
     "note": "服务日期时间：必填，接机填期望接到时间，送机填上车/出发时间；推荐格式 2026/05/22 10:00",
     "example_auto_group": "2026/05/22 10:00",
     "example_existing_group": "2026/05/25 08:30"
@@ -96,35 +96,43 @@
     "example_existing_group": "2大1小"
   },
   {
-    "key": "price",
-    "label": "价格",
-    "aliases": ["price", "价格", "费用"],
-    "note": "价格：可选，不填则按系统默认逻辑",
+    "key": "contact_status",
+    "label": "联系状态",
+    "aliases": ["contact_status", "联系状态"],
+    "note": "联系状态：未联系 / 已联系；留空默认未联系",
+    "example_auto_group": "未联系",
+    "example_existing_group": "已联系"
+  },
+  {
+    "key": "payment_collection_status",
+    "label": "收款状态",
+    "aliases": ["payment_collection_status", "收款状态", "payment_status", "付款状态", "支付状态"],
+    "note": "收款状态：未收款 / 已收定金 / 已收全款；留空默认未收款",
+    "example_auto_group": "未收款",
+    "example_existing_group": "已收定金"
+  },
+  {
+    "key": "deposit_amount_gbp",
+    "label": "定金 GBP",
+    "aliases": ["deposit_amount_gbp", "定金 GBP", "定金GBP", "定金", "price", "价格", "费用"],
+    "note": "定金 GBP：可选，只填写数字，例如 30 或 30.50",
     "example_auto_group": "",
-    "example_existing_group": "120"
+    "example_existing_group": "30"
   },
   {
-    "key": "payment_status",
-    "label": "付款状态",
-    "aliases": ["payment_status", "付款状态", "支付状态"],
-    "note": "付款状态：未付款 / 已付款",
-    "example_auto_group": "未付款",
-    "example_existing_group": "已付款"
+    "key": "shareable",
+    "label": "是否愿意拼车",
+    "aliases": ["shareable", "是否愿意拼车", "愿意拼车"],
+    "note": "是否愿意拼车：默认否；P4b 只作为普通订单字段，不会自动建组或入组",
+    "example_auto_group": "否",
+    "example_existing_group": "否"
   },
   {
-    "key": "group_id",
-    "label": "Group ID",
-    "aliases": ["group_id", "Group ID", "已有 Group ID", "是否加入已有 Group ID"],
-    "note": "Group ID：可选，填了则尝试加入已有拼车组，不填则默认新建组",
-    "example_auto_group": "",
-    "example_existing_group": "GRP-260525-0001"
-  },
-  {
-    "key": "notes",
-    "label": "备注",
-    "aliases": ["notes", "备注"],
-    "note": "备注：可选，保存客服补充信息",
-    "example_auto_group": "不填 Group ID，导入后自动新建组",
-    "example_existing_group": "填写已有 Group ID，导入后尝试加入已有组"
+    "key": "admin_note",
+    "label": "客服备注",
+    "aliases": ["admin_note", "客服备注", "notes", "备注"],
+    "note": "客服备注：可选，保存客服补充信息",
+    "example_auto_group": "线下补录",
+    "example_existing_group": "已电话确认"
   }
 ]

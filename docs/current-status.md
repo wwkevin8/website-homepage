@@ -8,9 +8,55 @@
 ## Last Updated Task
 
 - Date: 2026-05-24
-- Scope: P4a final sealing check with P3.2 filter layout included
+- Scope: P4b final sealing check
 
 ## Latest Completed Work
+
+- Completed P4b final sealing check without committing or deploying:
+  - `git status --short` / `git diff --name-status` show only P4b batch manual supplement files, template/docs/status files, `PLAN.md`, and regenerated admin bundle files;
+  - confirmed the old generated admin JS hash is deleted and the new generated admin JS hash exists in the worktree;
+  - confirmed the new batch template includes `联系状态`, `收款状态`, `定金 GBP`, `是否愿意拼车`, and `客服备注`, and no longer includes `Group ID`;
+  - confirmed old template aliases still work: `price` maps to `deposit_amount_gbp`, `payment_status` maps to `payment_collection_status`, and `notes` maps to `admin_note`;
+  - confirmed paste/CSV/XLSX import paths still normalize headers/cells and send rows through the same preview/commit APIs;
+  - confirmed preview does not write database rows, and commit only inserts `transport_requests`;
+  - confirmed P4b batch import does not call `createGroupForRequest`, `addRequestToGroup`, `adjust_flight_time`, or `transfer_existing_group`, and does not touch `transport_groups` / `transport_group_members` in request-only verification;
+  - confirmed `Group ID` in old sheets produces the P4b warning-only path and is ignored after warning confirmation;
+  - confirmed `shareable` defaults false and remains a normal request field even when true;
+  - confirmed public board source filtering remains `source is null OR source != admin_manual`, preserving normal `source = public_form` rows while excluding explicit admin manual supplement orders;
+  - confirmed no `P4B-*` temporary request/group leftovers remain.
+- P4b final sealing check verification:
+  - `git diff --check` reported only LF/CRLF warnings and no whitespace errors;
+  - template field verification passed;
+  - old-template compatibility verification passed;
+  - paste/CSV/XLSX shared mapping path verification passed;
+  - Group ID warning-only verification passed;
+  - preview no-write and commit request-only mock verification passed;
+  - P4B cleanup request/group verification passed;
+  - public-form preservation check found normal `source = public_form` samples and verified the public-board source filter does not exclude them.
+
+- Implemented P4b for the existing `/admin/transport/requests` batch manual supplement flow:
+  - reused the existing `批量补录` button, modal, paste, CSV template, Excel template, CSV/XLSX upload, preview, and import actions;
+  - updated the batch template source to P4a/P3 workbench fields: `联系状态`, `收款状态`, `定金 GBP`, `是否愿意拼车`, and `客服备注`;
+  - kept backward-compatible aliases for old `price`, `payment_status`, and `notes` columns while mapping them into `deposit_amount_gbp`, `payment_collection_status`, and `admin_note`;
+  - changed batch preview to parse, normalize, validate, and check duplicate transport requests only; it no longer queries candidate groups or validates existing groups;
+  - old `Group ID` / group columns now produce a clear warning and are ignored after warning confirmation; no group join or group creation is performed;
+  - changed batch commit to create `transport_requests` only, with `source = admin_manual`, `offline_recorded = true`, `import_batch_id = TMI-*`, creator/operator metadata, raw payload, and P3 workbench fields;
+  - preserved `shareable` as a normal request field with default `false`; even `shareable = true` does not create or join a group;
+  - did not change database structure, production deployment, `adjust_flight_time`, `transfer_existing_group`, transport group management, or public join flows.
+- P4b verification:
+  - `node --check api/_lib/transport-manual-import.js` passed;
+  - `node --check api/transport-manual-import/preview.js` passed;
+  - `node --check api/transport-manual-import/commit.js` passed;
+  - `node --check public-api-handlers/transport-board.js` passed;
+  - `npm run build:admin-vue` passed and regenerated the root `admin/` bundle;
+  - mock request-only verification confirmed a row containing `group_id` imports as `source = admin_manual`, does not touch `transport_groups`, `transport_group_members`, or `transport_groups_public_view`, and preserves `shareable` only as an ordinary field;
+  - legacy/default mapping verification confirmed old `price`, `payment_status`, and `notes` aliases still map to the new workbench fields and missing shareable defaults to false;
+  - local UI verification on `http://localhost:3142/admin/transport/requests` confirmed the existing batch modal still has paste/template/upload/preview/import actions, the new template fields are present, and Group ID / group selection controls are absent;
+  - real local data verification created and cleaned P4B temporary rows, confirmed `transport_requests` rows were created with `admin_manual` source and P3 fields, `transport_groups` and `transport_group_members` counts did not change, and public board did not return the admin manual supplement row;
+  - admin API verification confirmed P4B rows are searchable/filterable by workbench filters, current-filter export includes them, selected-id export includes them even with a conflicting search filter, and cleanup left no `P4B-*` temporary transport requests.
+- Scope intentionally unchanged in P4b:
+  - no production deployment was run;
+  - no database schema, email flow, batch-import second entry, Excel-upload rewrite, 拼车组管理 page, `adjust_flight_time`, `transfer_existing_group`, or `transport_groups` / `transport_group_members` structure was changed.
 
 - Completed P4a final sealing check without committing or deploying:
   - changed the public board `source` protection from a plain `source != admin_manual` style filter to `source is null OR source != admin_manual` in both the public board list query and the pickup backfill path, so only explicit `source = admin_manual` supplement orders are excluded;
