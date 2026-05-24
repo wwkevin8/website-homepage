@@ -34,6 +34,24 @@ const REQUEST_EXPORT_SELECT = [
   "site_users(email)"
 ].join(", ");
 
+const MEMBERSHIP_COLUMNS = new Set([
+  "membership_benefit_claim_id",
+  "membership_discount_amount"
+]);
+
+const REQUEST_EXPORT_SELECT_LEGACY = REQUEST_EXPORT_SELECT
+  .split(", ")
+  .filter(column => !MEMBERSHIP_COLUMNS.has(column))
+  .join(", ");
+
+function isMissingMembershipColumnError(error) {
+  const message = `${error?.message || ""} ${error?.details || ""} ${error?.hint || ""}`;
+  return [
+    "transport_requests.membership_benefit_claim_id",
+    "transport_requests.membership_discount_amount"
+  ].some(marker => message.includes(marker));
+}
+
 function applyRequestSort(query, value) {
   const sort = String(value || "submitted_latest").trim();
 
@@ -206,27 +224,34 @@ module.exports = async function handler(req, res) {
 
   try {
     const queryParams = req.query || {};
-    let query = supabase
-      .from("transport_requests")
-      .select(REQUEST_EXPORT_SELECT)
-      .limit(5000);
+    const buildQuery = selectColumns => {
+      let query = supabase
+        .from("transport_requests")
+        .select(selectColumns)
+        .limit(5000);
 
-    const ids = parseIdList(queryParams.ids);
-    if (ids.length) {
-      query.in("id", ids);
-    } else {
-      applyRequestFilters(query, queryParams);
-    }
-    applyRequestSort(query, queryParams.sort);
+      const ids = parseIdList(queryParams.ids);
+      if (ids.length) {
+        query.in("id", ids);
+      } else {
+        applyRequestFilters(query, queryParams);
+      }
+      applyRequestSort(query, queryParams.sort);
 
-    if (!ids.length && queryParams.grouped === "true") {
-      query.not("transport_group_members", "is", null);
-    }
-    if (!ids.length && queryParams.grouped === "false") {
-      query.is("transport_group_members", null);
-    }
+      if (!ids.length && queryParams.grouped === "true") {
+        query.not("transport_group_members", "is", null);
+      }
+      if (!ids.length && queryParams.grouped === "false") {
+        query.is("transport_group_members", null);
+      }
 
-    const { data, error } = await query;
+      return query;
+    };
+
+    let { data, error } = await buildQuery(REQUEST_EXPORT_SELECT);
+    if (error && isMissingMembershipColumnError(error)) {
+      ({ data, error } = await buildQuery(REQUEST_EXPORT_SELECT_LEGACY));
+    }
     if (error) {
       throw error;
     }

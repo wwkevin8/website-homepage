@@ -53,6 +53,18 @@ const adminLabel = computed(() => {
   return admin?.name || admin?.username || admin?.email || "Admin";
 });
 
+const runtimeEnvironment = computed(() => sessionStore.session?.runtime_environment || null);
+
+const environmentBadgeClass = computed(() => {
+  if (runtimeEnvironment.value?.is_local_test) {
+    return "is-local-test";
+  }
+  if (runtimeEnvironment.value?.is_production) {
+    return "is-production";
+  }
+  return "";
+});
+
 const activeRouteNames = computed(() => {
   const names = route.matched.map((item) => item.name).filter(Boolean);
   if (route.name) {
@@ -95,6 +107,15 @@ function toggleSection(section) {
       >
         <span aria-hidden="true"></span>
       </button>
+    </div>
+    <div
+      v-if="runtimeEnvironment"
+      class="admin-sidebar__environment"
+      :class="environmentBadgeClass"
+      :title="runtimeEnvironment.label"
+    >
+      <span class="admin-sidebar__environment-dot" aria-hidden="true"></span>
+      <span class="admin-sidebar__environment-text">{{ runtimeEnvironment.label }}</span>
     </div>
     <nav class="admin-sidebar__nav">
       <section

@@ -140,6 +140,14 @@ function toApiModulePath(urlPathname) {
     return path.join(ROOT, "api", "transport-requests", "[id]", "time-adjust-candidate-groups.js");
   }
 
+  if (/^\/api\/transport-requests\/[^/]+\/change-preview$/.test(urlPathname)) {
+    return path.join(ROOT, "api", "transport-requests", "[id]", "change-preview.js");
+  }
+
+  if (/^\/api\/transport-requests\/[^/]+\/change-confirm$/.test(urlPathname)) {
+    return path.join(ROOT, "api", "transport-requests", "[id]", "change-confirm.js");
+  }
+
   if (/^\/api\/transport-requests\/[^/]+\/recreate$/.test(urlPathname)) {
     return path.join(ROOT, "api", "transport-requests", "[id]", "recreate.js");
   }
@@ -202,6 +210,16 @@ function applyRouteParams(req, urlPathname) {
   const timeAdjustCandidateMatch = urlPathname.match(/^\/api\/transport-requests\/([^/]+)\/time-adjust-candidate-groups$/);
   if (timeAdjustCandidateMatch) {
     req.query = { ...(req.query || {}), id: timeAdjustCandidateMatch[1] };
+  }
+
+  const changePreviewMatch = urlPathname.match(/^\/api\/transport-requests\/([^/]+)\/change-preview$/);
+  if (changePreviewMatch) {
+    req.query = { ...(req.query || {}), id: changePreviewMatch[1] };
+  }
+
+  const changeConfirmMatch = urlPathname.match(/^\/api\/transport-requests\/([^/]+)\/change-confirm$/);
+  if (changeConfirmMatch) {
+    req.query = { ...(req.query || {}), id: changeConfirmMatch[1] };
   }
 
   const recreateMatch = urlPathname.match(/^\/api\/transport-requests\/([^/]+)\/recreate$/);

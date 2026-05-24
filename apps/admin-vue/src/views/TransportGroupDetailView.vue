@@ -14,6 +14,7 @@ import EmptyState from "@/components/EmptyState.vue";
 import ErrorState from "@/components/ErrorState.vue";
 import LoadingState from "@/components/LoadingState.vue";
 import StatusBadge from "@/components/StatusBadge.vue";
+import TransportOrderChangeDrawer from "@/components/TransportOrderChangeDrawer.vue";
 
 const route = useRoute();
 const group = ref(null);
@@ -26,6 +27,9 @@ const paymentSaving = ref("");
 const error = ref("");
 const notice = ref("");
 const addOrderNo = ref("");
+const changeDrawerOpen = ref(false);
+const changeRequest = ref(null);
+const changeMember = ref(null);
 const DISPATCH_SUMMARY_START = "[dispatch_summary_override]";
 const DISPATCH_SUMMARY_END = "[/dispatch_summary_override]";
 
@@ -184,6 +188,42 @@ function requestId(row) {
 function requestDetailHref(row) {
   const id = requestId(row);
   return id ? `/admin/transport/requests/${encodeURIComponent(id)}?return_to=${encodeURIComponent(`/admin/transport/groups/${groupId.value}`)}` : "";
+}
+
+function openOrderChange(row) {
+  const request = row?.request || {};
+  if (!request?.id) {
+    notice.value = "未找到该成员的订单 ID，无法发起订单变更。";
+    return;
+  }
+  changeMember.value = row;
+  changeRequest.value = request;
+  changeDrawerOpen.value = true;
+  notice.value = "";
+}
+
+function closeOrderChange() {
+  changeDrawerOpen.value = false;
+}
+
+async function handleOrderChangeSaved(payload = {}) {
+  const action = payload.groupAction || payload.result?.group_action || "";
+  const targetGroupId = payload.targetGroupId || payload.result?.new_group_id || payload.result?.group?.group_id || "";
+  const orderNo = changeRequest.value?.order_no || changeMember.value?.request?.order_no || "--";
+  await loadGroup();
+  changeDrawerOpen.value = false;
+  changeRequest.value = null;
+  changeMember.value = null;
+
+  if (action === "transfer_existing_group") {
+    notice.value = `订单 ${orderNo} 变更已保存，成员已转入目标拼车组 ${displayValue(targetGroupId)}。`;
+    return;
+  }
+  if (action === "move_out_no_group" || action === "move_out_new_single") {
+    notice.value = `订单 ${orderNo} 变更已保存，成员已从当前拼车组移出。`;
+    return;
+  }
+  notice.value = `订单 ${orderNo} 变更已保存，当前拼车组详情已刷新。`;
 }
 
 function fillForm(record) {
@@ -629,6 +669,14 @@ onMounted(loadGroup);
           </template>
           <template #cell-actions="{ row }">
             <div class="table-action-group table-action-group--compact">
+              <button
+                class="table-action-button"
+                type="button"
+                :disabled="memberSaving === requestId(row)"
+                @click="openOrderChange(row)"
+              >
+                订单变更
+              </button>
               <a v-if="requestDetailHref(row)" class="table-action-button" :href="requestDetailHref(row)">查看订单详情</a>
               <button class="table-action-button" type="button" disabled>更换拼车组</button>
               <button
@@ -676,4 +724,12 @@ onMounted(loadGroup);
       </section>
     </template>
   </section>
+  <TransportOrderChangeDrawer
+    :open="changeDrawerOpen"
+    :request="changeRequest"
+    :current-group-id="String(group?.group_id || group?.id || '')"
+    :has-current-group="Boolean(group)"
+    @close="closeOrderChange"
+    @saved="handleOrderChangeSaved"
+  />
 </template>

@@ -268,6 +268,26 @@ export function adjustTransportRequestTime(id, payload = {}) {
   });
 }
 
+export function previewTransportOrderChange(id, payload = {}) {
+  return request(`/api/transport-requests/${encodeURIComponent(id)}/change-preview`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(payload)
+  });
+}
+
+export function confirmTransportOrderChange(id, payload = {}) {
+  return request(`/api/transport-requests/${encodeURIComponent(id)}/change-confirm`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(payload)
+  });
+}
+
 export function fetchTimeAdjustCandidateGroups(id, params = {}) {
   const search = new URLSearchParams();
   Object.entries(params || {}).forEach(([key, value]) => {

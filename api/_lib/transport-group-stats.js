@@ -82,9 +82,9 @@ function buildMemberDetails(activeMembers) {
   });
 }
 
-function buildGroupStats(group, members, options = {}) {
+function normalizePricingMembers(members, options = {}) {
   const activeOnly = options.activeOnly !== false;
-  const displayMembers = (members || []).filter(member => {
+  return (members || []).filter(member => {
     if (!member?.transport_requests) {
       return false;
     }
@@ -93,6 +93,10 @@ function buildGroupStats(group, members, options = {}) {
     }
     return member.transport_requests.status !== "closed";
   });
+}
+
+function computeTransportGroupPricingSnapshot(group, members, options = {}) {
+  const displayMembers = normalizePricingMembers(members, options);
   const displayRequests = displayMembers.map(member => member.transport_requests || {});
   const currentPassengerCount = displayMembers.reduce((sum, member) => {
     return sum + Number(member.transport_requests?.passenger_count || member.passenger_count_snapshot || 0);
@@ -111,10 +115,18 @@ function buildGroupStats(group, members, options = {}) {
   const averagePriceGbp = currentPassengerCount > 0 ? roundCurrency(totalPriceGbp / currentPassengerCount) : 0;
 
   return {
+    pricing_season: pricingSeason,
+    airport_code: airportCode || null,
+    pricing_seat_count: pricingSeatCount,
+    base_price_per_person_gbp: roundCurrency(basePerPersonGbp),
+    cross_terminal_surcharge_total_gbp: roundCurrency(crossTerminalSurchargeTotalGbp),
+    group_total_price_gbp: totalPriceGbp,
+    per_person_price_gbp: averagePriceGbp,
     current_passenger_count: currentPassengerCount,
     remaining_passenger_count: Math.max(maxPassengers - currentPassengerCount, 0),
     current_average_price_gbp: averagePriceGbp,
     total_price_gbp: totalPriceGbp,
+    average_price_gbp: averagePriceGbp,
     has_cross_terminal: hasCrossTerminal,
     terminal_summary: hasCrossTerminal ? terminals.join(" / ") : (terminals[0] || group?.terminal || "--"),
     terminal_values: terminals,
@@ -123,6 +135,25 @@ function buildGroupStats(group, members, options = {}) {
     surcharge_gbp: crossTerminalSurchargeTotalGbp,
     surcharge_hint: hasCrossTerminal ? "跨航站楼附加费按当前拼车人数每人 £15，已计入当前均价" : "无附加费",
     member_details: buildMemberDetails(displayMembers)
+  };
+}
+
+function buildGroupStats(group, members, options = {}) {
+  const pricing = computeTransportGroupPricingSnapshot(group, members, options);
+
+  return {
+    current_passenger_count: pricing.current_passenger_count,
+    remaining_passenger_count: pricing.remaining_passenger_count,
+    current_average_price_gbp: pricing.current_average_price_gbp,
+    total_price_gbp: pricing.total_price_gbp,
+    has_cross_terminal: pricing.has_cross_terminal,
+    terminal_summary: pricing.terminal_summary,
+    terminal_values: pricing.terminal_values,
+    flight_no_values: pricing.flight_no_values,
+    arrival_range: pricing.arrival_range,
+    surcharge_gbp: pricing.surcharge_gbp,
+    surcharge_hint: pricing.surcharge_hint,
+    member_details: pricing.member_details
   };
 }
 
@@ -204,6 +235,7 @@ module.exports = {
   roundCurrency,
   formatArrivalRange,
   parseLuggageDisplay,
+  computeTransportGroupPricingSnapshot,
   buildGroupStats,
   loadGroupStatsMap
 };

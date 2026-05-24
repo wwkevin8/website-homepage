@@ -241,7 +241,10 @@ async function backfillMissingPickupGroups(supabase, options = {}) {
     .order("created_at", { ascending: true })
     .limit(limit);
 
-  const excludeSources = (options.excludeSources || []).map(source => String(source || "").trim()).filter(Boolean);
+  const excludeSources = Array.from(new Set([
+    "admin_manual",
+    ...(options.excludeSources || [])
+  ].map(source => String(source || "").trim()).filter(Boolean)));
   if (excludeSources.includes("admin_manual")) {
     query.or("source.is.null,source.neq.admin_manual");
   }
@@ -253,7 +256,8 @@ async function backfillMissingPickupGroups(supabase, options = {}) {
   }
 
   const createdGroups = [];
-  for (const request of requests || []) {
+  const backfillableRequests = (requests || []).filter(request => request.shareable !== false);
+  for (const request of backfillableRequests) {
     const group = await createGroupForRequest(supabase, request, {
       isInitiator: true
     });

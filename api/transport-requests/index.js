@@ -110,14 +110,19 @@ const WORKBENCH_COLUMNS = new Set([
   "deposit_amount_gbp"
 ]);
 
+const MEMBERSHIP_COLUMNS = new Set([
+  "membership_benefit_claim_id",
+  "membership_discount_amount"
+]);
+
 const REQUEST_LIST_SELECT_LEGACY = REQUEST_LIST_SELECT
   .split(", ")
-  .filter(column => !MANUAL_IMPORT_COLUMNS.has(column) && !WORKBENCH_COLUMNS.has(column))
+  .filter(column => !MANUAL_IMPORT_COLUMNS.has(column) && !WORKBENCH_COLUMNS.has(column) && !MEMBERSHIP_COLUMNS.has(column))
   .join(", ");
 
 const REQUEST_COMPACT_SELECT_LEGACY = REQUEST_COMPACT_SELECT
   .split(", ")
-  .filter(column => !MANUAL_IMPORT_COLUMNS.has(column) && !WORKBENCH_COLUMNS.has(column))
+  .filter(column => !MANUAL_IMPORT_COLUMNS.has(column) && !WORKBENCH_COLUMNS.has(column) && !MEMBERSHIP_COLUMNS.has(column))
   .join(", ");
 
 function isMissingManualImportColumnError(error) {
@@ -135,7 +140,9 @@ function isMissingManualImportColumnError(error) {
     "transport_requests.preferred_time_start",
     "transport_requests.passenger_count",
     "transport_requests.shareable",
-    "transport_requests.admin_note"
+    "transport_requests.admin_note",
+    "transport_requests.membership_benefit_claim_id",
+    "transport_requests.membership_discount_amount"
   ].some(marker => message.includes(marker));
 }
 

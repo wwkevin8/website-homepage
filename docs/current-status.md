@@ -8,9 +8,309 @@
 ## Last Updated Task
 
 - Date: 2026-05-24
-- Scope: P4 production post-deploy acceptance
+- Scope: P5 Release Prep 2.5 production env completion
 
 ## Latest Completed Work
+
+- Completed P5 Release Prep 2.5 without Vercel deployment, Supabase changes, UI changes, or P6 work:
+  - generated a strong random `P5_CHANGE_PREVIEW_TOKEN_SECRET` and configured it in Vercel Production only; the secret was not written to code or docs;
+  - configured Vercel Production `P5_CHANGE_PREVIEW_TOKEN_TTL_MS=900000`;
+  - configured Vercel Production `APP_BASE_URL=https://ngn.best`;
+  - configured Vercel Production `PUBLIC_SITE_URL=https://ngn.best`.
+- P5 Release Prep 2.5 env verification:
+  - production `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` exist, are non-empty, match the local production Supabase values, and contain no localhost target;
+  - `SUPABASE_URL` points to `brmsymzkmdnxzhrcaghw.supabase.co`;
+  - `ADMIN_SESSION_SECRET` exists and is non-empty;
+  - `P5_CHANGE_PREVIEW_TOKEN_SECRET` exists and is non-empty;
+  - `P5_CHANGE_PREVIEW_TOKEN_TTL_MS` exists with value `900000`;
+  - `APP_BASE_URL` and `PUBLIC_SITE_URL` both exist with production URL `https://ngn.best`;
+  - existing email envs remain present: `RESEND_API_KEY`, `AUTH_EMAIL_FROM`, `STORAGE_SYNC_AUDIT_EMAIL_FROM`, and `STORAGE_SYNC_AUDIT_NOTIFY_EMAIL`;
+  - temporary Vercel env pull files were deleted after verification.
+- P5 Release Prep 2.5 static verification:
+  - `npm run build:admin-vue` passed with the existing Vue/Vite chunk-size warning only;
+  - `git diff --check` passed with Windows LF-to-CRLF warnings only.
+- P5 Release Prep 2.5 conclusion:
+  - production env blockers from Release Prep 2 are resolved;
+  - P5 can proceed to Release Prep 3 / Deploy when explicitly approved, following the GitHub-first release rule;
+  - production has still not been deployed with P5 code, and P6 dispatch workbench remains out of scope.
+
+- Completed P5 Release Prep 2 without Vercel deployment, UI changes, or P6 work:
+  - production Supabase `public.order_change_logs` remains present and hardened: RLS enabled, force RLS enabled, no direct `public`/`anon`/`authenticated` grants, no policies, `source_snapshot_hash` present, and the partial unique `preview_token` index exists;
+  - raw anon REST select against `order_change_logs` still returns `401 permission denied`, authenticated role simulation still returns `rejected_permission_denied`, and service-role select works;
+  - production `transport_requests` has the P5/P4 support fields needed by current code, including `membership_benefit_claim_id`, `payment_collection_status`, `deposit_amount_gbp`, `manual_price_gbp`, `manual_payment_status`, `offline_recorded`, `last_operated_by`, and `last_operated_at`;
+  - production `admin_operation_logs`, `transport_groups`, and `transport_group_members` exist.
+- Vercel production environment readiness check:
+  - production `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` exist and match the local production `.env` values used for the successful production Supabase verification; `SUPABASE_URL` points to `brmsymzkmdnxzhrcaghw.supabase.co`;
+  - `ADMIN_SESSION_SECRET` exists;
+  - `RESEND_API_KEY`, `AUTH_EMAIL_FROM`, `STORAGE_SYNC_AUDIT_EMAIL_FROM`, and `STORAGE_SYNC_AUDIT_NOTIFY_EMAIL` exist;
+  - `P5_CHANGE_PREVIEW_TOKEN_SECRET` is missing and should be explicitly added before deploy instead of relying long-term on the fallback to `ADMIN_SESSION_SECRET`;
+  - `P5_CHANGE_PREVIEW_TOKEN_TTL_MS` is missing; code has a default TTL, but adding an explicit production value is recommended for operational clarity;
+  - `APP_BASE_URL` and `PUBLIC_SITE_URL` are missing and should be set to the production site URL before deploy/smoke testing so links and environment checks are unambiguous;
+  - SMTP fallback variables (`SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`) are missing; this is acceptable if Resend is the intended sole provider, otherwise add them before release.
+- P5 Release Prep 2 static verification:
+  - `node --check` passed for `api/transport-requests/[id]/change-confirm.js`, `api/transport-requests/[id]/change-preview.js`, `api/transport-requests/index.js`, `api/transport-requests/export.js`, `api/_lib/transport-group-stats.js`, `api/_lib/transport-group-lifecycle.js`, and `api/transport-groups/[id].js`;
+  - `npm run build:admin-vue` passed with the existing Vue/Vite chunk-size warning only;
+  - `git diff --check` passed with Windows LF-to-CRLF warnings only.
+- P5 Release Prep 2 conclusion:
+  - code and database are ready for Release Prep 3 / Deploy after adding or explicitly accepting the missing production env variables;
+  - current blocker/risk before deploy is configuration, not schema: missing explicit `P5_CHANGE_PREVIEW_TOKEN_SECRET`, missing explicit TTL, and missing production site URL variables;
+  - production has still not been deployed with P5 code, and P6 dispatch workbench remains out of scope.
+
+- Completed P5 Release Prep 1 for production `public.order_change_logs` security hardening without Vercel deployment, UI changes, or P6 work:
+  - rechecked production through Supabase pg_catalog and raw REST; the earlier RC REST HEAD probe was a false positive, and `public.order_change_logs` did not exist before this step;
+  - applied the idempotent P5 `order_change_logs` DDL/security SQL to production, creating the table and adding `preview_token`, `source_snapshot_hash`, request/order/pricing/payment/group/admin audit fields, indexes, and the updated-at trigger;
+  - enabled and forced RLS on `public.order_change_logs`;
+  - revoked all direct table privileges from `public`, `anon`, and `authenticated`;
+  - verified no RLS policies exist on `public.order_change_logs`, so there is no permissive read policy to remove;
+  - verified the partial unique preview-token index exists: `idx_order_change_logs_preview_token on preview_token where preview_token is not null`;
+  - verified direct privileges are denied: `public_select=false`, `anon_select=false`, `authenticated_select=false`, `anon_insert=false`, and `authenticated_insert=false`.
+- Production access verification after hardening:
+  - raw anon REST `GET /rest/v1/order_change_logs?select=id&limit=1` now returns `401 permission denied for table order_change_logs`;
+  - SQL role simulation for `authenticated` returns `rejected_permission_denied`;
+  - service-role REST select works and returned an empty result;
+  - service-role insert/read/delete using a synthetic `P5-SECURITY-CHECK` log row worked and the synthetic row was deleted immediately after verification;
+  - static scan found `order_change_logs` referenced only by `api/transport-requests/[id]/change-confirm.js`, not by public API handlers.
+- Supabase security advisors after the change:
+  - `order_change_logs` appears under the expected `RLS Enabled No Policy` info lint, which is intentional for this admin-only service-role table;
+  - other existing project security advisor items were not changed in this task.
+- P5 Release Prep 1 conclusion:
+  - production `order_change_logs` storage is now present and hardened for service-role/admin-server use;
+  - production Vercel was not deployed, so production `change-confirm` cannot be smoke-tested through the live admin route until the P5 code is released;
+  - P5 can proceed to Release Prep 2 after reviewing the remaining deployment/env checklist.
+
+- Completed P5 Final QA / Release Candidate checks without deploying production and without applying production migrations:
+  - P5 local main chain remains functional from the order detail entry and the transport group detail member entry;
+  - locally rechecked `no_group_change`, price-field semantics, duplicate-confirm rejection, stale/expired preview handling, and the previously accepted `keep_group`, `move_out_no_group`, `move_out_new_single`, and `transfer_existing_group` flows;
+  - local old-flow regression passed for the transport request list page, filters/pagination, filtered export, manual supplement, batch supplement preview/commit, transport group list, transport group detail, sync inspection logs, and the public board exclusion check for the local non-shareable/source test row;
+  - local duplicate-confirm check used a complete preview payload: the first `change-confirm` write succeeded and the second call with the same preview token was rejected;
+  - price fields still distinguish order-level receivable totals from `per_person_price_gbp` and `group_total_price_gbp`.
+- P5 Final QA environment and database findings:
+  - `npm run dev` currently uses the normal remote `SUPABASE_URL` and is labeled `PRODUCTION`;
+  - `npm run dev:local` maps `LOCAL_SUPABASE_URL`, `LOCAL_SUPABASE_ANON_KEY`, and `LOCAL_SUPABASE_SERVICE_ROLE_KEY` onto runtime `SUPABASE_*` keys and is labeled `LOCAL TEST MODE - 本地测试库，非真实订单`;
+  - production `transport_requests.membership_benefit_claim_id` is present;
+  - production `order_change_logs` already exists according to REST/schema reachability checks, even though this session did not apply it;
+  - production anon REST probing against `order_change_logs` did not return an access error, so P5 is not production-release-ready until `order_change_logs` RLS and grants are explicitly hardened and rechecked;
+  - the Supabase MCP connection required reauthentication and Supabase CLI had no access token, so direct pg_catalog verification of production RLS/grants was not available in this pass.
+- P5 Final QA verification:
+  - `node --check` passed for `api/transport-requests/[id]/change-confirm.js`, `api/transport-requests/[id]/change-preview.js`, `api/_lib/transport-group-stats.js`, `api/_lib/transport-group-lifecycle.js`, `api/transport-groups/[id].js`, and `api/transport-requests/[id].js`;
+  - `npm run build:admin-vue` passed with the existing Vue/Vite chunk-size warning only;
+  - `git diff --check` passed with Windows LF-to-CRLF warnings only.
+- P5 release-candidate conclusion:
+  - code/UI can move into production release preparation;
+  - production release is blocked until `supabase/20260524_transport_order_change_logs.sql` or equivalent hardening is applied/verified on production, especially `enable row level security`, `force row level security`, and `revoke all from public, anon, authenticated` for `public.order_change_logs`;
+  - no production deployment or production migration was performed in this QA pass.
+
+- Completed P5C-2 local UI integration for opening the P5 order-change flow from the transport group detail member list, without production deployment or production migration:
+  - added a reusable `TransportOrderChangeDrawer` component so transport request details and transport group details share the same change-preview/change-confirm UI and logic;
+  - added an `订单变更` action to each member row on the transport group detail page;
+  - the group detail entry reuses `change-preview`, `change-confirm`, `preview_token`, `source_snapshot_hash`, backend `group_action` validation, and preview candidate-group validation;
+  - high-risk fields on the group detail page are still not edited directly; airport, terminal, service date/time, passenger count, shareable intent, price, confirmed price, balance, and refund changes continue to go through P5;
+  - after a successful member change, the group detail page reloads the current group, member list, payment/price summary, group status, current per-person price, group total, and driver-dispatch summary;
+  - if a member leaves the current group through `move_out_no_group`, `move_out_new_single`, or `transfer_existing_group`, the refreshed member list removes that member and the success notice describes the result.
+- P5C-2 local UI acceptance used local Supabase fake-only rows under `P5C2-*`:
+  - member-row `订单变更` button opened the shared drawer and loaded the selected member order;
+  - `no_group_change`: flight-number-only change confirmed and the member remained in `P5C2-G-NO`;
+  - `move_out_no_group`: `shareable=false` confirmed and the member was removed from `P5C2-G-OUT` without creating a group;
+  - `move_out_new_single`: airport change to `STN` confirmed and the member moved from `P5C2-G-NEW` into a new single pending/matched group;
+  - `transfer_existing_group`: target group selection was restricted to preview candidates and the member moved from `P5C2-G-XFER` into `P5C2-G-XFER-TARGET`;
+  - stale preview displayed `订单或拼车组信息已变化，请重新预览后再确认。`;
+  - expired preview displayed `预览已过期，请重新预览。` and the confirm button stayed disabled;
+  - refreshed target/current group pages showed updated members, payment/price area, current per-person/group totals, and driver-dispatch summary;
+  - screenshot captured at `output/p5c2-group-order-change-drawer.png`.
+- P5C-2 verification:
+  - `node --check` passed for `api/transport-requests/[id]/change-confirm.js`, `api/transport-requests/[id]/change-preview.js`, `api/_lib/transport-group-stats.js`, `api/_lib/transport-group-lifecycle.js`, and `api/transport-groups/[id].js`;
+  - `npm run build:admin-vue` passed and regenerated the admin bundle;
+  - `git diff --check` passed with Windows LF-to-CRLF warnings only.
+- Scope intentionally unchanged:
+  - no production deployment;
+  - no production `order_change_logs` migration application;
+  - no P4 manual/batch supplement change;
+  - no ordinary `adjust_flight_time` semantic change;
+  - no P6 dispatch workbench, Excel-style group list, or group-list refactor.
+
+- Added an admin environment safety indicator without changing business logic, production configuration, or deploying:
+  - admin session responses now include a safe `runtime_environment` label only, without exposing Supabase URLs or keys;
+  - the admin sidebar displays `LOCAL TEST MODE - 本地测试库，非真实订单` when the running backend is connected to `LOCAL_SUPABASE_URL` or another localhost Supabase URL;
+  - the admin sidebar displays `PRODUCTION` when the running backend uses the normal remote `SUPABASE_URL`;
+  - added `npm run dev:local`, which loads root `.env` and maps `LOCAL_SUPABASE_URL`, `LOCAL_SUPABASE_ANON_KEY`, and `LOCAL_SUPABASE_SERVICE_ROLE_KEY` onto the runtime `SUPABASE_*` variables before starting `dev-server.js`;
+  - verified `npm run dev` on this machine returns `runtime_environment.mode = production`, because root `.env` `SUPABASE_URL` points at the remote `brmsymzkmdnxzhrcaghw.supabase.co`;
+  - verified `npm run dev:local` returns `runtime_environment.mode = local_test`, because it explicitly uses `LOCAL_SUPABASE_URL`;
+  - local admin page screenshot with the safety banner was captured at `output/local-test-mode-banner.png`.
+- Local Supabase data safety note:
+  - local Supabase currently contains P5/P5B/P5C fake test rows such as `P5BLOCAL-*`, `P5CLOCAL-*`, and `P5CQA-*`;
+  - production orders do not appear in the local test database;
+  - seeing `P5BLOCAL`, `P5CLOCAL`, or similar local test rows means the admin is connected to the test environment;
+  - do not judge whether real production orders are missing while connected to local Supabase.
+- Verification for the environment banner:
+  - `node --check api/admin/[...action].js` passed;
+  - `node --check scripts/dev-local.js` passed;
+  - `npm run build:admin-vue` passed.
+
+- Aligned the local Supabase schema only; no Vue pages, business APIs, Docker files, business logic, remote Supabase, or Vercel deployment were changed:
+  - checked `supabase/migrations` and root `supabase/*.sql` for the requested membership, transport claim, storage address/detail, and offline tracking migrations;
+  - applied existing local SQL files to local Supabase instead of creating duplicate fields: `supabase/20260513_membership_entitlements.sql`, `supabase/20260514_membership_activation_codes.sql`, `supabase/20260515_membership_activation_code_birthday.sql`, `supabase/20260515_membership_entitlement_grant_source_activation_code.sql`, `supabase/20260519_transport_request_offline_tracking.sql`, `supabase/20260519_storage_order_offline_tracking.sql`, `supabase/20260520_membership_birthday_reminders.sql`, `supabase/20260520_storage_sync_audit_logs.sql`, `supabase/20260520_storage_sync_audit_logs_cutover_notification.sql`, `supabase/20260416_transport_sync_audit_logs.sql`, and `supabase/20260416_transport_sync_audit_logs_perf.sql`;
+  - also applied existing `supabase/migrations/*.sql` files that local Supabase had not fully reflected, including the storage order type/detail constraint migration and storage suborder fields;
+  - no new migration file was needed because all requested missing schema pieces were already represented by existing project SQL. The earlier `storage_orders.full_address` note was a test/seed naming issue: current backend and schema use `storage_orders.address_full`, and the Vue list derives display address from that field.
+- Local schema now has the current code dependencies needed for the tested flows:
+  - membership tables: `membership_entitlements`, `membership_benefit_claims`, `membership_activation_codes`, `membership_audit_logs`, `membership_birthday_reminders`;
+  - transport fields: `membership_benefit_claim_id`, `membership_discount_amount`, `extra_charge_amount`, `final_price`, `membership_discount_breakdown_json`, `offline_recorded`, `last_operated_by`, `last_operated_at`;
+  - storage fields: `address_full`, membership claim/discount fields, suborder/date fields, `offline_recorded`, `last_operated_by`, `last_operated_at`;
+  - audit tables: `storage_sync_audit_logs` and `transport_sync_audit_logs`.
+- Reran the requested local verification:
+  - `npm run build` passed;
+  - `npm run preview` passed and served the local preview used for regression;
+  - `docker compose config --quiet` passed;
+  - `docker compose up -d --build web` built the image and started `webside-web-1` after stopping the preview process that was occupying port 3000.
+- Reran the focused business regression against `npm run preview` with local fake `REGSCHEMA-*` data, then cleaned the test rows:
+  - admin login/session, dashboard data load, `/admin/transport/requests` list API, seeded transport list visibility, and `DELETE /api/transport-requests/:id` passed without 500s;
+  - `/admin/memberships`, membership activation-code list, and birthday reminder list passed without 500s;
+  - `/admin/storage/orders` no longer reports the missing storage tracking migration;
+  - seeded storage order read, edit/save, and delete through the preview admin API passed;
+  - browser visits to `/admin/`, `/admin/transport/requests`, `/admin/memberships`, and `/admin/storage/orders` had no local 4xx/5xx network responses and no red console errors.
+- Remaining local caveat:
+  - Supabase CLI still reports local RLS disabled on several baseline tables (`admin_users`, `site_users`, `storage_orders`, `transport_requests`, `transport_groups`, and related local-only tables). This was not auto-fixed because enabling RLS without matching policies can break local admin/API testing; treat it as a local baseline/security drift item to plan separately.
+- Completed P5C-1 QA/UI closeout for the admin transport request detail order-change drawer, still without production deployment or production migration:
+  - localized stale, expired, invalid group-action, invalid target-group, and price/payment confirmation errors in the drawer;
+  - preview result now labels `old_price_gbp`, `new_price_gbp`, and `price_delta_gbp` as order-level receivable totals, and separately shows `per_person_price_gbp` as current per-person price and `group_total_price_gbp` as group total;
+  - high-risk changes now show prominent warnings for airport, terminal, service-date, passenger-count, and shareable=false changes;
+  - ordinary time adjustment previews continue to tell operators to use the existing normal time-adjustment flow instead of forcing P5;
+  - confirm is disabled until a valid preview exists, the preview is not expired, a reason is filled, and a preview candidate has been selected for `transfer_existing_group`; submitting shows a loading label to reduce duplicate clicks.
+- P5C-1 QA found and fixed a lifecycle regression:
+  - `backfillMissingPickupGroups` now excludes `source = admin_manual` by default, so P4 single/batch supplement rows remain request-only even if admin/public detail flows trigger backfill;
+  - the earlier `shareable === false` skip remains in place, so non-carpool orders are not auto-regrouped.
+- P5C-1 QA local acceptance used fake-only local Supabase rows under `P5CQA-*`:
+  - `no_group_change`: flight-number-only confirmed, no reprice, membership unchanged;
+  - `keep_group`: passenger count 1 -> 2 confirmed, order-level total changed 190 -> 210, per-person price shown separately as 105, original group retained;
+  - `move_out_no_group`: `shareable=false` confirmed, request refreshed with zero memberships;
+  - `move_out_new_single`: airport change to `STN` confirmed, old group closed/deleted and a new single group created;
+  - `transfer_existing_group`: LGW/date/terminal change confirmed using a preview candidate only;
+  - stale preview displayed `订单或拼车组信息已变化，请重新预览后再确认。`;
+  - expired preview displayed `预览已过期，请重新预览。` and confirm stayed disabled;
+  - duplicate confirm double-click produced one order-change log only;
+  - lifecycle regression checks passed: shareable=true request entered group/backfill path, shareable=false request stayed ungrouped, P4 `admin_manual` single/batch rows stayed ungrouped, and public board did not include the shareable=false test order;
+  - screenshot captured at `output/p5c1-qa-order-change-drawer.png`.
+- P5C-1 QA verification:
+  - `node --check` passed for `api/transport-requests/[id]/change-confirm.js`, `api/transport-requests/[id]/change-preview.js`, `api/_lib/transport-group-stats.js`, `api/_lib/transport-group-lifecycle.js`, and `api/transport-groups/[id].js`;
+  - `npm run build:admin-vue` passed and regenerated the admin bundle.
+- Scope intentionally unchanged:
+  - no production deployment;
+  - no production `order_change_logs` migration application;
+  - no P4 manual/batch supplement behavior change except protecting it from unintended backfill;
+  - no ordinary `adjust_flight_time` semantic change;
+  - no P6 dispatch workbench or carpool group-list refactor.
+
+- Completed P5C-1 admin order-detail UI integration without production deployment or production migration:
+  - added an `订单变更` entry on the admin transport request detail page;
+  - added an order-change drawer that shows current order, group, price/payment context, editable change draft fields, change-preview results, risk warnings, candidate groups, final `group_action`, and change-confirm status;
+  - wired the drawer to `POST /api/transport-requests/:id/change-preview` and `POST /api/transport-requests/:id/change-confirm`, carrying `preview_token` and `source_snapshot_hash`;
+  - ordinary time-adjustment previews now show a UI warning to use the existing time-adjustment flow instead of forcing P5;
+  - `transfer_existing_group` target selection is restricted to preview candidate groups and sends the candidate business `group_id`, not arbitrary typed values;
+  - high-risk detail fields on the existing detail form are now read-only; the direct save path only saves the admin note, so airport/terminal/flight/service-time/passenger/payment/carpool changes must go through P5;
+  - the previous direct group-replacement panel on the detail page is no longer an editable bypass and now points operators to the order-change flow.
+- P5C-1 local UI acceptance used local Supabase fake-only `P5CLOCAL-*` data through `http://localhost:3145`, with no production data:
+  - `no_group_change`: flight-number-only change confirmed, `requires_reprice=false`, membership unchanged;
+  - `move_out_no_group`: `shareable=false` confirmed, request became ungrouped after detail refresh;
+  - `move_out_new_single`: airport change to `STN` confirmed, old group closed/deleted and a new single pending group was created;
+  - `transfer_existing_group`: LGW/date/terminal change confirmed using a preview candidate group only, old group closed/deleted and target group became active;
+  - stale preview rejection displayed `Order or group has changed. Please preview again.`;
+  - screenshot captured at `output/p5c-order-change-drawer.png`.
+- P5C-1 backend side-effect fix:
+  - `backfillMissingPickupGroups` now skips requests with `shareable === false`, preventing a `move_out_no_group` order from being automatically re-grouped when the admin detail endpoint refreshes.
+- P5C-1 verification:
+  - `node --check` passed for `api/transport-requests/[id]/change-confirm.js`, `api/transport-requests/[id]/change-preview.js`, `api/_lib/transport-group-stats.js`, `api/_lib/transport-group-lifecycle.js`, and `api/transport-groups/[id].js`;
+  - `npm run build:admin-vue` passed and regenerated the admin bundle.
+- P5C/P6 scope still not entered:
+  - no production deployment;
+  - no production `order_change_logs` migration application;
+  - no P4 manual/batch supplement change;
+  - no ordinary `adjust_flight_time` semantic change;
+  - no carpool dispatch workbench, Excel-style group list, or group-list refactor.
+
+- Completed a local run/build consistency pass without changing business logic:
+  - added a root `Dockerfile`, `.dockerignore`, and `docker-compose.yml` for running the website/admin/API project in Docker while connecting to the Supabase CLI stack already running in Docker Desktop;
+  - added `npm run build` as the plain project build command and `npm run preview` as a production-built local preview command;
+  - kept `npm run build:preview` and `npm run build:prod` as Vercel output build checks, and pinned Vercel build/output settings in `vercel.json` so local Vercel build no longer depends on hidden project settings;
+  - updated `.env.example` with local Supabase, Docker Supabase aliases, session/admin, email, cron, Turnstile, QA, and P5 preview-token variables;
+  - added `README.md` with full local startup steps for Supabase, npm preview, Docker compose, and verification commands;
+  - updated `.vercelignore` so local `.env` files are not uploaded by Vercel CLI deploys.
+- Docker/preview verification completed:
+  - `npm run build` passed;
+  - `npm run build:prod` passed after fixing the local Vercel output-directory/build-command configuration and Windows build environment handling;
+  - `npm run preview` started locally, returned HTTP 200 for `/`, and `/api/public/auth-config` returned local Supabase URL `http://127.0.0.1:54321` with an anon key present;
+  - `docker compose config --quiet` passed;
+  - `docker compose up -d --build web` built and started the container, returned HTTP 200 for `/`, and `/api/public/auth-config` returned Docker Supabase URL `http://host.docker.internal:54321` with an anon key present;
+  - the Docker container was stopped with `docker compose down` after verification.
+- Remaining local/production differences after this pass:
+  - Supabase itself remains managed by the Supabase CLI, not manually duplicated in `docker-compose.yml`, to avoid drifting from `supabase/config.toml`;
+  - local preview is HTTP, so production HTTPS cookie behavior is not identical;
+  - Vercel cron scheduling is not executed by local preview;
+  - application email still depends on Resend/SMTP env values and may send real mail if real provider keys are used locally;
+  - Docker build still reports the existing moderate root npm advisory and an existing Vue/Vite chunk-size/compiler warning; no dependency or business fix was made in this environment-only pass.
+- Implemented P5A backend infrastructure for transport order-change preview without committing, deploying, or applying database changes to production:
+  - added `supabase/20260524_transport_order_change_logs.sql` for future `order_change_logs` audit persistence, with request/order/pricing/payment/group/admin fields, indexes, forced RLS, and direct public/anon/authenticated revokes;
+  - added the shared `computeTransportGroupPricingSnapshot` helper in `api/_lib/transport-group-stats.js` and refactored `api/transport-groups/[id].js` to use the same pricing口径 as group statistics;
+  - added admin-only `POST /api/transport-requests/:id/change-preview` as a read-only preview endpoint that returns field changes, order-change classification, repricing impact, paid/balance/refund impact, group-retention status, candidate groups, and risk codes without writing business tables;
+  - wired the local helper server route in `dev-server.js`;
+  - updated `docs/PROJECT_MAP.md` for the new endpoint, migration, and `order_change_logs` table.
+- P5A verification:
+  - `node --check` passed for the changed/related transport API and helper files, including `api/_lib/transport-group-stats.js`, `api/transport-groups/[id].js`, `api/transport-groups/index.js`, `api/transport-requests/[id]/change-preview.js`, `api/transport-requests/[id].js`, `api/_lib/transport-group-lifecycle.js`, and `dev-server.js`;
+  - `npm run build:admin-vue` passed;
+  - static scan of `change-preview` found no insert/update/upsert/delete/RPC calls;
+  - no production config, Vercel deployment, `adjust_flight_time`, `transfer_existing_group`, P4 manual supplement/import behavior, payment email, or UI modal wiring was intentionally changed.
+- P5B/P5C remain out of scope:
+  - no `change-confirm` endpoint;
+  - no actual request mutation from P5;
+  - no group move/transfer/create execution from the new change flow;
+  - no refund/collection mutation;
+  - no operator UI integration beyond the backend-ready response shape.
+- Completed P5A local acceptance testing for `change-preview` using existing transport request `PU260508-0027` / `5d7044e0-735c-42b1-89ed-ec30c9e7b77b`:
+  - time-only change was classified as `ordinary_time_adjustment` with `requires_reprice=false`;
+  - airport, terminal, service-date, passenger-count, and shareable changes were classified as `order_change`;
+  - flight-number-only change was classified as `order_change` with `requires_reprice=false`;
+  - unpaid payment handling returned `paid_amount_gbp=0`, `balance_due_gbp=new_price_gbp`, and `refund_due_gbp=0`;
+  - explicit `paid_amount_gbp=50` override correctly produced `balance_due_gbp=135` against a 185 GBP preview price;
+  - static scan found no insert/update/delete/upsert/RPC calls in `change-preview`;
+  - `transport_requests`, `transport_groups`, and `transport_group_members` counts were unchanged before/after the preview calls.
+- Completed P5A-1 price semantics correction for `change-preview`:
+  - `api/_lib/transport-group-stats.js` now exposes explicit `group_total_price_gbp` and `per_person_price_gbp` aliases while preserving existing group pricing fields;
+  - `change-preview` top-level `old_price_gbp`, `new_price_gbp`, and `price_delta_gbp` now represent the current order's total receivable amount, not group total or per-person average;
+  - pricing snapshots now include `passenger_count`, `per_person_price_gbp`, `group_total_price_gbp`, and `request_total_price_gbp`;
+  - local acceptance with `PU260508-0027` passenger count `1 -> 3` returned `old_price_gbp=185`, `per_person_price_gbp=75`, `new_price_gbp=225`, `price_delta_gbp=40`, unpaid `balance_due_gbp=225`, and explicit `paid_amount_gbp=50` `balance_due_gbp=175`;
+  - `transport_requests`, `transport_groups`, and `transport_group_members` counts remained unchanged before/after the preview calls.
+- P5A acceptance risks before P5B:
+  - local existing transport data only has `payment_collection_status=unpaid`, so `deposit_paid` and `fully_paid` status branches could not be validated against existing real rows without modifying data;
+  - `order_change_logs` is not applied in the current Supabase schema cache, matching the current "migration file only" state;
+  - P5B should continue using order-level `old_price_gbp/new_price_gbp` semantics for all collection, balance, refund, and audit-log writes.
+- Implemented P5B backend confirmation code path locally, but did not apply the migration to the visible Supabase project because the only connected project is `ngn-transport` and appears to be the current remote/production project:
+  - added admin-only `POST /api/transport-requests/:id/change-confirm`;
+  - `change-preview` now returns `preview_token` and `source_snapshot_hash`, and `change-confirm` recomputes preview before saving to reject stale submissions;
+  - `change-confirm` supports `no_group_change`, `keep_group`, `move_out_no_group`, `move_out_new_single`, and `transfer_existing_group`, with transfer targets restricted to backend preview candidates;
+  - `order_change_logs` migration was extended with `preview_token`, `source_snapshot_hash`, and a unique preview-token index for duplicate-confirm prevention;
+  - syntax checks and admin Vue build passed, and preview smoke checks returned tokens/hashes plus expected default group actions;
+  - full write-path tests for `order_change_logs`, `admin_operation_logs`, and group mutation/sync remain blocked until a non-production local/test Supabase target is available and the migration is applied there.
+- P5B write acceptance was requested again but was not run because no safe local/test Supabase target is currently available:
+  - `supabase status` is unavailable because the Supabase CLI is not installed in the current shell;
+  - current `.env` points at the remote `brmsymzkmdnxzhrcaghw.supabase.co` project;
+  - Supabase connector lists only one project, `ngn-transport`, so there is no separate visible test project to apply the migration or create test transport data;
+  - to avoid production-data mutation, no migration, test data creation, `change-confirm`, group membership change, or log write was executed.
+- P5B-Env local Supabase setup attempted without touching production:
+  - Docker CLI is installed (`Docker version 29.2.1`), but Docker Desktop's Linux engine is not running/available from this shell, so `npx supabase start` failed before any local database was created;
+  - Supabase CLI was added as a local dev dependency (`supabase` 2.101.0) and `npx supabase init` generated local project files under `supabase/`, including `supabase/config.toml` and `supabase/.gitignore`;
+  - no production Supabase project, paid Supabase branch, Vercel deployment, business API, UI, or P5 change-confirm behavior was modified during this environment setup;
+  - `order_change_logs` migration has not been applied to any non-production database yet because local Supabase could not start;
+  - no fake transport test data was imported and no P5B write validation was run;
+  - once Docker Desktop is running, rerun `npx supabase start`, capture local key names only, apply the baseline schema plus `supabase/20260524_transport_order_change_logs.sql`, seed fake transport request/group/member rows, and then run P5B write acceptance;
+  - `npm audit` after installing the CLI reports one moderate transitive `ws` advisory with a fix available; it was not fixed in this setup pass.
+- Completed P5B-Env and local P5B write validation against local Supabase only:
+  - Docker Desktop was running and `npx supabase start` succeeded locally; local API, DB, Studio, anon key, and service-role key were generated, with the key values stored only in ignored local `.env` entries named `LOCAL_SUPABASE_URL`, `LOCAL_SUPABASE_ANON_KEY`, and `LOCAL_SUPABASE_SERVICE_ROLE_KEY`;
+  - production `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `.env.local`, and `vercel.json` were not modified;
+  - baseline admin/transport/order schema plus `supabase/20260524_transport_order_change_logs.sql` were applied to the local database; `order_change_logs` exists locally with RLS enabled and forced;
+  - fake-only local rows were seeded under `P5BLOCAL-*`, including one admin, transport requests, groups, and group memberships; no production or real student data was imported;
+  - `change-preview` now returns a signed expiring `preview_token`, `preview_expires_at`, and `source_snapshot_hash`; `change-confirm` verifies token signature, expiry, and hash before mutating;
+  - write validation passed locally for `no_group_change`, `keep_group`, `move_out_no_group`, `move_out_new_single`, and `transfer_existing_group`, with five `order_change_logs` and five `admin_operation_logs` written;
+  - transfer to a hand-entered non-candidate group was rejected, duplicate confirmation was rejected, stale snapshot after group membership change was rejected, and an expired preview token was rejected;
+  - local validation noted one behavior to keep in mind for P5C/P6 copy and operator expectations: when a one-member kept group is synced, current lifecycle logic can leave the member request status as `published` while the group remains `single_member`.
+  - verification passed: `node --check` for `api/transport-requests/[id]/change-confirm.js`, `api/transport-requests/[id]/change-preview.js`, `api/_lib/transport-group-stats.js`, `api/_lib/transport-group-lifecycle.js`, `api/transport-groups/[id].js`, plus `npm run build:admin-vue`.
 
 - Started production post-deploy lightweight acceptance for the P3/P4 transport workbench release and stopped at the first blocking step:
   - target production URL: `https://ngn.best/admin/transport/requests`;
@@ -1961,6 +2261,14 @@
 - The public carpool request form was intentionally modified to remove the unused share-goal price option.
 - Transport request admin API responses now include `offline_recorded`, `last_operated_by`, and `last_operated_at`; public transport APIs were not intentionally expanded. No email behavior or secrets/env files were modified.
 - Transport manual supplement/import fields have been applied to Supabase project `ngn-transport`; public/ordinary-user transport APIs should continue using explicit safe field lists and must not expose `raw_import_payload` or admin import fields.
+- P5A order-change backend infrastructure is now present locally: `change-preview` is admin-only and read-only, and `order_change_logs` exists only as a migration file until explicitly applied through Supabase.
+- Future P5C/P6 transport UI requirement is recorded only, not implemented in current P5B: keep the existing transport group detail page because its overview, fee/payment, member list, add-member area, and driver dispatch summary remain valuable, but upgrade the transport group list into a spreadsheet-like "transport dispatch workbench" so operators can see high-frequency group/order information without repeatedly opening detail pages.
+  - The future list should surface Group ID, order numbers, service type/date, airport/terminal, flight time, route, member names, passenger/seat counts, group status, chat-group status, driver-notified state, payment status, current per-person price, customer-service notes, last operator, and last operated time.
+  - Low-risk fields may be edited directly in the list only with `admin_operation_logs`: chat-group status (`not_created`, `created`, `not_needed`, `pending_confirmation`), driver notification, customer-service notes, internal processing status, and offline-recorded state.
+  - High-risk fields must not be spreadsheet-edited and must use the P5 order-change flow: airport, terminal, service date, flight time, passenger count, shareable/carpool intent, price, confirmed order price, balance due, and refund due.
+  - `full` / fully matched group state should remain system-derived from `seats_used >= max_passengers`; customer service may close or cancel a group but should not manually fake a full state.
+  - Detail-page follow-up risks: group-level "mark paid" should become member-order-based after P5; current per-person price is dynamic group pricing, not final confirmed order price; max passengers must never be set below current passenger count and must log operations; driver-dispatch time may be directly editable only if it is dispatch-only and must use P5 if it affects service time or matching; add-member must validate service type, airport, date, capacity, shareable intent, and existing group membership; remove-member must sync old group status, request status, and pricing, not just delete membership.
+  - Recommended interaction: expandable rows on the future list should show member order number, name, phone, WeChat, flight number, terminal, time, passenger/luggage counts, payment status, confirmed order price, paid amount, balance/refund amount, and actions for payment handling, order change, and removal.
 - Personal center display now treats the membership benefit card as the single display location for the currently linked membership order, so the same order is not repeated in ordinary pickup/storage cards or recent records.
 - Personal center pickup membership reservations now show whether the member booking is a September free pickup or a non-September/other-time 100 GBP discount.
 - Personal center pickup cards and bound pickup membership cards now provide direct `查看详情` access, while pickup membership displays hide price/discount amounts.
@@ -1980,6 +2288,8 @@
 - The transport request tracking fields have been applied to Supabase project `ngn-transport`; the 2.0 admin launch deployment has now followed the GitHub-first release order and is live on Vercel production.
 - The storage order tracking migration `supabase/20260519_storage_order_offline_tracking.sql` has been applied to Supabase project `ngn-transport`; refresh `/admin/storage/orders` before testing mark/cancel recorded operations.
 - The transport manual supplement migration `supabase/20260521_transport_manual_import.sql` has been applied to Supabase project `ngn-transport`; refresh `/admin/transport/requests` before retesting the supplement and batch import controls. The two new import/filter indexes may continue to appear as unused in Supabase Advisor until real traffic exercises those queries.
+- P5A `supabase/20260524_transport_order_change_logs.sql` has not been applied to Supabase production; apply and verify it separately before implementing a P5B/P5C confirmation flow that writes change logs.
+- P5B backend code is implemented and locally write-validated against local Supabase only. The `order_change_logs` migration is still not applied to production, and no production write validation has been run.
 - Live mutation QA for creating manual supplement orders, joining existing groups, and verifying group payment/person statistics was not run against production data in this pass to avoid inserting test transport orders; run it with an approved real/admin test record before relying on the new manual supplement/import workflow for daily operations.
 - Local `.env` bootstrap admin credentials are no longer accepted by the admin password-login endpoint; the updated smoke test can still verify protected admin pages through a signed local admin session, but use a current approved admin password when specifically testing the login form.
 - Production admin protected-page QA still needs a current approved admin username/password; local signed admin-session fallback is rejected by production and cannot validate live admin internals.
@@ -1997,6 +2307,9 @@
 - Complete `docs/NGN_2_ADMIN_PREPROD_QA.md` manual Vercel-dev workflow with an approved admin account and QA records: admin login, transport list, single supplement with/without Group ID, paste/CSV/XLSX preview, commit, group passenger/payment sync, import-batch filtering, and public pickup form submission.
 - After committing/pushing and deploying, verify `/admin/transport/requests` filters, offline-recorded toggles, and filtered export against real admin data.
 - Verify `/admin/transport/requests/:id` with a real admin session to confirm field saves and group replacements write readable operation-log entries.
+- For P5B, review and accept the local write-validation result before deciding whether to apply `supabase/20260524_transport_order_change_logs.sql` to a future staging/test remote project. Keep production untouched until an explicit release request.
+- For P5B-Env, local Supabase is now available for continued fake-data testing through `LOCAL_SUPABASE_URL`, `LOCAL_SUPABASE_ANON_KEY`, and `LOCAL_SUPABASE_SERVICE_ROLE_KEY`; do not use real student data in this local environment.
+- For P5C/P6, design the "transport dispatch workbench" from the recorded customer-service requirement: keep group detail, make the group list more Excel-like, expose only low-risk inline fields with operation logs, and route all high-risk order/trip/price changes through P5 order-change APIs.
 - Next Vue phase should verify storage export/delete and storage detail price recalculation in the browser, then continue with the next explicitly approved low-risk operation only after server-side permission boundaries are reviewed.
 - Do not implement real dangerous operations until the corresponding detail/read-only flow is accepted and server-side permission boundaries are reviewed.
 - Keep following the fixed release order for future changes: commit and push intended changes to GitHub first, then deploy to Vercel.

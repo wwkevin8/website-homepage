@@ -1,6 +1,10 @@
 .git
 .vercel
 node_modules
+.env
+.env.*
+!.env.example
+supabase/.temp
 .tmp-dpl-3ReB2SCYt-output
 output
 output-*.png

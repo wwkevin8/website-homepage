@@ -5,13 +5,16 @@
   "description": "Static multi-page site with Vercel serverless APIs for transport dispatch management.",
   "scripts": {
     "dev": "node dev-server.js",
+    "dev:local": "node scripts/dev-local.js",
     "start": "node dev-server.js",
     "dev:vercel": "npx --yes vercel@53.1.0 dev",
+    "preview": "node scripts/vercel-preview.js",
     "qa:playwright:smoke": "node scripts/playwright-smoke.js",
     "qa:playwright:transport-flow": "node scripts/playwright-transport-flow.js",
     "build:admin-vue": "npm --prefix apps/admin-vue run build",
-    "build:preview": "node scripts/safe-vercel-build.js",
-    "build:prod": "node scripts/safe-vercel-build.js --prod",
+    "build": "npm run build:admin-vue",
+    "build:preview": "npm run build:admin-vue && node scripts/safe-vercel-build.js",
+    "build:prod": "npm run build:admin-vue && node scripts/safe-vercel-build.js --prod",
     "deploy:preview": "npx --yes vercel@53.1.0 deploy",
     "deploy:prod": "npx --yes vercel@53.1.0 deploy --prod"
   },
@@ -23,6 +26,7 @@
     "node": "24.x"
   },
   "devDependencies": {
-    "playwright": "^1.59.1"
+    "playwright": "^1.59.1",
+    "supabase": "^2.101.0"
   }
 }

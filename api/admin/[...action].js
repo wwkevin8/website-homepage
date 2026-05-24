@@ -155,6 +155,43 @@ function logPerf(label, details) {
   console.info(`[perf][admin-api] ${label}`, details);
 }
 
+function getRuntimeEnvironmentInfo() {
+  const supabaseUrl = String(process.env.SUPABASE_URL || "").trim();
+  const localSupabaseUrl = String(process.env.LOCAL_SUPABASE_URL || "").trim();
+  let host = "";
+  try {
+    host = new URL(supabaseUrl).hostname.toLowerCase();
+  } catch (error) {
+    host = "";
+  }
+
+  const isLocal = Boolean(
+    supabaseUrl &&
+    (
+      (localSupabaseUrl && supabaseUrl === localSupabaseUrl) ||
+      host === "localhost" ||
+      host === "127.0.0.1" ||
+      host === "::1"
+    )
+  );
+
+  if (isLocal) {
+    return {
+      mode: "local_test",
+      label: "LOCAL TEST MODE - 本地测试库，非真实订单",
+      is_local_test: true,
+      is_production: false
+    };
+  }
+
+  return {
+    mode: "production",
+    label: "PRODUCTION",
+    is_local_test: false,
+    is_production: true
+  };
+}
+
 function parseActionParts(req) {
   const candidates = [
     req.query?.admin_action,
@@ -1286,7 +1323,10 @@ async function handleSession(req, res, supabase) {
     authenticated: Boolean(session.authenticated),
     totalMs: nowMs() - startedAt
   });
-  ok(res, session);
+  ok(res, {
+    ...session,
+    runtime_environment: getRuntimeEnvironmentInfo()
+  });
 }
 
 async function handleMe(req, res, supabase, subAction) {

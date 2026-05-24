@@ -143,6 +143,60 @@ textarea {
   transform: rotate(-135deg);
 }
 
+.admin-sidebar__environment {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 9px 10px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.64);
+  color: #cbd5e1;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.admin-sidebar__environment.is-local-test {
+  border-color: rgba(251, 191, 36, 0.8);
+  background: #78350f;
+  color: #fef3c7;
+  box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.22);
+}
+
+.admin-sidebar__environment.is-production {
+  border-color: rgba(34, 197, 94, 0.45);
+  background: rgba(20, 83, 45, 0.42);
+  color: #dcfce7;
+}
+
+.admin-sidebar__environment-dot {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 8px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.admin-sidebar__environment-text {
+  min-width: 0;
+}
+
+.admin-sidebar.is-compact .admin-sidebar__environment {
+  justify-content: center;
+  padding: 9px;
+}
+
+.admin-sidebar.is-compact .admin-sidebar__environment-text {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
 .admin-sidebar.is-compact .admin-sidebar__brand-text,
 .admin-sidebar.is-compact .admin-sidebar__section-title-text,
 .admin-sidebar.is-compact .admin-sidebar__label,
@@ -2623,6 +2677,14 @@ textarea {
   grid-column: 1 / -1;
 }
 
+.transport-form-hint {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
 .transport-simple-detail-form__actions {
   display: flex;
   flex-wrap: wrap;
@@ -2654,6 +2716,158 @@ textarea {
 .transport-current-group-hint a {
   color: #1d4ed8;
   font-weight: 800;
+}
+
+.transport-change-modal {
+  align-items: stretch;
+  justify-content: flex-end;
+  padding: 0;
+}
+
+.transport-change-modal__panel {
+  border-radius: 0;
+  max-height: 100vh;
+  max-width: 920px;
+  padding: 24px;
+  width: min(100%, 920px);
+}
+
+.transport-change-section {
+  border: 1px solid #dbe5f0;
+  border-radius: 8px;
+  display: grid;
+  gap: 14px;
+  margin-top: 14px;
+  padding: 16px;
+}
+
+.transport-change-section h4 {
+  font-size: 16px;
+  margin: 0;
+}
+
+.transport-change-summary-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+}
+
+.transport-change-summary-grid div {
+  min-width: 0;
+}
+
+.transport-change-summary-grid dt {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.transport-change-summary-grid dd {
+  color: #0f172a;
+  font-size: 14px;
+  margin: 4px 0 0;
+  overflow-wrap: anywhere;
+}
+
+.transport-change-form,
+.transport-change-confirm-box {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.transport-change-form label,
+.transport-change-confirm-box label {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.transport-change-form span,
+.transport-change-confirm-box span {
+  color: #334155;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.transport-change-form input,
+.transport-change-form select,
+.transport-change-form textarea,
+.transport-change-confirm-box select {
+  border: 1px solid #d5dde8;
+  border-radius: 6px;
+  color: #0f172a;
+  font: inherit;
+  min-height: 40px;
+  min-width: 0;
+  padding: 0 10px;
+  width: 100%;
+}
+
+.transport-change-form textarea {
+  min-height: 78px;
+  padding: 10px;
+  resize: vertical;
+}
+
+.transport-change-form__wide,
+.transport-change-form__actions {
+  grid-column: 1 / -1;
+}
+
+.transport-change-form__actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.transport-change-list {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+}
+
+.transport-change-list strong,
+.transport-change-list p {
+  margin: 0;
+}
+
+.transport-change-list p {
+  color: #475569;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.transport-change-list--warning {
+  background: #fffbeb;
+  border-color: #fde68a;
+}
+
+.transport-change-list--critical {
+  background: #fff1f2;
+  border-color: #fda4af;
+}
+
+.transport-change-list--critical strong,
+.transport-change-list--critical p {
+  color: #9f1239;
+}
+
+.transport-change-confirm-box {
+  align-items: end;
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.transport-change-confirm-box__message {
+  color: #9f1239;
+  font-size: 13px;
+  grid-column: 1 / -1;
+  margin: 0;
 }
 
 .transport-force-assign-row {

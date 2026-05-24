@@ -3,6 +3,7 @@ const { requireAdminUser } = require("../_lib/admin-auth");
 const { ok, badRequest, parseJsonBody, methodNotAllowed, serverError } = require("../_lib/http");
 const { applyEffectiveGroupCounts, mapGroupPayload, getGroupPassengerCount, deriveDisplayGroupId } = require("../_lib/transport");
 const { createGroupForRequest } = require("../_lib/transport-group-lifecycle");
+const { computeTransportGroupPricingSnapshot } = require("../_lib/transport-group-stats");
 
 const GROUP_DETAIL_MEMBER_SELECT = "id,group_id,request_id,passenger_count_snapshot,luggage_count_snapshot,created_at,transport_requests(id,order_no,student_name,site_user_id,phone,wechat,email,service_type,status,passenger_count,luggage_count,terminal,flight_datetime,airport_code,flight_no,location_from,location_to,admin_note,manual_payment_status,notes)";
 
@@ -46,54 +47,6 @@ function uniqueNonEmpty(values) {
   return Array.from(new Set((values || []).map(value => String(value || "").trim()).filter(Boolean)));
 }
 
-function formatArrivalRange(members) {
-  const timestamps = members
-    .map(member => member.transport_requests?.flight_datetime)
-    .filter(Boolean)
-    .map(value => new Date(value).getTime())
-    .filter(value => !Number.isNaN(value))
-    .sort((a, b) => a - b);
-
-  if (!timestamps.length) {
-    return {
-      earliest: null,
-      latest: null
-    };
-  }
-
-  return {
-    earliest: new Date(timestamps[0]).toISOString(),
-    latest: new Date(timestamps[timestamps.length - 1]).toISOString()
-  };
-}
-
-const PICKUP_PRICING = {
-  normal: {
-    LHR: { perPerson: { 1: 185, 2: 100, 3: 75, 4: 60, 5: 55 } },
-    LGW: { perPerson: { 1: 235, 2: 125, 3: 95, 4: 80, 5: 70 } },
-    MAN: { perPerson: { 1: 165, 2: 90, 3: 65, 4: 55, 5: 50 } },
-    LTN: { perPerson: { 1: 180, 2: 95, 3: 70, 4: 55, 5: 50 } },
-    LCY: { perPerson: { 1: 190, 2: 105, 3: 80, 4: 75, 5: 60 } },
-    BHX: { perPerson: { 1: 100, 2: 60, 3: 50, 4: 45, 5: 40 } },
-    STN: { perPerson: { 1: 185, 2: 100, 3: 75, 4: 60, 5: 55 } }
-  },
-  peak: {
-    LHR: { perPerson: { 1: 190, 2: 105, 3: 80, 4: 65, 5: 60 } },
-    LGW: { perPerson: { 1: 240, 2: 130, 3: 100, 4: 85, 5: 75 } },
-    MAN: { perPerson: { 1: 170, 2: 95, 3: 70, 4: 60, 5: 55 } },
-    LTN: { perPerson: { 1: 185, 2: 100, 3: 75, 4: 60, 5: 55 } },
-    LCY: { perPerson: { 1: 195, 2: 110, 3: 85, 4: 80, 5: 65 } },
-    BHX: { perPerson: { 1: 105, 2: 65, 3: 55, 4: 50, 5: 45 } },
-    STN: { perPerson: { 1: 190, 2: 105, 3: 80, 4: 65, 5: 60 } }
-  }
-};
-
-function getPricingSeason(referenceDate) {
-  const date = new Date(referenceDate || Date.now());
-  if (Number.isNaN(date.getTime())) return "normal";
-  return date.getUTCMonth() === 8 ? "peak" : "normal";
-}
-
 function parsePaymentStatus(adminNote, structuredStatus) {
   const normalized = String(structuredStatus || "").trim().toLowerCase();
   if (["paid", "unpaid", "pending", "waived"].includes(normalized)) {
@@ -104,10 +57,6 @@ function parsePaymentStatus(adminNote, structuredStatus) {
   return match ? match[1].toLowerCase() : "unpaid";
 }
 
-function roundCurrency(value) {
-  return Math.round(Number(value || 0) * 100) / 100;
-}
-
 function computeGroupViewModel(group, members) {
   const normalizedGroup = applyEffectiveGroupCounts(group);
   const normalizedMembers = normalizeMembers(members);
@@ -116,26 +65,17 @@ function computeGroupViewModel(group, members) {
   const displayRequests = displayMembers.map(member => member.transport_requests || {});
   const activeRequests = activeMembers.map(member => member.transport_requests || {});
   const maxPassengers = Number(normalizedGroup.max_passengers || 0);
-  const currentPassengerCount = displayMembers.reduce((sum, member) => {
-    return sum + Number(member.transport_requests?.passenger_count || member.passenger_count_snapshot || 0);
-  }, 0);
+  const pricing = computeTransportGroupPricingSnapshot(normalizedGroup, normalizedMembers, { activeOnly: false });
+  const currentPassengerCount = pricing.current_passenger_count;
   const activeMemberCount = displayMembers.length;
-  const terminals = uniqueNonEmpty(displayRequests.map(request => request.terminal));
+  const terminals = pricing.terminal_values;
   const airports = uniqueNonEmpty(displayRequests.map(request => request.airport_code));
   const destinations = uniqueNonEmpty(displayRequests.map(request => request.location_to));
-  const arrivalRange = formatArrivalRange(displayMembers);
+  const arrivalRange = pricing.arrival_range;
   const timeSpanMinutes = arrivalRange.earliest && arrivalRange.latest
     ? Math.round((new Date(arrivalRange.latest).getTime() - new Date(arrivalRange.earliest).getTime()) / 60000)
     : 0;
-  const hasCrossTerminal = terminals.length > 1;
-  const primaryTerminal = normalizedGroup.terminal || terminals[0] || null;
-  const pricingSeason = getPricingSeason(normalizedGroup.group_date || arrivalRange.earliest || normalizedGroup.created_at);
-  const airportPricing = PICKUP_PRICING[pricingSeason]?.[normalizedGroup.airport_code || airports[0] || ""] || null;
-  const pricingSeatCount = Math.min(Math.max(currentPassengerCount, 1), 5);
-  const basePerPersonGbp = airportPricing?.perPerson?.[pricingSeatCount] || 0;
-  const crossTerminalSurchargeTotalGbp = hasCrossTerminal ? currentPassengerCount * 15 : 0;
-  const totalPriceGbp = roundCurrency(basePerPersonGbp * currentPassengerCount + crossTerminalSurchargeTotalGbp);
-  const averagePriceGbp = currentPassengerCount > 0 ? roundCurrency(totalPriceGbp / currentPassengerCount) : 0;
+  const hasCrossTerminal = pricing.has_cross_terminal;
 
   const membersWithSurcharge = normalizedMembers.map(member => {
     const request = member.transport_requests || {};
@@ -186,17 +126,17 @@ function computeGroupViewModel(group, members) {
     is_matchable: !airportMismatch && !timeDiffExceeded && !overCapacity && !invalidStatuses && !isClosed,
     is_over_capacity: overCapacity,
     has_cross_terminal: hasCrossTerminal,
-    cross_terminal_surcharge_gbp: hasCrossTerminal ? currentPassengerCount * 15 : 0,
+    cross_terminal_surcharge_gbp: pricing.cross_terminal_surcharge_total_gbp,
     can_accept_more_members: summary.joinable,
     blocking_reasons: blockingReasons
   };
 
   const payment_summary = {
-    pricing_season: pricingSeason,
-    base_price_per_person_gbp: roundCurrency(basePerPersonGbp),
-    cross_terminal_surcharge_total_gbp: roundCurrency(crossTerminalSurchargeTotalGbp),
-    total_price_gbp: totalPriceGbp,
-    average_price_gbp: averagePriceGbp,
+    pricing_season: pricing.pricing_season,
+    base_price_per_person_gbp: pricing.base_price_per_person_gbp,
+    cross_terminal_surcharge_total_gbp: pricing.cross_terminal_surcharge_total_gbp,
+    total_price_gbp: pricing.total_price_gbp,
+    average_price_gbp: pricing.average_price_gbp,
     member_payments: membersWithSurcharge.map(member => ({
       member_id: member.id,
       request_id: member.transport_requests?.id || member.request_id,
