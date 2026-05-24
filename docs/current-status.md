@@ -12,6 +12,16 @@
 
 ## Latest Completed Work
 
+- Production empty transport group cleanup final record:
+  - cleanup scope was historical empty transport groups with 0 members, no `transport_group_members`, no `transport_requests.group_id` reference, and no valid order attached;
+  - after cleanup, `transport_groups` went from 28 rows to 9 rows;
+  - `transport_group_members` stayed at 10 rows;
+  - groups with members/current passenger counts were not processed;
+  - transport request list remains normal;
+  - transport group list remains normal;
+  - P6 dispatch workbench was not started;
+  - follow-up remains to implement a formal automatic empty-group cleanup rule and deletion audit flow.
+
 - Completed a read-only production post-cleanup audit after manual empty-group cleanup:
   - no production data was inserted, updated, deleted, restored, or deployed during this audit;
   - `transport_groups` currently has 9 rows with status distribution `active=1`, `closed=3`, `single_member=5`;
