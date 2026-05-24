@@ -8,9 +8,32 @@
 ## Last Updated Task
 
 - Date: 2026-05-24
-- Scope: P5 Release Prep 2.5 production env completion
+- Scope: P5 Release Prep 3 production deploy and smoke test
 
 ## Latest Completed Work
+
+- Completed P5 Release Prep 3 production deployment and smoke test:
+  - followed the GitHub-first release rule before deploying: committed and pushed the P5 release changes in `7ae04ae` (`feat: release P5 transport order changes`), then committed and pushed the Vercel cloud-build fix in `17b5c79` (`fix: install admin app dependencies on Vercel`);
+  - first Vercel production deploy attempt failed before aliasing because the cloud build did not install `apps/admin-vue` dependencies and `npm run build` exited 127;
+  - fixed only deployment install configuration by adding Vercel `installCommand` to install root dependencies and run `npm --prefix apps/admin-vue ci`; no P5 business logic, UI behavior, API semantics, database schema, or production env values were changed in that blocker fix;
+  - second Vercel production deploy succeeded: deployment `dpl_3DE6ePQDmTsFC9oBAU2Rc5vHViTi`, URL `https://webside-6q9rzgr2x-wwkevin8s-projects.vercel.app`, aliased to `https://ngn.best`, ready state `READY`;
+  - Vercel build passed with the existing Vue/Vite chunk-size warning only, and production `npm install` reported one existing moderate root audit advisory while `apps/admin-vue` dependencies reported zero vulnerabilities.
+- Production smoke test passed using production admin authentication and synthetic P5 smoke rows only:
+  - `/api/admin/login` succeeded for an approved super-admin account, `/api/admin/session` returned `runtime_environment.label = PRODUCTION`, and the admin shell loaded without `LOCAL TEST MODE`;
+  - `/api/transport-requests` loaded real production orders, service-type filtering/pagination returned successfully, and filtered CSV export returned successfully; the `membership_benefit_claim_id does not exist` error did not recur;
+  - P4 manual supplement and batch supplement preview/commit both worked with synthetic rows;
+  - P5 order detail path was smoke-tested through `change-preview` and `change-confirm` on synthetic orders: flight-number-only change returned order-level price fields (`old_price_gbp=190`, `new_price_gbp=190`, `request_total_price_gbp=190`) and wrote both `order_change_logs` and `admin_operation_logs`;
+  - duplicate confirm was rejected, stale preview was rejected, expired preview was rejected, and the legacy `adjust_flight_time` flow still worked on a synthetic order;
+  - the production transport group list endpoint returned a valid empty list at the time of testing; because there was no real production group sample, a temporary synthetic group/member was created with service-role data, the group-detail/member order-change preview path returned a valid preview token and order-level price shape, then the synthetic group/member/request rows were deleted;
+  - public board smoke confirmed the synthetic `shareable=false` test order did not appear;
+  - security smoke confirmed anon REST direct select on `order_change_logs` returns 401, service role can read `order_change_logs`, `public`/`anon`/`authenticated` have no direct select privilege, RLS is enabled and forced, and no public API handler references `order_change_logs`.
+- Production smoke cleanup:
+  - synthetic `P5 Production Smoke` transport requests, synthetic `P5PRODGROUP` groups, and related group memberships were deleted after the test;
+  - production audit rows created by the synthetic confirm smoke test remain in `order_change_logs` / `admin_operation_logs` as expected audit evidence and do not expose real student data.
+- P5 production conclusion:
+  - no rollback was needed;
+  - P5 can be marked production released;
+  - P6 dispatch workbench was not started.
 
 - Completed P5 Release Prep 2.5 without Vercel deployment, Supabase changes, UI changes, or P6 work:
   - generated a strong random `P5_CHANGE_PREVIEW_TOKEN_SECRET` and configured it in Vercel Production only; the secret was not written to code or docs;
@@ -2261,7 +2284,7 @@
 - The public carpool request form was intentionally modified to remove the unused share-goal price option.
 - Transport request admin API responses now include `offline_recorded`, `last_operated_by`, and `last_operated_at`; public transport APIs were not intentionally expanded. No email behavior or secrets/env files were modified.
 - Transport manual supplement/import fields have been applied to Supabase project `ngn-transport`; public/ordinary-user transport APIs should continue using explicit safe field lists and must not expose `raw_import_payload` or admin import fields.
-- P5A order-change backend infrastructure is now present locally: `change-preview` is admin-only and read-only, and `order_change_logs` exists only as a migration file until explicitly applied through Supabase.
+- P5 order-change infrastructure is now live in production: `change-preview` is admin-only/read-only, `change-confirm` is admin-only/write-audited, and `order_change_logs` exists in production with forced RLS and no direct public/anon/authenticated table access.
 - Future P5C/P6 transport UI requirement is recorded only, not implemented in current P5B: keep the existing transport group detail page because its overview, fee/payment, member list, add-member area, and driver dispatch summary remain valuable, but upgrade the transport group list into a spreadsheet-like "transport dispatch workbench" so operators can see high-frequency group/order information without repeatedly opening detail pages.
   - The future list should surface Group ID, order numbers, service type/date, airport/terminal, flight time, route, member names, passenger/seat counts, group status, chat-group status, driver-notified state, payment status, current per-person price, customer-service notes, last operator, and last operated time.
   - Low-risk fields may be edited directly in the list only with `admin_operation_logs`: chat-group status (`not_created`, `created`, `not_needed`, `pending_confirmation`), driver notification, customer-service notes, internal processing status, and offline-recorded state.
@@ -2288,11 +2311,10 @@
 - The transport request tracking fields have been applied to Supabase project `ngn-transport`; the 2.0 admin launch deployment has now followed the GitHub-first release order and is live on Vercel production.
 - The storage order tracking migration `supabase/20260519_storage_order_offline_tracking.sql` has been applied to Supabase project `ngn-transport`; refresh `/admin/storage/orders` before testing mark/cancel recorded operations.
 - The transport manual supplement migration `supabase/20260521_transport_manual_import.sql` has been applied to Supabase project `ngn-transport`; refresh `/admin/transport/requests` before retesting the supplement and batch import controls. The two new import/filter indexes may continue to appear as unused in Supabase Advisor until real traffic exercises those queries.
-- P5A `supabase/20260524_transport_order_change_logs.sql` has not been applied to Supabase production; apply and verify it separately before implementing a P5B/P5C confirmation flow that writes change logs.
-- P5B backend code is implemented and locally write-validated against local Supabase only. The `order_change_logs` migration is still not applied to production, and no production write validation has been run.
-- Live mutation QA for creating manual supplement orders, joining existing groups, and verifying group payment/person statistics was not run against production data in this pass to avoid inserting test transport orders; run it with an approved real/admin test record before relying on the new manual supplement/import workflow for daily operations.
-- Local `.env` bootstrap admin credentials are no longer accepted by the admin password-login endpoint; the updated smoke test can still verify protected admin pages through a signed local admin session, but use a current approved admin password when specifically testing the login form.
-- Production admin protected-page QA still needs a current approved admin username/password; local signed admin-session fallback is rejected by production and cannot validate live admin internals.
+- P5 production smoke retained synthetic audit rows in `order_change_logs` and `admin_operation_logs`; the synthetic transport requests, groups, and group memberships were deleted. Keep the audit rows unless a separate cleanup policy is approved.
+- Production transport group list returned a valid empty list during smoke testing, so there was no real production group sample. Group-detail/member preview was verified with a temporary synthetic group, then cleaned up.
+- The `POST /api/transport-groups` and group member add route were not part of P5 and were not relied on for release; the P5 group-detail member order-change entry was verified through the existing group detail and change-preview path.
+- A current approved production admin username/password is available and was used for the P5 smoke test; do not rely on local signed admin-session fallback for production validation.
 - Preview env pulled from Vercel differs from local `.env`: local has `ADMIN_BOOTSTRAP_*` and `STORAGE_ORDER_WEBHOOK_URL`; Preview has `ADMIN_ALLOWED_EMAILS`/`ADMIN_PASSWORD` and Vercel/Turbo runtime keys. Confirm this is intentional before release.
 - Source scan found hardcoded `https://ngn.best` fallbacks in email/audit helpers. Confirm `APP_BASE_URL` or equivalent site URL behavior for Preview and Production before relying on email links.
 - Existing unrelated dirty changes were present before this checkpoint and were not reverted:
@@ -2304,10 +2326,8 @@
 
 ## Recommended Next Steps
 
-- Complete `docs/NGN_2_ADMIN_PREPROD_QA.md` manual Vercel-dev workflow with an approved admin account and QA records: admin login, transport list, single supplement with/without Group ID, paste/CSV/XLSX preview, commit, group passenger/payment sync, import-batch filtering, and public pickup form submission.
-- After committing/pushing and deploying, verify `/admin/transport/requests` filters, offline-recorded toggles, and filtered export against real admin data.
-- Verify `/admin/transport/requests/:id` with a real admin session to confirm field saves and group replacements write readable operation-log entries.
-- For P5B, review and accept the local write-validation result before deciding whether to apply `supabase/20260524_transport_order_change_logs.sql` to a future staging/test remote project. Keep production untouched until an explicit release request.
+- Monitor production P5 for the first real customer-service usage: check `order_change_logs`, `admin_operation_logs`, request updates, and group membership changes after the first confirmed real order change.
+- For future release/smoke runs, prefer an approved production test order or a documented synthetic-order cleanup routine; avoid using real student orders for destructive confirmation tests.
 - For P5B-Env, local Supabase is now available for continued fake-data testing through `LOCAL_SUPABASE_URL`, `LOCAL_SUPABASE_ANON_KEY`, and `LOCAL_SUPABASE_SERVICE_ROLE_KEY`; do not use real student data in this local environment.
 - For P5C/P6, design the "transport dispatch workbench" from the recorded customer-service requirement: keep group detail, make the group list more Excel-like, expose only low-risk inline fields with operation logs, and route all high-risk order/trip/price changes through P5 order-change APIs.
 - Next Vue phase should verify storage export/delete and storage detail price recalculation in the browser, then continue with the next explicitly approved low-risk operation only after server-side permission boundaries are reviewed.
