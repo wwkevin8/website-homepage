@@ -32,7 +32,7 @@ defineEmits(["toggle-current-page", "mark-selected", "unmark-selected", "export-
 <template>
   <div class="transport-list-toolbar">
     <div class="transport-list-toolbar__summary">
-      已选 {{ selectedCount }} 条，当前筛选共 {{ totalCount }} 条
+      当前页已选 {{ selectedCount }} 条 / 当前筛选共 {{ totalCount }} 条
     </div>
     <div class="transport-list-toolbar__actions">
       <button class="secondary-button" type="button" :disabled="disabled" @click="$emit('toggle-current-page')">

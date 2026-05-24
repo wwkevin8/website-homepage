@@ -7,10 +7,54 @@
 
 ## Last Updated Task
 
-- Date: 2026-05-23
-- Scope: Admin transport workbench display polish
+- Date: 2026-05-24
+- Scope: P3.1 admin transport request workbench inline action polish
 
 ## Latest Completed Work
+
+- Completed P3 admin transport request workbench filtering and bulk-action polish:
+  - added `PLAN.md` for the P3 implementation scope, acceptance constraints, test plan, and risks;
+  - updated `docs/PROJECT_MAP.md` for the expanded `/api/transport-requests` list/export filter behavior;
+  - `/admin/transport/requests` filter panel now uses the existing order-number input as a single keyword field with placeholder `订单号 / 姓名 / 电话 / 微信 / 航班号`, instead of adding a second search box;
+  - added top-level contact-status and payment-collection-status filters, kept the existing operator filter source from `operator_options`, and renamed the offline-recorded filter copy to `线下记录状态`;
+  - reorganized the filter panel into three operator-focused rows: core trip filters, customer-service state filters, then sort/page/actions;
+  - list and export now share `applyRequestFilters` for keyword, contact status, payment collection status, offline-recorded, airport, status, source/import batch, and service-date filtering;
+  - service-date filtering now matches the workbench display rule: use `preferred_time_start` first, then fall back to `flight_datetime` only when `preferred_time_start` is null;
+  - selected-order export still sends only `ids`, and the server keeps the ids branch independent from current filters;
+  - selected rows are cleared when filters, keyword, pagination, or page size changes; selected-row bulk mark/cancel and export remain disabled until at least one row is selected;
+  - selected-row bulk mark/cancel now shows a second confirmation before mutating and refreshes the list after success;
+  - workbench row save failures now state that the draft is retained, and the action column is more compact while keeping high-risk fields readonly and without adding visible `锁` text.
+- P3 verification:
+  - `node --check api/_lib/transport.js` passed;
+  - `node --check api/transport-requests/index.js` passed;
+  - `node --check api/transport-requests/export.js` passed;
+  - `npm run build:admin-vue` passed and regenerated the root `admin/` bundle;
+  - read-only local API checks with a signed admin session passed for keyword search, airport, contact status, payment collection status, offline-recorded, active status, service-date filtering, current-filter export, and selected-id export with a conflicting search filter;
+  - the selected-id export check confirmed ids export is not secondarily restricted by current filters;
+  - local Playwright UI verification on `http://localhost:3133/admin/transport/requests` passed: the filter panel rendered as three rows, keyword placeholder was correct, contact/payment/offline filters were visible, batch buttons were disabled without selection and enabled after selection, bulk mark displayed the second confirmation, keyword and page-size changes cleared selection, and table horizontal scroll remained available.
+- P3 acceptance repair follow-up:
+  - a temporary local QA transport request `P3QA-*` was inserted with `preferred_time_start = null` and `flight_datetime` set, then removed after verification;
+  - keyword search was verified against order number, student name, phone, WeChat, and flight number;
+  - combination filters passed for airport + contact status + payment status, service date + offline-recorded status using the fallback sample, and keyword + active order status;
+  - UI checks confirmed keyword changes, regular filter changes, and page-size changes clear selected rows; pagination clearing was skipped because the filtered local result had no page 2 in that run;
+  - current-filter export and selected-id export were both verified, including a selected export with a conflicting search filter to confirm `ids` is not secondarily restricted;
+  - export columns were expanded to include current workbench fields: phone, terminal, service datetime, contact status, payment collection status, deposit amount, offline-recorded state, admin note, last operation, and group id;
+  - export content was verified for Chinese headers/labels, Excel-safe date text, and `88.50` style amount formatting;
+  - cleanup check confirmed no `P3QA-*` transport request rows remained.
+- P3.1 small operator-experience polish:
+  - removed the always-visible inline `还原` button from `/admin/transport/requests` workbench rows to reduce action-column crowding;
+  - kept the underlying row draft initialization/reset logic for load/save flows and kept save-failure behavior that preserves the draft and shows the row error message;
+  - dirty rows now show the simple inline state `未保存修改` without offering a restore button;
+  - local build and UI validation passed on `http://localhost:3135/admin/transport/requests`: default row actions were `已保存 / 调整时间 / 详情 / 关闭订单`, dirty row actions were `保存 / 调整时间 / 详情 / 关闭订单 / 未保存修改`, and `还原` was absent in both states.
+- P3/P3.1 final sealing check:
+  - `git status --short` and `git diff --name-status` show only P3/P3.1 workbench source files, shared transport list/export filtering, docs, `PLAN.md`, and regenerated `admin/` bundle files;
+  - no supplement-order workflow, transport group management page, `adjust_flight_time`, `transfer_existing_group`, database structure, email behavior, or production deployment files were changed;
+  - `npm run build:admin-vue` passed again and regenerated the root admin bundle;
+  - final local UI validation passed on `http://localhost:3137/admin/transport/requests` with temporary `P3FINAL-*` data: the filter panel rendered as exactly three rows, keyword/contact/payment/offline filters existed, the bulk action bar was present, inline restore was absent, save success returned to `已保存`, and forced save failure kept the draft with the row error message;
+  - cleanup check confirmed no `P3FINAL-*` transport request rows remained.
+- Scope intentionally unchanged in P3:
+  - no production deployment was run;
+  - no database migration, public page, email behavior,補录订单 logic, `adjust_flight_time`, `transfer_existing_group`, transport group lifecycle, or `transport_groups` / `transport_group_members` structure was changed.
 
 - Preview deployment completed for the admin transport workbench display polish:
   - GitHub commit deployed: `0fd35b3` (`fix(admin): improve transport workbench table display`);

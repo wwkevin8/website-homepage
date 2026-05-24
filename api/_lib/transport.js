@@ -323,7 +323,56 @@ function applyEffectiveGroupCounts(record) {
   };
 }
 
+function normalizeSearchText(value) {
+  return String(value || "")
+    .replace(/[,%()]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function serviceDateBoundary(value, endOfDay = false) {
+  const text = String(value || "").trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) {
+    return "";
+  }
+  const localValue = endOfDay ? `${text}T23:59:59.999` : `${text}T00:00:00.000`;
+  const parsed = parseLocalTransportDateTime(localValue);
+  return parsed ? parsed.toISOString() : "";
+}
+
+function applyServiceDateFilters(query, reqQuery) {
+  const fromIso = serviceDateBoundary(reqQuery.date_from, false);
+  const toIso = serviceDateBoundary(reqQuery.date_to, true);
+  if (!fromIso && !toIso) {
+    return;
+  }
+
+  const preferredParts = [];
+  const fallbackParts = ["preferred_time_start.is.null"];
+  if (fromIso) {
+    preferredParts.push(`preferred_time_start.gte.${fromIso}`);
+    fallbackParts.push(`flight_datetime.gte.${fromIso}`);
+  }
+  if (toIso) {
+    preferredParts.push(`preferred_time_start.lte.${toIso}`);
+    fallbackParts.push(`flight_datetime.lte.${toIso}`);
+  }
+
+  query.or(`and(${preferredParts.join(",")}),and(${fallbackParts.join(",")})`);
+}
+
 function applyRequestFilters(query, reqQuery) {
+  const search = normalizeSearchText(reqQuery.search);
+  if (search) {
+    const pattern = `*${search}*`;
+    query.or([
+      `order_no.ilike.${pattern}`,
+      `student_name.ilike.${pattern}`,
+      `phone.ilike.${pattern}`,
+      `wechat.ilike.${pattern}`,
+      `flight_no.ilike.${pattern}`
+    ].join(","));
+  }
   if (reqQuery.order_no) {
     query.eq("order_no", String(reqQuery.order_no).trim().toUpperCase());
   }
@@ -350,18 +399,19 @@ function applyRequestFilters(query, reqQuery) {
   if (reqQuery.last_operated_by) {
     query.eq("last_operated_by", String(reqQuery.last_operated_by).trim());
   }
+  if (reqQuery.contact_status) {
+    query.eq("contact_status", String(reqQuery.contact_status).trim());
+  }
+  if (reqQuery.payment_collection_status) {
+    query.eq("payment_collection_status", String(reqQuery.payment_collection_status).trim());
+  }
   if (reqQuery.import_batch_id) {
     query.eq("import_batch_id", String(reqQuery.import_batch_id).trim());
   }
   if (reqQuery.source) {
     query.eq("source", String(reqQuery.source).trim());
   }
-  if (reqQuery.date_from) {
-    query.gte("flight_datetime", `${reqQuery.date_from}T00:00:00.000Z`);
-  }
-  if (reqQuery.date_to) {
-    query.lte("flight_datetime", `${reqQuery.date_to}T23:59:59.999Z`);
-  }
+  applyServiceDateFilters(query, reqQuery);
 }
 
 function applyGroupFilters(query, reqQuery) {

@@ -17,8 +17,13 @@ const REQUEST_EXPORT_SELECT = [
   "terminal",
   "flight_no",
   "flight_datetime",
+  "preferred_time_start",
   "location_from",
   "location_to",
+  "admin_note",
+  "contact_status",
+  "payment_collection_status",
+  "deposit_amount_gbp",
   "offline_recorded",
   "last_operated_by",
   "last_operated_at",
@@ -80,19 +85,47 @@ function serviceLabel(value) {
   return value === "dropoff" ? "送机" : "接机";
 }
 
+function contactStatusLabel(value) {
+  return value === "contacted" ? "已联系" : "未联系";
+}
+
+function paymentCollectionStatusLabel(value) {
+  const labels = {
+    unpaid: "未收款",
+    deposit_paid: "已付定金",
+    fully_paid: "已付全款"
+  };
+  return labels[value] || labels.unpaid;
+}
+
+function formatMoney(value) {
+  if (value === null || value === undefined || value === "") {
+    return "";
+  }
+  const amount = Number(value);
+  return Number.isFinite(amount) ? amount.toFixed(2) : String(value);
+}
+
 function buildRows(items) {
   return (items || []).map(item => ({
     "提交时间": formatExcelTextDateTime(item.created_at),
     "Order No": item.order_no || "",
     "学生": item.student_name || "",
+    "电话": item.phone || "",
     "微信号": item.wechat || "",
     "服务": serviceLabel(item.service_type),
     "机场": item.airport_code || "",
+    "航站楼": item.terminal || "",
     "航班": item.flight_no || "",
-    "您抵达/起飞日期和时间": formatExcelTextDateTime(item.flight_datetime),
+    "航班日期和时间": formatExcelTextDateTime(item.flight_datetime),
+    "服务日期和时间": formatExcelTextDateTime(item.preferred_time_start || item.flight_datetime),
     "出发地": item.location_from || "",
     "目的地": item.location_to || "",
+    "联系状态": contactStatusLabel(item.contact_status),
+    "收款状态": paymentCollectionStatusLabel(item.payment_collection_status),
+    "定金GBP": formatMoney(item.deposit_amount_gbp),
     "线下记录": item.offline_recorded ? "已记录" : "未记录",
+    "客服备注": item.admin_note || "",
     "上次操作人": item.last_operated_by || "",
     "上次操作时间": formatExcelTextDateTime(item.last_operated_at),
     "Group ID": item.group_id || ""
@@ -133,14 +166,21 @@ function rowsToCsv(rows) {
     "提交时间",
     "Order No",
     "学生",
+    "电话",
     "微信号",
     "服务",
     "机场",
+    "航站楼",
     "航班",
-    "您抵达/起飞日期和时间",
+    "航班日期和时间",
+    "服务日期和时间",
     "出发地",
     "目的地",
+    "联系状态",
+    "收款状态",
+    "定金GBP",
     "线下记录",
+    "客服备注",
     "上次操作人",
     "上次操作时间",
     "Group ID"

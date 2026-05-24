@@ -47,7 +47,7 @@ const columns = [
   { key: "wb_offline_recorded", label: "是否已记录", width: "104px" },
   { key: "wb_admin_note", label: "客服备注", width: "220px" },
   { key: "wb_last_operation", label: "最后操作", width: "132px" },
-  { key: "wb_actions", label: "操作", width: "230px", className: "is-actions", sticky: "end" }
+  { key: "wb_actions", label: "操作", width: "220px", className: "is-actions", sticky: "end" }
 ];
 
 const legacyColumns = [
@@ -69,10 +69,12 @@ const legacyColumns = [
 ];
 
 const defaultFilters = {
-  orderNo: "",
+  search: "",
   serviceType: "",
   airportCode: "",
   status: "active",
+  contactStatus: "",
+  paymentCollectionStatus: "",
   offlineRecorded: "",
   lastOperatedBy: "",
   importBatchId: "",
@@ -599,10 +601,12 @@ function groupHref(row) {
 
 function buildFilterQuery() {
   return {
-    order_no: filters.orderNo.trim(),
+    search: filters.search.trim(),
     service_type: filters.serviceType,
     airport_code: filters.airportCode,
     status: filters.status,
+    contact_status: filters.contactStatus,
+    payment_collection_status: filters.paymentCollectionStatus,
     offline_recorded: filters.offlineRecorded,
     last_operated_by: filters.lastOperatedBy,
     import_batch_id: filters.importBatchId.trim(),
@@ -658,6 +662,7 @@ function resetFilters() {
 }
 
 function handlePageChange(page) {
+  selectedIds.value = [];
   loadRequests(page);
 }
 
@@ -1426,6 +1431,10 @@ async function setSelectedOfflineRecorded(value) {
     return;
   }
   if (bulkSaving.value) return;
+  const selectedCount = selectedIds.value.length;
+  const actionLabel = value ? "标记为已线下记录" : "取消线下记录";
+  const confirmed = window.confirm(`确认将选中的 ${selectedCount} 条订单${actionLabel}吗？操作完成后列表会刷新。`);
+  if (!confirmed) return;
   bulkSaving.value = true;
   notice.value = "";
   error.value = "";
@@ -1489,7 +1498,7 @@ async function saveWorkbenchRow(row) {
     resetWorkbenchDraft({ ...row, ...nextRow });
     notice.value = `订单 ${displayValue(row.order_no)} 的客服工作台字段已保存。`;
   } catch (err) {
-    rowErrorMessages[key] = err.message || "保存失败，请检查后重试。";
+    rowErrorMessages[key] = `保存失败：${err.message || "请检查后重试"}。草稿已保留。`;
     notice.value = rowErrorMessages[key];
   } finally {
     rowSavingIds.value = rowSavingIds.value.filter(item => item !== key);
@@ -1592,6 +1601,35 @@ onMounted(() => {
 
 watch(
   () => [
+    filters.search,
+    filters.serviceType,
+    filters.airportCode,
+    filters.status,
+    filters.contactStatus,
+    filters.paymentCollectionStatus,
+    filters.offlineRecorded,
+    filters.lastOperatedBy,
+    filters.importBatchId,
+    filters.source,
+    filters.dateFrom,
+    filters.dateTo,
+    filters.sort
+  ],
+  () => {
+    selectedIds.value = [];
+  }
+);
+
+watch(
+  () => filters.pageSize,
+  () => {
+    selectedIds.value = [];
+    loadRequests(1);
+  }
+);
+
+watch(
+  () => [
     manualForm.group_id,
     manualForm.service_type,
     manualForm.airport_code,
@@ -1654,7 +1692,7 @@ watch(
 
     <LoadingState v-if="loading">正在加载接机送机订单...</LoadingState>
     <ErrorState v-else-if="error" :message="error" />
-    <EmptyState v-else-if="!hasRequests" title="暂无符合条件的接机送机订单" description="请调整订单编号、机场、状态或日期范围后重试。" />
+    <EmptyState v-else-if="!hasRequests" title="暂无符合条件的接机送机订单" description="请调整关键词、机场、状态或日期范围后重试。" />
     <template v-else>
       <AdminBulkActionBar
         :selected-count="selectedRows.length"
@@ -1846,7 +1884,6 @@ watch(
             >
               {{ isRowSaving(row) ? "保存中..." : isWorkbenchRowDirty(row) ? "保存" : "已保存" }}
             </button>
-            <button class="table-action-button" type="button" @click="resetWorkbenchDraft(row)">还原</button>
             <button class="table-action-button" type="button" @click="openTimeAdjustDialog(row)">调整时间</button>
             <button class="table-action-button" type="button" @click="openRequestDetail(row)">详情</button>
             <button
@@ -1857,7 +1894,7 @@ watch(
             >
               {{ deletingId === String(requestActionId(row)) ? "处理中..." : requestDangerActionLabel(row) }}
             </button>
-            <small v-if="isWorkbenchRowDirty(row)" class="workbench-dirty-label">未保存</small>
+            <small v-if="isWorkbenchRowDirty(row)" class="workbench-dirty-label">未保存修改</small>
             <small v-if="rowErrorMessages[draftKey(row)]" class="workbench-error-label">{{ rowErrorMessages[draftKey(row)] }}</small>
           </div>
         </template>
