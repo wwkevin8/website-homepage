@@ -8,7 +8,7 @@
 ## Last Updated Task
 
 - Date: 2026-05-24
-- Scope: Production transport group list route hotfix
+- Scope: Production transport group list route hotfix and final verification
 
 ## Latest Completed Work
 
@@ -16,7 +16,7 @@
   - production data exists: `transport_groups` has 28 rows and `transport_group_members` has 10 rows;
   - group status distribution is `single_member=20`, `closed=4`, `active=3`, `full=1`;
   - at least 9 groups have members, including one `active` group with two members and several `single_member` groups with one member;
-  - `/api/transport-groups/index` returns JSON and shows the expected manageable groups (`status=active` returns 6 rows; no status returns 9 rows), but `/api/transport-groups` was being served as static JavaScript source with `content-type: application/javascript`;
+  - `/api/transport-groups/index` returned JSON, but `/api/transport-groups` was being served as static JavaScript source with `content-type: application/javascript`;
   - root cause: Vercel served the nested `api/transport-groups/index.js` source file for the extensionless route `/api/transport-groups`, so the Vue page received non-JSON and rendered the empty state;
   - added `api/transport-groups.js` as a top-level shim to route `/api/transport-groups` to the existing admin list/create handler;
   - updated admin group status filtering so `status=all` is treated as no status filter while existing `active` / `open` / `single_member` compatibility remains intact;
@@ -24,11 +24,14 @@
   - tightened public carpool board filtering to explicitly require `shareable = true`, while admin group management remains unrestricted by public-board visibility rules.
 - Production hotfix deployment and verification:
   - route hotfix deploy: `dpl_CaQDkJmmpqGENk7PbA7qVWzfDk2Z`;
-  - final public-board boundary deploy: `dpl_8ts98nKnv8zqBLaE4p51B9VtNNBn`;
+  - public-board boundary deploy: `dpl_8ts98nKnv8zqBLaE4p51B9VtNNBn`;
+  - final admin group-list deploy: `dpl_3pjZsUYCRrRUsXWuHCW9g4Tgxs9F`, URL `https://webside-olbvcn4rv-wwkevin8s-projects.vercel.app`, aliased to `https://ngn.best`;
   - `/api/transport-groups` now returns JSON for no status, `active`, `open`, `single_member`, `full`, and `all`;
+  - production API counts after the final deploy: no status `28/28`, `active=24/24`, `open=24/24`, `single_member=20/20`, `full=1/1`, `all=28/28`;
   - production `/admin/transport/groups` now renders real `GRP-*` rows and no longer shows the empty state;
   - Group ID search, order-number search, group detail API, and member order-change preview all passed read-only production verification;
-  - public board verification passed with `has_shareable_false=false`.
+  - public board verification passed with `has_shareable_false=false`;
+  - UI verification screenshot: `E:\webside\output\production-transport-groups-final-hotfix.png`.
 
 - Completed P5 Release Prep 3 production deployment and smoke test:
   - followed the GitHub-first release rule before deploying: committed and pushed the P5 release changes in `7ae04ae` (`feat: release P5 transport order changes`), then committed and pushed the Vercel cloud-build fix in `17b5c79` (`fix: install admin app dependencies on Vercel`);
