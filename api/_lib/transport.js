@@ -423,6 +423,9 @@ function applyGroupFilters(query, reqQuery) {
   } else if (reqQuery.airport_name) {
     query.eq("airport_name", reqQuery.airport_name);
   }
+  if (reqQuery.status === "all") {
+    return;
+  }
   if (reqQuery.status === "active") {
     query.in("status", ["single_member", "active", "full"]);
   } else if (reqQuery.status === "closed") {

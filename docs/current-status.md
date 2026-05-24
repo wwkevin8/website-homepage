@@ -8,9 +8,19 @@
 ## Last Updated Task
 
 - Date: 2026-05-24
-- Scope: P5 Release Prep 3 production deploy and smoke test
+- Scope: Production transport group list route hotfix
 
 ## Latest Completed Work
+
+- Investigated the production `/admin/transport/groups` empty-state report without entering P6, changing production data, or adding new product features:
+  - production data exists: `transport_groups` has 28 rows and `transport_group_members` has 10 rows;
+  - group status distribution is `single_member=20`, `closed=4`, `active=3`, `full=1`;
+  - at least 9 groups have members, including one `active` group with two members and several `single_member` groups with one member;
+  - `/api/transport-groups/index` returns JSON and shows the expected manageable groups (`status=active` returns 6 rows; no status returns 9 rows), but `/api/transport-groups` was being served as static JavaScript source with `content-type: application/javascript`;
+  - root cause: Vercel served the nested `api/transport-groups/index.js` source file for the extensionless route `/api/transport-groups`, so the Vue page received non-JSON and rendered the empty state;
+  - added `api/transport-groups.js` as a top-level shim to route `/api/transport-groups` to the existing admin list/create handler;
+  - updated admin group status filtering so `status=all` is treated as no status filter while existing `active` / `open` / `single_member` compatibility remains intact;
+  - public carpool board filtering was not changed and should continue excluding `shareable=false`.
 
 - Completed P5 Release Prep 3 production deployment and smoke test:
   - followed the GitHub-first release rule before deploying: committed and pushed the P5 release changes in `7ae04ae` (`feat: release P5 transport order changes`), then committed and pushed the Vercel cloud-build fix in `17b5c79` (`fix: install admin app dependencies on Vercel`);
@@ -31,6 +41,10 @@
   - synthetic `P5 Production Smoke` transport requests, synthetic `P5PRODGROUP` groups, and related group memberships were deleted after the test;
   - production audit rows created by the synthetic confirm smoke test remain in `order_change_logs` / `admin_operation_logs` as expected audit evidence and do not expose real student data.
 - P5 production conclusion:
+  - final note: P5 production released on deployment `dpl_3DE6ePQDmTsFC9oBAU2Rc5vHViTi`;
+  - deployed commit: `17b5c79` (`fix: install admin app dependencies on Vercel`), containing prior P5 release commit `7ae04ae` (`feat: release P5 transport order changes`);
+  - production smoke test passed;
+  - `order_change_logs` security verification passed: RLS enabled, force RLS enabled, no direct `public`/`anon`/`authenticated` table access, anon REST direct select rejected, and service-role/admin API access works;
   - no rollback was needed;
   - P5 can be marked production released;
   - P6 dispatch workbench was not started.
@@ -2327,6 +2341,7 @@
 ## Recommended Next Steps
 
 - Monitor production P5 for the first real customer-service usage: check `order_change_logs`, `admin_operation_logs`, request updates, and group membership changes after the first confirmed real order change.
+- Observe production P5 after real customer-service usage for: operator feedback on the order-change drawer, `change-confirm` error logs, and whether transport group refresh remains stable after member move-out/new-single/transfer actions.
 - For future release/smoke runs, prefer an approved production test order or a documented synthetic-order cleanup routine; avoid using real student orders for destructive confirmation tests.
 - For P5B-Env, local Supabase is now available for continued fake-data testing through `LOCAL_SUPABASE_URL`, `LOCAL_SUPABASE_ANON_KEY`, and `LOCAL_SUPABASE_SERVICE_ROLE_KEY`; do not use real student data in this local environment.
 - For P5C/P6, design the "transport dispatch workbench" from the recorded customer-service requirement: keep group detail, make the group list more Excel-like, expose only low-risk inline fields with operation logs, and route all high-risk order/trip/price changes through P5 order-change APIs.
