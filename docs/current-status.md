@@ -21,6 +21,13 @@
   - added `api/transport-groups.js` as a top-level shim to route `/api/transport-groups` to the existing admin list/create handler;
   - updated admin group status filtering so `status=all` is treated as no status filter while existing `active` / `open` / `single_member` compatibility remains intact;
   - tightened public carpool board filtering to explicitly require `shareable = true`, while admin group management remains unrestricted by public-board visibility rules.
+- Production hotfix deployment and verification:
+  - route hotfix deploy: `dpl_CaQDkJmmpqGENk7PbA7qVWzfDk2Z`;
+  - final public-board boundary deploy: `dpl_8ts98nKnv8zqBLaE4p51B9VtNNBn`;
+  - `/api/transport-groups` now returns JSON for no status, `active`, `open`, `single_member`, `full`, and `all`;
+  - production `/admin/transport/groups` now renders real `GRP-*` rows and no longer shows the empty state;
+  - Group ID search, order-number search, group detail API, and member order-change preview all passed read-only production verification;
+  - public board verification passed with `has_shareable_false=false`.
 
 - Completed P5 Release Prep 3 production deployment and smoke test:
   - followed the GitHub-first release rule before deploying: committed and pushed the P5 release changes in `7ae04ae` (`feat: release P5 transport order changes`), then committed and pushed the Vercel cloud-build fix in `17b5c79` (`fix: install admin app dependencies on Vercel`);
