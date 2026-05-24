@@ -8,9 +8,21 @@
 ## Last Updated Task
 
 - Date: 2026-05-24
-- Scope: P6A local group detail final UI polish
+- Scope: P6B-A local transport group dispatch list filters, export, and driver summary
 
 ## Latest Completed Work
+
+- Completed P6B-A in local/source only:
+  - no production data, SQL schema, migrations, build, deployment, email behavior, public pages, or transport member relationship operations were touched;
+  - admin source changes are limited to the Vue transport group list/filter/detail presentation layer and shared admin CSS;
+  - `/admin/transport/groups` now has clearer base filters plus folded advanced filters for keyword, service type, airport, terminal, group status, frontend visibility, risk type, date range, payment status, and offline-record status;
+  - advanced list filtering is computed from existing `transport-groups` API response fields such as `member_details`, `dispatch_risks`, `payment_summary`, and `luggage_summary`; no SQL fields or migrations were added;
+  - group list rows now present Group ID, service type, airport/terminal, service date/time, member contact summary, current people/capacity, total luggage, current average price, estimated total price, payment status, offline-record status, frontend visibility, group status, and risk badges;
+  - high-risk list actions remain absent: no delete button, no member add/remove/transfer, and no direct order core-field edits were added;
+  - list and detail pages can copy a driver-ready dispatch summary containing service type/date/time, airport/terminal, people/capacity, luggage, average/total price, passenger contact/flight/address/payment/contact/offline-record state, and group/driver/dispatch notes;
+  - copy success shows an inline notice; copy failure falls back to manual copy selection/prompt without changing order data;
+  - list page can export only the current filtered group results as `transport-groups-dispatch-YYYYMMDD.csv` for dispatch/customer-service use;
+  - local verification confirmed `LOCAL TEST MODE`, `is_production=false`, all 6 P6 local groups still exist in local Supabase, list filters work, risk/payment/offline filters work, driver summary copy works, current-filter CSV export works, P6A detail summary remains available, forbidden member move/delete/join terms are absent on the checked detail page, console has no errors, network has no non-favicon 4xx/5xx responses, and no build/deploy/migration/production access occurred.
 
 - Completed final small P6A UI polish on the local transport group detail page:
   - no production data, API behavior, business logic, SQL schema, migrations, admin build, deployment, P6B implementation, or broad refactor was touched;
@@ -74,11 +86,12 @@
   - P6A can now be accepted at the source/local-test level. The root `admin/` folder remains generated build output and was not rebuilt in this task.
 
 - Recorded the empty-group lifecycle cleanup follow-up as `P6C: transport group lifecycle cleanup mechanism`; this is a future cleanup phase only and was not implemented:
-  - current priority remains P6A bug fixing/acceptance, then explicitly approved next work; do not enter P6B or P6C implicitly;
+  - current priority is the explicitly approved P6B-A source/local work; do not enter P6C implicitly;
   - P6C should use a management-side explicit cleanup flow: dry-run candidate report first, then human confirmation before deletion;
   - P6C deletion must be real backend/database deletion, not CSS/frontend filtering or hiding to pretend the group is gone;
   - P6C must write `admin_operation_logs` with before snapshot, validation result, reason, operator identity, and target group details;
   - P6C should not start with scheduled background deletion and should not clean automatically before normal API reads;
+  - P6C should not be implemented as frontend hiding, and should not add a background job in the first pass;
   - P6C must keep the same blocker checks: current member rows, effective order/group references, active grouped orders, protected/manual-hold flags, and foreign-key failures block deletion;
   - historical audit logs alone should not be treated as active business usage, but must be preserved and never cascade-deleted as part of empty-group cleanup.
 

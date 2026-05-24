@@ -21,6 +21,7 @@ const savingGroup = ref(false);
 const savingMember = ref("");
 const error = ref("");
 const notice = ref("");
+const summaryTextarea = ref(null);
 const DISPATCH_SUMMARY_START = "[dispatch_summary_override]";
 const DISPATCH_SUMMARY_END = "[/dispatch_summary_override]";
 
@@ -195,6 +196,14 @@ function memberPrice(row) {
   return request.confirmed_price_gbp ?? request.manual_price_gbp ?? request.deposit_amount_gbp ?? "";
 }
 
+function totalPrice() {
+  const direct = paymentSummary.value.total_price_gbp;
+  if (direct !== null && direct !== undefined && direct !== "") return direct;
+  const average = Number(paymentSummary.value.average_price_gbp || group.value?.current_average_price_gbp || 0);
+  const people = Number(group.value?.current_passenger_count || 0);
+  return average && people ? average * people : "";
+}
+
 function totalLuggage() {
   return Number(group.value?.luggage_summary?.total_luggage_count || 0);
 }
@@ -256,33 +265,32 @@ function buildDispatchSummary() {
       `${index + 1}. ${request.student_name || "--"}`,
       `电话: ${request.phone || "--"}`,
       `微信: ${request.wechat || "--"}`,
-      `航班: ${request.flight_no || "--"}`,
-      `时间: ${formatDateTime(request.flight_datetime || request.preferred_time_start)}`,
+      `航班号: ${request.flight_no || "--"}`,
+      `航班时间: ${formatDateTime(request.flight_datetime || request.preferred_time_start)}`,
       `航站楼: ${request.terminal || "--"}`,
-      `人数: ${Number(request.passenger_count || row.passenger_count_snapshot || 0)}`,
-      `行李: ${Number(request.luggage_count || row.luggage_count_snapshot || 0)}`,
       `地址: ${memberAddress(row) || "--"}`,
-      `付款: ${paymentLabel(row)}`,
-      `联系: ${contactLabel(request.contact_status)}`,
-      `线下记录: ${request.offline_recorded ? "已记录" : "未记录"}`
+      `付款状态: ${paymentLabel(row)}`,
+      `是否已联系: ${contactLabel(request.contact_status)}`,
+      `是否已线下记录: ${request.offline_recorded ? "已记录" : "未记录"}`
     ].join("；");
   }).join("\n");
 
   return [
-    "派单信息",
+    "司机派单摘要",
     "",
     `Group ID: ${group.value.group_id || group.value.id || "--"}`,
     `服务类型: ${serviceLabel(group.value.service_type)}`,
-    `服务日期与时间: ${formatDate(group.value.group_date)} ${serviceTime}`,
-    `机场与航站楼: ${airport} / ${terminalSummary.value}`,
-    `总人数: ${Number(group.value.current_passenger_count || 0)} / ${Number(group.value.max_passengers || 0)}`,
-    `总行李: ${totalLuggage()} 件`,
-    `动态人均: ${money(paymentSummary.value.average_price_gbp || group.value.current_average_price_gbp)}`,
+    `服务日期: ${formatDate(group.value.group_date)}`,
+    `服务时间: ${serviceTime}`,
+    `机场 / 航站楼: ${airport} / ${terminalSummary.value}`,
+    `当前人数 / 容量: ${Number(group.value.current_passenger_count || 0)} / ${Number(group.value.max_passengers || 0)}`,
+    `总行李数: ${totalLuggage()}`,
+    `当前人均价 / 总价: ${money(paymentSummary.value.average_price_gbp || group.value.current_average_price_gbp)} / ${money(totalPrice())}`,
     "",
-    "乘客明细:",
-    memberLines || "暂无成员",
+    "乘客信息:",
+    memberLines || "暂无乘客",
     "",
-    `备注: ${stripDispatchSummaryOverride(group.value.notes) || "--"}`
+    `组备注 / 司机备注 / 调度备注: ${stripDispatchSummaryOverride(group.value.notes) || "--"}`
   ].join("\n");
 }
 
@@ -346,11 +354,18 @@ function resetSummary() {
 }
 
 async function copySummary() {
+  const text = form.notes || dispatchSummary.value || "";
   try {
-    await navigator.clipboard.writeText(form.notes || dispatchSummary.value || "");
-    notice.value = "派单信息已复制。";
+    await navigator.clipboard.writeText(text);
+    notice.value = "司机派单摘要已复制。";
   } catch (err) {
-    notice.value = "复制失败，请手动选择派单信息复制。";
+    if (summaryTextarea.value) {
+      summaryTextarea.value.focus();
+      summaryTextarea.value.select();
+    } else {
+      window.prompt("复制失败，请手动复制以下司机派单摘要：", text);
+    }
+    notice.value = "浏览器限制了自动复制，请手动复制已选中的司机摘要。";
   }
 }
 
@@ -499,7 +514,7 @@ onMounted(loadGroup);
             <button class="table-action-button" type="button" @click="resetSummary">??????</button>
           </div>
         </div>
-        <textarea v-model="form.notes" class="transport-dispatch-summary-editor" rows="18"></textarea>
+        <textarea ref="summaryTextarea" v-model="form.notes" class="transport-dispatch-summary-editor" rows="18"></textarea>
       </section>
     </template>
   </section>

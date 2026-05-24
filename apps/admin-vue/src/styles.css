@@ -1128,12 +1128,32 @@ textarea {
 }
 
 .transport-group-filter-panel {
-  grid-template-columns: minmax(240px, 1.4fr) repeat(4, minmax(120px, 1fr)) minmax(100px, 140px) auto;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
 }
 
 .transport-group-filter-panel__actions {
   justify-content: flex-end;
   flex-wrap: wrap;
+}
+
+.transport-group-filter-row {
+  display: grid;
+  gap: 12px;
+  align-items: end;
+  width: 100%;
+}
+
+.transport-group-filter-row--primary {
+  grid-template-columns: minmax(220px, 1.4fr) repeat(3, minmax(130px, 0.85fr)) minmax(260px, auto);
+}
+
+.transport-group-filter-row--advanced {
+  grid-template-columns: repeat(4, minmax(130px, 1fr)) minmax(120px, 0.8fr) repeat(2, minmax(130px, 0.8fr)) minmax(90px, 120px);
+  padding-top: 12px;
+  border-top: 1px solid #e2e8f0;
 }
 
 .sync-log-filter-panel {
@@ -3311,6 +3331,11 @@ textarea {
   }
 
   .transport-group-filter-panel {
+    display: flex;
+  }
+
+  .transport-group-filter-row--primary,
+  .transport-group-filter-row--advanced {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
