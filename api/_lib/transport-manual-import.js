@@ -31,7 +31,11 @@ const FIELD_ALIASES = {
   carpool_note: ["carpool_note", "最少能接受几人拼车"],
   group_note: ["group_note", "是否已有车/当前人数", "当前人数"],
   luggage_note: ["luggage_note", "行李备注", "行李数量/行李备注"],
-  shareable: ["shareable", "是否愿意拼车", "愿意拼车"]
+  shareable: ["shareable", "是否愿意拼车", "愿意拼车"],
+  contact_status: ["contact_status", "联系状态"],
+  payment_collection_status: ["payment_collection_status", "收款状态"],
+  deposit_amount_gbp: ["deposit_amount_gbp", "定金 GBP", "定金GBP", "定金"],
+  admin_note: ["admin_note", "客服备注"]
 };
 
 FIELD_ALIASES.flight_date = ["flight_date", "flight date", "arrival date", "departure date", "航班日期", "抵达日期", "起飞日期"];
@@ -133,6 +137,24 @@ function normalizePaymentStatus(value) {
   if (text.includes("waived") || text.includes("免")) return "waived";
   if (text.includes("pending") || text.includes("待")) return "pending";
   if (text.includes("unpaid") || text.includes("未付") || text.includes("未收")) return "unpaid";
+  return null;
+}
+
+function normalizePaymentCollectionStatus(value) {
+  const text = String(value || "").trim().toLowerCase();
+  if (!text) return null;
+  if (["unpaid", "未付", "未收"].some(item => text.includes(item))) return "unpaid";
+  if (["fully_paid", "full", "paid_full"].includes(text) || text.includes("全款")) return "fully_paid";
+  if (["deposit_paid", "deposit", "part_paid"].includes(text) || text.includes("定金")) return "deposit_paid";
+  if (["paid", "已付", "已收"].some(item => text.includes(item))) return "fully_paid";
+  return null;
+}
+
+function normalizeContactStatus(value) {
+  const text = String(value || "").trim().toLowerCase();
+  if (!text) return null;
+  if (text === "contacted" || text.includes("已联系") || text.includes("联系过")) return "contacted";
+  if (text === "uncontacted" || text.includes("未联系")) return "uncontacted";
   return null;
 }
 
@@ -386,6 +408,10 @@ function normalizeRow(rawRow = {}) {
     shareable: parseBoolean(pickField(rawRow, "shareable"), true),
     price: parseMoney(pickField(rawRow, "price")),
     payment_status: normalizePaymentStatus(pickField(rawRow, "payment_status")),
+    deposit_amount_gbp: parseMoney(pickField(rawRow, "deposit_amount_gbp") ?? pickField(rawRow, "price")),
+    payment_collection_status: normalizePaymentCollectionStatus(pickField(rawRow, "payment_collection_status") ?? pickField(rawRow, "payment_status")),
+    contact_status: normalizeContactStatus(pickField(rawRow, "contact_status")),
+    admin_note: normalizeText(pickField(rawRow, "admin_note")),
     notes: normalizeText(pickField(rawRow, "notes")),
     carpool_note: normalizeText(pickField(rawRow, "carpool_note")),
     group_note: normalizeText(pickField(rawRow, "group_note")),
@@ -416,7 +442,7 @@ function normalizeRow(rawRow = {}) {
       preferred_time_end: null,
       shareable: clean.shareable,
       notes: buildNotes(clean),
-      admin_note: buildAdminNote(clean),
+      admin_note: clean.admin_note || buildAdminNote(clean),
       offline_recorded: true
     }
   };
@@ -770,19 +796,92 @@ async function commitRows(supabase, adminUser, rows = [], options = {}) {
 }
 
 async function createManualRequest(supabase, adminUser, row = {}, options = {}) {
+  if (normalizeText(pickField(row, "group_id"))) {
+    return {
+      ok: false,
+      preview: {
+        row_index: 1,
+        raw_import_payload: { ...row },
+        clean: null,
+        target_group: null,
+        candidate_groups: [],
+        status: "error",
+        can_import: false,
+        errors: [
+          {
+            code: "group_disabled_for_single_manual_request",
+            message: "P4a 单条补录暂不支持填写 Group ID，也不会创建或加入拼车组。"
+          }
+        ],
+        warnings: []
+      }
+    };
+  }
+
   const [preview] = await previewRows(supabase, [row]);
   if (!preview || preview.errors.length) {
     return { ok: false, preview };
   }
+  if (preview.clean.group_id) {
+    return {
+      ok: false,
+      preview: {
+        ...preview,
+        status: "error",
+        can_import: false,
+        errors: [
+          ...(preview.errors || []),
+          {
+            code: "group_disabled_for_single_manual_request",
+            message: "P4a 单条补录暂不支持填写 Group ID，也不会创建或加入拼车组。"
+          }
+        ]
+      }
+    };
+  }
   if (preview.warnings.length && options.confirmWarnings !== true) {
     return { ok: false, preview, requires_confirmation: true };
   }
-  const result = await createRequestFromPreview(supabase, adminUser, preview, {
+
+  if (pickField(row, "shareable") === undefined) {
+    preview.clean.shareable = false;
+    preview.request_payload.shareable = false;
+  }
+
+  const adminName = resolveAdminDisplayName(adminUser);
+  const requestPayload = mapRequestPayload(preview.request_payload);
+  const request = await createRequestRecord(supabase, {
+    ...requestPayload,
     source: "admin_manual",
-    importBatchId: null,
-    confirmedWarnings: preview.warnings
+    created_by_admin_id: adminUser.id || null,
+    created_by_admin_name: adminName,
+    import_batch_id: null,
+    raw_import_payload: preview.raw_import_payload || null,
+    manual_price_gbp: preview.clean.deposit_amount_gbp,
+    manual_payment_status: null,
+    contact_status: preview.clean.contact_status || "uncontacted",
+    payment_collection_status: preview.clean.payment_collection_status || "unpaid",
+    deposit_amount_gbp: preview.clean.deposit_amount_gbp,
+    offline_recorded: true,
+    last_operated_by: adminName,
+    last_operated_at: new Date().toISOString()
   });
-  return { ok: true, preview, ...result };
+
+  await logTransportImportOperation(supabase, adminUser, request, "create_transport_manual_request_request_only", {
+    source: "admin_manual",
+    import_batch_id: null,
+    group_id: null,
+    confirmed_warnings: options.confirmWarnings === true ? preview.warnings : [],
+    warning_count: preview.warnings.length
+  });
+
+  return {
+    ok: true,
+    preview,
+    request,
+    group: null,
+    group_id: null
+  };
 }
 
 module.exports = {

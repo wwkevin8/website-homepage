@@ -104,6 +104,7 @@ const showBatchDialog = ref(false);
 const manualSaving = ref(false);
 const manualConfirmWarnings = ref(false);
 const manualPreview = ref(null);
+const manualErrorMessage = ref("");
 const manualGroupChecking = ref(false);
 const manualGroupConfirmedId = ref("");
 const manualGroupMessage = ref("");
@@ -168,7 +169,8 @@ const manualForm = reactive({
   flight_datetime: "",
   service_time: "",
   address: "",
-  shareable: true,
+  shareable: false,
+  contact_status: "uncontacted",
   price: "",
   payment_status: "unpaid",
   notes: "",
@@ -785,13 +787,15 @@ function resetManualForm() {
     flight_datetime: "",
     service_time: "",
     address: "",
-    shareable: true,
+    shareable: false,
+    contact_status: "uncontacted",
     price: "",
     payment_status: "unpaid",
     notes: "",
     group_id: ""
   });
   manualPreview.value = null;
+  manualErrorMessage.value = "";
   manualConfirmWarnings.value = false;
   manualGroupConfirmedId.value = "";
   manualGroupMessage.value = "";
@@ -802,6 +806,7 @@ function openManualDialog() {
   resetManualForm();
   showManualDialog.value = true;
   notice.value = "";
+  manualErrorMessage.value = "";
 }
 
 function closeManualDialog() {
@@ -828,10 +833,10 @@ function buildManualRow() {
     服务时间: manualForm.service_time,
     地址: manualForm.address,
     是否愿意拼车: manualForm.shareable ? "是" : "否",
-    价格: manualForm.price,
-    付款状态: manualForm.payment_status,
-    备注: manualForm.notes,
-    "Group ID": manualForm.group_id
+    contact_status: manualForm.contact_status,
+    payment_collection_status: manualForm.payment_status,
+    deposit_amount_gbp: manualForm.price,
+    admin_note: manualForm.notes
   };
 }
 
@@ -872,8 +877,10 @@ async function checkManualGroup() {
 async function submitManualForm() {
   if (manualSaving.value) return;
   manualSubmitAttempted.value = true;
+  manualErrorMessage.value = "";
   if (manualRequiredErrors.value.length) {
     notice.value = `请先补齐必填项：${manualRequiredErrors.value.join("、")}`;
+    manualErrorMessage.value = notice.value;
     return;
   }
   if (manualGroupNeedsConfirmation.value) {
@@ -885,7 +892,7 @@ async function submitManualForm() {
   error.value = "";
   try {
     const result = await createManualTransportRequest(buildManualRow(), manualConfirmWarnings.value);
-    notice.value = `补录订单已创建：${displayValue(result?.request?.order_no)}，Group ID：${displayValue(result?.group_id)}`;
+    notice.value = `补录订单已创建：${displayValue(result?.request?.order_no)}`;
     showManualDialog.value = false;
     resetManualForm();
     await loadRequests(1);
@@ -893,9 +900,11 @@ async function submitManualForm() {
     manualPreview.value = err.body?.error?.details || null;
     if (manualPreview.value?.warnings?.length) {
       notice.value = "存在黄色提示，确认后可再次提交。";
+      manualErrorMessage.value = notice.value;
       manualConfirmWarnings.value = true;
     } else {
       notice.value = err.message || "补录失败，请检查字段后重试。";
+      manualErrorMessage.value = notice.value;
     }
   } finally {
     manualSaving.value = false;
@@ -2017,6 +2026,10 @@ watch(
           <li v-for="item in manualRequiredErrors" :key="item">{{ item }}</li>
         </ul>
       </div>
+      <div v-if="manualErrorMessage && !manualRequiredErrors.length" class="import-error-box">
+        <strong>补录失败</strong>
+        <p>{{ manualErrorMessage }}</p>
+      </div>
       <div class="manual-import-sections">
         <section class="manual-import-section">
           <h4>学生信息</h4>
@@ -2094,7 +2107,7 @@ watch(
         </section>
 
         <section class="manual-import-section">
-          <h4>拼车与付款</h4>
+          <h4>记录与收款</h4>
           <div class="manual-import-grid">
             <label class="field">
               <span>是否愿意拼车</span>
@@ -2103,42 +2116,28 @@ watch(
                 <option :value="false">否</option>
               </select>
             </label>
-            <label class="field"><span>价格</span><input v-model="manualForm.price" inputmode="decimal" /></label>
             <label class="field">
-              <span>付款状态</span>
-              <select v-model="manualForm.payment_status">
-                <option value="unpaid">未付款</option>
-                <option value="paid">已付款</option>
-                <option value="pending">待确认</option>
-                <option value="waived">免付</option>
+              <span>联系状态</span>
+              <select v-model="manualForm.contact_status">
+                <option value="uncontacted">未联系</option>
+                <option value="contacted">已联系</option>
               </select>
             </label>
-            <label class="field manual-import-grid__wide"><span>已有 Group ID</span><input v-model="manualForm.group_id" placeholder="可留空自动建组" /></label>
-            <div class="manual-import-grid__wide group-check-panel">
-              <div class="batch-import-actions">
-                <button class="secondary-button" type="button" :disabled="manualGroupChecking || !manualForm.group_id" @click="checkManualGroup">
-                  {{ manualGroupChecking ? "校验中..." : "校验并确认 Group" }}
-                </button>
-                <span v-if="manualForm.group_id && manualGroupConfirmedId === manualForm.group_id" class="import-success-text">已确认可加入</span>
-                <span v-else-if="manualForm.group_id" class="import-warning-text">填写已有 Group ID 后必须先校验确认</span>
-              </div>
-              <p v-if="manualGroupMessage" class="muted-line">{{ manualGroupMessage }}</p>
-              <article v-if="manualPreview?.target_group" class="group-summary-card">
-                <div><span>Group ID</span><strong>{{ manualPreview.target_group.group_id }}</strong></div>
-                <div><span>服务类型</span><strong>{{ serviceLabel(manualPreview.target_group.service_type) }}</strong></div>
-                <div><span>机场</span><strong>{{ displayValue(manualPreview.target_group.airport_code) }}</strong></div>
-                <div><span>航站楼</span><strong>{{ displayValue(manualPreview.target_group.terminal) }}</strong></div>
-                <div><span>日期</span><strong>{{ displayValue(manualPreview.target_group.group_date || formatDateTime(manualPreview.target_group.preferred_time_start)) }}</strong></div>
-                <div><span>当前人数</span><strong>{{ displayValue(manualPreview.target_group.current_passenger_count) }}</strong></div>
-                <div class="group-summary-card__wide"><span>目的地/上车地</span><strong>{{ groupDestination(manualPreview.target_group) }}</strong></div>
-              </article>
-            </div>
+            <label class="field"><span>定金 GBP</span><input v-model="manualForm.price" inputmode="decimal" /></label>
+            <label class="field">
+              <span>收款状态</span>
+              <select v-model="manualForm.payment_status">
+                <option value="unpaid">未收款</option>
+                <option value="deposit_paid">已付定金</option>
+                <option value="fully_paid">已付全款</option>
+              </select>
+            </label>
           </div>
         </section>
 
         <section class="manual-import-section">
-          <h4>备注</h4>
-          <label class="field"><span>备注</span><textarea v-model="manualForm.notes" rows="3"></textarea></label>
+          <h4>客服备注</h4>
+          <label class="field"><span>客服备注</span><textarea v-model="manualForm.notes" rows="3"></textarea></label>
         </section>
       </div>
       <div v-if="manualPreview?.warnings?.length" class="import-warning-box">

@@ -8,9 +8,71 @@
 ## Last Updated Task
 
 - Date: 2026-05-24
-- Scope: P3.1 admin transport request workbench inline action polish
+- Scope: P4a final sealing check with P3.2 filter layout included
 
 ## Latest Completed Work
+
+- Completed P4a final sealing check without committing or deploying:
+  - changed the public board `source` protection from a plain `source != admin_manual` style filter to `source is null OR source != admin_manual` in both the public board list query and the pickup backfill path, so only explicit `source = admin_manual` supplement orders are excluded;
+  - verified no remaining public-board source filter uses `.neq("source", "admin_manual")`;
+  - current local DB rejects inserting `source = null` because `transport_requests.source` is NOT NULL, so a live null-source sample could not be created without a schema change; the code-level public query now preserves null-source rows, and a Supabase `source is null` query was accepted;
+  - verified a `source = public_form` temporary pickup appears on public board/public groups and gets normal public-board backfill;
+  - verified a `source = admin_manual` temporary pickup does not appear on public board/public groups and does not get public-board backfill;
+  - verified P4a single manual supplement pickup/dropoff creates only `transport_requests`, not `transport_groups` or `transport_group_members`;
+  - verified manual supplement orders remain searchable/filterable/exportable in the admin workbench.
+- Final P4a/P3.2 verification:
+  - `node --check public-api-handlers/transport-board.js` passed;
+  - `node --check api/_lib/transport-group-lifecycle.js` passed;
+  - `node --check api/_lib/transport-manual-import.js` passed;
+  - `node --check api/transport-manual-import/manual.js` passed;
+  - `node --check api/transport-requests/export.js` passed;
+  - `npm run build:admin-vue` passed and regenerated the root `admin/` bundle;
+  - local API validation on `http://localhost:3141` created and removed temporary `P4A-FINAL-*` orders; cleanup restored transport group/member counts;
+  - local Playwright UI validation on `http://localhost:3141/admin/transport/requests` passed at 1440px and 2560px widths for the P3.2 filter layout: exactly three rows, fields start from the left, table horizontal scroll and bulk toolbar remain intact;
+  - local Playwright UI validation confirmed the P4a modal hides Group ID / group validation controls, defaults shareable to false, shows the expected field labels, keeps the modal open and preserves form content on a forced submit failure, and creates a backend-visible `admin_manual` order on success without creating group/member rows.
+- Scope intentionally unchanged:
+  - no commit was made;
+  - no production deployment was run;
+  - no database schema, batch import, Excel upload, email flow, `adjust_flight_time`, `transfer_existing_group`, or transport group/member structure was changed.
+
+- Completed P3.2 admin transport request filter panel layout repair:
+  - fixed `/admin/transport/requests` filter panel CSS so the three filter rows stretch across the full filter card width instead of inheriting right-aligned flex-item behavior;
+  - the filter fields now start from the left edge of the panel and use full-width grid rows, with six fields in the first row, six fields in the second row, and sort/page/actions in the third row;
+  - the third-row action buttons remain right-aligned within their own grid cell without pushing the whole form to the right;
+  - no filter parameters, API logic, export logic, supplement-order flow, transport group logic, database structure, email behavior, or deployment behavior was changed.
+- P3.2 verification:
+  - `npm run build:admin-vue` passed and regenerated the root `admin/` bundle;
+  - local Playwright layout verification on `http://localhost:3140/admin/transport/requests` passed at 1440px and 2560px widths: the filter panel had exactly three `.transport-request-filter-row` rows, each row started at the same left edge, the first field in each row started from the row's left edge, and row widths filled the filter panel;
+  - table horizontal scrolling remained available and the bulk action toolbar remained present after the filter panel.
+
+- Implemented P4a for the existing `/admin/transport/requests` single manual supplement flow:
+  - reused the current right-side `补录接送机订单` entry and modal instead of adding a new entry;
+  - removed the modal's single-order Group ID flow from the visible UI and stopped submitting Group ID from `buildManualRow`;
+  - defaulted the modal's `是否愿意拼车` field to `否`, while keeping `shareable` as an ordinary request field;
+  - renamed the modal's P3 workbench fields to `联系状态`, `收款状态`, `定金 GBP`, and `客服备注`, mapped to `contact_status`, `payment_collection_status`, `deposit_amount_gbp`, and `admin_note`;
+  - `POST /api/transport-manual-import/manual` now creates `transport_requests` only, writes `source = admin_manual`, `offline_recorded = true`, creator/operator metadata, raw payload, and P3 workbench fields, and returns no group id;
+  - direct Group ID input in the single manual API now returns a clear `group_disabled_for_single_manual_request` validation error;
+  - `/api/transport-manual-import/preview` and `/commit` batch import behavior was intentionally left unchanged;
+  - public transport board listing now excludes `source = admin_manual`, and its pickup backfill call excludes `admin_manual` so public-board reads cannot create groups for P4a supplement orders.
+- P4a verification:
+  - `node --check api/transport-manual-import/manual.js` passed;
+  - `node --check api/_lib/transport-manual-import.js` passed;
+  - `node --check api/_lib/transport-group-lifecycle.js` passed;
+  - `node --check public-api-handlers/transport-board.js` passed;
+  - `node --check api/transport-requests/export.js` passed;
+  - `npm run build:admin-vue` passed and regenerated the root `admin/` bundle;
+  - local API/UI validation on `http://localhost:3139/admin/transport/requests` created temporary `P4A-*` pickup/dropoff/shareable-true orders and a UI-created `P4A-UI-*` order, then removed them;
+  - verified created records are in `transport_requests` with `source = admin_manual`, `offline_recorded = true`, default UI `shareable = false`, and saved contact/payment/deposit/admin-note fields;
+  - verified `transport_groups` and `transport_group_members` counts do not change during P4a create flows, including when `shareable = true`;
+  - verified Group ID is rejected for single manual create and no group/member rows are created;
+  - verified keyword search hits name, phone, WeChat, flight number, and order number for P4a orders;
+  - verified filters hit service type, airport, service date, contact status, payment collection status, offline-recorded state, and source;
+  - verified current-filter export and selected-id export both include P4a orders correctly, with selected export not restricted by a conflicting search filter;
+  - verified `/api/public/transport-board` excludes admin manual P4a rows and does not backfill P4a groups, and `/api/public/transport-groups` contains no P4a group content;
+  - cleanup check confirmed no `P4A-*` temporary transport request or group rows remain.
+- Scope intentionally unchanged in P4a:
+  - no production deployment was run;
+  - no database schema, email flow, batch import `/preview` or `/commit`, Excel upload,补录 batch workflow,拼车组管理 page, `adjust_flight_time`, `transfer_existing_group`, or `transport_groups` / `transport_group_members` structure was changed.
 
 - Completed P3 admin transport request workbench filtering and bulk-action polish:
   - added `PLAN.md` for the P3 implementation scope, acceptance constraints, test plan, and risks;

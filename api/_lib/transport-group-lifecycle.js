@@ -233,13 +233,20 @@ async function createGroupForRequest(supabase, request, options = {}) {
 
 async function backfillMissingPickupGroups(supabase, options = {}) {
   const limit = Number.isInteger(options.limit) && options.limit > 0 ? options.limit : 200;
-  const { data: requests, error } = await supabase
+  const query = supabase
     .from("transport_requests")
     .select("*, transport_group_members(request_id)")
     .eq("service_type", "pickup")
     .is("transport_group_members", null)
     .order("created_at", { ascending: true })
     .limit(limit);
+
+  const excludeSources = (options.excludeSources || []).map(source => String(source || "").trim()).filter(Boolean);
+  if (excludeSources.includes("admin_manual")) {
+    query.or("source.is.null,source.neq.admin_manual");
+  }
+
+  const { data: requests, error } = await query;
 
   if (error) {
     throw error;

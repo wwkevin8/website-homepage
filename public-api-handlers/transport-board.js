@@ -112,7 +112,7 @@ module.exports = async function handler(req, res) {
   const supabase = getSupabaseAdmin();
 
   try {
-    await backfillMissingPickupGroups(supabase);
+    await backfillMissingPickupGroups(supabase, { excludeSources: ["admin_manual"] });
     await closeExpiredRequests(supabase);
 
     const queryParams = req.query || {};
@@ -125,6 +125,7 @@ module.exports = async function handler(req, res) {
       .from("transport_requests")
       .select("id, order_no, service_type, airport_code, airport_name, terminal, flight_no, flight_datetime, location_from, location_to, passenger_count, shareable, status, created_at, transport_group_members(*)", { count: "exact" })
       .in("status", PUBLIC_REQUEST_STATUSES)
+      .or("source.is.null,source.neq.admin_manual")
       .gt("flight_datetime", nowIso);
 
     if (queryParams.service_type) {

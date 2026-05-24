@@ -1018,25 +1018,29 @@ textarea {
 .transport-request-filter-panel {
   display: flex;
   flex-direction: column;
+  align-items: stretch;
   gap: 12px;
+  width: 100%;
 }
 
 .transport-request-filter-row {
   display: grid;
   gap: 12px;
   align-items: end;
+  width: 100%;
+  justify-content: stretch;
 }
 
 .transport-request-filter-row--primary {
-  grid-template-columns: minmax(220px, 1.35fr) repeat(5, minmax(0, 1fr));
+  grid-template-columns: minmax(180px, 1.25fr) repeat(5, minmax(140px, 1fr));
 }
 
 .transport-request-filter-row--secondary {
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(140px, 1fr));
 }
 
 .transport-request-filter-row--controls {
-  grid-template-columns: minmax(220px, 1fr) minmax(90px, 120px) minmax(360px, 2fr);
+  grid-template-columns: minmax(180px, 1fr) minmax(90px, 120px) minmax(320px, 4fr);
 }
 
 .transport-request-filter-panel__actions {
