@@ -20,6 +20,7 @@
   - root cause: Vercel served the nested `api/transport-groups/index.js` source file for the extensionless route `/api/transport-groups`, so the Vue page received non-JSON and rendered the empty state;
   - added `api/transport-groups.js` as a top-level shim to route `/api/transport-groups` to the existing admin list/create handler;
   - updated admin group status filtering so `status=all` is treated as no status filter while existing `active` / `open` / `single_member` compatibility remains intact;
+  - removed the admin group-list `current_passenger_count > 0` restriction so backend operators can see empty/stale groups as well as member-bearing groups;
   - tightened public carpool board filtering to explicitly require `shareable = true`, while admin group management remains unrestricted by public-board visibility rules.
 - Production hotfix deployment and verification:
   - route hotfix deploy: `dpl_CaQDkJmmpqGENk7PbA7qVWzfDk2Z`;

@@ -142,7 +142,6 @@ function buildGroupsBaseQuery(supabase, queryParams, options = {}) {
   const query = supabase
     .from("transport_groups_public_view")
     .select("*", options.count ? { count: options.count } : undefined)
-    .gt("current_passenger_count", 0)
     .order("group_date", { ascending: true })
     .order("preferred_time_start", { ascending: true, nullsFirst: false })
     .order("created_at", { ascending: false });
@@ -315,7 +314,7 @@ async function enrichGroupsBatch(supabase, groups, metrics = {}) {
       future_duplicate_order_nos: duplicateOrderMap.get(groupRef) || [],
       cross_service_future_order_nos: crossServiceOrderMap.get(groupRef) || []
     });
-  }).filter(group => Number(group.current_passenger_count || 0) > 0);
+  });
 }
 
 async function listPaginatedGroups(supabase, queryParams, page, pageSize, perfContext = {}) {
