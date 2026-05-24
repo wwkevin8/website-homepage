@@ -38,6 +38,69 @@ function loadEnvFile() {
 
 loadEnvFile();
 
+function normalizeBoolean(value) {
+  return ["1", "true", "yes", "on"].includes(String(value || "").trim().toLowerCase());
+}
+
+function getSupabaseUrlInfo() {
+  const rawUrl = String(process.env.SUPABASE_URL || "").trim();
+  let parsed = null;
+  try {
+    parsed = rawUrl ? new URL(rawUrl) : null;
+  } catch (error) {
+    parsed = null;
+  }
+
+  const hostname = parsed?.hostname?.toLowerCase() || "";
+  const projectRef = hostname.endsWith(".supabase.co")
+    ? hostname.split(".")[0]
+    : hostname || "(missing)";
+  const isLocalSupabase = Boolean(
+    rawUrl &&
+    (
+      hostname === "localhost" ||
+      hostname === "127.0.0.1" ||
+      hostname === "::1" ||
+      rawUrl === String(process.env.LOCAL_SUPABASE_URL || "").trim()
+    )
+  );
+  const appEnv = String(process.env.APP_ENV || "").trim().toLowerCase();
+  const isStaging = appEnv === "staging";
+  const isProductionData = Boolean(rawUrl && !isLocalSupabase && !isStaging);
+
+  return {
+    appEnv: process.env.APP_ENV || "(unset)",
+    runtimeMode: process.env.RUNTIME_MODE || "local_dev",
+    projectRef,
+    isProductionData,
+    isLocalRuntime: true,
+    allowProductionInDev: normalizeBoolean(process.env.ALLOW_PROD_IN_DEV)
+  };
+}
+
+function logRuntimeEnvironment(info) {
+  console.info("[dev-server] runtime environment:");
+  console.info(`  APP_ENV / runtime mode: ${info.appEnv} / ${info.runtimeMode}`);
+  console.info(`  Supabase project ref: ${info.projectRef}`);
+  console.info(`  production data: ${info.isProductionData ? "yes" : "no"}`);
+  console.info(`  local runtime: ${info.isLocalRuntime ? "yes" : "no"}`);
+  console.info(`  allow production in dev: ${info.allowProductionInDev ? "yes" : "no"}`);
+}
+
+function enforceDevDatabaseSafety() {
+  const info = getSupabaseUrlInfo();
+  logRuntimeEnvironment(info);
+
+  if (info.isLocalRuntime && info.isProductionData && !info.allowProductionInDev) {
+    console.error(
+      "Blocked: local dev server is trying to connect to production Supabase. Use npm run dev:local for local DB, or npm run dev:prod with ALLOW_PROD_IN_DEV=true only when intentionally testing production."
+    );
+    process.exit(1);
+  }
+}
+
+enforceDevDatabaseSafety();
+
 const MIME_TYPES = {
   ".html": "text/html; charset=utf-8",
   ".js": "application/javascript; charset=utf-8",

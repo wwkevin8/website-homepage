@@ -2458,6 +2458,65 @@ textarea {
   white-space: pre-wrap;
 }
 
+.dispatch-risk-list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.dispatch-risk-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 4px 8px;
+  border: 1px solid #fed7aa;
+  border-radius: 999px;
+  background: #fff7ed;
+  color: #9a3412;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.dispatch-control-grid {
+  display: grid;
+  grid-template-columns: minmax(180px, 240px) minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.dispatch-control-grid label {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.dispatch-control-grid label span {
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.dispatch-control-grid select,
+.dispatch-control-grid textarea {
+  width: 100%;
+  min-height: 36px;
+  padding: 8px 10px;
+  border: 1px solid #dbe5f0;
+  border-radius: 8px;
+  background: #fff;
+  color: #0f172a;
+}
+
+.dispatch-control-grid textarea {
+  resize: vertical;
+  line-height: 1.6;
+}
+
+.dispatch-control-grid__wide {
+  grid-column: span 1;
+}
+
 .group-payment-cards {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

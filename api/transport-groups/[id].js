@@ -4,8 +4,9 @@ const { ok, badRequest, parseJsonBody, methodNotAllowed, serverError } = require
 const { applyEffectiveGroupCounts, mapGroupPayload, getGroupPassengerCount, deriveDisplayGroupId } = require("../_lib/transport");
 const { createGroupForRequest } = require("../_lib/transport-group-lifecycle");
 const { computeTransportGroupPricingSnapshot } = require("../_lib/transport-group-stats");
+const { logAdminOperation } = require("../_lib/orders");
 
-const GROUP_DETAIL_MEMBER_SELECT = "id,group_id,request_id,passenger_count_snapshot,luggage_count_snapshot,created_at,transport_requests(id,order_no,student_name,site_user_id,phone,wechat,email,service_type,status,passenger_count,luggage_count,terminal,flight_datetime,airport_code,flight_no,location_from,location_to,admin_note,manual_payment_status,notes)";
+const GROUP_DETAIL_MEMBER_SELECT = "id,group_id,request_id,passenger_count_snapshot,luggage_count_snapshot,created_at,transport_requests(id,order_no,student_name,site_user_id,phone,wechat,email,service_type,status,passenger_count,luggage_count,terminal,flight_datetime,preferred_time_start,airport_code,airport_name,flight_no,location_from,location_to,admin_note,manual_payment_status,payment_collection_status,deposit_amount_gbp,manual_price_gbp,offline_recorded,contact_status,notes)";
 
 const GROUP_DELETE_MEMBER_SELECT = "request_id,transport_requests(id,site_user_id,student_name,email,phone,wechat,service_type,passenger_count,luggage_count,airport_code,airport_name,terminal,flight_no,flight_datetime,location_from,location_to,preferred_time_start,preferred_time_end,shareable,status,notes,admin_note,manual_payment_status,closed_at,closed_reason,created_at)";
 
@@ -31,6 +32,34 @@ function normalizeLegacyGroupStatusInput(input = {}) {
   };
 }
 
+function resolveAdminDisplayName(adminUser = {}) {
+  return String(adminUser.name || adminUser.username || adminUser.email || "admin").trim() || "admin";
+}
+
+function normalizeAuditValue(value) {
+  if (value === undefined || value === null || value === "") {
+    return null;
+  }
+  if (typeof value === "boolean" || typeof value === "number") {
+    return value;
+  }
+  const parsed = new Date(value);
+  if (/^\d{4}-\d{2}-\d{2}T/.test(String(value || "")) && !Number.isNaN(parsed.getTime())) {
+    return parsed.toISOString();
+  }
+  return String(value);
+}
+
+function buildChangedFields(existing = {}, payload = {}) {
+  return Object.entries(payload || {})
+    .filter(([field, value]) => normalizeAuditValue(existing[field]) !== normalizeAuditValue(value))
+    .map(([field, value]) => ({
+      field,
+      before: normalizeAuditValue(existing[field]),
+      after: normalizeAuditValue(value)
+    }));
+}
+
 function normalizeMembers(members) {
   return (members || []).map(member => {
     const request = member.transport_requests || {};
@@ -45,6 +74,53 @@ function normalizeMembers(members) {
 
 function uniqueNonEmpty(values) {
   return Array.from(new Set((values || []).map(value => String(value || "").trim()).filter(Boolean)));
+}
+
+function buildTimeRange(values) {
+  const timestamps = (values || [])
+    .filter(Boolean)
+    .map(value => new Date(value).getTime())
+    .filter(value => !Number.isNaN(value))
+    .sort((a, b) => a - b);
+
+  if (!timestamps.length) {
+    return { earliest: null, latest: null, span_minutes: 0 };
+  }
+
+  return {
+    earliest: new Date(timestamps[0]).toISOString(),
+    latest: new Date(timestamps[timestamps.length - 1]).toISOString(),
+    span_minutes: timestamps.length > 1 ? Math.round((timestamps[timestamps.length - 1] - timestamps[0]) / 60000) : 0
+  };
+}
+
+function buildDispatchRisks(group, members) {
+  const requests = (members || []).map(member => member.transport_requests || {});
+  const maxPassengers = Number(group.max_passengers || 0);
+  const currentPassengers = Number(group.current_passenger_count || 0);
+  const terminals = uniqueNonEmpty(requests.map(request => request.terminal));
+  const timeRange = buildTimeRange(requests.map(request => request.flight_datetime || request.preferred_time_start));
+  const visibleOnFrontend = group.visible_on_frontend === true;
+  const risks = [];
+
+  if (!members.length) risks.push({ code: "empty_group", label: "0 members" });
+  if (terminals.length > 1) risks.push({ code: "cross_terminal", label: "Different terminals" });
+  if (timeRange.span_minutes > 180) risks.push({ code: "time_gap_large", label: "Time gap over 3h" });
+  if (requests.some(request => !request.flight_no)) risks.push({ code: "missing_flight_no", label: "Missing flight no" });
+  if (requests.some(request => !request.terminal)) risks.push({ code: "missing_terminal", label: "Missing terminal" });
+  if (requests.some(request => !request.phone && !request.wechat)) risks.push({ code: "missing_contact", label: "Missing phone/WeChat" });
+  if (requests.some(request => Number(request.passenger_count || 0) <= 0 || Number(request.luggage_count || 0) < 0)) {
+    risks.push({ code: "abnormal_count", label: "Passenger/luggage count abnormal" });
+  }
+  if (maxPassengers > 0 && currentPassengers > maxPassengers) risks.push({ code: "over_capacity", label: "Over capacity" });
+  if (String(group.status || "").toLowerCase() === "full" && visibleOnFrontend) {
+    risks.push({ code: "full_visible", label: "Full but public visible" });
+  }
+  if (visibleOnFrontend && (["closed", "cancelled"].includes(String(group.status || "").toLowerCase()) || !members.length)) {
+    risks.push({ code: "public_visibility_invalid", label: "Public visible but not display-ready" });
+  }
+
+  return risks;
 }
 
 function parsePaymentStatus(adminNote, structuredStatus) {
@@ -146,6 +222,11 @@ function computeGroupViewModel(group, members) {
       payment_label: member.payment_label
     }))
   };
+  const luggageSummary = normalizedMembers.reduce((summary, member) => {
+    const request = member.transport_requests || {};
+    summary.total_luggage_count += Number(request.luggage_count || member.luggage_count_snapshot || 0);
+    return summary;
+  }, { total_luggage_count: 0 });
 
   return {
     group: {
@@ -156,7 +237,9 @@ function computeGroupViewModel(group, members) {
     summary,
     members: membersWithSurcharge,
     system_judgement,
-    payment_summary
+    payment_summary,
+    luggage_summary: luggageSummary,
+    dispatch_risks: buildDispatchRisks({ ...normalizedGroup, current_passenger_count: currentPassengerCount }, normalizedMembers)
   };
 }
 
@@ -226,7 +309,9 @@ module.exports = async function handler(req, res) {
         summary: viewModel.summary,
         members: viewModel.members,
         system_judgement: viewModel.system_judgement,
-        payment_summary: viewModel.payment_summary
+        payment_summary: viewModel.payment_summary,
+        luggage_summary: viewModel.luggage_summary,
+        dispatch_risks: viewModel.dispatch_risks
       });
       return;
     }
@@ -277,6 +362,36 @@ module.exports = async function handler(req, res) {
       if (!updated) {
         badRequest(res, "group update failed");
         return;
+      }
+
+      const changedFields = buildChangedFields(existing, payload);
+      if (changedFields.length) {
+        try {
+          await logAdminOperation(supabase, {
+            admin_user_id: adminUser.id || null,
+            target_type: "transport_group",
+            target_id: existing.id,
+            action: "update_transport_group",
+            before_data: changedFields.reduce((result, item) => {
+              result[item.field] = item.before;
+              return result;
+            }, {}),
+            after_data: changedFields.reduce((result, item) => {
+              result[item.field] = item.after;
+              return result;
+            }, {}),
+            metadata: {
+              group_id: existing.group_id || deriveDisplayGroupId(existing.id, existing.group_date),
+              admin_name: resolveAdminDisplayName(adminUser),
+              changed_fields: changedFields
+            }
+          });
+        } catch (logError) {
+          console.warn("transport_group_operation_log_failed", {
+            group_id: existing.group_id || existing.id,
+            message: logError?.message || String(logError)
+          });
+        }
       }
 
       const nextStatus = String(payload.status || "").trim().toLowerCase();

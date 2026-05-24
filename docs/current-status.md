@@ -8,9 +8,157 @@
 ## Last Updated Task
 
 - Date: 2026-05-24
-- Scope: Production transport group empty/test data cleanup audit
+- Scope: P6A local group detail final UI polish
 
 ## Latest Completed Work
+
+- Completed final small P6A UI polish on the local transport group detail page:
+  - no production data, API behavior, business logic, SQL schema, migrations, admin build, deployment, P6B implementation, or broad refactor was touched;
+  - final tweaks were limited to the generated-admin P6A detail override presentation layer;
+  - stabilized the `返回拼车组管理` button in the heading area by explicitly controlling the title/action flex layout and preventing the button label from wrapping;
+  - unified card vertical spacing to a consistent 16px rhythm and kept card padding compact for smaller screens;
+  - improved table horizontal scrolling with a bounded scroll wrapper and touch scrolling while preventing body-level horizontal overflow on small viewports;
+  - kept the driver dispatch summary at the bottom with a reachable, moderate-height textarea and improved copy fallback behavior for restricted clipboard environments;
+  - retained unified badge wording for payment/offline/contact states: `已付款` / `未付款`, `已记录` / `未记录`, and `已联系` / `未联系`;
+  - added a lightweight floating success toast in addition to the existing inline notice so save, payment, and copy confirmations are visible without disrupting the current scroll position;
+  - local browser verification confirmed `LOCAL TEST MODE`, `is_production=false`, all 6 P6 local groups open, required sections render, high-risk member add/remove/transfer controls are absent, card gaps are 16px, the table scrolls horizontally on small width, the return button remains visible, the summary area is reachable, success prompts appear for save/copy/payment, clean page load has no console errors, failed requests, or 4xx/5xx responses, and local test payment data was restored.
+
+- Completed P6A local transport group detail UI polish:
+  - no production data, API behavior, SQL schema, migrations, admin build, deployment, P6B implementation, or broad refactor was touched;
+  - the local generated-admin P6A group detail override now presents the page as a formal customer-service dispatch workbench instead of a temporary debug panel;
+  - layout now uses a constrained page width, consistent 8px-radius cards, clear section headers, compact spacing, unified badges, and consistent button sizing;
+  - the top summary card now displays Group ID, service type, group status, frontend visibility, airport/terminal, service date/time, current people/capacity, luggage count, and current average price in a 3-4 column information grid;
+  - dispatch risks are shown in a light risk area, with a green `无明显风险` badge when no risks are present and warning badges/cards when risks exist;
+  - dispatch settings are now a formal form card with controlled-width capacity input, frontend visibility select, compact notes textarea, and a primary save button;
+  - fees/payment now use three statistic cards for total price, current average price, and cross-terminal surcharge, plus a compact per-member payment list with paid/unpaid badges and single-member `标记已付款` actions;
+  - member details are now a cleaner table with grouped phone/WeChat, flight/time, airport/terminal, people/luggage, address, price, payment, offline-record, contact, and record-operation columns;
+  - driver dispatch summary now sits at the bottom in its own card with a moderate-height text area and a primary copy button;
+  - existing P6A behavior was preserved: controlled capacity save, frontend visibility save, notes save, local mock payment email behavior, contact/offline toggles, readonly high-risk fields, and no member add/remove/transfer controls;
+  - local browser verification confirmed `LOCAL TEST MODE`, `is_production=false`, all 6 P6 local groups open with the expected sections, forbidden high-risk action text is absent, and console/network checks have no errors, failed requests, or 4xx/5xx responses.
+
+- Adjusted P6A local transport group detail rules after business review:
+  - no production data, SQL schema, migrations, admin build, deployment, P6B implementation, or broad refactor was touched;
+  - local verification continued to report `runtime_environment.mode=local_test`, `LOCAL TEST MODE`, and `is_production=false`;
+  - maximum passengers / seat capacity is no longer fully readonly in P6A; it is now a controlled dispatch setting that can be edited only at group-capacity level, not order passenger-count or member-relationship level;
+  - capacity save validates that the value is not below the current joined member/passenger count, asks for operator confirmation, persists through the existing group update API, and relies on the existing group update log path for `admin_operation_logs`;
+  - when capacity is set equal to the current member count, the local P6A detail asks whether to also turn off frontend visibility so operators can stop further public matching;
+  - airport, terminal, flight number, service date/time, order passenger count, prices, member relationships, member add/remove, and group transfer remain unavailable for direct P6A editing;
+  - the served local generated-admin detail now uses business sections such as `调度设置` and `费用与付款` instead of the developer-style low-risk-operation wording;
+  - per-member `标记已付款` was restored in the P6A detail as a single-order action with confirmation; already-paid rows do not expose a repeat-send action;
+  - the existing `PATCH /api/transport-requests/:id` payment update flow is reused so payment state persists, payment confirmation email logic is preserved, and operation logging continues through the existing request update behavior;
+  - local runtime now skips real transport payment email delivery with a `local_mock` result so local validation does not send real mail while production email behavior remains available outside local mode;
+  - member contacted/uncontacted and offline-recorded/unrecorded controls remain available and persist through refresh;
+  - browser verification on the local generated admin checked capacity validation and persistence, optional frontend visibility closing, restored test mutations, payment marking with local mock messaging, contact/offline toggles, driver summary copy, absence of forbidden member-move controls, and no console/network 4xx/5xx errors.
+
+- Fixed P6A local transport group detail boundary bugs in the currently served local admin page:
+  - no production data, SQL schema, migrations, admin build, deployment, P6B implementation, or broad refactor was touched;
+  - local verification continued to report `runtime_environment.mode=local_test`, `LOCAL TEST MODE - 本地测试库，非真实订单`, and `is_production=false`;
+  - source Vue group detail no longer exposes P6A member core-change entry points from the group detail action column;
+  - because local `localhost:3000` serves the existing generated `admin/` bundle and an admin build was not allowed, a small generated-admin P6A detail override script was added only for `/admin/transport/groups/:id`; it hides the stale generated detail component and renders a P6A-only detail panel beside it;
+  - the served P6A detail now shows core itinerary/group fields as readonly: airport, terminal, flight, service date/time, people count, luggage, dynamic price, and member relationship data;
+  - the served P6A detail now exposes only the allowed low-risk actions: save group/driver/dispatch notes plus frontend visibility, mark member offline-recorded/unrecorded, mark member contacted/uncontacted, and copy the driver dispatch summary;
+  - high-risk generated controls are no longer visible or actionable in the served P6A detail page: maximum-passenger edit, service-time edit, member add/remove/move, payment toggle, and direct order-change/detail entry points;
+  - contact-state 404 root cause was the stale generated page/old path; the correct existing API is `PATCH /api/transport-requests/:id` with `action=update_safe_fields`, which returns 200 and writes `admin_operation_logs` through the existing safe-field log path;
+  - local browser verification confirmed all 6 P6 groups render the P6A detail panel, no forbidden controls are visible, notes/frontend visibility save and persist then were restored, member contacted/uncontacted save and persist then were restored, offline-recorded/unrecorded save and persist then were restored, driver summary copy works, and console/network had no errors or 4xx/5xx responses.
+
+- Completed P6A local transport dispatch final acceptance cleanup against the current source dev server and local Supabase only:
+  - accepted the empty-group audit conclusion for `GRP-260524-K7UY`: it was old local/old-port dirty data and is not returned by the current local Supabase or current local API, so it does not block P6A;
+  - no production data, SQL schema, migrations, admin build, deployment, P6B implementation, or broad refactor was touched;
+  - verified `/admin/transport/groups/GRP-P6LOCAL-PAYMIX` through the admin Vue source dev server with API proxying to the local-only backend (`runtime_environment.mode=local_test`, `is_production=false`);
+  - verified P6A group detail no longer exposes direct high-risk edit controls for maximum passengers, airport, terminal, flight number, service date/time, passenger count, or price;
+  - verified P6A group detail no longer exposes high-risk member/group operation buttons for joining members, moving/removing members, changing carpool group, group-level/member payment marking, or direct member core-field edits;
+  - verified the only editable controls on the group detail page are the allowed low-risk frontend visibility selector and dispatch/driver notes text areas;
+  - verified line-item offline-recorded status is clearly displayed, can be toggled, persists after refresh, and was restored on local test data;
+  - verified line-item contact status is clearly displayed, can be toggled through `PATCH /api/transport-requests/:id` with `action=update_safe_fields`, persists after refresh, and was restored on local test data;
+  - the previous contact-status `404` was not reproduced on the current source/API path; browser console and network checks showed no non-favicon 4xx/5xx requests;
+  - P6A can now be accepted at the source/local-test level. The root `admin/` folder remains generated build output and was not rebuilt in this task.
+
+- Recorded the empty-group lifecycle cleanup follow-up as `P6C: transport group lifecycle cleanup mechanism`; this is a future cleanup phase only and was not implemented:
+  - current priority remains P6A bug fixing/acceptance, then explicitly approved next work; do not enter P6B or P6C implicitly;
+  - P6C should use a management-side explicit cleanup flow: dry-run candidate report first, then human confirmation before deletion;
+  - P6C deletion must be real backend/database deletion, not CSS/frontend filtering or hiding to pretend the group is gone;
+  - P6C must write `admin_operation_logs` with before snapshot, validation result, reason, operator identity, and target group details;
+  - P6C should not start with scheduled background deletion and should not clean automatically before normal API reads;
+  - P6C must keep the same blocker checks: current member rows, effective order/group references, active grouped orders, protected/manual-hold flags, and foreign-key failures block deletion;
+  - historical audit logs alone should not be treated as active business usage, but must be preserved and never cascade-deleted as part of empty-group cleanup.
+
+- Completed P6A local acceptance check against the reseeded local Supabase dataset:
+  - guard check confirmed the browser/API session is local-only: `runtime_environment.mode=local_test`, label `LOCAL TEST MODE - 本地测试库，非真实订单`, and `is_production=false`;
+  - no production data, SQL schema, migrations, admin build, deployment, P6B implementation, or feature changes were touched;
+  - `/admin/transport/requests` loaded with the local environment badge and API returned exactly 13 local P6 test orders: `PU260925-P6-UNGROUPED`, `PU260925-P6-SINGLE`, `PU260925-P6-TWO-A`, `PU260925-P6-TWO-B`, `PU260925-P6-FULL-A`, `PU260925-P6-FULL-B`, `PU260925-P6-FULL-C`, `PU260925-P6-RISK-T2`, `PU260925-P6-RISK-T5`, `PU260925-P6-MISSING`, `PU260925-P6-CLOSED`, `PU260925-P6-PAID`, and `PU260925-P6-UNPAID`;
+  - `/admin/transport/groups` loaded with the local environment badge and API returned exactly 6 local P6 test groups: `GRP-P6LOCAL-SINGLE`, `GRP-P6LOCAL-TWO`, `GRP-P6LOCAL-FULL`, `GRP-P6LOCAL-XTERM`, `GRP-P6LOCAL-CLOSED`, and `GRP-P6LOCAL-PAYMIX`;
+  - each group detail API opened successfully and returned the expected member counts: single=1, two=2, full=3, cross-terminal=2, closed=1, payment-mix=2;
+  - risk API flags are present for `GRP-P6LOCAL-XTERM` (`cross_terminal`) and `GRP-P6LOCAL-FULL` (`full_visible`), while `GRP-P6LOCAL-CLOSED` correctly shows `status=closed` and `visible_on_frontend=false`;
+  - `PU260925-P6-MISSING` is present as an ungrouped local order with empty `phone`, `wechat`, and `flight_no`;
+  - group notes/frontend visibility PATCH persisted and was restored on local data; offline-recorded PATCH persisted and was restored on local data;
+  - Earlier P6A acceptance blockers were later rechecked on the current source/local-test path and resolved: group detail no longer exposes direct high-risk controls or member join/move/remove/payment buttons, and contact-state save no longer returns `404`;
+  - driver summary content is generated, the `一键复制` button copied the summary to the clipboard, and the copied content includes service timing, airport/terminal, flight details, price/payment state, passenger contacts, and addresses;
+  - the original check had seen two local contact-state `404` responses, but the final source/local-test recheck showed no non-favicon 4xx/5xx requests.
+
+- Completed local-only Supabase transport test-data cleanup and P6 acceptance reseed:
+  - operation guard confirmed local runtime before cleanup: `APP_ENV=local`, `runtime mode=local_dev`, Supabase project ref `127.0.0.1`, `is_production=false`, and `production data=no`;
+  - no production data, SQL schema, migrations, admin build, deployment, UI, API business logic, or P6B implementation was touched;
+  - pre-cleanup local counts were `transport_requests=36`, `transport_groups=37`, `transport_group_members=28`, `admin_operation_logs=47`, and `order_change_logs=21`;
+  - cleared the local noisy transport test dataset and local test audit/change logs only;
+  - first reseed attempt was blocked by local table check constraints, after which the data was reseeded with allowed enum values (`source=admin_manual`, `payment_collection_status=fully_paid/unpaid`);
+  - final local counts are `transport_requests=13`, `transport_groups=6`, `transport_group_members=11`, `admin_operation_logs=0`, and `order_change_logs=0`;
+  - P6 acceptance seed groups now present: `GRP-P6LOCAL-SINGLE`, `GRP-P6LOCAL-TWO`, `GRP-P6LOCAL-FULL`, `GRP-P6LOCAL-XTERM`, `GRP-P6LOCAL-CLOSED`, and `GRP-P6LOCAL-PAYMIX`;
+  - P6 acceptance coverage now includes ungrouped order, single-member group, two-member group, full group, cross-terminal risk group, missing flight/contact risk order, closed frontend-hidden group, paid/unpaid mixed group, and offline-recorded/unrecorded mixed group;
+  - post-check `/api/admin/session` still returns `LOCAL TEST MODE - 本地测试库，非真实订单` with `is_production=false`.
+
+- Completed local environment startup process audit after the browser still showed `PRODUCTION` on `localhost:3000`:
+  - no production data, local data, SQL schema, migrations, admin build, deployment, or transport business logic was changed;
+  - port audit showed `localhost:3000` was occupied by Docker/WSL forwarding for container `webside-web-1`, while ports `3100`, `3101`, and `3103` were free;
+  - the old `webside-web-1` container returned `/api/admin/session` with `runtime_environment.label=PRODUCTION`, explaining the stale browser badge;
+  - that old web app container was stopped; local Supabase containers were left running;
+  - `npm run dev` was restarted safely on port `3000` through `scripts/dev-local.js`;
+  - the active port `3000` listener is now Windows `node.exe` running `scripts/dev-local.js`;
+  - startup/session checks now report `APP_ENV=local`, `runtime mode=local_dev`, Supabase project ref `127.0.0.1`, `production data=no`, and `allow production in dev=no`;
+  - `apps/admin-vue` reads the left environment badge from `sessionStore.session.runtime_environment.label`, which comes from `/api/admin/session`;
+  - a browser automation check opened `http://127.0.0.1:3000/admin/transport/requests`; without an admin cookie it redirected to login, and a no-cache `/api/admin/session` fetch returned `LOCAL TEST MODE - 本地测试库，非真实订单`.
+
+- Implemented local dev Supabase environment isolation guard without touching production data, SQL schema, migrations, admin build, deployment, or transport business logic:
+  - `npm run dev` now runs the safe local wrapper and defaults to `LOCAL_SUPABASE_URL`, `LOCAL_SUPABASE_ANON_KEY`, and `LOCAL_SUPABASE_SERVICE_ROLE_KEY`;
+  - `npm run dev:local` remains the explicit local Supabase command and uses the same safe local wrapper;
+  - the local wrapper now fails fast if any required `LOCAL_SUPABASE_*` value is missing, instead of silently falling back to production `SUPABASE_*`;
+  - added `npm run dev:prod` as the explicit local-app-to-production-data command; it sets `APP_ENV=production`, `RUNTIME_MODE=local_dev_prod_data`, and `ALLOW_PROD_IN_DEV=true`;
+  - `dev-server.js` now logs sanitized runtime environment details on startup: app/runtime mode, Supabase project ref, production-data flag, local-runtime flag, and whether production in dev is allowed;
+  - `dev-server.js` now blocks local startup when `SUPABASE_URL` points to non-local production-like Supabase data and `ALLOW_PROD_IN_DEV` is not true;
+  - verification showed `npm run dev` and `npm run dev:local` resolve to local Supabase project ref `127.0.0.1`, `production data=no`; direct unapproved production startup is blocked with the required error; `npm run dev:prod` starts only with the explicit allow flag.
+
+- Completed a read-only production transport group/member/request manual audit:
+  - no production data was inserted, updated, deleted, migrated, built, or deployed;
+  - audited all current production rows: `transport_groups=9`, `transport_group_members=10`, and `transport_requests=10`;
+  - final classification: `SAFE_DELETE=0`, `UNKNOWN=0`, `MIXED=1`, and the remaining groups are `SAFE_KEEP`;
+  - `GRP-260519-R3T7` is `MIXED` because it contains the operator-confirmed retained test-account request `PU260522-0043` plus the real request `PU260519-0021`; the group must not be deleted;
+  - no current `request_id`, `transport_group_members.id`, or `group_id` is approved as safely deletable in this audit;
+  - all current group IDs should be retained unless a later operator-reviewed cleanup scope changes this conclusion.
+
+- Completed a read-only production test-data cleanup dry-run audit for transport groups/orders:
+  - no production data was inserted, updated, deleted, migrated, built, or deployed;
+  - local admin-vue requests use same-origin `/api/...`; in Vite dev, `/api` proxies to `http://127.0.0.1:3000`;
+  - the running local API reported `runtime_environment.mode=production` and uses `SUPABASE_URL=https://brmsymzkmdnxzhrcaghw.supabase.co` (`project_ref=brmsymzkmdnxzhrcaghw`);
+  - current local `npm run dev` environment values were read from `E:\webside\.env`; no root `.env.local`, `.env.development`, or `.env.production` file was present in the workspace scan, and the package scripts do not pass `--mode production`;
+  - a Vercel-pulled `.vercel\.env.preview.local` file exists and also points `SUPABASE_URL` to `brmsymzkmdnxzhrcaghw`, but the custom local `dev-server.js` path does not load that file;
+  - `npm run dev` loads `.env` as-is, while `npm run dev:local` would override `SUPABASE_*` with `LOCAL_SUPABASE_*`;
+  - production row counts during the audit were `transport_groups=9`, `transport_group_members=10`, `transport_requests=10`, and `admin_operation_logs=254`;
+  - operator clarification after the initial dry-run: `PU260522-0043` / request `cfb0c396-2c50-402d-9057-27e8fb3e9442` is the operator's own intentional test-account record and should be retained, so the final approved cleanup-candidate count for current production transport group/member/request rows is 0;
+  - strict matching against the requested English/code test markers found no current `transport_groups` or `transport_requests` candidates;
+  - one current transport request was flagged as an obvious production test-data candidate because `student_name=测试` and `admin_note=测试1`: `PU260522-0043` / request `cfb0c396-2c50-402d-9057-27e8fb3e9442`;
+  - that request is linked by membership `873b16ed-056c-4b3f-b2da-c0c7e9389d55` to `GRP-260519-R3T7`;
+  - `GRP-260519-R3T7` is not a delete candidate because it also contains a non-test request `PU260519-0021`; any future confirmed cleanup must delete only the test membership/request and then recheck/sync the containing group state;
+  - three associated `admin_operation_logs` rows were identified for the test request and should be retained by default unless an explicit audit-log cleanup policy is approved.
+
+- Implemented P6A transport dispatch workbench foundation without deployment, database migration, SQL/config changes, or admin build:
+  - `/admin/transport/groups` is now a dispatch-oriented group workbench rather than a simple group-management table;
+  - the group list surfaces group/order summary, service type, airport/terminal summary, service date/time range, members, people/luggage totals, payment/offline-record summary, public visibility, group status, and readonly dispatch risk count;
+  - the group list no longer exposes daily group-level bulk payment or delete actions; operators enter a group through the detail/check action;
+  - the group detail page now focuses on dispatch verification: overview, frontend visibility, risk prompts, member contact/flight/terminal/count/address/price-reference/payment/offline/contact status, and driver dispatch summary copy;
+  - P6A allows only low-risk actions in the group detail view: save group dispatch notes/driver notes, toggle frontend visibility, mark member offline-recorded, and mark member contacted/uncontacted;
+  - high-risk fields such as airport, terminal, flight number, service date/time, passenger count, luggage count, price, and member group movement are displayed only and remain outside P6A direct editing;
+  - existing P5 order-change entry remains available from member rows, but P6A did not change P5 order-change rules;
+  - admin group APIs now return P6A member detail, luggage summary, payment/offline-record state, and readonly dispatch risk flags; group PATCH now writes `admin_operation_logs` for group field changes;
+  - `docs/PROJECT_MAP.md` was updated for the enriched admin group API behavior.
 
 - Production empty transport group cleanup final record:
   - cleanup scope was historical empty transport groups with 0 members, no `transport_group_members`, no `transport_requests.group_id` reference, and no valid order attached;
@@ -34,23 +182,17 @@
   - admin transport group list, admin transport request list, group detail APIs, and public carpool board API returned successfully; public board still does not expose `shareable=false` rows;
   - current cleanup result is acceptable from a referential-integrity and active-order-impact perspective; no restore is required based on this audit.
 
-- Planned the 0-member orphan transport-group automatic cleanup mechanism; this is a design record only and no production data was changed:
-  - goal: if a transport group becomes a true orphan empty group and remains orphaned for more than 10 minutes, the system may delete it automatically while keeping an `admin_operation_logs` audit trail;
-  - this must not be implemented as `current_passenger_count=0 for 10 minutes => delete`; every cleanup candidate must satisfy all orphan checks at deletion time;
-  - true delete blockers are only current business references or protection flags: rows still exist in `transport_group_members`; `transport_requests` still has an effective `group_id` pointing to the group; a valid order number is still attached to the group; active/published/grouped orders are still using the group; deletion would fail on a foreign-key constraint; or `admin_keep`, `manual_hold`, or `protected` is set;
-  - historical audit rows must not block orphan cleanup by themselves: past `order_change_logs`, past `admin_operation_logs`, historical order-change activity, or historical membership that is now fully removed should be preserved as audit history, not treated as current business usage;
-  - revised automatic delete conditions: `current_passenger_count=0`; `transport_group_members` count is 0; no valid `transport_requests.group_id` reference; no valid order number currently attached; no active/published/grouped order currently uses the group; `became_empty_at` is older than 10 minutes, or `created_at` is older than 10 minutes and the group has never had members; no `admin_keep`, `manual_hold`, or `protected`; deleting will not trigger a foreign-key error; and the pre-delete snapshot is written to `admin_operation_logs`;
-  - payment/refund rule: empty-group cleanup does not process refunds; payment, balance, refund, and collection state belongs to the order, not the empty group. If an effective order reference remains, the group cannot be deleted and the order must first go through cancellation/refund/order-change handling. If no effective order reference remains, historical payment fields or historical audit logs alone do not require keeping the empty group;
-  - recommended schema additions: `became_empty_at timestamptz`, `admin_keep boolean default false`, `manual_hold boolean default false`, `protected boolean default false`, and optional `cleanup_note text` / `cleanup_last_checked_at timestamptz` on `transport_groups`; these should be additive migrations and not applied directly to production before local/staging validation;
-  - `became_empty_at` should be set by group lifecycle sync when the last member is removed, and cleared when a member is added; if missing, cleanup may fall back to `created_at` only for groups that have never had members and pass all orphan checks;
-  - preferred execution model: an admin-only cleanup API/script with `dry_run=true` first, then a scheduled cleanup job that calls the same backend helper in dry-run/limited mode, with the same helper optionally called after lifecycle sync only to mark `became_empty_at`, not to delete immediately;
-  - avoid transfer-race deletes by using the 10-minute grace period, row locks/transactional validation, a latest-state recheck immediately before delete, and a rule that lifecycle operations set/clear `became_empty_at` but do not delete inside the member move transaction;
-  - delete flow: generate before JSON snapshot; insert `admin_operation_logs` with `action=auto_cleanup_empty_transport_group`, object type, `group_id` / group code, reason, validation result, trigger mode (`auto` or `manual`), operator/system identity, and timestamp; only after the log insert succeeds delete from `transport_groups`; then verify no orphan references remain;
-  - audit preservation rule: deleting an empty group must never delete `order_change_logs` or existing `admin_operation_logs`; if `order_change_logs` stores `old_group_id`, `new_group_id`, or group code, those values remain as historical audit text. If a strong foreign key from audit logs to `transport_groups` ever prevents deletion, do not cascade-delete audit rows; skip deletion or close/archive the group and record the reason;
-  - skip flow: if any current-reference/protection/foreign-key check fails, do not delete; return/log skip reason in dry-run output, and for scheduled jobs optionally record aggregate skip metrics rather than noisy per-row audit logs;
-  - local test plan: create local fake groups covering true orphan, member present, direct request reference, valid order number, active/published/grouped order reference, historical `order_change_logs` only, historical `admin_operation_logs` only, protected/manual hold, new empty under 10 minutes, and empty over 10 minutes; verify only true orphan over 10 minutes deletes, historical audit-only groups can delete while audit rows remain, and all current-reference/protected cases skip with reasons;
-  - production rollout plan: first deploy dry-run only, run production dry-run and review candidate report; then enable manual-confirm cleanup for reviewed whitelist; only after repeated clean dry-runs enable scheduled auto-delete with a low per-run limit and alertable logs;
-  - production deletion must never run from frontend-only filtering or CSS hiding; data lifecycle rules must live in backend/database-aware helpers and admin-only operations.
+- Recorded `P6C: transport group lifecycle cleanup mechanism` as a future cleanup phase; this is a design record only and no production data was changed:
+  - P6C should not be implemented now and must not be used as a substitute for finishing P6A bug fixes;
+  - priority for P6C is management-side explicit cleanup, not scheduled automatic deletion and not API-read-before-cleanup;
+  - the flow should generate a dry-run candidate report first, then require manual operator confirmation before deleting anything;
+  - cleanup must delete eligible empty/orphan groups in the backend/database layer; frontend-only hiding, CSS hiding, or list filtering is not an acceptable cleanup mechanism;
+  - every deletion must write `admin_operation_logs` with a before snapshot, validation details, skip/delete reason, operator identity, target `group_id`, and operation timestamp;
+  - candidate validation must recheck current references at confirmation time: `transport_group_members`, effective order/group references, valid linked order numbers, active/published/grouped orders, protected/manual-hold flags, and foreign-key constraints;
+  - do not delete if any current business reference or protection check fails; return a skip reason in the dry-run/confirmation result;
+  - historical `order_change_logs`, historical `admin_operation_logs`, and historical group codes should be preserved as audit history and must never be cascade-deleted as part of empty-group cleanup;
+  - P6C may later add additive helper fields such as `became_empty_at`, `admin_keep`, `manual_hold`, `protected`, or cleanup notes only through an explicitly approved migration; no migration is part of the current P6A scope;
+  - local validation for P6C should cover true orphan empty groups, groups with members, groups with effective order references, protected/manual-hold groups, new empty groups, stale empty groups, and historical-audit-only groups.
 
 - Recorded the transport group empty/dirty-data governance rule and cleanup audit plan:
   - default admin views may hide 0-member empty groups to reduce operator noise, but this must be a default filter only, not a data-quality workaround;
@@ -2388,13 +2530,26 @@
 - Transport request admin API responses now include `offline_recorded`, `last_operated_by`, and `last_operated_at`; public transport APIs were not intentionally expanded. No email behavior or secrets/env files were modified.
 - Transport manual supplement/import fields have been applied to Supabase project `ngn-transport`; public/ordinary-user transport APIs should continue using explicit safe field lists and must not expose `raw_import_payload` or admin import fields.
 - P5 order-change infrastructure is now live in production: `change-preview` is admin-only/read-only, `change-confirm` is admin-only/write-audited, and `order_change_logs` exists in production with forced RLS and no direct public/anon/authenticated table access.
-- Future P5C/P6 transport UI requirement is recorded only, not implemented in current P5B: keep the existing transport group detail page because its overview, fee/payment, member list, add-member area, and driver dispatch summary remain valuable, but upgrade the transport group list into a spreadsheet-like "transport dispatch workbench" so operators can see high-frequency group/order information without repeatedly opening detail pages.
-  - The future list should surface Group ID, order numbers, service type/date, airport/terminal, flight time, route, member names, passenger/seat counts, group status, chat-group status, driver-notified state, payment status, current per-person price, customer-service notes, last operator, and last operated time.
-  - Low-risk fields may be edited directly in the list only with `admin_operation_logs`: chat-group status (`not_created`, `created`, `not_needed`, `pending_confirmation`), driver notification, customer-service notes, internal processing status, and offline-recorded state.
-  - High-risk fields must not be spreadsheet-edited and must use the P5 order-change flow: airport, terminal, service date, flight time, passenger count, shareable/carpool intent, price, confirmed order price, balance due, and refund due.
+- P6A transport dispatch workbench is implemented in source but not built/deployed:
+  - the source Vue group list at `/admin/transport/groups` is now a dispatch workbench that emphasizes group readiness, member summary, people/luggage totals, public visibility, payment/offline-record status, and readonly risk flags;
+  - the source Vue group detail page is now a dispatch verification surface for members, flight/terminal/contact/payment/offline information, low-risk dispatch notes/visibility/contact/offline actions, and driver dispatch summary copy;
+  - P6A intentionally does not directly edit airport, terminal, flight number, service date/time, passenger count, luggage count, price, or group/member movement.
+- Future P5C/P6 work beyond P6A should keep the existing transport group detail page because its overview, fee/payment, member list, add-member area, and driver dispatch summary remain valuable, while continuing to evolve the transport group list from "detail-page management" into a customer-service dispatch workbench. This is not a simple visual polish task; it is an operational workflow change so operators can judge group/order readiness without repeatedly opening detail pages.
+  - Current group-list gaps to solve: member contact details, WeChat, flight number, terminal, luggage, passenger count, order-level payment state, chat-group state, driver-notification state, customer-service notes, last operator/time, and dispatch risks are not visible enough for day-to-day dispatch decisions. Group-level "mark paid" is too broad after P5 because payment belongs to member orders, not the group.
+  - The future main list should surface Group ID, order-number summary, member names, service type/date, airport, terminal summary, flight/service time range, route summary, passenger/seat counts, group status, dispatch risk flags, payment summary, current dynamic per-person price, chat-group status, driver-notified state, customer-service notes, last operator, and last operated time.
+  - Future expandable member rows are required. They should show member order number, name, phone, WeChat, flight number, airport, terminal, time, passenger/luggage counts, route/address, order payment status, confirmed order price, paid amount, balance/refund amount, and actions for viewing the order, starting P5 order change, payment handling, and controlled remove/transfer workflows.
+  - Low-risk fields may be edited directly in the list only with `admin_operation_logs`: chat-group status (`not_created`, `created`, `not_needed`, `pending_confirmation`), driver notification, customer-service notes, internal processing status, and offline-recorded/customer-service registration state.
+  - High-risk fields must not be spreadsheet-edited and must use the P5 order-change flow: airport, terminal, service date, flight time, pickup/dropoff time, passenger count, shareable/carpool intent, price, confirmed order price, paid amount, balance due, refund due, and any group/member move that affects matching or pricing.
+  - Terminal / airport terminal is a high-risk field. P6 may display terminal and may provide an "order change" entry point, but backend lists and the dispatch workbench must not directly save terminal through Excel-style inline editing.
+  - Customer service terminal changes must go through P5 `change-preview` and `change-confirm`, including `preview_token` / `source_snapshot_hash` validation, `group_action` judgment, price recalculation or risk warning, and group relationship reassessment.
+  - Same-airport terminal changes, such as `LHR T4 -> LHR T2`, must be recognized as `order_change`, show a `terminal_changed` risk, set `requires_reprice=true` or at least warn that price may be affected, judge whether the original group can still be kept, and not default to automatic `keep_group` unless cross-terminal grouping is allowed and the operator confirms. If cross-terminal surcharge changes, old/new price and `price_delta` must be shown.
+  - Airport plus terminal changes, such as `LHR T4 -> LGW North`, must reprice, move the order out of the original group, disallow `keep_group`, and allow only controlled outcomes such as `move_out_new_single` or `transfer_existing_group`.
+  - Flight-number-only changes may be `no_group_change` and do not require forced repricing when airport, terminal, service date, time, and passenger count are unchanged.
+  - The terminal rule applies to both pickup and dropoff: pickup terminal affects the driver pickup point; dropoff terminal affects the driver dropoff point; driver dispatch summaries must refresh after the P5 change result.
+  - P6 minimum viable release should be split into: P6-A readonly dispatch workbench with expandable members and allowed low-risk status toggles; P6-B low-risk group dispatch status edits with operation logs; P6-C transport group lifecycle cleanup mechanism using dry-run plus manual confirmation; P6-D member-order payment entry points replacing group-level bulk payment; P6-E filters and export for dispatch status, payment gaps, terminal/cross-terminal risk, last operator, and anomalies.
+  - Delete should not remain a normal red list action. Daily operators should see detail, close/cancel, or anomaly-review actions; true deletion should stay in a separate guarded empty/test-group cleanup flow with candidate validation, second confirmation, before snapshot, and `admin_operation_logs`.
   - `full` / fully matched group state should remain system-derived from `seats_used >= max_passengers`; customer service may close or cancel a group but should not manually fake a full state.
-  - Detail-page follow-up risks: group-level "mark paid" should become member-order-based after P5; current per-person price is dynamic group pricing, not final confirmed order price; max passengers must never be set below current passenger count and must log operations; driver-dispatch time may be directly editable only if it is dispatch-only and must use P5 if it affects service time or matching; add-member must validate service type, airport, date, capacity, shareable intent, and existing group membership; remove-member must sync old group status, request status, and pricing, not just delete membership.
-  - Recommended interaction: expandable rows on the future list should show member order number, name, phone, WeChat, flight number, terminal, time, passenger/luggage counts, payment status, confirmed order price, paid amount, balance/refund amount, and actions for payment handling, order change, and removal.
+  - Detail-page follow-up risks: current per-person price is dynamic group pricing, not final confirmed order price; max passengers must never be set below current passenger count and must log operations; driver-dispatch time may be directly editable only if it is dispatch-only and must use P5 if it affects service time or matching; add-member must validate service type, airport, date, capacity, shareable intent, and existing group membership; remove-member must sync old group status, request status, and pricing, not just delete membership.
 - Personal center display now treats the membership benefit card as the single display location for the currently linked membership order, so the same order is not repeated in ordinary pickup/storage cards or recent records.
 - Personal center pickup membership reservations now show whether the member booking is a September free pickup or a non-September/other-time 100 GBP discount.
 - Personal center pickup cards and bound pickup membership cards now provide direct `查看详情` access, while pickup membership displays hide price/discount amounts.
@@ -2433,7 +2588,7 @@
 - Observe production P5 after real customer-service usage for: operator feedback on the order-change drawer, `change-confirm` error logs, and whether transport group refresh remains stable after member move-out/new-single/transfer actions.
 - For future release/smoke runs, prefer an approved production test order or a documented synthetic-order cleanup routine; avoid using real student orders for destructive confirmation tests.
 - For P5B-Env, local Supabase is now available for continued fake-data testing through `LOCAL_SUPABASE_URL`, `LOCAL_SUPABASE_ANON_KEY`, and `LOCAL_SUPABASE_SERVICE_ROLE_KEY`; do not use real student data in this local environment.
-- For P5C/P6, design the "transport dispatch workbench" from the recorded customer-service requirement: keep group detail, make the group list more Excel-like, expose only low-risk inline fields with operation logs, and route all high-risk order/trip/price changes through P5 order-change APIs.
+- For P5C/P6, design the "transport dispatch workbench" from the recorded customer-service requirement: keep group detail, expose only low-risk inline fields with operation logs, route all high-risk order/trip/price/terminal changes through P5 order-change APIs, and treat flight-number-only changes as `no_group_change` only when airport, terminal, service date, time, and passenger count are unchanged.
 - Next Vue phase should verify storage export/delete and storage detail price recalculation in the browser, then continue with the next explicitly approved low-risk operation only after server-side permission boundaries are reviewed.
 - Do not implement real dangerous operations until the corresponding detail/read-only flow is accepted and server-side permission boundaries are reviewed.
 - Keep following the fixed release order for future changes: commit and push intended changes to GitHub first, then deploy to Vercel.

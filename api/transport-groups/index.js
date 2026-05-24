@@ -34,6 +34,105 @@ function parsePaymentStatus(adminNote, structuredStatus) {
   return match ? match[1].toLowerCase() : "unpaid";
 }
 
+function uniqueNonEmpty(values) {
+  return Array.from(new Set((values || []).map(value => String(value || "").trim()).filter(Boolean)));
+}
+
+function buildTimeRange(values) {
+  const timestamps = (values || [])
+    .filter(Boolean)
+    .map(value => new Date(value).getTime())
+    .filter(value => !Number.isNaN(value))
+    .sort((a, b) => a - b);
+
+  if (!timestamps.length) {
+    return { earliest: null, latest: null, span_minutes: 0 };
+  }
+
+  return {
+    earliest: new Date(timestamps[0]).toISOString(),
+    latest: new Date(timestamps[timestamps.length - 1]).toISOString(),
+    span_minutes: timestamps.length > 1 ? Math.round((timestamps[timestamps.length - 1] - timestamps[0]) / 60000) : 0
+  };
+}
+
+function buildDispatchMemberDetails(memberRows) {
+  return (memberRows || []).map(member => {
+    const request = member.transport_requests || {};
+    const passengerCount = Number(request.passenger_count || member.passenger_count_snapshot || 0);
+    const luggageCount = Number(request.luggage_count || 0);
+    return {
+      member_id: member.id || null,
+      request_id: request.id || member.request_id || null,
+      order_no: request.order_no || "--",
+      student_name: request.student_name || "--",
+      phone: request.phone || "",
+      wechat: request.wechat || "",
+      service_type: request.service_type || "",
+      status: request.status || "",
+      airport_code: request.airport_code || "",
+      airport_name: request.airport_name || "",
+      terminal: request.terminal || "",
+      flight_no: request.flight_no || "",
+      flight_datetime: request.flight_datetime || null,
+      preferred_time_start: request.preferred_time_start || null,
+      passenger_count: passengerCount,
+      luggage_count: luggageCount,
+      location_from: request.location_from || "",
+      location_to: request.location_to || "",
+      admin_note: request.admin_note || "",
+      manual_payment_status: request.manual_payment_status || "",
+      payment_collection_status: request.payment_collection_status || "",
+      deposit_amount_gbp: request.deposit_amount_gbp ?? null,
+      manual_price_gbp: request.manual_price_gbp ?? null,
+      offline_recorded: Boolean(request.offline_recorded),
+      contact_status: request.contact_status || ""
+    };
+  });
+}
+
+function buildDispatchRisks(group, memberDetails) {
+  const risks = [];
+  const maxPassengers = Number(group.max_passengers || 0);
+  const currentPassengers = Number(group.current_passenger_count || 0);
+  const terminals = uniqueNonEmpty(memberDetails.map(member => member.terminal));
+  const timeRange = buildTimeRange(memberDetails.map(member => member.flight_datetime || member.preferred_time_start));
+  const visibleOnFrontend = group.visible_on_frontend === true;
+
+  if (!memberDetails.length) {
+    risks.push({ code: "empty_group", label: "0 members" });
+  }
+  if (terminals.length > 1) {
+    risks.push({ code: "cross_terminal", label: "Different terminals" });
+  }
+  if (timeRange.span_minutes > 180) {
+    risks.push({ code: "time_gap_large", label: "Time gap over 3h" });
+  }
+  if (memberDetails.some(member => !member.flight_no)) {
+    risks.push({ code: "missing_flight_no", label: "Missing flight no" });
+  }
+  if (memberDetails.some(member => !member.terminal)) {
+    risks.push({ code: "missing_terminal", label: "Missing terminal" });
+  }
+  if (memberDetails.some(member => !member.phone && !member.wechat)) {
+    risks.push({ code: "missing_contact", label: "Missing phone/WeChat" });
+  }
+  if (memberDetails.some(member => Number(member.passenger_count || 0) <= 0 || Number(member.luggage_count || 0) < 0)) {
+    risks.push({ code: "abnormal_count", label: "Passenger/luggage count abnormal" });
+  }
+  if (maxPassengers > 0 && currentPassengers > maxPassengers) {
+    risks.push({ code: "over_capacity", label: "Over capacity" });
+  }
+  if (String(group.status || "").toLowerCase() === "full" && visibleOnFrontend) {
+    risks.push({ code: "full_visible", label: "Full but public visible" });
+  }
+  if (visibleOnFrontend && (["closed", "cancelled"].includes(String(group.status || "").toLowerCase()) || !memberDetails.length)) {
+    risks.push({ code: "public_visibility_invalid", label: "Public visible but not display-ready" });
+  }
+
+  return risks;
+}
+
 function normalizeLegacyGroupStatusInput(input = {}) {
   if (!input || typeof input !== "object" || Array.isArray(input)) return input;
   if (String(input.status || "").trim().toLowerCase() !== "open") return input;
@@ -162,7 +261,7 @@ async function enrichGroupsBatch(supabase, groups, metrics = {}) {
   const memberQueryStartedAt = nowMs();
   const { data: memberRows, error: memberRowsError } = await supabase
     .from("transport_group_members")
-    .select("group_id, request_id, passenger_count_snapshot, created_at, transport_requests(id, order_no, student_name, site_user_id, service_type, passenger_count, status, terminal, flight_datetime, airport_code, flight_no, notes, luggage_count, admin_note, manual_payment_status)")
+    .select("id, group_id, request_id, passenger_count_snapshot, created_at, transport_requests(id, order_no, student_name, site_user_id, phone, wechat, service_type, passenger_count, status, terminal, flight_datetime, preferred_time_start, airport_code, airport_name, flight_no, location_from, location_to, notes, luggage_count, admin_note, manual_payment_status, payment_collection_status, deposit_amount_gbp, manual_price_gbp, offline_recorded, contact_status)")
     .in("group_id", groupIds)
     .order("created_at", { ascending: true });
   metrics.memberQueryMs = (metrics.memberQueryMs || 0) + (nowMs() - memberQueryStartedAt);
@@ -174,6 +273,8 @@ async function enrichGroupsBatch(supabase, groups, metrics = {}) {
   const memberOrderMap = new Map();
   const memberStudentMap = new Map();
   const memberUserMap = new Map();
+  const memberDetailsMap = new Map();
+  const luggageSummaryMap = new Map();
   const paymentSummaryMap = new Map();
   (memberRows || []).forEach(item => {
     const orderNos = memberOrderMap.get(item.group_id) || [];
@@ -190,6 +291,11 @@ async function enrichGroupsBatch(supabase, groups, metrics = {}) {
     const studentName = item.transport_requests?.student_name || null;
     const siteUserId = item.transport_requests?.site_user_id || null;
     const paymentStatus = parsePaymentStatus(item.transport_requests?.admin_note, item.transport_requests?.manual_payment_status);
+    const details = memberDetailsMap.get(item.group_id) || [];
+    const request = item.transport_requests || {};
+    const luggageSummary = luggageSummaryMap.get(item.group_id) || {
+      total_luggage_count: 0
+    };
 
     if (orderNo) {
       orderNos.push(orderNo);
@@ -217,9 +323,14 @@ async function enrichGroupsBatch(supabase, groups, metrics = {}) {
       });
     }
 
+    details.push(...buildDispatchMemberDetails([item]));
+    luggageSummary.total_luggage_count += Number(request.luggage_count || 0);
+
     memberOrderMap.set(item.group_id, orderNos);
     memberStudentMap.set(item.group_id, studentNames);
     memberUserMap.set(item.group_id, userIds);
+    memberDetailsMap.set(item.group_id, details);
+    luggageSummaryMap.set(item.group_id, luggageSummary);
     paymentSummaryMap.set(item.group_id, paymentSummary);
   });
 
@@ -297,6 +408,7 @@ async function enrichGroupsBatch(supabase, groups, metrics = {}) {
   return groups.map(group => {
     const groupRef = group.group_id || group.id;
     const groupStats = groupStatsById.get(groupRef) || {};
+    const memberDetails = memberDetailsMap.get(groupRef) || [];
     return buildListItem({
       ...group,
       ...groupStats,
@@ -304,6 +416,9 @@ async function enrichGroupsBatch(supabase, groups, metrics = {}) {
       group_id: group.group_id || deriveDisplayGroupId(groupRef, group.group_date),
       source_order_nos: memberOrderMap.get(groupRef) || [],
       student_names: memberStudentMap.get(groupRef) || [],
+      member_details: memberDetails,
+      dispatch_risks: buildDispatchRisks({ ...group, ...groupStats }, memberDetails),
+      luggage_summary: luggageSummaryMap.get(groupRef) || { total_luggage_count: 0 },
       payment_summary: paymentSummaryMap.get(groupRef) || {
         total_member_count: 0,
         paid_member_count: 0,

@@ -11,6 +11,15 @@ function getOptionalEnv(name) {
   return value ? String(value).trim() : "";
 }
 
+function isLocalRuntime() {
+  const appEnv = getOptionalEnv("APP_ENV").toLowerCase();
+  const runtimeMode = getOptionalEnv("RUNTIME_MODE").toLowerCase();
+  const supabaseUrl = getOptionalEnv("SUPABASE_URL");
+  return appEnv === "local"
+    || runtimeMode.includes("local")
+    || /^https?:\/\/(127\.0\.0\.1|localhost)(?::\d+)?/i.test(supabaseUrl);
+}
+
 function getTransportPaymentEmailFrom() {
   return getOptionalEnv("TRANSPORT_PAYMENT_EMAIL_FROM")
     || getOptionalEnv("TRANSPORT_EMAIL_FROM")
@@ -274,6 +283,14 @@ async function deliverTransportPaymentEmail(mail) {
 
 async function sendTransportPaymentConfirmationEmail(supabase, request) {
   const mail = buildTransportPaymentConfirmationEmail(request);
+  if (isLocalRuntime()) {
+    return {
+      skipped: true,
+      provider: "local_mock",
+      reason: "local_test_mode",
+      email: mail.to
+    };
+  }
   return deliverTransportPaymentEmail(mail);
 }
 

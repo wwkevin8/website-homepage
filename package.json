@@ -4,8 +4,9 @@
   "private": true,
   "description": "Static multi-page site with Vercel serverless APIs for transport dispatch management.",
   "scripts": {
-    "dev": "node dev-server.js",
+    "dev": "node scripts/dev-local.js",
     "dev:local": "node scripts/dev-local.js",
+    "dev:prod": "node scripts/dev-prod.js",
     "start": "node dev-server.js",
     "dev:vercel": "npx --yes vercel@53.1.0 dev",
     "preview": "node scripts/vercel-preview.js",

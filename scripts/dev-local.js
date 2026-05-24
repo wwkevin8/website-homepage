@@ -34,14 +34,27 @@ function loadEnvFile(targetEnv) {
 
 loadEnvFile(process.env);
 
-if (process.env.LOCAL_SUPABASE_URL) {
-  process.env.SUPABASE_URL = process.env.LOCAL_SUPABASE_URL;
+const requiredLocalKeys = [
+  "LOCAL_SUPABASE_URL",
+  "LOCAL_SUPABASE_ANON_KEY",
+  "LOCAL_SUPABASE_SERVICE_ROLE_KEY"
+];
+
+const missingLocalKeys = requiredLocalKeys.filter(key => !String(process.env[key] || "").trim());
+if (missingLocalKeys.length) {
+  console.error("[dev-local] Missing local Supabase configuration:");
+  for (const key of missingLocalKeys) {
+    console.error(`- ${key}`);
+  }
+  console.error("Set LOCAL_SUPABASE_URL, LOCAL_SUPABASE_ANON_KEY, and LOCAL_SUPABASE_SERVICE_ROLE_KEY before running npm run dev.");
+  process.exit(1);
 }
-if (process.env.LOCAL_SUPABASE_ANON_KEY) {
-  process.env.SUPABASE_ANON_KEY = process.env.LOCAL_SUPABASE_ANON_KEY;
-}
-if (process.env.LOCAL_SUPABASE_SERVICE_ROLE_KEY) {
-  process.env.SUPABASE_SERVICE_ROLE_KEY = process.env.LOCAL_SUPABASE_SERVICE_ROLE_KEY;
-}
+
+process.env.APP_ENV = process.env.APP_ENV || "local";
+process.env.RUNTIME_MODE = process.env.RUNTIME_MODE || "local_dev";
+process.env.SUPABASE_URL = process.env.LOCAL_SUPABASE_URL;
+process.env.SUPABASE_ANON_KEY = process.env.LOCAL_SUPABASE_ANON_KEY;
+process.env.SUPABASE_SERVICE_ROLE_KEY = process.env.LOCAL_SUPABASE_SERVICE_ROLE_KEY;
+delete process.env.ALLOW_PROD_IN_DEV;
 
 require("../dev-server");
