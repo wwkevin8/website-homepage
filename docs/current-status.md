@@ -12,6 +12,40 @@
 
 ## Latest Completed Work
 
+- Planned the 0-member orphan transport-group automatic cleanup mechanism; this is a design record only and no production data was changed:
+  - goal: if a transport group becomes a true orphan empty group and remains orphaned for more than 10 minutes, the system may delete it automatically while keeping an `admin_operation_logs` audit trail;
+  - this must not be implemented as `current_passenger_count=0 for 10 minutes => delete`; every cleanup candidate must satisfy all orphan checks at deletion time;
+  - true delete blockers are only current business references or protection flags: rows still exist in `transport_group_members`; `transport_requests` still has an effective `group_id` pointing to the group; a valid order number is still attached to the group; active/published/grouped orders are still using the group; deletion would fail on a foreign-key constraint; or `admin_keep`, `manual_hold`, or `protected` is set;
+  - historical audit rows must not block orphan cleanup by themselves: past `order_change_logs`, past `admin_operation_logs`, historical order-change activity, or historical membership that is now fully removed should be preserved as audit history, not treated as current business usage;
+  - revised automatic delete conditions: `current_passenger_count=0`; `transport_group_members` count is 0; no valid `transport_requests.group_id` reference; no valid order number currently attached; no active/published/grouped order currently uses the group; `became_empty_at` is older than 10 minutes, or `created_at` is older than 10 minutes and the group has never had members; no `admin_keep`, `manual_hold`, or `protected`; deleting will not trigger a foreign-key error; and the pre-delete snapshot is written to `admin_operation_logs`;
+  - payment/refund rule: empty-group cleanup does not process refunds; payment, balance, refund, and collection state belongs to the order, not the empty group. If an effective order reference remains, the group cannot be deleted and the order must first go through cancellation/refund/order-change handling. If no effective order reference remains, historical payment fields or historical audit logs alone do not require keeping the empty group;
+  - recommended schema additions: `became_empty_at timestamptz`, `admin_keep boolean default false`, `manual_hold boolean default false`, `protected boolean default false`, and optional `cleanup_note text` / `cleanup_last_checked_at timestamptz` on `transport_groups`; these should be additive migrations and not applied directly to production before local/staging validation;
+  - `became_empty_at` should be set by group lifecycle sync when the last member is removed, and cleared when a member is added; if missing, cleanup may fall back to `created_at` only for groups that have never had members and pass all orphan checks;
+  - preferred execution model: an admin-only cleanup API/script with `dry_run=true` first, then a scheduled cleanup job that calls the same backend helper in dry-run/limited mode, with the same helper optionally called after lifecycle sync only to mark `became_empty_at`, not to delete immediately;
+  - avoid transfer-race deletes by using the 10-minute grace period, row locks/transactional validation, a latest-state recheck immediately before delete, and a rule that lifecycle operations set/clear `became_empty_at` but do not delete inside the member move transaction;
+  - delete flow: generate before JSON snapshot; insert `admin_operation_logs` with `action=auto_cleanup_empty_transport_group`, object type, `group_id` / group code, reason, validation result, trigger mode (`auto` or `manual`), operator/system identity, and timestamp; only after the log insert succeeds delete from `transport_groups`; then verify no orphan references remain;
+  - audit preservation rule: deleting an empty group must never delete `order_change_logs` or existing `admin_operation_logs`; if `order_change_logs` stores `old_group_id`, `new_group_id`, or group code, those values remain as historical audit text. If a strong foreign key from audit logs to `transport_groups` ever prevents deletion, do not cascade-delete audit rows; skip deletion or close/archive the group and record the reason;
+  - skip flow: if any current-reference/protection/foreign-key check fails, do not delete; return/log skip reason in dry-run output, and for scheduled jobs optionally record aggregate skip metrics rather than noisy per-row audit logs;
+  - local test plan: create local fake groups covering true orphan, member present, direct request reference, valid order number, active/published/grouped order reference, historical `order_change_logs` only, historical `admin_operation_logs` only, protected/manual hold, new empty under 10 minutes, and empty over 10 minutes; verify only true orphan over 10 minutes deletes, historical audit-only groups can delete while audit rows remain, and all current-reference/protected cases skip with reasons;
+  - production rollout plan: first deploy dry-run only, run production dry-run and review candidate report; then enable manual-confirm cleanup for reviewed whitelist; only after repeated clean dry-runs enable scheduled auto-delete with a low per-run limit and alertable logs;
+  - production deletion must never run from frontend-only filtering or CSS hiding; data lifecycle rules must live in backend/database-aware helpers and admin-only operations.
+
+- Recorded the transport group empty/dirty-data governance rule and cleanup audit plan:
+  - default admin views may hide 0-member empty groups to reduce operator noise, but this must be a default filter only, not a data-quality workaround;
+  - every hidden group must remain discoverable through an explicit admin filter such as `空组/异常数据`, including 0-member, no-member-row, stale status, orphaned, and suspected test groups;
+  - admin list/API behavior must distinguish visibility from cleanup: CSS-only or frontend-only hiding is not an acceptable fix for dirty production data;
+  - clearly identified test garbage can be deleted only through a guarded cleanup flow with a candidate list, secondary validation, admin confirmation, before snapshot, and audit log;
+  - uncertain or possibly historical-business data must not be deleted directly; it should be closed, cancelled, archived, or queued for manual review;
+  - production deletion must always be preceded by a generated candidate report and explicit human approval;
+  - every production delete must write `admin_operation_logs` with object type, `group_id` / `order_no`, deletion reason, before snapshot, operator identity, and operation timestamp;
+  - public carpool board visibility rules remain separate from admin cleanup rules; public filtering must not be reused as admin data governance.
+- Proposed follow-up implementation plan for a future cleanup/audit phase, not P6:
+  - add/standardize backend query flags for `include_empty_groups`, `anomaly_filter`, and `status=all` so admin can intentionally view hidden empty/anomalous groups;
+  - add an admin-only dry-run endpoint or script that returns candidate groups with classification A/B/C and all validation fields, without writing data;
+  - add a confirm endpoint/script that accepts only a reviewed whitelist and repeats all validations in the same write flow before delete/archive;
+  - make delete and archive separate actions: delete only for confirmed test garbage, archive/close for uncertain records;
+  - include regression checks that default group management stays quiet while `空组/异常数据` can still find hidden records.
+
 - Executed production empty test transport group cleanup Step 1 after operator confirmation:
   - intended scope was A-list only: `GRP-260416-BY3H`, `GRP-260508-6E2D`, and `GRP-260523-U6LE`;
   - pre-delete validation showed all 3 A-list groups met the required conditions: `current_passenger_count=0`, no member rows, no valid order references, no payment logs, no `order_change_logs` references, explicit test-like text, and whitelist membership;
