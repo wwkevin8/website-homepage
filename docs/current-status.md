@@ -8,9 +8,31 @@
 ## Last Updated Task
 
 - Date: 2026-05-24
-- Scope: Production transport group list route hotfix and final verification
+- Scope: Production transport group empty/test data cleanup audit
 
 ## Latest Completed Work
+
+- Executed production empty test transport group cleanup Step 1 after operator confirmation:
+  - intended scope was A-list only: `GRP-260416-BY3H`, `GRP-260508-6E2D`, and `GRP-260523-U6LE`;
+  - pre-delete validation showed all 3 A-list groups met the required conditions: `current_passenger_count=0`, no member rows, no valid order references, no payment logs, no `order_change_logs` references, explicit test-like text, and whitelist membership;
+  - `admin_operation_logs` rows were written for the 3 A-list groups with action `cleanup_test_empty_transport_group`, before snapshots, validation details, and delete metadata;
+  - the 3 A-list groups were deleted from `transport_groups`;
+  - post-check confirmed those 3 group codes no longer exist and the 9 groups with members/current passengers still exist.
+- Cleanup Step 1 anomaly requiring operator review:
+  - later post-checks showed production `transport_groups` now contains only the 9 member-bearing groups;
+  - the previously audited B-list empty groups are also absent, despite no `cleanup_test_empty_transport_group` log rows for them;
+  - no further write operations were performed after this was detected;
+  - next step should be an explicit operator decision: accept removal of all empty orphan groups, investigate Supabase/Vercel/admin delete history further, or recover B-list groups from a backup/PITR if business requires them.
+
+- Completed a read-only production cleanup audit for transport groups after the admin list started showing 0-member historical groups:
+  - no production data was deleted, updated, archived, or inserted;
+  - production `transport_groups` still has 28 rows and `transport_group_members` has 10 rows;
+  - 19 groups are cleanup candidates because `current_passenger_count=0` and/or there are no `transport_group_members` rows;
+  - none of the 19 cleanup candidates currently has member rows, direct `transport_requests.group_id` references, or valid linked order numbers from the audited references;
+  - 3 candidates have explicit test-like indicators and can be considered safe-delete candidates after operator confirmation;
+  - 16 candidates have no members/references but not enough explicit test signals, so they should be closed/archived or reviewed rather than blindly deleted;
+  - 9 groups have members or current passengers and should not be cleaned in this pass;
+  - P6 dispatch workbench was not started.
 
 - Investigated the production `/admin/transport/groups` empty-state report without entering P6, changing production data, or adding new product features:
   - production data exists: `transport_groups` has 28 rows and `transport_group_members` has 10 rows;
