@@ -8,9 +8,50 @@
 ## Last Updated Task
 
 - Date: 2026-05-24
-- Scope: P4b final sealing check
+- Scope: P4 production post-deploy acceptance
 
 ## Latest Completed Work
+
+- Started production post-deploy lightweight acceptance for the P3/P4 transport workbench release and stopped at the first blocking step:
+  - target production URL: `https://ngn.best/admin/transport/requests`;
+  - browser was redirected to `https://ngn.best/admin-login.html?return_to=%2Fadmin%2Ftransport%2Frequests`;
+  - existing local bootstrap admin credentials were rejected by production with `账号或密码错误`;
+  - local signed admin-session fallback was also checked through `/api/admin/session` and production returned `authenticated: false`;
+  - screenshot recorded at `output/playwright/prod-postdeploy-admin-login-blocked.png`;
+  - no `PRODTEST-*` request/group/member test data was created during this blocked pass.
+- Production post-deploy acceptance status:
+  - login/session blocker was later cleared using an approved `test-admin` production admin account;
+  - production `/api/admin/login` returned 200, set `ngn_admin_session`, and `/api/admin/session` returned `authenticated: true`, `is_admin: true`, `role: operations_admin`;
+  - production `/admin/transport/requests` opened with 3 filter rows and no visible `还原` button in the loaded workbench page;
+  - a production post-deploy mutation pass was started with `PRODTEST-18813764-*` and stopped during the inline-save setup because the automation locator did not find the visible table row within 15 seconds;
+  - failure screenshot: `output/playwright/prod-postdeploy-failure-18813764.png`;
+  - the temporary `PRODTEST-18813764-SAVE` request was cleaned immediately; follow-up read-only counts confirmed `PRODTEST-*` requests = 0, `transport_groups` = 28, and `transport_group_members` = 10;
+  - this was confirmed as an automation locator issue rather than a business failure; the follow-up pass avoided `tbody tr hasText` and instead used order-number filtering plus input-value/first-row checks.
+- Completed the P4 production post-deploy lightweight acceptance with `PRODTEST-19184303-*`:
+  - inline save passed: created `PRODTEST-19184303-SAVE` (`PU260524-0095`), edited客服备注 to `production save test 19184303`, saved back to `已保存`, refreshed, and confirmed the note persisted;
+  - single supplement passed: created `PRODTEST-19184303-SINGLE`, confirmed `source = admin_manual`, `offline_recorded = true`, no request membership, no new `transport_groups` / `transport_group_members`, and no public board/groups exposure;
+  - batch supplement passed: paste preview showed the `PRODTEST-19184303-BATCH-*` rows and did not write the database, import created 2 request-only rows with import batch `TMI-20260524104026-CH5AFN`, `source = admin_manual`, `offline_recorded = true`, and no group/member rows;
+  - search/filter/export passed: keyword `PRODTEST`, `source = admin_manual`, and `offline_recorded = true` found the 4 test rows; current-filter export contained them; selected-id export contained the selected row even with a conflicting search filter;
+  - public isolation passed: `PRODTEST-*` admin manual rows did not appear in public board or public groups, while production still had normal `public_form` rows available;
+  - cleanup passed: removed 4 `PRODTEST-19184303-*` requests, removed 0 memberships, confirmed remaining `PRODTEST-*` requests = 0, `transport_groups` = 28, and `transport_group_members` = 10.
+- P4 production acceptance is complete for the P3/P4 scope; no production redeploy, P4c, P5, database structure change, or business-code change was made during this acceptance pass.
+
+- Deployed the accepted P3/P4 transport request workspace and manual supplement release to Vercel Production:
+  - production deployment command used: `npm run deploy:prod`;
+  - Vercel production deployment URL: `https://webside-mu100mmdk-wwkevin8s-projects.vercel.app`;
+  - Vercel production deployment id: `dpl_7NtA4ZuRT8X73V9S2hKQ6ErKMayL`;
+  - Vercel ready state: `READY`;
+  - production aliases assigned: `https://ngn.best`, `https://www.ngn.best`, `https://webside-chi.vercel.app`, `https://webside-wwkevin8s-projects.vercel.app`, and `https://webside-wwkevin8-wwkevin8s-projects.vercel.app`;
+  - deployed GitHub commit: `84a375faab2dd3f3a8b64ad1e340d5e574498d74` on `codex/membership-v1`;
+  - deployment target: `production`;
+  - Vercel metadata commit message: `feat(admin): make batch transport supplements request-only`.
+- Scope intentionally unchanged during production deployment:
+  - did not enter P4c;
+  - did not expand the existing adjust-time dialog into airport/terminal/flight-number change or repricing;
+  - did not change database structure, supplement logic, public-board admin_manual isolation logic, `adjust_flight_time`, or `transfer_existing_group`.
+- Required post-production acceptance remains:
+  - open `/admin/transport/requests` on production and verify the three-row filter layout, inline save, single manual supplement, batch manual supplement, search/filter/export, and `admin_manual` public-board/public-groups isolation;
+  - create only temporary `P4FINAL-PROD-*` records if needed and clean all test requests plus any unexpected group/member rows immediately after verification.
 
 - Completed P4b final sealing check without committing or deploying:
   - `git status --short` / `git diff --name-status` show only P4b batch manual supplement files, template/docs/status files, `PLAN.md`, and regenerated admin bundle files;
