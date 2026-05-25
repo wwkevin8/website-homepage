@@ -7,10 +7,107 @@
 
 ## Last Updated Task
 
-- Date: 2026-05-24
-- Scope: P6B-A local transport group dispatch list filters, export, and driver summary
+- Date: 2026-05-25
+- Scope: P6B-B1 group batch payment action planning/implementation
 
 ## Latest Completed Work
+
+- Adjusted the P6B-B1 group-level batch mark-paid action to be detail-page only:
+  - transport group list row actions now stay read-only/low-risk with only `查看详情` and `复制司机摘要`; list rows no longer expose `批量标记付款`, disabled `已全部付款`, or any payment write operation;
+  - transport group detail `费用与付款` keeps the current-group-only payment entry as `本组收款完成`, and shows disabled `本组已全部付款` when no unpaid member orders remain;
+  - the detail confirmation modal now uses customer-service copy: `确认本组收款完成`, target unpaid order count, processed member/order/amount list, already-paid skip notice, LOCAL TEST MODE mock-email notice, and `确认标记已付款`;
+  - batch execution processes only the current group and only unpaid member orders, skips `fully_paid` orders, does not bulk-cancel payment, and does not modify prices, passenger counts, member relationships, airport/terminal/flight/date/time fields, group status, or frontend visibility;
+  - each successful order update reuses the existing safe-field mark-paid flow, writes `admin_operation_logs`, and now triggers the same payment-confirmation email path as single mark-paid; LOCAL TEST MODE returns `local_mock` instead of sending real email;
+  - operation logs carry batch metadata so the detail page can show a readable Chinese batch-payment audit entry, while individual order payment changes remain visible;
+  - local browser-source verification executed the batch action once on `GRP-P6LOCAL-FULL`, which updated its local test member orders to paid and produced the expected `LOCAL TEST MODE` mock-email feedback/logs;
+  - no SQL/schema/config change, migration, build, deploy, production access, cross-group payment, current-filter payment, all-list payment, or next-stage work occurred.
+
+- Refreshed the local generated admin bundle for the P6B-B1 batch-payment UI:
+  - `http://127.0.0.1:3000/admin/transport/groups` now serves `admin/assets/index-BykUa2Rt.js` and `admin/assets/index-D9NC8lrO.css`;
+  - hotfixed the current local generated JS without running a new build and added a local cache-busting query to `admin/index.html` so the served `3000` admin page immediately removes list-page payment write actions and shows the detail-only `本组收款完成` confirmation copy;
+  - restarted the local `3000` helper server after the generated-bundle hotfix;
+  - verified the served list page no longer contains `批量标记付款`, still shows `查看详情` and `复制司机摘要`, and keeps `派单准备度` visible;
+  - verified `/api/admin/session` still reports `LOCAL TEST MODE`, `is_local_test=true`, and `is_production=false`;
+  - no build, deploy, migration, SQL/schema/config change, production access, commit, or next-stage work occurred.
+
+- Adjusted P6B-B1 local test internal-note copy:
+  - updated the LOCAL TEST database note for `GRP-P6LOCAL-PAYMIX` to `P6 本地测试：该组包含已付款/未付款、已线下记录/未记录的混合状态，用于验收付款与记录状态展示。`;
+  - updated the detail-page local pollution fallback text to the same Chinese note so future local cleanup does not reintroduce English copy;
+  - searched the source tree for a P6 seed/reseed script containing the old English note; none was found outside generated admin assets and current-status history;
+  - no business logic, API, SQL/schema/config, migration, build, deploy, production access, member relationship, or itinerary/core order-field behavior was changed.
+
+- Adjusted the P6B-B1 group detail dispatch-settings UI:
+  - replaced the large notes textarea in the highlighted dispatch-settings area with a read-only `司机派单摘要` preview rendered from the current group and member data;
+  - moved `一键复制司机摘要` into the summary preview header; copy remains clipboard-only and does not write notes or trigger saving;
+  - kept editable notes as a separate compact `内部备注` textarea that saves only manual group/driver/dispatch notes;
+  - lightened operation-log row styling so audit entries read as secondary audit text rather than main content headings;
+  - refreshed the local generated admin bundle and restarted the local `3000` helper server for browser verification after the UI source update;
+  - no API, SQL/schema/config change, migration, Vercel deploy, production access, member relationship change, itinerary/core order-field change, or next-stage work occurred.
+
+- Adjusted P6B-B1 detail-page notes and operation-log presentation:
+  - hardened the note sanitizer so legacy embedded driver-summary blocks recover the real group note and do not show driver summaries, passenger details, dispatch-readiness text, or corrupted `P6LOCAL / x /` fragments in the notes textarea;
+  - cleaned the local test `GRP-P6LOCAL-PAYMIX` group note in the LOCAL TEST database only;
+  - moved operation logs out of the payment panel into a final independent `操作记录` card at the bottom of the group detail page;
+  - changed operation-log display to concise customer-service-readable Chinese sentences while keeping time, admin, and order/group target context;
+  - kept payment controls, dispatch-readiness display, member detail actions, CSV/list behavior, and P6A/P6B-A flows intact;
+  - refreshed the local generated admin bundle and restarted the local `3000` helper server for browser verification after the UI source update;
+  - no SQL/schema/config change, migration, Vercel deploy, production access, member relationship change, itinerary/core order-field change, or next-stage work occurred.
+
+- Adjusted P6B-B1 detail-page payment and audit controls in source only:
+  - protected `一键复制司机摘要` so it copies only to clipboard/fallback copy, restores the active note field after fallback selection, and does not modify `notes` or any textarea;
+  - kept dispatch-settings save scoped to capacity, frontend visibility, and the cleaned manual note text;
+  - added `取消标记` for already paid members; it writes `payment_collection_status=unpaid` through the existing safe-field update path, requires confirmation, and does not trigger the payment-confirmation email path;
+  - kept `标记已付款` on the existing safe-field update path (`payment_collection_status=fully_paid`), so already paid members do not show a duplicate mark-paid action;
+  - extended the existing transport-group detail API response with existing `admin_operation_logs` for the group and member transport requests, without adding SQL/schema or migrations;
+  - displayed the latest 10 operation logs in the group detail payment section, including time, admin, action, target, and changed-field summary;
+  - verification used source-level SFC/template checks, `node -c` for the touched API route, local `3000` session check (`LOCAL TEST MODE`, `is_production=false`), API response check confirming `operation_logs` is returned, and Vite dev-source browser verification confirming the copy action leaves the note textarea unchanged and shows the new buttons/log section;
+  - no static admin build, Vercel deploy, SQL/schema/config change, migration, production access, member relationship change, itinerary/core order-field change, or next-stage work occurred.
+
+- Adjusted the P6B-B1 group detail page to avoid duplicate driver summaries:
+  - the dispatch settings notes textarea now contains only group/driver/dispatch notes after stripping any stored driver-summary override block or older inline driver-summary text;
+  - saving dispatch settings writes only the note textarea content and no longer merges a generated driver summary into `transport_groups.notes`;
+  - added a compact `一键复制司机摘要` button in the dispatch settings header with clipboard fallback and removed the duplicate bottom driver-summary textarea section;
+  - removed the long helper sentence under `调度设置` to keep the operator UI compact;
+  - refreshed the local generated admin bundle after user approval (`npm run build:admin-vue`) and restarted the local `3000` helper server, so `http://127.0.0.1:3000/admin/transport/groups` now serves `admin/assets/index-BXxbmJWC.js`;
+  - browser verification on `3000` confirmed one notes textarea, no bottom driver-summary preview, no long helper sentence, one `一键复制司机摘要` button, dispatch readiness still visible, copy feedback works, and console checks had no errors;
+  - local session verification still reports `LOCAL TEST MODE`, `is_local_test=true`, and `is_production=false`;
+  - no API route, SQL/schema, config, migration, deployment, production access, formal dispatch status, or member relationship behavior was changed.
+
+- Adjusted P6B-B1 source after manual UI review:
+  - transport group list member cells now show only member/order names plus a count; phone, WeChat, and full contact details remain available only in detail, driver summary, and CSV export;
+  - dispatch-readiness no longer renders a generic `有风险` badge, so risk groups show concrete inline risk text instead of duplicated badge-plus-risk messaging; risk filters and CSV risk fields remain intact;
+  - the group detail source keeps the P6A polished workbench structure: overview cards, compact dispatch risk/readiness, compact dispatch settings, restored fees/payment section with per-member payment state/action, member detail table, and bottom driver dispatch summary;
+  - no API route, SQL/schema, config, migration, deployment, production access, driver notification, formal dispatch status, or member relationship behavior was changed;
+  - this source follow-up has now been refreshed into the local generated `admin/` bundle after explicit user approval.
+
+- Refreshed the local generated admin bundle after the P6B-B1 UI cleanup:
+  - ran the local admin Vue build only (`npm run build:admin-vue`) after user approval so `http://127.0.0.1:3000/admin/transport/groups` serves the latest source changes;
+  - the generated admin bundle now includes the fixed UTF-8 Chinese detail-page text, the removed standalone risk column, compact inline risk summaries under dispatch readiness, and the existing dispatch-readiness/risk filters and CSV fields;
+  - local session verification still reports `LOCAL TEST MODE`, `is_local_test=true`, and `is_production=false`;
+  - no Vercel deployment, SQL schema change, migration, API route change, config change, email behavior change, production data access, or production deployment occurred.
+
+- Adjusted P6B-B1 source after UI review:
+  - fixed literal question-mark mojibake in the Vue transport group detail source and restored UTF-8 Chinese labels, notices, member table text, and driver dispatch-summary text;
+  - removed the standalone transport-group list risk column in source and moved risk summaries under the dispatch-readiness badge area as compact red inline text while keeping risk filtering and CSV risk export fields intact;
+  - kept P6B-B1 read-only: no API route, SQL/schema, config, migration, deployment, production access, driver notification, formal dispatch status, or member relationship behavior was changed;
+  - this cleanup has now been refreshed into the local generated `admin/` bundle after explicit user approval.
+
+- Refreshed the local generated admin bundle for P6B-B1:
+  - ran the local admin Vue build only (`npm run build:admin-vue`) after user approval so `http://127.0.0.1:3000/admin/transport/groups` serves the latest P6B-B1 generated admin assets;
+  - no Vercel build, deployment, SQL schema change, migration, API route change, config change, email behavior, production data access, or production deployment occurred;
+  - the local generated admin now shows the P6B-B1 dispatch-readiness column and badges on the transport group list, the dispatch-readiness advanced filter, and the dispatch-readiness display on group detail;
+  - local browser verification on port `3000` confirmed default group-status filtering shows 5 active/current P6 groups, switching group status to all shows all 6 P6 local test groups, dispatch-readiness badges render, the advanced dispatch-readiness filter is present, the detail page summary includes readiness, no delete button is visible on the checked list/detail pages, and console checks showed no errors.
+
+- Completed P6B-B1 in local/source only:
+  - no production data, SQL schema, migrations, build, deployment, API route, config, email behavior, public pages, transport group status writes, frontend visibility automation, or transport member relationship operations were touched;
+  - admin source changes are limited to the Vue transport group list/filter/detail presentation layer and shared admin CSS;
+  - `/admin/transport/groups` now derives read-only dispatch readiness from existing API response data: pending contact, incomplete payment, pending offline record, risk present, dispatch ready, and completed record;
+  - dispatch readiness is displayed as badges in the group list without replacing existing group status, frontend visibility, or payment/offline status; risk reminders are shown as compact inline text in the readiness area instead of a standalone column;
+  - the advanced group filter panel now includes a dispatch-readiness filter for all, pending contact, incomplete payment, pending offline record, risk present, dispatch ready, and completed record; filtering is client-side only against the already loaded API response;
+  - current-filter CSV export now includes a `派单准备度` field, and list/detail driver dispatch summaries include a `派单准备度` line;
+  - the group detail page now shows the same read-only dispatch readiness badges near the dispatch risk area and does not add formal state-flow buttons or driver information fields;
+  - formal `dispatch_status`, `dispatch_note`, `driver_name`, `driver_phone`, `driver_car_info`, notification timestamps, and member passenger-confirmation fields remain deferred to P6B-B2 and require a future migration;
+  - local verification confirmed `LOCAL TEST MODE`, `is_production=false`, all 6 P6 local test groups are still present when the group-status filter is cleared, readiness badges render on the source Vue list/detail pages, readiness filters work, driver summary copy includes readiness, SFC parse/template checks pass, console has no errors in the checked source pages, and no build/deploy/migration/production access occurred.
 
 - Completed P6B-A in local/source only:
   - no production data, SQL schema, migrations, build, deployment, email behavior, public pages, or transport member relationship operations were touched;
@@ -2597,6 +2694,9 @@
 
 ## Recommended Next Steps
 
+- P6B-B2 should be treated as the first formal dispatch-status schema phase: add structured group-level dispatch fields and any group-member passenger-confirmation fields through an explicit migration, API validation, operation logging, and separate acceptance plan.
+- P6B-B1 batch mark-paid is now detail-page-only in source and the served local admin bundle; before commit, do one final visual pass on the detail confirmation modal and operation-log wording.
+- Keep P6B-B1 readiness as derived/read-only until P6B-B2 exists; do not persist readiness badges into `transport_groups.status`, `visible_on_frontend`, or notes.
 - Monitor production P5 for the first real customer-service usage: check `order_change_logs`, `admin_operation_logs`, request updates, and group membership changes after the first confirmed real order change.
 - Observe production P5 after real customer-service usage for: operator feedback on the order-change drawer, `change-confirm` error logs, and whether transport group refresh remains stable after member move-out/new-single/transfer actions.
 - For future release/smoke runs, prefer an approved production test order or a documented synthetic-order cleanup routine; avoid using real student orders for destructive confirmation tests.

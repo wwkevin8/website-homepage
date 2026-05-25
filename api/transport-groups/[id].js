@@ -60,6 +60,57 @@ function buildChangedFields(existing = {}, payload = {}) {
     }));
 }
 
+function isUuid(value) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value || ""));
+}
+
+async function fetchGroupOperationLogs(supabase, group, members = []) {
+  const requestIds = Array.from(new Set(
+    (members || [])
+      .map(member => member.transport_requests?.id || member.request_id)
+      .filter(Boolean)
+  ));
+  const logSelect = "id, action, before_data, after_data, metadata, created_at, target_type, target_id, admin_user_id, admin_user:admin_users(id, name, username, email)";
+  const groupTargetId = [group.id, group.group_ref].find(isUuid);
+  let groupLogs = [];
+
+  if (groupTargetId) {
+    const groupLogsResult = await supabase
+      .from("admin_operation_logs")
+      .select(logSelect)
+      .eq("target_type", "transport_group")
+      .eq("target_id", groupTargetId)
+      .order("created_at", { ascending: false })
+      .limit(50);
+
+    if (groupLogsResult.error) {
+      throw groupLogsResult.error;
+    }
+    groupLogs = groupLogsResult.data || [];
+  }
+
+  let requestLogs = [];
+  if (requestIds.length) {
+    const requestLogsResult = await supabase
+      .from("admin_operation_logs")
+      .select(logSelect)
+      .eq("target_type", "transport_request")
+      .in("target_id", requestIds)
+      .order("created_at", { ascending: false })
+      .limit(100);
+
+    if (requestLogsResult.error) {
+      throw requestLogsResult.error;
+    }
+    requestLogs = requestLogsResult.data || [];
+  }
+
+  return [
+    ...groupLogs,
+    ...requestLogs
+  ].sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
+}
+
 function normalizeMembers(members) {
   return (members || []).map(member => {
     const request = member.transport_requests || {};
@@ -301,6 +352,7 @@ module.exports = async function handler(req, res) {
       }
 
       const viewModel = computeGroupViewModel(group, members || []);
+      const operationLogs = await fetchGroupOperationLogs(supabase, group, members || []);
 
       ok(res, {
         ...viewModel.group,
@@ -311,7 +363,8 @@ module.exports = async function handler(req, res) {
         system_judgement: viewModel.system_judgement,
         payment_summary: viewModel.payment_summary,
         luggage_summary: viewModel.luggage_summary,
-        dispatch_risks: viewModel.dispatch_risks
+        dispatch_risks: viewModel.dispatch_risks,
+        operation_logs: operationLogs
       });
       return;
     }

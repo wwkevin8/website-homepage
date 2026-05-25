@@ -2356,6 +2356,11 @@ textarea {
   gap: 10px;
 }
 
+.group-overview-cards--detail {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-top: 12px;
+}
+
 .group-overview-card {
   display: grid;
   align-content: start;
@@ -2379,6 +2384,11 @@ textarea {
   color: #0f172a;
   font-weight: 750;
   line-height: 1.35;
+}
+
+.group-overview-card--highlight {
+  border-color: #bfdbfe;
+  background: #eff6ff;
 }
 
 .group-overview-meta {
@@ -2467,7 +2477,7 @@ textarea {
 
 .transport-dispatch-summary-editor {
   width: 100%;
-  min-height: 380px;
+  min-height: 260px;
   resize: vertical;
   padding: 18px;
   border: 1px solid #dbe5f0;
@@ -2485,6 +2495,34 @@ textarea {
   gap: 8px;
 }
 
+.dispatch-readiness-panel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px 24px;
+}
+
+.dispatch-readiness-list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.dispatch-readiness-list--detail {
+  margin-bottom: 10px;
+}
+
+.dispatch-risk-inline {
+  flex-basis: 100%;
+  margin-top: 2px;
+  color: #b91c1c;
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.4;
+}
+
 .dispatch-risk-chip {
   display: inline-flex;
   align-items: center;
@@ -2500,25 +2538,27 @@ textarea {
 
 .dispatch-control-grid {
   display: grid;
-  grid-template-columns: minmax(180px, 240px) minmax(0, 1fr);
+  grid-template-columns: minmax(160px, 220px) minmax(160px, 220px);
   gap: 12px;
   align-items: start;
 }
 
-.dispatch-control-grid label {
+.dispatch-control-grid label,
+.dispatch-note-field {
   display: grid;
   gap: 6px;
   min-width: 0;
 }
 
-.dispatch-control-grid label span {
+.dispatch-control-grid label span,
+.dispatch-note-field span {
   color: #64748b;
   font-size: 13px;
   font-weight: 650;
 }
 
 .dispatch-control-grid select,
-.dispatch-control-grid textarea {
+.dispatch-note-field textarea {
   width: 100%;
   min-height: 36px;
   padding: 8px 10px;
@@ -2528,13 +2568,43 @@ textarea {
   color: #0f172a;
 }
 
-.dispatch-control-grid textarea {
+.dispatch-note-field {
+  margin-top: 12px;
+}
+
+.dispatch-note-field textarea {
+  min-height: 72px;
+  max-height: 132px;
   resize: vertical;
   line-height: 1.6;
 }
 
-.dispatch-control-grid__wide {
-  grid-column: span 1;
+.dispatch-summary-preview {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.dispatch-summary-preview h4 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 15px;
+}
+
+.dispatch-summary-preview pre {
+  max-height: 260px;
+  margin: 0;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  padding: 12px;
+  border: 1px solid #dbe5f0;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #334155;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.6;
 }
 
 .group-payment-cards {
@@ -2786,6 +2856,16 @@ textarea {
   margin: 0;
 }
 
+@media (max-width: 1200px) {
+  .group-overview-cards--detail {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dispatch-control-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 .transport-current-group-hint {
   color: #166534;
   font-size: 15px;
@@ -3008,11 +3088,11 @@ textarea {
 
 .transport-operation-log-list li {
   display: grid;
-  gap: 8px;
-  padding: 14px;
+  gap: 6px;
+  padding: 12px;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
-  background: #f8fafc;
+  background: #fbfdff;
 }
 
 .transport-operation-log-list li > div {
@@ -3023,7 +3103,24 @@ textarea {
 }
 
 .transport-operation-log-list strong {
+  color: #475569;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.55;
+}
+
+.transport-operation-log-block {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.transport-operation-log-block h4 {
+  margin: 0;
   color: #0f172a;
+  font-size: 15px;
 }
 
 .transport-empty-box {
@@ -3954,6 +4051,65 @@ textarea {
   display: inline-flex;
   gap: 6px;
   align-items: center;
+}
+
+.transport-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(15, 23, 42, 0.32);
+}
+
+.transport-confirm-modal {
+  width: min(640px, 100%);
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid #dbe3ef;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.18);
+}
+
+.transport-confirm-list {
+  max-height: 240px;
+  overflow: auto;
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.transport-confirm-list li {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1.4fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 10px;
+  border: 1px solid #edf2f7;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.transport-confirm-list span {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.transport-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.table-action-button--primary {
+  border-color: #2563eb;
+  background: #2563eb;
+  color: #ffffff;
 }
 
 @media (max-width: 900px) {

@@ -114,6 +114,18 @@ const airportOptions = [
         </select>
       </label>
       <label class="field">
+        <span>派单准备度</span>
+        <select v-model="model.dispatchReadiness">
+          <option value="">全部</option>
+          <option value="contact_pending">待联系</option>
+          <option value="payment_incomplete">付款未齐</option>
+          <option value="offline_pending">未线下记录</option>
+          <option value="has_risk">有风险</option>
+          <option value="dispatch_ready">可派单</option>
+          <option value="completed_recorded">已完成记录</option>
+        </select>
+      </label>
+      <label class="field">
         <span>开始日期</span>
         <input v-model="model.dateFrom" type="date" />
       </label>

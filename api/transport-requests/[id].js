@@ -482,6 +482,14 @@ module.exports = async function handler(req, res) {
         payload.last_operated_by = resolveAdminDisplayName(adminUser);
         payload.last_operated_at = new Date().toISOString();
         const changedFields = buildSafeChangedFields(existing, payload);
+        const wasPaid = String(existing.payment_collection_status || "").trim().toLowerCase() === "fully_paid";
+        const isPaid = String(payload.payment_collection_status || existing.payment_collection_status || "").trim().toLowerCase() === "fully_paid";
+        const batchPaymentMetadata = body.batch_payment_group_id ? {
+          batch_payment_action: body.batch_payment_action || "mark_group_unpaid_paid",
+          batch_payment_group_id: body.batch_payment_group_id,
+          batch_payment_group_size: Number(body.batch_payment_group_size || 0) || null,
+          batch_payment_batch_id: body.batch_payment_batch_id || null
+        } : {};
 
         const { error } = await supabase
           .from("transport_requests")
@@ -510,7 +518,8 @@ module.exports = async function handler(req, res) {
               metadata: {
                 order_no: existing.order_no,
                 admin_name: resolveAdminDisplayName(adminUser),
-                changed_fields: changedFields
+                changed_fields: changedFields,
+                ...batchPaymentMetadata
               }
             });
           } catch (logError) {
@@ -521,7 +530,24 @@ module.exports = async function handler(req, res) {
           }
         }
 
-        ok(res, await getRequestDetailWithLogs(supabase, id));
+        const updatedRequest = await getRequestDetailWithLogs(supabase, id);
+        let paymentEmail = null;
+        if (!wasPaid && isPaid) {
+          try {
+            const { sendTransportPaymentConfirmationEmail } = require("../_lib/transport-payment-email");
+            paymentEmail = await sendTransportPaymentConfirmationEmail(supabase, updatedRequest);
+          } catch (emailError) {
+            paymentEmail = {
+              skipped: false,
+              error: emailError && emailError.message ? emailError.message : "Failed to send payment confirmation email"
+            };
+          }
+        }
+
+        ok(res, {
+          ...updatedRequest,
+          payment_email: paymentEmail
+        });
         return;
       }
 

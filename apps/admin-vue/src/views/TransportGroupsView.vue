@@ -17,9 +17,9 @@ const columns = [
   { key: "capacity", label: "人数 / 行李", width: "9%" },
   { key: "price", label: "人均 / 总价", width: "10%" },
   { key: "payment_status", label: "付款 / 记录", width: "12%" },
-  { key: "visibility", label: "前台 / 状态", width: "9%" },
-  { key: "risks", label: "风险", width: "11%" },
-  { key: "actions", label: "操作", width: "126px", className: "is-actions", sticky: "end" }
+  { key: "dispatch_readiness", label: "派单准备度", width: "14%" },
+  { key: "visibility", label: "前台 / 状态", width: "10%" },
+  { key: "actions", label: "操作", width: "150px", className: "is-actions", sticky: "end" }
 ];
 
 const defaultFilters = {
@@ -34,6 +34,7 @@ const defaultFilters = {
   dateTo: "",
   paymentStatus: "",
   offlineStatus: "",
+  dispatchReadiness: "",
   pageSize: 10
 };
 
@@ -161,6 +162,10 @@ function isPaidStatus(value) {
   return ["fully_paid", "paid", "waived"].includes(String(value || "").trim().toLowerCase());
 }
 
+function normalizedPaymentStatus(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
 function memberRows(group) {
   const orderNos = Array.isArray(group.source_order_nos) ? group.source_order_nos : [];
   const studentNames = Array.isArray(group.student_names) ? group.student_names : [];
@@ -170,6 +175,7 @@ function memberRows(group) {
     const detail = memberDetails[index] || {};
     const paymentStatus = detail.payment_collection_status || detail.manual_payment_status || "";
     return {
+      id: detail.id || detail.request_id || detail.transport_request_id || "",
       orderNo: detail.order_no || orderNos[index] || "--",
       studentName: detail.student_name || studentNames[index] || "--",
       terminal: detail.terminal || group.terminal || "",
@@ -185,6 +191,12 @@ function memberRows(group) {
       offlineRecorded: Boolean(detail.offline_recorded),
       contactStatus: detail.contact_status || "",
       paymentStatus,
+      amount: detail.confirmed_price_gbp
+        ?? detail.manual_price_gbp
+        ?? detail.deposit_amount_gbp
+        ?? group.current_average_price_gbp
+        ?? group.payment_summary?.average_price_gbp
+        ?? "",
       paid: isPaidStatus(paymentStatus),
       note: detail.admin_note || detail.notes || ""
     };
@@ -259,6 +271,66 @@ function riskLabel(group) {
   return risks.length ? `${risks.length} 项提醒` : "无明显风险";
 }
 
+function riskDisplayLabel(risk) {
+  const code = String(risk?.code || "").trim();
+  const labels = {
+    cross_terminal: "不同航站楼",
+    different_terminal: "不同航站楼",
+    different_terminals: "不同航站楼",
+    missing_flight_no: "缺航班号",
+    missing_flight_number: "缺航班号",
+    missing_contact: "缺联系方式",
+    full_visible: "满员仍前台显示",
+    full_public_visible: "满员仍前台显示",
+    empty_group: "空组风险"
+  };
+  return labels[code] || risk?.label || code || "调度风险";
+}
+
+function riskSummary(group) {
+  return riskItems(group).map(riskDisplayLabel).join(" / ");
+}
+
+function readinessState(group) {
+  const rows = memberRows(group);
+  const risks = riskItems(group);
+  const hasMembers = rows.length > 0;
+  const hasUncontacted = rows.some(row => row.contactStatus !== "contacted");
+  const hasUnpaid = rows.some(row => normalizedPaymentStatus(row.paymentStatus) !== "fully_paid");
+  const hasUnrecorded = rows.some(row => !row.offlineRecorded);
+  const hasRisk = risks.length > 0;
+  const hasMissingDispatchInfo = rows.some(row => {
+    const hasContact = Boolean(row.phone || row.wechat);
+    return !hasContact || !row.flightNo || !row.address || !normalizedPaymentStatus(row.paymentStatus);
+  });
+  const dispatchReady = hasMembers && !hasRisk && !hasUncontacted && !hasMissingDispatchInfo;
+  const completedRecorded = hasMembers && rows.every(row => row.offlineRecorded);
+  return {
+    contact_pending: hasUncontacted,
+    payment_incomplete: hasUnpaid,
+    offline_pending: hasUnrecorded,
+    has_risk: hasRisk,
+    dispatch_ready: dispatchReady,
+    completed_recorded: completedRecorded
+  };
+}
+
+function readinessItems(group) {
+  const state = readinessState(group);
+  const items = [];
+  if (state.contact_pending) items.push({ key: "contact_pending", label: "待联系", tone: "warning" });
+  if (state.payment_incomplete) items.push({ key: "payment_incomplete", label: "付款未齐", tone: "warning" });
+  if (state.offline_pending) items.push({ key: "offline_pending", label: "未线下记录", tone: "neutral" });
+  if (state.dispatch_ready) items.push({ key: "dispatch_ready", label: "可派单", tone: "success" });
+  if (state.completed_recorded) items.push({ key: "completed_recorded", label: "已完成记录", tone: "success" });
+  if (items.length) return items;
+  return memberRows(group).length ? [{ key: "manual_review", label: "待人工判断", tone: "neutral" }] : [{ key: "no_members", label: "暂无成员", tone: "neutral" }];
+}
+
+function readinessText(group) {
+  return readinessItems(group).map(item => item.label).join(" / ");
+}
+
 function offlineSummary(group) {
   const rows = memberRows(group);
   if (!rows.length) return "0/0 已记录";
@@ -331,6 +403,12 @@ function matchesOfflineFilter(group) {
   return true;
 }
 
+function matchesDispatchReadinessFilter(group) {
+  const selected = filters.dispatchReadiness;
+  if (!selected) return true;
+  return Boolean(readinessState(group)[selected]);
+}
+
 function matchesClientFilters(group) {
   const keyword = normalizeText(filters.keyword);
   if (keyword && !searchHaystack(group).includes(keyword)) return false;
@@ -343,6 +421,7 @@ function matchesClientFilters(group) {
   if (!matchesRiskFilter(group)) return false;
   if (!matchesPaymentFilter(group)) return false;
   if (!matchesOfflineFilter(group)) return false;
+  if (!matchesDispatchReadinessFilter(group)) return false;
   return true;
 }
 
@@ -432,6 +511,7 @@ function buildDispatchSummary(group) {
     `当前人数 / 容量: ${Number(group.current_passenger_count || 0)} / ${Number(group.max_passengers || 0)}`,
     `总行李数: ${totalLuggage(group)}`,
     `当前人均价 / 总价: ${formatMoney(group.current_average_price_gbp || group.payment_summary?.average_price_gbp)} / ${formatMoney(totalPrice(group))}`,
+    `派单准备度: ${readinessText(group)}`,
     "",
     "乘客信息:",
     memberLines || "暂无乘客",
@@ -466,6 +546,7 @@ function exportFilteredGroups() {
     "组状态",
     "前台显示",
     "风险提示",
+    "派单准备度",
     "成员姓名",
     "电话",
     "微信",
@@ -479,7 +560,7 @@ function exportFilteredGroups() {
   ];
   const rows = filteredGroups.value.flatMap(group => {
     const members = memberRows(group);
-    const groupRisks = riskItems(group).map(risk => risk.label).join(" / ") || "无明显风险";
+    const groupRisks = riskSummary(group) || "无明显风险";
     const groupBase = [
       group.group_id || group.id || "",
       serviceLabel(group.service_type),
@@ -493,7 +574,8 @@ function exportFilteredGroups() {
       formatMoney(totalPrice(group)),
       statusLabel(group.status),
       visibleLabel(group.visible_on_frontend),
-      groupRisks
+      groupRisks,
+      readinessText(group)
     ];
     if (!members.length) {
       return [[...groupBase, "", "", "", "", "", "", "", "", "", group.notes || ""]];
@@ -581,7 +663,7 @@ onMounted(() => {
             <strong v-for="member in memberRows(row)" :key="`${row.group_id || row.id}-${member.orderNo}-name`" class="cell-truncate">
               {{ member.studentName }}
             </strong>
-            <small>{{ memberRows(row).map(member => [member.phone, member.wechat].filter(Boolean).join(" / ")).filter(Boolean).join("；") || "无联系方式" }}</small>
+            <small>{{ memberRows(row).length ? `共 ${memberRows(row).length} 名成员` : "暂无成员" }}</small>
           </span>
         </template>
         <template #cell-capacity="{ row }">
@@ -602,16 +684,18 @@ onMounted(() => {
             <StatusBadge :tone="offlineSummary(row) === '全部已记录' ? 'success' : 'neutral'">{{ offlineSummary(row) }}</StatusBadge>
           </span>
         </template>
+        <template #cell-dispatch_readiness="{ row }">
+          <span class="dispatch-readiness-list">
+            <StatusBadge v-for="item in readinessItems(row)" :key="`${row.group_id || row.id}-${item.key}`" :tone="item.tone">
+              {{ item.label }}
+            </StatusBadge>
+            <small v-if="riskItems(row).length" class="dispatch-risk-inline">风险：{{ riskSummary(row) }}</small>
+          </span>
+        </template>
         <template #cell-visibility="{ row }">
           <span class="cell-stack">
             <StatusBadge :tone="visibleTone(row.visible_on_frontend)">{{ visibleLabel(row.visible_on_frontend) }}</StatusBadge>
             <StatusBadge :tone="statusTone(row.status)">{{ statusLabel(row.status) }}</StatusBadge>
-          </span>
-        </template>
-        <template #cell-risks="{ row }">
-          <span class="cell-stack">
-            <StatusBadge :tone="riskTone(row)">{{ riskLabel(row) }}</StatusBadge>
-            <small v-for="risk in riskItems(row).slice(0, 3)" :key="`${row.group_id || row.id}-${risk.code}`">{{ risk.label }}</small>
           </span>
         </template>
         <template #cell-actions="{ row }">
