@@ -8,9 +8,21 @@
 ## Last Updated Task
 
 - Date: 2026-05-25
-- Scope: Restored route-breaking multi-member transport order changes so operators can choose either a replacement single-member group or a compatible target carpool group. No database, public-page, email, deployment, migration, or production data change.
+- Scope: Cleaned the admin transport request list row actions so the right-side operation area exposes the final three entry points: itinerary adjustment, operation log, and close order. No API, database, import, group-membership, payment, SQL, migration, production data, commit, or push action.
 
 ## Latest Completed Work
+
+- Cleaned the admin transport request row action area:
+  - `apps/admin-vue/src/views/TransportRequestsView.vue` now labels the itinerary entry as `调整行程`;
+  - the operation-log row button now says `操作记录` and opens the existing read-only operation-log drawer;
+  - the list row no longer exposes a separate request-detail entry from the transport request action area;
+  - the workbench row action area now keeps the three primary actions in order: `调整行程`, `操作记录`, `关闭订单`;
+  - the row save affordance is demoted to a small note-save link/status below the primary actions, so `已保存` is no longer presented as a peer operation button;
+  - `apps/admin-vue/src/styles.css` adds the minimal layout/style needed for the small note-save link/status.
+
+- Verification for the transport request row action cleanup:
+  - `npm --prefix apps/admin-vue run build` passed with only the existing Vite chunk-size warning;
+  - the generated admin bundle was refreshed to `admin/assets/index-BVfRgabj.js` and `admin/assets/index-DfE4uMCS.css`.
 
 - Restored target-group choice for route-breaking multi-member itinerary edits:
   - `apps/admin-vue/src/components/TransportOrderChangeDrawer.vue` now keeps the final group-handling selector visible when a changed order cannot remain in its current multi-member group;

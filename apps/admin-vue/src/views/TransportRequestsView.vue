@@ -7,10 +7,9 @@ import {
   createManualTransportRequest,
   deleteTransportRequest,
   exportTransportRequests,
-  fetchTimeAdjustCandidateGroups,
+  fetchTransportRequest,
   fetchTransportRequests,
   previewTransportManualImport,
-  adjustTransportRequestTime,
   updateTransportRequest,
   updateTransportRequestSafeFields
 } from "@/api/admin-api";
@@ -22,6 +21,7 @@ import ErrorState from "@/components/ErrorState.vue";
 import LoadingState from "@/components/LoadingState.vue";
 import Pagination from "@/components/Pagination.vue";
 import StatusBadge from "@/components/StatusBadge.vue";
+import TransportOrderChangeDrawer from "@/components/TransportOrderChangeDrawer.vue";
 import TransportRequestFilters from "@/components/TransportRequestFilters.vue";
 import importColumns from "../../../../shared/transport-manual-import-columns.json";
 
@@ -32,7 +32,6 @@ const columns = [
   { key: "wb_service_time", label: "时间段", width: "92px" },
   { key: "wb_student_name", label: "学生姓名", width: "140px" },
   { key: "wb_phone", label: "电话", width: "128px" },
-  { key: "wb_wechat", label: "微信", width: "128px" },
   { key: "wb_service_type", label: "服务类型", width: "86px" },
   { key: "wb_airport", label: "机场", width: "82px" },
   { key: "wb_terminal", label: "航站楼", width: "82px" },
@@ -43,7 +42,7 @@ const columns = [
   { key: "wb_group_status", label: "拼车状态/组", width: "138px" },
   { key: "wb_contact_status", label: "联系状态", width: "112px" },
   { key: "wb_payment_collection_status", label: "收款状态", width: "120px" },
-  { key: "wb_deposit_amount_gbp", label: "定金", width: "98px" },
+  { key: "wb_deposit_amount_gbp", label: "已收全款/定金", width: "128px" },
   { key: "wb_offline_recorded", label: "是否已记录", width: "104px" },
   { key: "wb_admin_note", label: "客服备注", width: "220px" },
   { key: "wb_last_operation", label: "最后操作", width: "132px" },
@@ -55,7 +54,6 @@ const legacyColumns = [
   { key: "created_at", label: "提交时间", width: "9%" },
   { key: "order_no", label: "订单编号", width: "10%" },
   { key: "student", label: "学生", width: "12%" },
-  { key: "wechat", label: "微信号", width: "9%" },
   { key: "service_type", label: "服务", width: "7%" },
   { key: "airport", label: "机场", width: "8%" },
   { key: "flight_no", label: "航班", width: "8%" },
@@ -75,6 +73,7 @@ const defaultFilters = {
   status: "active",
   contactStatus: "",
   paymentCollectionStatus: "",
+  groupStatus: "",
   offlineRecorded: "",
   lastOperatedBy: "",
   importBatchId: "",
@@ -120,19 +119,12 @@ const importStatusMessage = ref("");
 const workbenchDrafts = reactive({});
 const rowSavingIds = ref([]);
 const rowErrorMessages = reactive({});
-const timeAdjustTarget = ref(null);
-const timeAdjustSaving = ref(false);
-const timeAdjustError = ref("");
-const timeAdjustCandidateLoading = ref(false);
-const timeAdjustCandidateError = ref("");
-const timeAdjustCandidateGroups = ref([]);
-const timeAdjustForm = reactive({
-  flight_datetime: "",
-  preferred_time_start: "",
-  reason: "",
-  handling_method: "direct",
-  target_group_id: ""
-});
+const itineraryChangeTarget = ref(null);
+const itineraryChangeLoadingId = ref("");
+const operationLogOpen = ref(false);
+const operationLogTarget = ref(null);
+const operationLogLoadingId = ref("");
+const operationLogError = ref("");
 
 const IMPORT_COLUMNS = importColumns;
 const IMPORT_TEMPLATE_HEADERS = IMPORT_COLUMNS.map(column => column.label);
@@ -154,9 +146,43 @@ const REQUIRED_IMPORT_HEADERS = IMPORT_COLUMNS
   .filter(column => REQUIRED_IMPORT_KEYS.includes(column.key))
   .map(column => column.label);
 const IMPORT_TEMPLATE_NOTES = IMPORT_COLUMNS.map(column => column.note);
+const GROUP_IDENTIFIER_HELP = [
+  "拼车组标识留空：每一行都会自动创建一个新的单人拼车组，不代表整批订单进入同一个组。",
+  "多行填写相同内容（例如 新组A）：系统会创建一个新的拼车组，所有填写 新组A 的订单都会加入同一个拼车组。",
+  "填写已有 GRP 编号：系统会尝试加入该已有拼车组；如果编号不存在，预览阶段会标红，不允许导入。"
+];
+const TEMP_GROUP_EXAMPLE_ONE = {
+  student_name: "王五",
+  phone: "+44 7100 011111",
+  wechat: "wechat_wang",
+  service_type: "接机",
+  airport_code: "LHR",
+  terminal: "T2",
+  flight_no: "CA937",
+  flight_datetime: "2026/05/26 13:00",
+  service_time: "2026/05/26 11:30",
+  address: "Nottingham NG1 1AA",
+  passenger_count: "1",
+  luggage_count: "2",
+  contact_status: "未联系",
+  payment_collection_status: "未收款",
+  group_id: "新组A",
+  admin_note: "临时组示例：同标识第1行"
+};
+const TEMP_GROUP_EXAMPLE_TWO = {
+  ...TEMP_GROUP_EXAMPLE_ONE,
+  student_name: "赵六",
+  phone: "+44 7200 022222",
+  wechat: "wechat_zhao",
+  flight_no: "CA938",
+  group_id: "新组A",
+  admin_note: "临时组示例：同标识第2行"
+};
 const IMPORT_TEMPLATE_EXAMPLES = [
   IMPORT_COLUMNS.map(column => column.example_auto_group ?? ""),
-  IMPORT_COLUMNS.map(column => column.example_existing_group ?? "")
+  IMPORT_COLUMNS.map(column => column.example_existing_group ?? ""),
+  IMPORT_COLUMNS.map(column => TEMP_GROUP_EXAMPLE_ONE[column.key] ?? ""),
+  IMPORT_COLUMNS.map(column => TEMP_GROUP_EXAMPLE_TWO[column.key] ?? "")
 ];
 const IMPORT_HEADER_ALIAS_MAP = IMPORT_COLUMNS.reduce((map, column) => {
   [column.label, ...(column.aliases || [])].forEach(alias => {
@@ -167,8 +193,19 @@ const IMPORT_HEADER_ALIAS_MAP = IMPORT_COLUMNS.reduce((map, column) => {
 
 const IMPORT_TEMPLATE_SAMPLE_TEXT = [
   IMPORT_TEMPLATE_HEADERS.join("\t"),
-  IMPORT_TEMPLATE_EXAMPLES[0].join("\t")
+  ...IMPORT_TEMPLATE_EXAMPLES.map(row => row.join("\t"))
 ].join("\n");
+
+const airportOptions = [
+  { code: "LHR", name: "Heathrow" },
+  { code: "LGW", name: "Gatwick" },
+  { code: "MAN", name: "Manchester" },
+  { code: "LTN", name: "Luton" },
+  { code: "LCY", name: "London City" },
+  { code: "BHX", name: "Birmingham" },
+  { code: "STN", name: "Stansted" },
+  { code: "OTHER", name: "Other Airport" }
+];
 
 const manualForm = reactive({
   service_type: "pickup",
@@ -191,6 +228,8 @@ const manualForm = reactive({
   price: "",
   payment_status: "unpaid",
   notes: "",
+  group_action: "create_single",
+  target_group_id: "",
   group_id: ""
 });
 
@@ -215,6 +254,7 @@ const manualRequiredErrors = computed(() => {
   if (!manualForm.flight_datetime) errors.push("航班日期时间必填");
   if (!manualForm.service_time) errors.push("服务时间必填");
   if (!String(manualForm.address || "").trim()) errors.push(`${manualAddressLabel.value}必填`);
+  if (manualForm.group_action === "join_existing" && !String(manualForm.target_group_id || "").trim()) errors.push("目标拼车组编号必填");
   return errors;
 });
 const manualFieldErrors = computed(() => {
@@ -232,10 +272,13 @@ const manualFieldErrors = computed(() => {
   if (!manualForm.flight_datetime) errors.flight_datetime = "请选择航班日期时间";
   if (!manualForm.service_time) errors.service_time = "请选择服务时间";
   if (!String(manualForm.address || "").trim()) errors.address = `请填写${manualAddressLabel.value}`;
+  if (manualForm.group_action === "join_existing" && !String(manualForm.target_group_id || "").trim()) {
+    errors.target_group_id = "请填写目标拼车组编号";
+  }
   return errors;
 });
 const manualGroupNeedsConfirmation = computed(() => {
-  const groupId = String(manualForm.group_id || "").trim();
+  const groupId = String(manualForm.target_group_id || manualForm.group_id || "").trim();
   return Boolean(groupId) && manualGroupConfirmedId.value !== groupId;
 });
 const hasImportPasteText = computed(() => Boolean(String(importPasteText.value || "").trim()));
@@ -263,28 +306,7 @@ const allCurrentPageSelected = computed(() => {
   const ids = requests.value.map(row => String(row.id)).filter(Boolean);
   return ids.length > 0 && ids.every(id => selectedIds.value.includes(id));
 });
-const isTimeAdjustGrouped = computed(() => isRequestGrouped(timeAdjustTarget.value));
-const isTimeAdjustTransfer = computed(() => timeAdjustForm.handling_method === "transfer_existing_group");
-const timeAdjustDisableReason = computed(() => {
-  if (timeAdjustSaving.value || !timeAdjustTarget.value) return "";
-  if (!fromDateTimeLocalValue(timeAdjustForm.flight_datetime) || !fromDateTimeLocalValue(timeAdjustForm.preferred_time_start)) {
-    return "请填写新的航班时间和接机时间";
-  }
-  if (!String(timeAdjustForm.reason || "").trim()) return "请填写调整原因";
-  if (isTimeAdjustGrouped.value && !["keep_group", "move_out", "transfer_existing_group"].includes(timeAdjustForm.handling_method)) {
-    return "请选择处理方式";
-  }
-  if (isTimeAdjustTransfer.value && timeAdjustCandidateLoading.value) return "候选拼车组加载中，请稍候";
-  if (isTimeAdjustTransfer.value && timeAdjustCandidateError.value) return "请先重新加载候选拼车组";
-  if (isTimeAdjustTransfer.value && !timeAdjustForm.target_group_id) return "请先选择目标拼车组";
-  return "";
-});
-const timeAdjustConfirmDisabled = computed(() => {
-  if (timeAdjustSaving.value) return true;
-  if (!timeAdjustTarget.value) return true;
-  return Boolean(timeAdjustDisableReason.value);
-});
-
+const operationLogs = computed(() => Array.isArray(operationLogTarget.value?.operation_logs) ? operationLogTarget.value.operation_logs : []);
 function displayValue(value) {
   return value === null || value === undefined || value === "" ? "--" : String(value);
 }
@@ -352,6 +374,132 @@ function formatDateTime(value) {
   }).format(date);
 }
 
+function logAdminName(log) {
+  return displayValue(log?.metadata?.admin_name || log?.admin_user?.name || log?.admin_user?.username || log?.admin_user?.email || log?.admin_user_id);
+}
+
+function logActionLabel(log) {
+  const labels = {
+    create_transport_manual_request_request_only: "创建订单",
+    transport_group_created_from_manual_request: "创建拼车组",
+    transport_group_created_from_request: "创建拼车组",
+    transport_request_route_update: "行程更新",
+    update_transport_request: "订单更新",
+    order_change_confirmed: "行程更新",
+    update_safe_fields: "快速修改",
+    set_transport_request_offline_recorded: "记录状态",
+    add_transport_request_to_group: "加入拼车组",
+    remove_transport_request_from_group: "移出拼车组",
+    move_transport_request_group: "更换拼车组",
+    transport_request_group_changed: "更换拼车组",
+    transport_request_removed_from_group: "移出拼车组"
+  };
+  return labels[log?.action] || displayValue(log?.action);
+}
+
+function logFieldLabel(field) {
+  const labels = {
+    service_type: "服务",
+    airport_code: "机场",
+    airport_name: "机场名",
+    terminal: "航站楼",
+    flight_no: "航班号",
+    flight_datetime: "航班时间",
+    preferred_time_start: "服务时间",
+    preferred_time_end: "结束时间",
+    location_from: "出发地",
+    location_to: "目的地",
+    passenger_count: "人数",
+    luggage_count: "行李",
+    shareable: "拼车",
+    payment_collection_status: "收款",
+    deposit_amount_gbp: "已收",
+    paid_amount_gbp: "已收",
+    notes: "客户备注",
+    admin_note: "内部备注",
+    offline_recorded: "已记录",
+    contact_status: "联系",
+    status: "状态",
+    group_id: "拼车组",
+    order_no: "订单号"
+  };
+  return labels[field] || String(field || "").replace(/_/g, " ");
+}
+
+function formatLogDateTime(value) {
+  if (!value) return "--";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return displayValue(value);
+  return new Intl.DateTimeFormat("zh-CN", {
+    timeZone: "Europe/London",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false
+  }).format(date);
+}
+
+function formatLogValue(field, value) {
+  if (value === null || value === undefined || value === "") return "--";
+  if (["flight_datetime", "preferred_time_start", "preferred_time_end", "created_at", "updated_at"].includes(field)) {
+    return formatLogDateTime(value);
+  }
+  if (field === "service_type") {
+    return value === "pickup" ? "接机" : value === "dropoff" ? "送机" : displayValue(value);
+  }
+  if (field === "payment_collection_status") {
+    const labels = { unpaid: "未收", deposit_paid: "已收定金", fully_paid: "已收全款" };
+    return labels[value] || displayValue(value);
+  }
+  if (field === "contact_status") {
+    const labels = { uncontacted: "未联系", contacted: "已联系" };
+    return labels[value] || displayValue(value);
+  }
+  if (typeof value === "boolean") return value ? "是" : "否";
+  const text = String(value);
+  if (/^[0-9a-f]{8}-[0-9a-f-]{20,}$/i.test(text)) return `${text.slice(0, 8)}...`;
+  return text.length > 42 ? `${text.slice(0, 39)}...` : text;
+}
+
+function rawLogChangedFields(log) {
+  if (Array.isArray(log?.metadata?.changed_fields)) {
+    return log.metadata.changed_fields;
+  }
+  const beforeData = log?.before_data || {};
+  const afterData = log?.after_data || {};
+  return Array.from(new Set([...Object.keys(beforeData), ...Object.keys(afterData)])).map(field => ({
+    field,
+    label: field,
+    before: beforeData[field],
+    after: afterData[field]
+  }));
+}
+
+function logChangedFields(log) {
+  const hiddenFields = new Set([
+    "id",
+    "request_id",
+    "transport_request_id",
+    "created_at",
+    "updated_at",
+    "last_operated_by",
+    "last_operated_at",
+    "source_snapshot_hash",
+    "preview_token"
+  ]);
+  return rawLogChangedFields(log)
+    .filter(item => !hiddenFields.has(String(item.field || "")))
+    .map(item => ({
+      ...item,
+      label: logFieldLabel(item.field),
+      beforeText: formatLogValue(item.field, item.before),
+      afterText: formatLogValue(item.field, item.after)
+    }))
+    .filter(item => item.beforeText !== item.afterText)
+    .slice(0, 5);
+}
+
 function toDateTimeLocalValue(value) {
   if (!value) return "";
   const date = new Date(value);
@@ -410,7 +558,7 @@ function paymentCollectionStatusLabel(value) {
 function groupStatusLabel(row) {
   if (row.group_id) return "已入组";
   if (row.matching_status_code === "matched") return "已匹配";
-  return "未入组";
+  return "无拼车组";
 }
 
 function statusLabel(status) {
@@ -435,7 +583,7 @@ function groupInfoText(row) {
   if (!row) return "--";
   const membership = Array.isArray(row.transport_group_members) ? row.transport_group_members[0] : null;
   const groupId = row.group_id || row.group_ref || row.matched_group_id || membership?.group_id;
-  if (!groupId) return "未加入拼车组";
+  if (!groupId) return "无拼车组";
   const role = membership?.is_initiator ? "发起人" : "成员";
   return `当前拼车组：${groupId}（${role}）`;
 }
@@ -626,6 +774,7 @@ function buildFilterQuery() {
     status: filters.status,
     contact_status: filters.contactStatus,
     payment_collection_status: filters.paymentCollectionStatus,
+    grouped: filters.groupStatus,
     offline_recorded: filters.offlineRecorded,
     last_operated_by: filters.lastOperatedBy,
     import_batch_id: filters.importBatchId.trim(),
@@ -685,13 +834,6 @@ function handlePageChange(page) {
   loadRequests(page);
 }
 
-function requestDetailHref(row) {
-  const id = row?.id || row?.request_id || row?.transport_request_id || row?.legacy_id;
-  if (!id) return "";
-  const searchParams = new URLSearchParams({ return_to: "/admin/transport/requests" });
-  return `/admin/transport/requests/${encodeURIComponent(id)}?${searchParams.toString()}`;
-}
-
 function requestActionId(row) {
   return row?.id || row?.request_id || row?.transport_request_id || row?.legacy_id || "";
 }
@@ -708,15 +850,6 @@ function isTestTransportRequest(row) {
 
 function requestDangerActionLabel(row) {
   return isTestTransportRequest(row) ? "删除测试单" : "关闭订单";
-}
-
-function openRequestDetail(row) {
-  const href = requestDetailHref(row);
-  if (href) {
-    window.location.href = href;
-    return;
-  }
-  notice.value = `暂未找到订单 ${displayValue(row?.order_no || row?.id)} 的详情入口。`;
 }
 
 function openDeleteDialog(row) {
@@ -809,6 +942,8 @@ function resetManualForm() {
     price: "",
     payment_status: "unpaid",
     notes: "",
+    group_action: "create_single",
+    target_group_id: "",
     group_id: ""
   });
   manualPreview.value = null;
@@ -853,8 +988,18 @@ function buildManualRow() {
     contact_status: manualForm.contact_status,
     payment_collection_status: manualForm.payment_status,
     deposit_amount_gbp: manualForm.price,
-    admin_note: manualForm.notes
+    admin_note: manualForm.notes,
+    拼车组处理: manualGroupActionLabel(manualForm.group_action),
+    目标拼车组编号: manualForm.group_action === "join_existing" ? manualForm.target_group_id : ""
   };
+}
+
+function manualGroupActionLabel(value) {
+  const labels = {
+    create_single: "创建新的单人拼车组，并自动加入",
+    join_existing: "加入已有拼车组"
+  };
+  return labels[value] || labels.create_single;
 }
 
 async function checkManualGroup() {
@@ -900,15 +1045,14 @@ async function submitManualForm() {
     manualErrorMessage.value = notice.value;
     return;
   }
-  if (manualGroupNeedsConfirmation.value) {
-    notice.value = "请先点击“校验并确认 Group”后再提交。";
-    return;
-  }
   manualSaving.value = true;
   notice.value = "";
   error.value = "";
   try {
-    const result = await createManualTransportRequest(buildManualRow(), manualConfirmWarnings.value);
+    const result = await createManualTransportRequest(buildManualRow(), manualConfirmWarnings.value, {
+      group_action: manualForm.group_action,
+      target_group_id: manualForm.group_action === "join_existing" ? manualForm.target_group_id : ""
+    });
     notice.value = `补录订单已创建：${displayValue(result?.request?.order_no)}`;
     showManualDialog.value = false;
     resetManualForm();
@@ -929,7 +1073,7 @@ async function submitManualForm() {
 }
 
 function normalizeImportHeader(value) {
-  return String(value || "").trim().toLowerCase().replace(/\s+/g, "");
+  return String(value || "").replace(/^\uFEFF/, "").trim().toLowerCase().replace(/\s+/g, "");
 }
 
 function normalizeImportHeaders(headers = []) {
@@ -1330,7 +1474,7 @@ async function handleImportFile(event) {
       }
       rows = parsed.rows;
     } else if (/\.xlsx$/i.test(file.name)) {
-      const parsed = parseSheetRows(await readXlsxFile(file));
+      const parsed = parseSheetRows(await readXlsxFile(file, { trim: false }));
       if (parsed.error) {
         importStatusMessage.value = parsed.error;
         event.target.value = "";
@@ -1529,94 +1673,68 @@ async function saveWorkbenchRow(row) {
   }
 }
 
-function openTimeAdjustDialog(row) {
-  timeAdjustTarget.value = row;
-  timeAdjustError.value = "";
-  timeAdjustCandidateError.value = "";
-  timeAdjustCandidateGroups.value = [];
-  timeAdjustForm.flight_datetime = toDateTimeLocalValue(row.flight_datetime);
-  timeAdjustForm.preferred_time_start = toDateTimeLocalValue(row.preferred_time_start || row.flight_datetime);
-  timeAdjustForm.reason = "";
-  timeAdjustForm.handling_method = isRequestGrouped(row) ? "keep_group" : "direct";
-  timeAdjustForm.target_group_id = "";
+function currentGroupIdFor(row) {
+  if (!row) return "";
+  const membership = Array.isArray(row.transport_group_members) ? row.transport_group_members[0] : null;
+  return String(row.group_id || row.group_ref || row.matched_group_id || membership?.group_id || "").trim();
 }
 
-function closeTimeAdjustDialog() {
-  if (timeAdjustSaving.value) return;
-  timeAdjustTarget.value = null;
-  timeAdjustError.value = "";
-  timeAdjustCandidateError.value = "";
-  timeAdjustCandidateGroups.value = [];
-  timeAdjustForm.target_group_id = "";
-}
-
-async function loadTimeAdjustCandidateGroups() {
-  const row = timeAdjustTarget.value;
+async function fetchRequestDetailForRow(row) {
   const id = requestActionId(row);
-  if (!row || !id || !isTimeAdjustTransfer.value) return;
-
-  const flightDatetime = fromDateTimeLocalValue(timeAdjustForm.flight_datetime);
-  const preferredTimeStart = fromDateTimeLocalValue(timeAdjustForm.preferred_time_start);
-  timeAdjustForm.target_group_id = "";
-  timeAdjustCandidateGroups.value = [];
-  timeAdjustCandidateError.value = "";
-
-  if (!flightDatetime || !preferredTimeStart) {
-    timeAdjustCandidateError.value = "请先填写有效的新航班时间和接机时间。";
-    return;
+  if (!id) {
+    throw new Error(`未找到订单 ${displayValue(row?.order_no || row?.id)} 的 ID。`);
   }
-
-  timeAdjustCandidateLoading.value = true;
-  try {
-    const payload = await fetchTimeAdjustCandidateGroups(id, {
-      flight_datetime: flightDatetime,
-      preferred_time_start: preferredTimeStart
-    });
-    timeAdjustCandidateGroups.value = Array.isArray(payload?.candidate_groups) ? payload.candidate_groups : [];
-  } catch (err) {
-    timeAdjustCandidateError.value = err.message || "候选拼车组加载失败，请稍后重试。";
-  } finally {
-    timeAdjustCandidateLoading.value = false;
-  }
+  const payload = await fetchTransportRequest(id);
+  return payload?.request || payload?.item || payload;
 }
 
-async function saveTimeAdjustment() {
-  const row = timeAdjustTarget.value;
+async function openItineraryChangeDrawer(row) {
   const id = requestActionId(row);
-  if (!row || !id || timeAdjustConfirmDisabled.value) return;
-
-  const flightDatetime = fromDateTimeLocalValue(timeAdjustForm.flight_datetime);
-  const preferredTimeStart = fromDateTimeLocalValue(timeAdjustForm.preferred_time_start);
-  if (!flightDatetime || !preferredTimeStart) {
-    timeAdjustError.value = "请填写有效的新航班时间和接机时间。";
-    return;
-  }
-
-  timeAdjustSaving.value = true;
-  timeAdjustError.value = "";
+  if (!id || itineraryChangeLoadingId.value) return;
+  itineraryChangeLoadingId.value = String(id);
   notice.value = "";
   error.value = "";
   try {
-    const payload = {
-      flight_datetime: flightDatetime,
-      preferred_time_start: preferredTimeStart,
-      reason: String(timeAdjustForm.reason || "").trim(),
-      handling_method: timeAdjustForm.handling_method
-    };
-    if (timeAdjustForm.handling_method === "transfer_existing_group") {
-      payload.target_group_id = timeAdjustForm.target_group_id;
-    }
-    const updated = await adjustTransportRequestTime(id, payload);
-    const nextRow = updated?.request || updated?.item || updated;
-    requests.value = requests.value.map(item => (item.id === row.id ? { ...item, ...nextRow } : item));
-    resetWorkbenchDraft({ ...row, ...nextRow });
-    notice.value = `订单 ${displayValue(row.order_no)} 的接机/航班时间已保存。`;
-    timeAdjustTarget.value = null;
+    itineraryChangeTarget.value = await fetchRequestDetailForRow(row);
   } catch (err) {
-    timeAdjustError.value = err.message || "时间调整保存失败，请检查后重试。";
+    notice.value = err.message || "订单详情加载失败，请稍后重试。";
   } finally {
-    timeAdjustSaving.value = false;
+    itineraryChangeLoadingId.value = "";
   }
+}
+
+function closeItineraryChangeDrawer() {
+  itineraryChangeTarget.value = null;
+}
+
+async function handleItineraryChangeSaved(result) {
+  const orderNo = result?.request?.order_no || itineraryChangeTarget.value?.order_no || itineraryChangeTarget.value?.id;
+  itineraryChangeTarget.value = null;
+  notice.value = `订单 ${displayValue(orderNo)} 的行程信息已保存。`;
+  await loadRequests(pagination.value.page || 1);
+}
+
+async function openOperationLog(row) {
+  const id = requestActionId(row);
+  if (!id || operationLogLoadingId.value) return;
+  operationLogLoadingId.value = String(id);
+  operationLogError.value = "";
+  operationLogTarget.value = row || null;
+  operationLogOpen.value = true;
+  try {
+    operationLogTarget.value = await fetchRequestDetailForRow(row);
+  } catch (err) {
+    operationLogError.value = err.message || "记录加载失败，请重试";
+  } finally {
+    operationLogLoadingId.value = "";
+  }
+}
+
+function closeOperationLog() {
+  if (operationLogLoadingId.value) return;
+  operationLogOpen.value = false;
+  operationLogTarget.value = null;
+  operationLogError.value = "";
 }
 
 onMounted(() => {
@@ -1654,6 +1772,8 @@ watch(
 
 watch(
   () => [
+    manualForm.group_action,
+    manualForm.target_group_id,
     manualForm.group_id,
     manualForm.service_type,
     manualForm.airport_code,
@@ -1668,24 +1788,6 @@ watch(
     manualGroupMessage.value = "";
     manualPreview.value = null;
     manualConfirmWarnings.value = false;
-  }
-);
-
-watch(
-  () => [
-    timeAdjustForm.handling_method,
-    timeAdjustForm.flight_datetime,
-    timeAdjustForm.preferred_time_start,
-    timeAdjustTarget.value?.id
-  ],
-  () => {
-    if (isTimeAdjustTransfer.value) {
-      loadTimeAdjustCandidateGroups();
-      return;
-    }
-    timeAdjustForm.target_group_id = "";
-    timeAdjustCandidateGroups.value = [];
-    timeAdjustCandidateError.value = "";
   }
 );
 </script>
@@ -1752,9 +1854,6 @@ watch(
             <small class="cell-truncate">{{ displayValue(row.student_email || row.email) }}</small>
           </span>
         </template>
-        <template #cell-wechat="{ row }">
-          <span class="cell-truncate" :title="displayValue(row.wechat)">{{ displayValue(row.wechat) }}</span>
-        </template>
         <template #cell-service_type="{ row }">
           <StatusBadge tone="neutral">{{ serviceLabel(row.service_type) }}</StatusBadge>
         </template>
@@ -1795,7 +1894,12 @@ watch(
         </template>
         <template #cell-actions="{ row }">
           <div class="table-action-group table-action-group--compact">
-            <button class="table-action-button" type="button" @click="openRequestDetail(row)">查看详情</button>
+            <button class="table-action-button" type="button" :disabled="itineraryChangeLoadingId === String(requestActionId(row))" @click="openItineraryChangeDrawer(row)">
+              {{ itineraryChangeLoadingId === String(requestActionId(row)) ? "加载中..." : "调整行程" }}
+            </button>
+            <button class="table-action-button" type="button" :disabled="operationLogLoadingId === String(requestActionId(row))" @click="openOperationLog(row)">
+              {{ operationLogLoadingId === String(requestActionId(row)) ? "加载中" : "操作记录" }}
+            </button>
             <button
               class="table-action-button table-action-button--danger"
               type="button"
@@ -1803,14 +1907,6 @@ watch(
               @click="openDeleteDialog(row)"
             >
               {{ deletingId === String(requestActionId(row)) ? "处理中..." : requestDangerActionLabel(row) }}
-            </button>
-            <button
-              class="table-action-button"
-              type="button"
-              :disabled="togglingId === String(row.id)"
-              @click="toggleOfflineRecorded(row)"
-            >
-              {{ row.offline_recorded ? "取消已记录" : "标记已记录" }}
             </button>
           </div>
         </template>
@@ -1836,9 +1932,6 @@ watch(
         </template>
         <template #cell-wb_phone="{ row }">
           <input v-model="ensureWorkbenchDraft(row).phone" class="workbench-input" />
-        </template>
-        <template #cell-wb_wechat="{ row }">
-          <input v-model="ensureWorkbenchDraft(row).wechat" class="workbench-input" />
         </template>
         <template #cell-wb_service_type="{ row }">
           <span class="locked-cell" :title="lockTitle()">{{ serviceLabel(row.service_type) }}</span>
@@ -1901,15 +1994,21 @@ watch(
         <template #cell-wb_actions="{ row }">
           <div class="table-action-group table-action-group--compact workbench-actions">
             <button
-              class="table-action-button table-action-button--paid"
+              class="table-action-button"
               type="button"
-              :disabled="isRowSaving(row) || !isWorkbenchRowDirty(row)"
-              @click="saveWorkbenchRow(row)"
+              :disabled="itineraryChangeLoadingId === String(requestActionId(row))"
+              @click="openItineraryChangeDrawer(row)"
             >
-              {{ isRowSaving(row) ? "保存中..." : isWorkbenchRowDirty(row) ? "保存" : "已保存" }}
+              {{ itineraryChangeLoadingId === String(requestActionId(row)) ? "加载中..." : "调整行程" }}
             </button>
-            <button class="table-action-button" type="button" @click="openTimeAdjustDialog(row)">调整时间</button>
-            <button class="table-action-button" type="button" @click="openRequestDetail(row)">详情</button>
+            <button
+              class="table-action-button"
+              type="button"
+              :disabled="operationLogLoadingId === String(requestActionId(row))"
+              @click="openOperationLog(row)"
+            >
+              {{ operationLogLoadingId === String(requestActionId(row)) ? "加载中" : "操作记录" }}
+            </button>
             <button
               class="table-action-button table-action-button--danger"
               type="button"
@@ -1918,7 +2017,16 @@ watch(
             >
               {{ deletingId === String(requestActionId(row)) ? "处理中..." : requestDangerActionLabel(row) }}
             </button>
-            <small v-if="isWorkbenchRowDirty(row)" class="workbench-dirty-label">未保存修改</small>
+            <button
+              v-if="isWorkbenchRowDirty(row)"
+              class="workbench-save-link"
+              type="button"
+              :disabled="isRowSaving(row)"
+              @click="saveWorkbenchRow(row)"
+            >
+              {{ isRowSaving(row) ? "备注保存中" : "保存备注修改" }}
+            </button>
+            <small v-else class="workbench-saved-label">备注已保存</small>
             <small v-if="rowErrorMessages[draftKey(row)]" class="workbench-error-label">{{ rowErrorMessages[draftKey(row)] }}</small>
           </div>
         </template>
@@ -1926,105 +2034,47 @@ watch(
       <Pagination :pagination="pagination" @change="handlePageChange" />
     </template>
 
-    <ConfirmDialog
-      :open="Boolean(timeAdjustTarget)"
-      title="调整接机/航班时间"
-      confirm-label="保存调整"
-      cancel-label="取消"
-      :loading="timeAdjustSaving"
-      panel-class="confirm-dialog__panel--wide"
-      :confirm-disabled="timeAdjustConfirmDisabled"
-      tone="neutral"
-      @cancel="closeTimeAdjustDialog"
-      @confirm="saveTimeAdjustment"
-    >
-      <div class="time-adjust-dialog">
-        <div class="time-adjust-readonly-grid">
-          <div>
-            <span>当前航班时间</span>
-            <strong>{{ formatDateTime(timeAdjustTarget?.flight_datetime) }}</strong>
-          </div>
-          <div>
-            <span>当前接机时间</span>
-            <strong>{{ formatDateTime(timeAdjustTarget?.preferred_time_start || timeAdjustTarget?.flight_datetime) }}</strong>
-          </div>
-          <div class="time-adjust-readonly-grid__wide">
-            <span>当前拼车组信息</span>
-            <strong>{{ groupInfoText(timeAdjustTarget) }}</strong>
-          </div>
-        </div>
 
-        <div class="manual-import-grid">
-          <label class="field">
-            <span>新航班时间 *</span>
-            <input v-model="timeAdjustForm.flight_datetime" required type="datetime-local" />
-          </label>
-          <label class="field">
-            <span>新接机时间 *</span>
-            <input v-model="timeAdjustForm.preferred_time_start" required type="datetime-local" />
-          </label>
-          <label class="field manual-import-grid__wide">
-            <span>调整原因 *</span>
-            <textarea v-model="timeAdjustForm.reason" rows="3" placeholder="请填写客服确认的调整原因"></textarea>
-          </label>
-        </div>
-
-        <div v-if="isTimeAdjustGrouped" class="time-adjust-options">
-          <span class="time-adjust-options__title">处理方式 *</span>
-          <label class="time-adjust-option">
-            <input v-model="timeAdjustForm.handling_method" type="radio" value="keep_group" />
-            <span>
-              <strong>保留在当前拼车组</strong>
-              <small>适用于轻微延误且客服确认仍可同行；不改拼车组成员、人数和剩余座位。</small>
-            </span>
-          </label>
-          <label class="time-adjust-option">
-            <input v-model="timeAdjustForm.handling_method" type="radio" value="move_out" />
-            <span>
-              <strong>移出当前拼车组并新建单人待匹配组</strong>
-              <small>适用于时间变化较大；会同步原组人数，并给该订单保留新的单人拼车组容器。</small>
-            </span>
-          </label>
-          <label class="time-adjust-option">
-            <input v-model="timeAdjustForm.handling_method" type="radio" value="transfer_existing_group" />
-            <span>
-              <strong>转移到其他已有合适拼车组</strong>
-              <small>系统会按新时间、机场、服务类型、座位和拼车状态筛选候选组；客服只能从候选组中选择，不能手动输入 group_id。</small>
-            </span>
-          </label>
-          <div v-if="isTimeAdjustTransfer" class="time-adjust-candidates">
-            <div class="time-adjust-candidates__header">
-              <strong>候选拼车组</strong>
-              <button class="table-action-button" type="button" :disabled="timeAdjustCandidateLoading" @click="loadTimeAdjustCandidateGroups">刷新</button>
-            </div>
-            <p v-if="timeAdjustCandidateLoading" class="time-adjust-hint">正在加载候选拼车组...</p>
-            <p v-else-if="timeAdjustCandidateError" class="workbench-error-label">{{ timeAdjustCandidateError }}</p>
-            <p v-else-if="!timeAdjustCandidateGroups.length" class="time-adjust-hint">没有符合条件的已有拼车组，可选择移出并新建单人待匹配组。</p>
-            <div v-else class="time-adjust-candidate-list">
-              <label
-                v-for="group in timeAdjustCandidateGroups"
-                :key="group.group_id"
-                class="time-adjust-candidate"
-                :class="{ 'is-selected': timeAdjustForm.target_group_id === group.group_id }"
-              >
-                <input v-model="timeAdjustForm.target_group_id" type="radio" :value="group.group_id" />
-                <span>
-                  <strong>{{ candidateGroupTitle(group) }}</strong>
-                  <small>{{ candidateGroupMeta(group) }}</small>
-                  <small v-if="Array.isArray(group.warnings) && group.warnings.length" class="time-adjust-candidate__warning">
-                    {{ group.warnings.map(item => item.message || item.code).join("；") }}
-                  </small>
-                </span>
-              </label>
-            </div>
+    <TransportOrderChangeDrawer
+      :open="Boolean(itineraryChangeTarget)"
+      :request="itineraryChangeTarget"
+      :current-group-id="currentGroupIdFor(itineraryChangeTarget)"
+      :has-current-group="isRequestGrouped(itineraryChangeTarget)"
+      @close="closeItineraryChangeDrawer"
+      @saved="handleItineraryChangeSaved"
+    />
+    <div v-if="operationLogOpen" class="membership-modal transport-log-drawer" role="dialog" aria-modal="true" aria-label="操作记录">
+      <button class="membership-modal__backdrop" type="button" aria-label="关闭" @click="closeOperationLog"></button>
+      <div class="membership-modal__panel transport-log-drawer__panel">
+        <header class="membership-modal__header">
+          <div>
+            <h3>操作记录</h3>
+            <p>{{ displayValue(operationLogTarget?.order_no || operationLogTarget?.id) }}</p>
           </div>
+          <button class="table-action-button" type="button" :disabled="Boolean(operationLogLoadingId)" @click="closeOperationLog">关闭</button>
+        </header>
+        <p v-if="operationLogError" class="inline-notice inline-notice--error">{{ operationLogError }}</p>
+        <p v-if="operationLogLoadingId" class="detail-muted">加载中</p>
+        <div v-else-if="!operationLogs.length" class="transport-empty-box">暂无操作记录</div>
+        <div v-else class="transport-log-drawer__body">
+          <article v-for="log in operationLogs" :key="log.id || `${log.action}-${log.created_at}`" class="transport-log-card">
+            <div class="transport-log-card__meta">
+              <strong>{{ logActionLabel(log) }}</strong>
+              <span>{{ logAdminName(log) }} · {{ formatLogDateTime(log.created_at) }}</span>
+            </div>
+            <ul v-if="logChangedFields(log).length" class="transport-log-change-list">
+              <li v-for="item in logChangedFields(log)" :key="`${log.id || log.action}-${item.field}`">
+                <span>{{ item.label }}</span>
+                <strong>{{ item.beforeText }}</strong>
+                <em>→</em>
+                <strong>{{ item.afterText }}</strong>
+              </li>
+            </ul>
+            <p v-else class="transport-log-card__empty">无可见字段变化</p>
+          </article>
         </div>
-        <p v-else class="time-adjust-hint">该订单未加入拼车组，保存后只更新本订单时间，不创建拼车组、不自动匹配。</p>
-        <p v-if="timeAdjustDisableReason" class="workbench-error-label">{{ timeAdjustDisableReason }}</p>
-        <p v-if="timeAdjustError" class="workbench-error-label">{{ timeAdjustError }}</p>
       </div>
-    </ConfirmDialog>
-
+    </div>
     <ConfirmDialog
       :open="showManualDialog"
       title="补录接送机订单"
@@ -2055,7 +2105,6 @@ watch(
               <input v-model="manualForm.student_name" required />
               <small v-if="manualFieldErrors.student_name" class="field-error">{{ manualFieldErrors.student_name }}</small>
             </label>
-            <label class="field"><span>拼音/英文名</span><input v-model="manualForm.english_name" /></label>
             <label class="field">
               <span>手机号</span>
               <input v-model="manualForm.phone" placeholder="手机号/微信号至少填一个" />
@@ -2066,7 +2115,6 @@ watch(
               <input v-model="manualForm.wechat" placeholder="手机号/微信号至少填一个" />
               <small v-if="manualFieldErrors.contact" class="field-error">{{ manualFieldErrors.contact }}</small>
             </label>
-            <label class="field"><span>邮箱</span><input v-model="manualForm.email" type="email" /></label>
             <label class="field">
               <span>人数 *</span>
               <input v-model.number="manualForm.passenger_count" min="1" required type="number" />
@@ -2088,7 +2136,11 @@ watch(
             </label>
             <label class="field">
               <span>机场 *</span>
-              <input v-model="manualForm.airport_code" placeholder="LHR / LGW" required />
+              <select v-model="manualForm.airport_code" required>
+                <option v-for="airport in airportOptions" :key="airport.code" :value="airport.code">
+                  {{ airport.code }} / {{ airport.name }}
+                </option>
+              </select>
               <small v-if="manualFieldErrors.airport_code" class="field-error">{{ manualFieldErrors.airport_code }}</small>
             </label>
             <label class="field">
@@ -2116,44 +2168,28 @@ watch(
               <input v-model="manualForm.address" required />
               <small v-if="manualFieldErrors.address" class="field-error">{{ manualFieldErrors.address }}</small>
             </label>
-            <label class="field"><span>行李数量</span><input v-model.number="manualForm.luggage_count" min="0" type="number" /></label>
-            <label class="field manual-import-grid__wide"><span>行李备注</span><input v-model="manualForm.luggage_note" /></label>
           </div>
         </section>
 
         <section class="manual-import-section">
-          <h4>记录与收款</h4>
+          <h4>拼车组处理</h4>
+          <p class="manual-section-hint">补录订单需要直接创建单人拼车组，或加入已有拼车组。</p>
           <div class="manual-import-grid">
-            <label class="field">
-              <span>是否愿意拼车</span>
-              <select v-model="manualForm.shareable">
-                <option :value="true">是</option>
-                <option :value="false">否</option>
+            <label class="field manual-import-grid__wide">
+              <span>拼车组处理 *</span>
+              <select v-model="manualForm.group_action" required>
+                <option value="create_single">创建新的单人拼车组，并自动加入</option>
+                <option value="join_existing">加入已有拼车组</option>
               </select>
             </label>
-            <label class="field">
-              <span>联系状态</span>
-              <select v-model="manualForm.contact_status">
-                <option value="uncontacted">未联系</option>
-                <option value="contacted">已联系</option>
-              </select>
-            </label>
-            <label class="field"><span>定金 GBP</span><input v-model="manualForm.price" inputmode="decimal" /></label>
-            <label class="field">
-              <span>收款状态</span>
-              <select v-model="manualForm.payment_status">
-                <option value="unpaid">未收款</option>
-                <option value="deposit_paid">已付定金</option>
-                <option value="fully_paid">已付全款</option>
-              </select>
+            <label v-if="manualForm.group_action === 'join_existing'" class="field manual-import-grid__wide">
+              <span>目标拼车组编号 *</span>
+              <input v-model="manualForm.target_group_id" placeholder="请输入拼车组编号，例如 GRP-P6LOCAL-FULL" />
+              <small v-if="manualFieldErrors.target_group_id" class="field-error">{{ manualFieldErrors.target_group_id }}</small>
             </label>
           </div>
         </section>
 
-        <section class="manual-import-section">
-          <h4>客服备注</h4>
-          <label class="field"><span>客服备注</span><textarea v-model="manualForm.notes" rows="3"></textarea></label>
-        </section>
       </div>
       <div v-if="manualPreview?.warnings?.length" class="import-warning-box">
         <strong>黄色提示</strong>
@@ -2198,13 +2234,21 @@ watch(
         <p v-if="importCommitBlockReason" class="muted-line">{{ importCommitBlockReason }}</p>
         <details class="import-template-help">
           <summary>模板字段说明</summary>
+          <ul>
+            <li v-for="item in GROUP_IDENTIFIER_HELP" :key="item">{{ item }}</li>
+          </ul>
           <ol>
             <li v-for="item in IMPORT_TEMPLATE_NOTES" :key="item">{{ item }}</li>
           </ol>
         </details>
         <details class="import-template-help">
           <summary>可直接测试的粘贴示例</summary>
-          <textarea class="template-sample-textarea" readonly rows="3" :value="IMPORT_TEMPLATE_SAMPLE_TEXT"></textarea>
+          <ul>
+            <li>示例第 1 行留空：导入后自动创建一个新的单人拼车组。</li>
+            <li>示例第 2 行填写不存在的 GRP：预览应标红并禁止导入。</li>
+            <li>示例第 3、4 行同填“新组A”：导入后应进入同一个新拼车组。</li>
+          </ul>
+          <textarea class="template-sample-textarea" readonly rows="5" :value="IMPORT_TEMPLATE_SAMPLE_TEXT"></textarea>
         </details>
         <p v-if="importFileName" class="muted-line">已读取文件：{{ importFileName }}</p>
         <div v-if="importPreviewRows.length" class="import-preview-table-wrap">
@@ -2227,7 +2271,7 @@ watch(
                 <th>联系状态</th>
                 <th>收款状态</th>
                 <th>定金 GBP</th>
-                <th>是否愿意拼车</th>
+                <th>拼车组处理结果</th>
                 <th>客服备注</th>
                 <th>错误/警告原因</th>
                 <th>确认</th>
@@ -2251,7 +2295,7 @@ watch(
                 <td>{{ displayValue(row.clean?.contact_status) }}</td>
                 <td>{{ displayValue(row.clean?.payment_collection_status) }}</td>
                 <td>{{ displayValue(row.clean?.deposit_amount_gbp) }}</td>
-                <td>{{ row.clean?.shareable ? "是" : "否" }}</td>
+                <td>{{ displayValue(row.group_plan?.label) }}</td>
                 <td>{{ displayValue(row.clean?.admin_note || row.clean?.notes) }}</td>
                 <td>
                   <ul class="import-issues">
