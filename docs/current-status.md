@@ -8,9 +8,17 @@
 ## Last Updated Task
 
 - Date: 2026-05-25
-- Scope: Removed internal P5/P6 stage-marker wording from the admin carpool group list/detail screens. No API, database, import, group-membership, payment, SQL, migration, production data, commit, or push action.
+- Scope: Committed, pushed, and deployed the current transport/admin update set to production. GitHub commit `284c9f9`; Vercel production deployment `dpl_Hsc7cyudx1QcUAiouXKegai3AcZ1` aliased to `https://ngn.best`.
 
 ## Latest Completed Work
+
+- Released the current transport/admin update set:
+  - committed the current working tree as `284c9f9` (`Update transport admin dispatch workflow`) on `codex/membership-v1`;
+  - pushed `codex/membership-v1` to GitHub before deploying, preserving the required release order;
+  - deployed to Vercel production as `dpl_Hsc7cyudx1QcUAiouXKegai3AcZ1`;
+  - production URL: `https://webside-1qug783uq-wwkevin8s-projects.vercel.app`;
+  - production alias: `https://ngn.best`;
+  - production admin bundle served by the alias is `admin/assets/index-Qsmlano-.js` with `admin/assets/index-DfE4uMCS.css`.
 
 - Removed internal stage-marker wording from the admin carpool group UI:
   - `apps/admin-vue/src/views/TransportGroupsView.vue` no longer shows the toolbar hint mentioning the detail/P5 flow;
@@ -268,6 +276,12 @@
 - `docs/PROJECT_MAP.md` now documents that single manual supplement defaults to single-member group creation, can manually join a validated existing group, and rejects the old no-group manual handling.
 
 ## Verification
+
+- `git diff --check` passed after clearing two trailing blank-line issues; remaining messages were Windows LF/CRLF warnings only.
+- `npm run build:prod` passed and produced `.vercel/output` for production.
+- `npm run deploy:prod` completed successfully; deployment `dpl_Hsc7cyudx1QcUAiouXKegai3AcZ1` reached `READY` and was aliased to `https://ngn.best`.
+- `https://ngn.best/admin/` returns the deployed admin bundle references `admin/assets/index-Qsmlano-.js` and `admin/assets/index-DfE4uMCS.css`.
+- Direct Vercel preview URL access is protected by Vercel authentication, while the production alias verification succeeded.
 
 - `npm --prefix apps/admin-vue run build` passed with only the existing Vite chunk-size warning after removing the admin carpool group P5/P6 stage-marker wording.
 - Source/generated-admin searches confirmed the removed phrases are no longer present in `TransportGroupsView.vue`, `TransportGroupDetailView.vue`, or `admin/assets`.
