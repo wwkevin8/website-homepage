@@ -8,7 +8,7 @@
 ## Last Updated Task
 
 - Date: 2026-05-25
-- Scope: Updated the 2.0 NGN admin carpool group management / dispatch workbench filters locally. The page now defaults to effective groups and service-time nearest-first sorting, with manual switches for effective, invalid, all, ascending, and descending views. No production deployment, Git commit, database write, real group data change, email change, or dependency change was performed.
+- Scope: Deployed the 2.0 NGN admin carpool group management / dispatch workbench filter update to Vercel Production and `ngn.best`. The page now defaults to effective groups and service-time nearest-first sorting, with manual switches for effective, invalid, all, ascending, and descending views. No database write, real group data change, test data upload, email change, public page change, price change, order data change, or group member data change was performed.
 
 ## Latest Completed Work
 
@@ -37,6 +37,14 @@
   - No transport group rows were edited, deleted, closed, or hidden.
   - No schema, migration, payment, email, or deployment behavior was changed.
 
+- Release:
+  - Git commit: `abbf81809c2f2ea25a6851af673f7502dc9e9a71` (`Add transport group validity and time filters`)
+  - GitHub branch pushed: `codex/transport-group-filters-release`
+  - Vercel Production deployment: `dpl_A66pc3GH1JbdMqiTbXLLVXf6qeCW`
+  - Production URL: `https://webside-rgi4qvqw0-wwkevin8s-projects.vercel.app`
+  - Alias: `https://ngn.best`
+  - Production state: `READY`
+
 ## Verification
 
 - `node --check api/transport-groups/index.js` passed.
@@ -54,6 +62,12 @@
   - switching sort sends `validity=all&sort=service_time_desc`;
   - descending rows are sorted from farthest to nearest;
   - refreshing the page restores `validity=active` and `sort=service_time_asc`.
+- Production verification confirmed:
+  - Vercel inspect reports deployment `dpl_A66pc3GH1JbdMqiTbXLLVXf6qeCW` as Ready.
+  - Vercel inspect lists aliases `https://ngn.best` and `https://www.ngn.best`.
+  - `https://ngn.best/admin/transport/groups` returns 200.
+  - The production admin route references `/admin/assets/index-Br4HPUCj.js`.
+  - The production bundle contains `validity`, `service_time_asc`, `service_time_desc`, and the default `validity:"active"` logic.
 - `git diff --check` passed.
 
 ## Current Project State
@@ -67,6 +81,5 @@
 
 ## Open Risks / Follow-Up
 
-- No deployment was performed in this task. Follow the release order in `AGENTS.md`: commit and push to GitHub before any Vercel preview or production deployment.
 - `/api/transport-groups` now defaults omitted `validity` to active groups. Callers that need historical groups must send `validity=all` or `validity=invalid`.
 - Production visual acceptance still requires a logged-in production operator session after release.
