@@ -1,4 +1,4 @@
-﻿# Current Status
+# Current Status
 
 ## Document Rules
 
@@ -8,9 +8,67 @@
 ## Last Updated Task
 
 - Date: 2026-05-25
-- Scope: Committed, pushed, and deployed the current transport/admin update set to production. GitHub commit `284c9f9`; Vercel production deployment `dpl_Hsc7cyudx1QcUAiouXKegai3AcZ1` aliased to `https://ngn.best`.
+- Scope: Removed the `目的地：` / `出发地：` / `地址：` prefixes from the admin transport request itinerary-address column. Preserved the existing default order-status filter behavior. No API, database, email, price, carpool grouping, test-data, production-data, commit, push, or deploy action.
 
 ## Latest Completed Work
+
+- Investigated the registered airport pickup/dropoff order-list empty-state report with read-only Supabase checks:
+  - connected to Supabase project host `brmsymzkmdnxzhrcaghw.supabase.co` using only `select/count` queries;
+  - `transport_requests` has 10 rows total: `published` 4, `matched` 2, `closed` 4;
+  - service types are `dropoff` 7 and `pickup` 3;
+  - present status/metadata columns counted: `contact_status` = `uncontacted` 10, `payment_collection_status` = `unpaid` 10, `offline_recorded` false 4 / true 6, `import_batch_id` blank 10, `source` = `public_form` 10;
+  - requested legacy columns `order_status`, `payment_status`, `offline_record_status`, `import_batch`, and `deleted_at` do not exist on the checked table;
+  - `transport_groups` has 9 rows and `transport_group_members` has 10 rows;
+  - no orphan `transport_group_members` rows were found;
+  - 4 group members still point to existing `transport_requests` rows but those requests are `closed`, so they are excluded by the old default `status=active` filter.
+
+- Fixed the admin default filter that could hide old orders:
+  - `apps/admin-vue/src/views/TransportRequestsView.vue` now initializes `defaultFilters.status` to empty string, so the first load and reset state mean `全部`;
+  - the existing order-status dropdown remains available, including `有效单` and `已关闭/过期单`;
+  - backend filtering was not changed: `status=active` still maps to `published/matched`, while an empty status sends no status filter;
+  - rebuilt the generated admin bundle; `/admin/` now serves `admin/assets/index-aWx2_NFV.js` and `admin/assets/index-DfE4uMCS.css`;
+  - restarted the local `3000` helper server after the frontend bundle change.
+
+- Verification for the order-list empty-state investigation and default-filter fix:
+  - read-only DB count confirmed `transport_requests` total 10, page default `status=active` equivalent count 6, and no-status-filter equivalent count 10;
+  - full API-equivalent select with the same columns/relations as `/api/transport-requests` returned 6 rows before the default-filter change and 10 rows when `status` is empty;
+  - source search confirmed `defaultFilters.status` is now `""`;
+  - generated-admin search confirmed the new bundle contains `status:""` in the transport request view state;
+  - `npm --prefix apps/admin-vue run build` passed with only the existing Vite chunk-size warning;
+  - `node --check api/transport-requests/index.js` and `node --check api/_lib/transport.js` passed.
+
+- Simplified the `行程地址` display in the `登记接送机订单` workbench table:
+  - `apps/admin-vue/src/views/TransportRequestsView.vue` still selects the best existing address field based on pickup/dropoff service type;
+  - the table cell now displays the address text directly, without `目的地：`, `出发地：`, or `地址：` prefixes;
+  - empty addresses still display `-`;
+  - column placement, width, one-line ellipsis, hover title, filters, pagination, export controls, price logic, and carpool grouping logic were left unchanged;
+  - the existing default order-status filter setting remains `""` from the previous empty-list fix;
+  - rebuilt the generated admin bundle; `/admin/` now serves `admin/assets/index-aWx2_NFV.js` and `admin/assets/index-DfE4uMCS.css`;
+  - restarted the local `3000` helper server after the frontend bundle change.
+
+- Verification for the itinerary-address prefix removal:
+  - `npm --prefix apps/admin-vue run build` passed with only the existing Vite chunk-size warning;
+  - source search confirmed the list-column prefixes `目的地：`, `出发地：`, and `地址：` are no longer in `TransportRequestsView.vue`;
+  - generated-admin search confirmed the new bundle contains `行程地址` / `wb_itinerary_address`;
+  - `http://127.0.0.1:3000/admin/` returned the new generated bundle references;
+  - `http://127.0.0.1:3000/api/admin/session` returned LOCAL TEST MODE and unauthenticated admin state, so row-level visual acceptance still needs a logged-in admin session.
+
+- Added `行程地址` to the `登记接送机订单` workbench table in `apps/admin-vue/src/views/TransportRequestsView.vue`:
+  - the new column is placed after `航班时间` and before `人数`;
+  - the column width is `220px`, reusing the existing fixed-layout horizontal-scroll table behavior;
+  - long values render as one-line ellipsis with the full address in the hover title;
+  - pickup/airport pickup/arrival rows use destination-first existing fields such as `location_to`, `destination`, `accommodation`, `address`, and `detailed_address`;
+  - dropoff/airport dropoff/departure rows use origin-first existing fields such as `location_from`, `address`, and `detailed_address`;
+  - unrecognized service types fall back to existing address fields;
+  - missing addresses display `-`;
+  - rebuilt the generated admin bundle; `/admin/` now serves `admin/assets/index-Qsmlano-.js` and `admin/assets/index-DfE4uMCS.css`;
+  - restarted the local `3000` helper server after the frontend bundle change.
+
+- Verification for the itinerary-address column:
+  - `npm --prefix apps/admin-vue run build` passed with only the existing Vite chunk-size warning;
+  - `http://127.0.0.1:3000/admin/` returned the new generated bundle references;
+  - source/generated-admin search confirmed `wb_itinerary_address` and `行程地址` are present;
+  - browser navigation to `/admin/` reached the admin login page and confirmed the admin entry still loads; row-level acceptance still needs a logged-in admin session.
 
 - Released the current transport/admin update set:
   - committed the current working tree as `284c9f9` (`Update transport admin dispatch workflow`) on `codex/membership-v1`;
@@ -375,6 +433,8 @@
 ## Current Project State
 
 - Admin Vue source is the canonical admin UI source; `npm --prefix apps/admin-vue run build` refreshes the served `admin/` bundle.
+- The `登记接送机订单` page now defaults the order-status filter to `全部`, so old `closed` orders are visible by default instead of being hidden by `status=active`; operators can still manually choose `有效单`.
+- The admin transport request workbench includes a read-only `行程地址` column between `航班时间` and `人数`, derived from existing address fields only and shown without route-prefix labels.
 - The transport request list no longer links to a standalone transport request detail page; operators should use list filters for scanning, `璋冩暣琛岀▼` for full order view/edit with preview-confirm, and `鎿嶄綔璁板綍` for audit review.
 - Manual single-order supplement now creates a single-member group by default or joins a compatible existing group by entered group code/id.
 - Bulk manual import now requires an explicit group outcome for every imported row through `鎷艰溅缁勬爣璇嗭紙鍙€夛級`: blank creates a single-member group, existing `GRP-...` joins that group, and repeated temporary identifiers create one shared new group.
@@ -382,6 +442,8 @@
 
 ## Open Risks / Follow-Up
 
+- Production browser acceptance still needs a logged-in admin session to confirm the deployed page/API response after this local code change is committed, pushed, and deployed.
 - Browser-level acceptance still needs a logged-in admin session to manually confirm the batch import modal, row-level `璋冩暣琛岀▼`, and `鎿嶄綔璁板綍` drawers.
+- Browser-level row acceptance for the new `行程地址` column still needs a logged-in admin session with pickup/dropoff rows that cover non-empty and empty address cases.
 - Historical database rows may still have old compatibility values; this task did not run cleanup SQL. If cleanup is needed, prepare a separate reviewable Supabase plan before any migration.
 - The repository had pre-existing unrelated modified files before this task; they were left intact.

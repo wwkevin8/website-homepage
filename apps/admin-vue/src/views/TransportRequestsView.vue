@@ -71,7 +71,7 @@ const defaultFilters = {
   search: "",
   serviceType: "",
   airportCode: "",
-  status: "active",
+  status: "",
   contactStatus: "",
   paymentCollectionStatus: "",
   groupStatus: "",
@@ -574,10 +574,7 @@ function itineraryAddress(row) {
 
 function itineraryAddressText(row) {
   const address = itineraryAddress(row);
-  if (!address) return "-";
-  if (isPickupService(row)) return `目的地：${address}`;
-  if (isDropoffService(row)) return `出发地：${address}`;
-  return `地址：${address}`;
+  return address || "-";
 }
 
 function lockTitle() {
