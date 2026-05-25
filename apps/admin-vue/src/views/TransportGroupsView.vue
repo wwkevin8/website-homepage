@@ -27,7 +27,7 @@ const defaultFilters = {
   serviceType: "",
   airportCode: "",
   terminal: "",
-  status: "active",
+  status: "",
   visibleOnFrontend: "",
   risk: "",
   dateFrom: "",
