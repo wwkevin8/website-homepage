@@ -165,6 +165,7 @@ Storage order flow:
 ## Testing Requirements
 
 - For documentation-only changes, verify the intended files exist and no functional files were edited.
+- After any functional code change, restart the relevant local server before verification so API/frontend changes are not tested against a stale running process.
 - For frontend changes, run or manually verify the affected page in desktop and mobile widths.
 - For API changes, run syntax checks and at least one focused endpoint test where practical.
 - For transport/public-board changes, verify public privacy boundaries and status filtering.

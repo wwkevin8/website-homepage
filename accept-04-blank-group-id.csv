@@ -1,0 +1,3 @@
+student_name,phone,wechat,service_type,airport_code,terminal,flight_no,flight_datetime,service_time,address,passenger_count,luggage_count,contact_status,payment_collection_status,deposit_amount_gbp,group_id,admin_note
+验收空标识A,+44 7100 200001,wx_accept_blank_a,pickup,LHR,T2,BA1001,2026-06-10 09:20,2026-06-10 10:30,10 Test Street London,1,1,uncontacted,unpaid,0,,A类验收-空标识A
+验收空标识B,+44 7100 200002,wx_accept_blank_b,pickup,LHR,T2,BA1002,2026-06-10 11:10,2026-06-10 12:20,20 Test Street London,1,1,uncontacted,unpaid,0,,A类验收-空标识B

@@ -1,5 +1,6 @@
 const REQUEST_STATUSES = ["published", "matched", "closed"];
 const GROUP_STATUSES = ["single_member", "active", "full", "closed", "cancelled"];
+const DISPATCH_STATUSES = ["pending_dispatch", "driver_assigned", "driver_notified", "in_progress", "completed", "cancelled"];
 const SERVICE_TYPES = ["pickup", "dropoff"];
 const MANUAL_CURRENT_PREFIX = "manual_current:";
 const PUBLIC_REQUEST_STATUSES = ["published", "matched"];
@@ -285,8 +286,15 @@ function mapGroupPayload(payload, existing = {}) {
     max_passengers: ensurePositiveInteger(payload.max_passengers ?? existing.max_passengers, "max_passengers"),
     visible_on_frontend: payload.visible_on_frontend ?? existing.visible_on_frontend ?? false,
     status: ensureEnum(normalizeLegacyGroupStatus(payload.status ?? existing.status ?? "single_member"), GROUP_STATUSES, "status"),
+    dispatch_status: ensureEnum(payload.dispatch_status ?? existing.dispatch_status ?? "pending_dispatch", DISPATCH_STATUSES, "dispatch_status"),
     notes: normalizeNullableText(payload.notes ?? existing.notes)
   };
+
+  ["driver_name", "driver_phone", "driver_note"].forEach(field => {
+    if (Object.prototype.hasOwnProperty.call(payload, field) || Object.prototype.hasOwnProperty.call(existing, field)) {
+      next[field] = normalizeNullableText(payload[field] ?? existing[field]);
+    }
+  });
 
   validateTimeWindow(next.preferred_time_start, next.preferred_time_end);
   return next;
@@ -547,6 +555,7 @@ module.exports = {
   PUBLIC_REQUEST_STATUSES,
   ACTIVE_PICKUP_REQUEST_STATUSES,
   GROUP_STATUSES,
+  DISPATCH_STATUSES,
   SERVICE_TYPES,
   DEFAULT_GROUP_MAX_PASSENGERS,
   mapRequestPayload,

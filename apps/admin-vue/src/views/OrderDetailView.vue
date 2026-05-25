@@ -139,14 +139,14 @@ function professionalHref() {
     return `/admin/storage/${routeName}/${encodeURIComponent(sourceId)}?return_to=${encodeURIComponent(`/admin/orders/${orderId.value}`)}`;
   }
   if (isTransportOrder.value) {
-    return `/admin/transport/requests/${encodeURIComponent(sourceId)}?return_to=${encodeURIComponent(`/admin/orders/${orderId.value}`)}`;
+    return `/admin/transport/requests?return_to=${encodeURIComponent(`/admin/orders/${orderId.value}`)}`;
   }
   return "";
 }
 
 function professionalLabel() {
   if (isStorageOrder.value) return "打开寄存专业详情";
-  if (isTransportOrder.value) return "打开接送机专业详情";
+  if (isTransportOrder.value) return "打开接送机订单列表";
   return "暂无专业详情入口";
 }
 

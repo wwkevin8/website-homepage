@@ -10,16 +10,16 @@ import StatusBadge from "@/components/StatusBadge.vue";
 import TransportGroupFilters from "@/components/TransportGroupFilters.vue";
 
 const columns = [
-  { key: "group_id", label: "Group ID", width: "10%" },
-  { key: "route", label: "服务 / 机场", width: "12%" },
-  { key: "service_time", label: "日期 / 时间", width: "11%" },
-  { key: "members", label: "成员", width: "16%" },
-  { key: "capacity", label: "人数 / 行李", width: "9%" },
-  { key: "price", label: "人均 / 总价", width: "10%" },
-  { key: "payment_status", label: "付款 / 记录", width: "12%" },
-  { key: "dispatch_readiness", label: "派单准备度", width: "14%" },
-  { key: "visibility", label: "前台 / 状态", width: "10%" },
-  { key: "actions", label: "操作", width: "150px", className: "is-actions", sticky: "end" }
+  { key: "group_id", label: "Group ID", width: "160px" },
+  { key: "route", label: "服务 / 机场", width: "170px" },
+  { key: "service_time", label: "日期 / 时间", width: "150px" },
+  { key: "members", label: "成员", width: "260px" },
+  { key: "capacity", label: "人数 / 行李", width: "130px" },
+  { key: "price", label: "人均 / 总价", width: "150px" },
+  { key: "payment_status", label: "付款 / 记录", width: "170px" },
+  { key: "dispatch_readiness", label: "派单准备度", width: "230px" },
+  { key: "visibility", label: "前台 / 组状态 / 调度", width: "200px" },
+  { key: "actions", label: "操作", width: "170px", className: "is-actions", sticky: "end" }
 ];
 
 const defaultFilters = {
@@ -35,6 +35,7 @@ const defaultFilters = {
   paymentStatus: "",
   offlineStatus: "",
   dispatchReadiness: "",
+  dispatchStatus: "",
   pageSize: 10
 };
 
@@ -144,6 +145,25 @@ function statusTone(status) {
   if (status === "closed" || status === "cancelled" || status === "canceled") return "neutral";
   if (status === "full") return "success";
   return "warning";
+}
+
+function dispatchStatusLabel(status) {
+  const labels = {
+    pending_dispatch: "待调度",
+    driver_assigned: "已派车",
+    driver_notified: "已通知司机",
+    in_progress: "服务中",
+    completed: "已完成",
+    cancelled: "已取消"
+  };
+  return labels[status] || "待调度";
+}
+
+function dispatchStatusTone(status) {
+  if (status === "completed") return "success";
+  if (status === "cancelled") return "neutral";
+  if (status === "driver_assigned" || status === "driver_notified" || status === "in_progress") return "warning";
+  return "neutral";
 }
 
 function paymentCollectionLabel(value) {
@@ -409,6 +429,12 @@ function matchesDispatchReadinessFilter(group) {
   return Boolean(readinessState(group)[selected]);
 }
 
+function matchesDispatchStatusFilter(group) {
+  const selected = filters.dispatchStatus;
+  if (!selected) return true;
+  return String(group.dispatch_status || "pending_dispatch") === selected;
+}
+
 function matchesClientFilters(group) {
   const keyword = normalizeText(filters.keyword);
   if (keyword && !searchHaystack(group).includes(keyword)) return false;
@@ -422,6 +448,7 @@ function matchesClientFilters(group) {
   if (!matchesPaymentFilter(group)) return false;
   if (!matchesOfflineFilter(group)) return false;
   if (!matchesDispatchReadinessFilter(group)) return false;
+  if (!matchesDispatchStatusFilter(group)) return false;
   return true;
 }
 
@@ -544,6 +571,7 @@ function exportFilteredGroups() {
     "当前人均价",
     "总价",
     "组状态",
+    "调度状态",
     "前台显示",
     "风险提示",
     "派单准备度",
@@ -573,6 +601,7 @@ function exportFilteredGroups() {
       formatMoney(group.current_average_price_gbp || group.payment_summary?.average_price_gbp),
       formatMoney(totalPrice(group)),
       statusLabel(group.status),
+      dispatchStatusLabel(group.dispatch_status),
       visibleLabel(group.visible_on_frontend),
       groupRisks,
       readinessText(group)
@@ -624,9 +653,6 @@ onMounted(() => {
     <div class="transport-list-toolbar">
       <span class="transport-list-toolbar__summary">
         当前筛选 {{ filteredGroups.length }} 组，已加载 {{ allGroups.length }} 组
-      </span>
-      <span class="transport-list-toolbar__summary">
-        仅展示调度信息；成员加入、移出、换组和订单核心字段仍需走详情/P5流程。
       </span>
     </div>
 
@@ -696,6 +722,7 @@ onMounted(() => {
           <span class="cell-stack">
             <StatusBadge :tone="visibleTone(row.visible_on_frontend)">{{ visibleLabel(row.visible_on_frontend) }}</StatusBadge>
             <StatusBadge :tone="statusTone(row.status)">{{ statusLabel(row.status) }}</StatusBadge>
+            <StatusBadge :tone="dispatchStatusTone(row.dispatch_status)">{{ dispatchStatusLabel(row.dispatch_status) }}</StatusBadge>
           </span>
         </template>
         <template #cell-actions="{ row }">

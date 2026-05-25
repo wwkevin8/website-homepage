@@ -126,6 +126,18 @@ const airportOptions = [
         </select>
       </label>
       <label class="field">
+        <span>调度状态</span>
+        <select v-model="model.dispatchStatus">
+          <option value="">全部</option>
+          <option value="pending_dispatch">待调度</option>
+          <option value="driver_assigned">已派车</option>
+          <option value="driver_notified">已通知司机</option>
+          <option value="in_progress">服务中</option>
+          <option value="completed">已完成</option>
+          <option value="cancelled">已取消</option>
+        </select>
+      </label>
+      <label class="field">
         <span>开始日期</span>
         <input v-model="model.dateFrom" type="date" />
       </label>

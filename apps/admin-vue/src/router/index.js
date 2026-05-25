@@ -19,7 +19,6 @@ import StorageSyncLogsView from "@/views/StorageSyncLogsView.vue";
 import StorageTodayWorkOrdersView from "@/views/StorageTodayWorkOrdersView.vue";
 import TransportGroupDetailView from "@/views/TransportGroupDetailView.vue";
 import TransportGroupsView from "@/views/TransportGroupsView.vue";
-import TransportRequestDetailView from "@/views/TransportRequestDetailView.vue";
 import TransportRequestsView from "@/views/TransportRequestsView.vue";
 import TransportSyncLogsView from "@/views/TransportSyncLogsView.vue";
 import UsersView from "@/views/UsersView.vue";
@@ -116,12 +115,6 @@ const router = createRouter({
           name: "transport-requests",
           component: TransportRequestsView,
           meta: { title: "登记接送机订单" }
-        },
-        {
-          path: "transport/requests/:id",
-          name: "transport-request-detail",
-          component: TransportRequestDetailView,
-          meta: { title: "接送机订单详情" }
         },
         {
           path: "transport/groups",

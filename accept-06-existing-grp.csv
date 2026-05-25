@@ -1,0 +1,2 @@
+student_name,phone,wechat,service_type,airport_code,terminal,flight_no,flight_datetime,service_time,address,passenger_count,luggage_count,contact_status,payment_collection_status,deposit_amount_gbp,group_id,admin_note
+验收加入已有组,+44 7100 220001,wx_accept_existing,pickup,LHR,T2,BA1201,2026-06-10 10:50,2026-06-10 11:20,40 Test Street London,1,1,uncontacted,unpaid,0,GRP-请替换为真实编号,A类验收-加入已有GRP

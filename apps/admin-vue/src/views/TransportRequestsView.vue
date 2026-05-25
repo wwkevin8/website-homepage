@@ -37,6 +37,7 @@ const columns = [
   { key: "wb_terminal", label: "航站楼", width: "82px" },
   { key: "wb_flight_no", label: "航班号", width: "100px" },
   { key: "wb_flight_datetime", label: "航班时间", width: "142px" },
+  { key: "wb_itinerary_address", label: "行程地址", width: "220px" },
   { key: "wb_passenger_count", label: "人数", width: "68px" },
   { key: "wb_luggage_count", label: "行李", width: "68px" },
   { key: "wb_group_status", label: "拼车状态/组", width: "138px" },
@@ -536,6 +537,47 @@ function rowServiceDate(row) {
 function rowServiceTimeRange(row) {
   const start = row.preferred_time_start || row.flight_datetime;
   return start ? formatTime(start) : "--";
+}
+
+function firstTextValue(...values) {
+  for (const value of values) {
+    const text = String(value ?? "").trim();
+    if (text) return text;
+  }
+  return "";
+}
+
+function normalizedServiceType(row) {
+  return String(row?.service_type || row?.serviceType || row?.type || "").trim().toLowerCase();
+}
+
+function isPickupService(row) {
+  const type = normalizedServiceType(row);
+  return ["pickup", "airport_pickup", "airport pickup", "arrival", "arrivals", "接机"].includes(type);
+}
+
+function isDropoffService(row) {
+  const type = normalizedServiceType(row);
+  return ["dropoff", "airport_dropoff", "airport dropoff", "departure", "departures", "送机"].includes(type);
+}
+
+function itineraryAddress(row) {
+  if (!row) return "";
+  if (isPickupService(row)) {
+    return firstTextValue(row.location_to, row.destination, row.accommodation, row.address, row.detailed_address, row.location_from);
+  }
+  if (isDropoffService(row)) {
+    return firstTextValue(row.location_from, row.address, row.detailed_address, row.accommodation, row.destination, row.location_to);
+  }
+  return firstTextValue(row.address, row.detailed_address, row.location_to, row.destination, row.accommodation, row.location_from);
+}
+
+function itineraryAddressText(row) {
+  const address = itineraryAddress(row);
+  if (!address) return "-";
+  if (isPickupService(row)) return `目的地：${address}`;
+  if (isDropoffService(row)) return `出发地：${address}`;
+  return `地址：${address}`;
 }
 
 function lockTitle() {
@@ -1947,6 +1989,9 @@ watch(
         </template>
         <template #cell-wb_flight_datetime="{ row }">
           <span class="locked-cell" :title="lockTitle()">{{ formatDateTime(row.flight_datetime) }}</span>
+        </template>
+        <template #cell-wb_itinerary_address="{ row }">
+          <span class="cell-truncate locked-cell" :title="itineraryAddressText(row)">{{ itineraryAddressText(row) }}</span>
         </template>
         <template #cell-wb_passenger_count="{ row }">
           <span class="locked-cell" :title="lockTitle()">{{ displayValue(row.passenger_count) }}</span>

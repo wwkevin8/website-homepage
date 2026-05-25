@@ -2,7 +2,7 @@ const { getSupabaseAdmin } = require("../_lib/supabase");
 const { requireAdminUser } = require("../_lib/admin-auth");
 const { ok, badRequest, parseJsonBody, methodNotAllowed, serverError } = require("../_lib/http");
 const { applyEffectiveGroupCounts, mapGroupPayload, getGroupPassengerCount, deriveDisplayGroupId } = require("../_lib/transport");
-const { createGroupForRequest } = require("../_lib/transport-group-lifecycle");
+const { createGroupForRequest, cleanupEmptyTransportGroups, deleteEmptyGroupIfEligible } = require("../_lib/transport-group-lifecycle");
 const { computeTransportGroupPricingSnapshot } = require("../_lib/transport-group-stats");
 const { logAdminOperation } = require("../_lib/orders");
 
@@ -34,6 +34,18 @@ function normalizeLegacyGroupStatusInput(input = {}) {
 
 function resolveAdminDisplayName(adminUser = {}) {
   return String(adminUser.name || adminUser.username || adminUser.email || "admin").trim() || "admin";
+}
+
+function dispatchStatusLabel(status) {
+  const labels = {
+    pending_dispatch: "待调度",
+    driver_assigned: "已派车",
+    driver_notified: "已通知司机",
+    in_progress: "服务中",
+    completed: "已完成",
+    cancelled: "已取消"
+  };
+  return labels[status] || String(status || "");
 }
 
 function normalizeAuditValue(value) {
@@ -335,28 +347,42 @@ module.exports = async function handler(req, res) {
 
   try {
     if (req.method === "GET") {
+      await cleanupEmptyTransportGroups(supabase);
       const group = await fetchSingleGroupRow(supabase, "transport_groups_public_view", id);
       if (!group) {
         badRequest(res, "group not found");
         return;
       }
+      const rawGroup = await fetchSingleGroupRow(supabase, "transport_groups", group.group_id || id);
+      const emptyCleanup = await deleteEmptyGroupIfEligible(supabase, rawGroup || group);
+      if (emptyCleanup.deleted) {
+        badRequest(res, "group not found");
+        return;
+      }
+      const groupWithDispatchStatus = {
+        ...group,
+        dispatch_status: rawGroup?.dispatch_status || "pending_dispatch",
+        driver_name: rawGroup?.driver_name || "",
+        driver_phone: rawGroup?.driver_phone || "",
+        driver_note: rawGroup?.driver_note || ""
+      };
 
       const { data: members, error: membersError } = await supabase
         .from("transport_group_members")
         .select(GROUP_DETAIL_MEMBER_SELECT)
-        .eq("group_id", group.group_id || group.id)
+        .eq("group_id", groupWithDispatchStatus.group_id || groupWithDispatchStatus.id)
         .order("created_at", { ascending: true });
 
       if (membersError) {
         throw membersError;
       }
 
-      const viewModel = computeGroupViewModel(group, members || []);
-      const operationLogs = await fetchGroupOperationLogs(supabase, group, members || []);
+      const viewModel = computeGroupViewModel(groupWithDispatchStatus, members || []);
+      const operationLogs = await fetchGroupOperationLogs(supabase, groupWithDispatchStatus, members || []);
 
       ok(res, {
         ...viewModel.group,
-        id: group.id,
+        id: groupWithDispatchStatus.id,
         group_id: viewModel.summary.group_id,
         summary: viewModel.summary,
         members: viewModel.members,
@@ -391,17 +417,44 @@ module.exports = async function handler(req, res) {
         return;
       }
 
+      let updatePayload = payload;
       let result = await supabase
         .from("transport_groups")
-        .update(payload)
+        .update(updatePayload)
         .eq("id", existing.id)
         .select("*");
+
+      if (result.error && isMissingColumnError(result.error, "dispatch_status")) {
+        updatePayload = { ...payload };
+        delete updatePayload.dispatch_status;
+        result = await supabase
+          .from("transport_groups")
+          .update(updatePayload)
+          .eq("id", existing.id)
+          .select("*");
+      }
+
+      if (result.error && (
+        isMissingColumnError(result.error, "driver_name") ||
+        isMissingColumnError(result.error, "driver_phone") ||
+        isMissingColumnError(result.error, "driver_note")
+      )) {
+        updatePayload = { ...updatePayload };
+        delete updatePayload.driver_name;
+        delete updatePayload.driver_phone;
+        delete updatePayload.driver_note;
+        result = await supabase
+          .from("transport_groups")
+          .update(updatePayload)
+          .eq("id", existing.id)
+          .select("*");
+      }
 
       if (result.error && isMissingColumnError(result.error, "transport_groups.group_id")) {
         result = await supabase
           .from("transport_groups")
           .update({
-            ...payload
+            ...updatePayload
           })
           .eq("id", existing.id)
           .select("*");
@@ -417,26 +470,28 @@ module.exports = async function handler(req, res) {
         return;
       }
 
-      const changedFields = buildChangedFields(existing, payload);
-      if (changedFields.length) {
+      const changedFields = buildChangedFields(existing, updatePayload);
+      const dispatchStatusChange = changedFields.find(item => item.field === "dispatch_status");
+      const regularChangedFields = changedFields.filter(item => item.field !== "dispatch_status");
+      if (regularChangedFields.length) {
         try {
           await logAdminOperation(supabase, {
             admin_user_id: adminUser.id || null,
             target_type: "transport_group",
             target_id: existing.id,
             action: "update_transport_group",
-            before_data: changedFields.reduce((result, item) => {
+            before_data: regularChangedFields.reduce((result, item) => {
               result[item.field] = item.before;
               return result;
             }, {}),
-            after_data: changedFields.reduce((result, item) => {
+            after_data: regularChangedFields.reduce((result, item) => {
               result[item.field] = item.after;
               return result;
             }, {}),
             metadata: {
               group_id: existing.group_id || deriveDisplayGroupId(existing.id, existing.group_date),
               admin_name: resolveAdminDisplayName(adminUser),
-              changed_fields: changedFields
+              changed_fields: regularChangedFields
             }
           });
         } catch (logError) {
@@ -447,7 +502,39 @@ module.exports = async function handler(req, res) {
         }
       }
 
-      const nextStatus = String(payload.status || "").trim().toLowerCase();
+      if (dispatchStatusChange) {
+        try {
+          await logAdminOperation(supabase, {
+            admin_user_id: adminUser.id || null,
+            target_type: "transport_group",
+            target_id: existing.id,
+            action: "dispatch_status_update",
+            before_data: {
+              dispatch_status: dispatchStatusChange.before
+            },
+            after_data: {
+              dispatch_status: dispatchStatusChange.after
+            },
+            metadata: {
+              group_id: existing.group_id || deriveDisplayGroupId(existing.id, existing.group_date),
+              admin_name: resolveAdminDisplayName(adminUser),
+              field: "dispatch_status",
+              old_value: dispatchStatusChange.before,
+              new_value: dispatchStatusChange.after,
+              old_label: dispatchStatusLabel(dispatchStatusChange.before),
+              new_label: dispatchStatusLabel(dispatchStatusChange.after),
+              changed_fields: [dispatchStatusChange]
+            }
+          });
+        } catch (logError) {
+          console.warn("transport_group_dispatch_status_log_failed", {
+            group_id: existing.group_id || existing.id,
+            message: logError?.message || String(logError)
+          });
+        }
+      }
+
+      const nextStatus = String(updatePayload.status || "").trim().toLowerCase();
       if (nextStatus === "closed" || nextStatus === "cancelled") {
         const { data: groupMembers, error: groupMembersError } = await supabase
           .from("transport_group_members")

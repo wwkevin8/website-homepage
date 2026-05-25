@@ -500,7 +500,28 @@ module.exports = async function handler(req, res) {
           throw error;
         }
 
+        const updatedRequest = await getRequestDetailWithLogs(supabase, id);
+        let paymentEmail = null;
+        if (!wasPaid && isPaid) {
+          try {
+            const { sendTransportPaymentConfirmationEmail } = require("../_lib/transport-payment-email");
+            paymentEmail = await sendTransportPaymentConfirmationEmail(supabase, updatedRequest);
+          } catch (emailError) {
+            paymentEmail = {
+              skipped: false,
+              error: emailError && emailError.message ? emailError.message : "Failed to send payment confirmation email"
+            };
+          }
+        }
+
         if (changedFields.length) {
+          const paymentEmailMetadata = {
+            payment_email_triggered: Boolean(paymentEmail && !paymentEmail.skipped),
+            payment_email_status: paymentEmail
+              ? (paymentEmail.error ? "failed" : (paymentEmail.provider === "local_mock" ? "local_mock" : "sent"))
+              : "not_triggered",
+            payment_email_error: paymentEmail?.error || null
+          };
           try {
             await logAdminOperation(supabase, {
               admin_user_id: adminUser.id || null,
@@ -519,7 +540,8 @@ module.exports = async function handler(req, res) {
                 order_no: existing.order_no,
                 admin_name: resolveAdminDisplayName(adminUser),
                 changed_fields: changedFields,
-                ...batchPaymentMetadata
+                ...batchPaymentMetadata,
+                ...paymentEmailMetadata
               }
             });
           } catch (logError) {
@@ -527,20 +549,6 @@ module.exports = async function handler(req, res) {
               request_id: existing.id,
               message: logError?.message || String(logError)
             });
-          }
-        }
-
-        const updatedRequest = await getRequestDetailWithLogs(supabase, id);
-        let paymentEmail = null;
-        if (!wasPaid && isPaid) {
-          try {
-            const { sendTransportPaymentConfirmationEmail } = require("../_lib/transport-payment-email");
-            paymentEmail = await sendTransportPaymentConfirmationEmail(supabase, updatedRequest);
-          } catch (emailError) {
-            paymentEmail = {
-              skipped: false,
-              error: emailError && emailError.message ? emailError.message : "Failed to send payment confirmation email"
-            };
           }
         }
 

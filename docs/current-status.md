@@ -1,4 +1,4 @@
-# Current Status
+﻿# Current Status
 
 ## Document Rules
 
@@ -8,16 +8,23 @@
 ## Last Updated Task
 
 - Date: 2026-05-25
-- Scope: Cleaned the admin transport request list row actions so the right-side operation area exposes the final three entry points: itinerary adjustment, operation log, and close order. No API, database, import, group-membership, payment, SQL, migration, production data, commit, or push action.
+- Scope: Removed internal P5/P6 stage-marker wording from the admin carpool group list/detail screens. No API, database, import, group-membership, payment, SQL, migration, production data, commit, or push action.
 
 ## Latest Completed Work
 
+- Removed internal stage-marker wording from the admin carpool group UI:
+  - `apps/admin-vue/src/views/TransportGroupsView.vue` no longer shows the toolbar hint mentioning the detail/P5 flow;
+  - `apps/admin-vue/src/views/TransportGroupDetailView.vue` no longer shows `Transport dispatch 路 P6A`, the P6A read-only overview hint, or the P5 order-change member hint;
+  - the local-test note now says `鏈湴娴嬭瘯` instead of `P6 鏈湴娴嬭瘯`;
+  - rebuilt the generated admin bundle; `/admin/` now serves `admin/assets/index-Qsmlano-.js` and `admin/assets/index-DfE4uMCS.css`;
+  - restarted the local `3000` helper server after the frontend bundle change.
+
 - Cleaned the admin transport request row action area:
-  - `apps/admin-vue/src/views/TransportRequestsView.vue` now labels the itinerary entry as `调整行程`;
-  - the operation-log row button now says `操作记录` and opens the existing read-only operation-log drawer;
+  - `apps/admin-vue/src/views/TransportRequestsView.vue` now labels the itinerary entry as `璋冩暣琛岀▼`;
+  - the operation-log row button now says `鎿嶄綔璁板綍` and opens the existing read-only operation-log drawer;
   - the list row no longer exposes a separate request-detail entry from the transport request action area;
-  - the workbench row action area now keeps the three primary actions in order: `调整行程`, `操作记录`, `关闭订单`;
-  - the row save affordance is demoted to a small note-save link/status below the primary actions, so `已保存` is no longer presented as a peer operation button;
+  - the workbench row action area now keeps the three primary actions in order: `璋冩暣琛岀▼`, `鎿嶄綔璁板綍`, `鍏抽棴璁㈠崟`;
+  - the row save affordance is demoted to a small note-save link/status below the primary actions, so `宸蹭繚瀛榒 is no longer presented as a peer operation button;
   - `apps/admin-vue/src/styles.css` adds the minimal layout/style needed for the small note-save link/status.
 
 - Verification for the transport request row action cleanup:
@@ -32,7 +39,7 @@
   - `docs/PROJECT_MAP.md` documents the confirmed behavior.
 
 - Updated the admin transport request workbench amount column:
-  - `apps/admin-vue/src/views/TransportRequestsView.vue` now labels `wb_deposit_amount_gbp` as `已收全款/定金`;
+  - `apps/admin-vue/src/views/TransportRequestsView.vue` now labels `wb_deposit_amount_gbp` as `宸叉敹鍏ㄦ/瀹氶噾`;
   - widened the column from `98px` to `128px` so the longer header fits more comfortably;
   - rebuilt the generated admin bundle; `/admin/` now serves `admin/assets/index-Cl00qDbt.js` and `admin/assets/index-DJs6utB9.css`;
   - restarted the local `3000` helper server after the frontend bundle change.
@@ -40,19 +47,19 @@
 - Verification for the received-amount header rename:
   - `npm --prefix apps/admin-vue run build` passed with only the existing Vite chunk-size warning;
   - `http://127.0.0.1:3000/admin/` returned the new generated bundle references;
-  - source/generated-admin search confirmed `已收全款/定金` is present.
+  - source/generated-admin search confirmed `宸叉敹鍏ㄦ/瀹氶噾` is present.
 
-- Added a visible row-level `保存` button to `apps/admin-vue/src/views/TransportRequestsView.vue` in the `登记接送机订单` workbench action column:
+- Added a visible row-level `淇濆瓨` button to `apps/admin-vue/src/views/TransportRequestsView.vue` in the `鐧昏鎺ラ€佹満璁㈠崟` workbench action column:
   - the button calls the existing `saveWorkbenchRow(row)` path used for customer-service workbench fields;
-  - it is enabled only when that row has unsaved changes and shows `保存中` while the row is saving;
-  - the existing `未保存修改` and row error messages remain in place;
+  - it is enabled only when that row has unsaved changes and shows `淇濆瓨涓璥 while the row is saving;
+  - the existing `鏈繚瀛樹慨鏀筦 and row error messages remain in place;
   - rebuilt the generated admin bundle; `/admin/` now serves `admin/assets/index-CjYfWIm_.js` and `admin/assets/index-DJs6utB9.css`;
   - restarted the local `3000` helper server after the functional frontend change.
 
 - Verification for the explicit save-button change:
   - `npm --prefix apps/admin-vue run build` passed with only the existing Vite chunk-size warning;
   - `http://127.0.0.1:3000/admin/` returned the new generated bundle references;
-  - source/generated-admin search confirmed the row action now includes `保存`, `保存中`, and `saveWorkbenchRow(row)`.
+  - source/generated-admin search confirmed the row action now includes `淇濆瓨`, `淇濆瓨涓璥, and `saveWorkbenchRow(row)`.
 
 - Completed the controlled A-class transport fix set:
   - `apps/admin-vue/src/components/TransportOrderChangeDrawer.vue` now reads and sends the received amount through `deposit_amount_gbp`, matching the amount field used by the transport request list.
@@ -74,7 +81,7 @@
 - Restored route-breaking multi-member carpool edit choices in `apps/admin-vue/src/components/TransportOrderChangeDrawer.vue`:
   - when preview says the order cannot stay in the current multi-member carpool group, the drawer disables keeping the original group but still allows a replacement single-member group or a compatible target group;
   - for that required move-out case, the drawer keeps the final-handling selector visible instead of forcing only the single-member-group path;
-  - duplicate red/yellow risk sections were merged into one Chinese `风险提示` block, so operators still see the risk without repeated blocking copy.
+  - duplicate red/yellow risk sections were merged into one Chinese `椋庨櫓鎻愮ず` block, so operators still see the risk without repeated blocking copy.
 
 - Added target carpool-group number search to `apps/admin-vue/src/components/TransportOrderChangeDrawer.vue`:
   - when final handling is joining a specified compatible carpool group, operators can enter a `GRP-...` group number and click the Chinese validation button;
@@ -96,7 +103,7 @@
   - rebuilt the generated local admin bundle and restarted the local `3000` helper server.
 
 - Added target carpool-group number search to `apps/admin-vue/src/components/TransportOrderChangeDrawer.vue`:
-  - when final handling is `加入指定兼容拼车组`, operators can enter a `GRP-...` group number and click `校验拼车组`;
+  - when final handling is `鍔犲叆鎸囧畾鍏煎鎷艰溅缁刞, operators can enter a `GRP-...` group number and click `鏍￠獙鎷艰溅缁刞;
   - the drawer calls the existing order-change preview endpoint with the current draft itinerary and target group number;
   - if the group can be joined, it is added to the dropdown and automatically selected;
   - if it cannot be joined, the drawer shows the returned Chinese reason instead of only showing an empty dropdown.
@@ -114,11 +121,11 @@
   - rebuilt the generated local admin bundle and restarted the local `3000` helper server.
 
 - Fixed the batch manual import preview treating filled temporary group identifiers as blank:
-  - `api/_lib/transport-manual-import.js` now recognizes the shared template label `拼车组标识（可选）` and related Chinese/English aliases when normalizing uploaded rows;
+  - `api/_lib/transport-manual-import.js` now recognizes the shared template label `鎷艰溅缁勬爣璇嗭紙鍙€夛級` and related Chinese/English aliases when normalizing uploaded rows;
   - UTF-8 BOM is stripped from frontend and backend import header normalization so BOM CSV headers do not miss alias matching;
-  - the batch import template no longer includes the unused `是否愿意拼车` column;
-  - the batch import preview table no longer displays the unused `是否愿意拼车` column;
-  - regenerated `transport-bulk-import-group-test.csv` and `transport-bulk-import-group-test-utf8-bom.csv` without the unused column and with three `测试组A` rows;
+  - the batch import template no longer includes the unused `鏄惁鎰挎剰鎷艰溅` column;
+  - the batch import preview table no longer displays the unused `鏄惁鎰挎剰鎷艰溅` column;
+  - regenerated `transport-bulk-import-group-test.csv` and `transport-bulk-import-group-test-utf8-bom.csv` without the unused column and with three `娴嬭瘯缁凙` rows;
   - created `transport-bulk-import-group-test-v2.xlsx` with the same updated test rows because the previous `.xlsx` was locked open by Excel;
   - updated `docs/PROJECT_MAP.md` to record that preview recognizes the current Chinese group-identifier template header and aliases;
   - rebuilt the generated local admin bundle and restarted the local `3000` helper server.
@@ -132,25 +139,25 @@
   - refreshed the generated local admin bundle and restarted the local `3000` helper server after the functional change.
 
 - Clarified batch manual import group identifier guidance:
-  - `shared/transport-manual-import-columns.json` now explains that a blank `拼车组标识（可选）` creates a separate single-member group for each blank row, not one group for the whole batch;
-  - the same field note explains that repeated temporary identifiers such as `新组A` create one shared new group for those rows;
+  - `shared/transport-manual-import-columns.json` now explains that a blank `鎷艰溅缁勬爣璇嗭紙鍙€夛級` creates a separate single-member group for each blank row, not one group for the whole batch;
+  - the same field note explains that repeated temporary identifiers such as `鏂扮粍A` create one shared new group for those rows;
   - the same field note explains that existing `GRP-...` identifiers are joined only if found, and missing identifiers are red preview errors;
   - the batch import modal now shows these three rules before the full template field list;
   - the test-example section now labels which example row tests blank single-group creation, missing `GRP` blocking, and shared temporary-group creation;
   - refreshed the generated local admin bundle with `npm --prefix apps/admin-vue run build`.
 
-- Removed the `是否愿意拼车` selectable control from `apps/admin-vue/src/components/TransportOrderChangeDrawer.vue`:
+- Removed the `鏄惁鎰挎剰鎷艰溅` selectable control from `apps/admin-vue/src/components/TransportOrderChangeDrawer.vue`:
   - the itinerary edit drawer no longer lets operators switch a request to not-shareable;
   - opening the drawer sets the draft `shareable` value to `true`;
   - preview/confirm payloads always send `shareable: true`, so target carpool-group lookup is not blocked by an old stored not-shareable value;
-  - removed the temporary UI gating that disabled `加入指定兼容拼车组` for not-shareable previews;
+  - removed the temporary UI gating that disabled `鍔犲叆鎸囧畾鍏煎鎷艰溅缁刞 for not-shareable previews;
   - cleaned the previous temporary `group_context.request_shareable` response field from `api/transport-requests/[id]/change-preview.js`;
   - refreshed the generated local admin bundle and restarted the local `3000` helper server after the functional change.
 
 - Clarified admin transport order-change candidate behavior:
   - `api/transport-requests/[id]/change-preview.js` now includes `group_context.request_shareable` so the UI can tell whether the previewed order is allowed to join a carpool group;
-  - `apps/admin-vue/src/components/TransportOrderChangeDrawer.vue` disables `加入指定兼容拼车组` when the previewed order has `是否愿意拼车 = 否`;
-  - the drawer now tells operators to change `是否愿意拼车` to `是` and re-preview before trying to join a target carpool group;
+  - `apps/admin-vue/src/components/TransportOrderChangeDrawer.vue` disables `鍔犲叆鎸囧畾鍏煎鎷艰溅缁刞 when the previewed order has `鏄惁鎰挎剰鎷艰溅 = 鍚;
+  - the drawer now tells operators to change `鏄惁鎰挎剰鎷艰溅` to `鏄痐 and re-preview before trying to join a target carpool group;
   - confirmation also blocks a disabled group action instead of falling through to a generic missing-target error;
   - refreshed the generated local admin bundle and restarted the local `3000` helper server after the functional change.
 
@@ -163,7 +170,7 @@
 
 - Created `transport-bulk-import-group-test.csv` in the project root for manual admin validation of batch import group handling:
   - one blank group identifier row to verify automatic single-member group creation;
-  - two rows with the same temporary identifier `测试组A` to verify one shared new group is created;
+  - two rows with the same temporary identifier `娴嬭瘯缁凙` to verify one shared new group is created;
   - one row with `GRP-DOES-NOT-EXIST` to verify preview blocks non-existent existing group identifiers.
 
 - Investigated the follow-up target-group dropdown case:
@@ -197,7 +204,7 @@
   - verification: admin build passed with only the existing Vite chunk-size warning, and source search found no `wb_wechat` / `cell-wb_wechat` list column remnants.
 
 - Fixed batch manual transport import group assignment:
-  - added `拼车组标识（可选）` to the shared import template column definition used by CSV, Excel, copied headers, and paste parsing;
+  - added `鎷艰溅缁勬爣璇嗭紙鍙€夛級` to the shared import template column definition used by CSV, Excel, copied headers, and paste parsing;
   - preview now shows each row's group handling result: blank values auto-create a single-member group, `GRP-...` values join an existing group, and repeated non-`GRP` temporary keys create one shared new group for those rows;
   - preview now blocks non-existent `GRP-...` group identifiers as red errors and surfaces compatibility/capacity concerns as yellow warnings requiring operator confirmation;
   - commit now creates each `transport_requests` row and immediately creates or joins a `transport_group`, writing `transport_group_members` for every imported request;
@@ -206,36 +213,36 @@
   - `docs/PROJECT_MAP.md` now documents the new preview/commit behavior.
 
 - Simplified the transport request operation-log drawer in `apps/admin-vue/src/views/TransportRequestsView.vue`:
-  - changed the row audit button back to concise Chinese `记录`;
+  - changed the row audit button back to concise Chinese `璁板綍`;
   - changed the drawer title, close/loading/empty/error copy back to concise Chinese;
   - replaced the repeated audit table with compact cards showing action, operator, time, and up to five readable field changes;
-  - mapped technical actions and fields to short customer-service labels such as `行程更新`, `航班时间`, `服务时间`, `人数`, `行李`, and `已收`;
+  - mapped technical actions and fields to short customer-service labels such as `琛岀▼鏇存柊`, `鑸彮鏃堕棿`, `鏈嶅姟鏃堕棿`, `浜烘暟`, `琛屾潕`, and `宸叉敹`;
   - compacted timestamps and long UUID-like values so audit rows fit without noisy wrapping;
   - refreshed the generated local admin bundle with `npm --prefix apps/admin-vue run build`;
   - verification: admin build passed with only the existing Vite chunk-size warning, and source/generated-admin searches found no leftover English Activity copy from the previous iteration.
 
 - Simplified the transport request list in `apps/admin-vue/src/views/TransportRequestsView.vue`:
-  - removed the list-row `详情` / `查看详情` entry for pickup/dropoff transport requests;
-  - row actions now expose `调整行程`, `操作记录`, and `关闭订单` in the transport list action column;
-  - `调整行程` now fetches the latest single-order detail before opening `TransportOrderChangeDrawer`, so the drawer remains the single place to view and modify itinerary/payment/note fields with preview and confirm;
+  - removed the list-row `璇︽儏` / `鏌ョ湅璇︽儏` entry for pickup/dropoff transport requests;
+  - row actions now expose `璋冩暣琛岀▼`, `鎿嶄綔璁板綍`, and `鍏抽棴璁㈠崟` in the transport list action column;
+  - `璋冩暣琛岀▼` now fetches the latest single-order detail before opening `TransportOrderChangeDrawer`, so the drawer remains the single place to view and modify itinerary/payment/note fields with preview and confirm;
   - added a right-side operation-log drawer that fetches the latest request detail and displays operation type, changed field, before value, after value, operator, and operation time;
-  - empty audit state shows `暂无操作记录`;
+  - empty audit state shows `鏆傛棤鎿嶄綔璁板綍`;
   - removed the Vue admin route for `/admin/transport/requests/:id`, so the standalone transport request detail page is no longer reachable from the router;
   - updated general order-center transport links to return to `/admin/transport/requests` instead of the removed transport request detail route;
   - refreshed the generated local admin bundle with `npm --prefix apps/admin-vue run build`;
   - verification: admin build passed with only the existing Vite chunk-size warning, and source/generated-admin search found no active transport request detail route or list-row detail handler.
 
 - Simplified the shared transport itinerary edit drawer in `apps/admin-vue/src/components/TransportOrderChangeDrawer.vue`:
-  - removed the duplicate `保留当前拼车组` UI option and maps old keep aliases to `不调整拼车组`;
-  - keeps exactly three group-handling choices: `不调整拼车组`, `移出并创建新的单人拼车组`, and `加入指定兼容拼车组`;
-  - preview now defaults the final handling dropdown to `不调整拼车组`;
-  - selecting `加入指定兼容拼车组` shows a target-group dropdown with group id, airport, terminal, service time, and current/max passenger count;
+  - removed the duplicate `淇濈暀褰撳墠鎷艰溅缁刞 UI option and maps old keep aliases to `涓嶈皟鏁存嫾杞︾粍`;
+  - keeps exactly three group-handling choices: `涓嶈皟鏁存嫾杞︾粍`, `绉诲嚭骞跺垱寤烘柊鐨勫崟浜烘嫾杞︾粍`, and `鍔犲叆鎸囧畾鍏煎鎷艰溅缁刞;
+  - preview now defaults the final handling dropdown to `涓嶈皟鏁存嫾杞︾粍`;
+  - selecting `鍔犲叆鎸囧畾鍏煎鎷艰溅缁刞 shows a target-group dropdown with group id, airport, terminal, service time, and current/max passenger count;
   - saving still blocks transfer when no target group is selected and only sends `target_group_id` for transfer;
   - refreshed the generated local admin bundle with `npm --prefix apps/admin-vue run build`;
-  - verification: admin build passed with only the existing Vite chunk-size warning, and source/generated-admin search found no `保留当前拼车组` option text.
+  - verification: admin build passed with only the existing Vite chunk-size warning, and source/generated-admin search found no `淇濈暀褰撳墠鎷艰溅缁刞 option text.
 
-- Simplified the single `补录接送机订单` modal in `apps/admin-vue/src/views/TransportRequestsView.vue`:
-  - removed optional manual-entry controls for `拼音/英文名`, `邮箱`, `行李数量`, `行李备注`, the `记录与收款` section, and `客服备注`;
+- Simplified the single `琛ュ綍鎺ラ€佹満璁㈠崟` modal in `apps/admin-vue/src/views/TransportRequestsView.vue`:
+  - removed optional manual-entry controls for `鎷奸煶/鑻辨枃鍚峘, `閭`, `琛屾潕鏁伴噺`, `琛屾潕澶囨敞`, the `璁板綍涓庢敹娆綻 section, and `瀹㈡湇澶囨敞`;
   - kept required fields for student/contact, trip details, passenger count, and carpool group handling;
   - existing default values are still included in the manual submit payload, so API/database/payment/email behavior was not changed;
   - refreshed the generated local admin bundle with `npm --prefix apps/admin-vue run build`;
@@ -243,10 +250,10 @@
 
 ## Previous Transport Work Kept As Context
 
-- The shared transport itinerary edit drawer no longer renders the redundant `预览结果` heading or the red-boxed price/group summary metrics after preview; it still keeps risk warnings, change summary, group-handling selection, consequence copy, and `确认保存`.
+- The shared transport itinerary edit drawer no longer renders the redundant `棰勮缁撴灉` heading or the red-boxed price/group summary metrics after preview; it still keeps risk warnings, change summary, group-handling selection, consequence copy, and `纭淇濆瓨`.
 
 - Single manual supplement orders now require an explicit carpool-group result:
-  - `apps/admin-vue/src/views/TransportRequestsView.vue` shows only `创建新的单人拼车组，并自动加入` and `加入已有拼车组` in `拼车组处理`;
+  - `apps/admin-vue/src/views/TransportRequestsView.vue` shows only `鍒涘缓鏂扮殑鍗曚汉鎷艰溅缁勶紝骞惰嚜鍔ㄥ姞鍏 and `鍔犲叆宸叉湁鎷艰溅缁刞 in `鎷艰溅缁勫鐞哷;
   - new/reset manual supplement forms default to `create_single`;
   - `apps/admin-vue/src/api/admin-api.js` defaults missing manual group handling to `create_single`;
   - `api/_lib/transport-manual-import.js` rejects the old manual no-group choice with a Chinese error instead of creating an order outside a carpool group.
@@ -257,10 +264,14 @@
   - the Vue change drawer and detail-page itinerary edit controls show the operator action as creating a new single-member carpool group, with no old no-group outcome copy.
 
 - Current admin transport source and the generated local admin bundle no longer contain the removed hidden-queue wording.
-- Existing orders that currently have no group are displayed with neutral carpool wording such as `无拼车组` / `暂无拼车组`, not the removed wording.
+- Existing orders that currently have no group are displayed with neutral carpool wording such as `鏃犳嫾杞︾粍` / `鏆傛棤鎷艰溅缁刞, not the removed wording.
 - `docs/PROJECT_MAP.md` now documents that single manual supplement defaults to single-member group creation, can manually join a validated existing group, and rejects the old no-group manual handling.
 
 ## Verification
+
+- `npm --prefix apps/admin-vue run build` passed with only the existing Vite chunk-size warning after removing the admin carpool group P5/P6 stage-marker wording.
+- Source/generated-admin searches confirmed the removed phrases are no longer present in `TransportGroupsView.vue`, `TransportGroupDetailView.vue`, or `admin/assets`.
+- Restarted the local `3000` helper server; `http://127.0.0.1:3000/admin/` now serves `admin/assets/index-Qsmlano-.js` and `admin/assets/index-DfE4uMCS.css`.
 
 - `node --check api/transport-requests/[id]/change-confirm.js`
 - `node --check api/transport-requests/[id]/change-preview.js`
@@ -274,7 +285,7 @@
 - `npm --prefix apps/admin-vue run build` passed with only the existing Vite chunk-size warning; current generated bundle is `admin/assets/index-BAVj2NC9.js`.
 - Restarted the local `3000` helper server after the functional change; `http://127.0.0.1:3000/admin/` now serves `admin/assets/index-BAVj2NC9.js` and `admin/assets/index-DJs6utB9.css`.
 
-- Source search confirmed the admin drawer now contains `搜索拼车组编号`, `校验拼车组`, `targetGroupSearch`, and merged selectable target-group handling.
+- Source search confirmed the admin drawer now contains `鎼滅储鎷艰溅缁勭紪鍙穈, `鏍￠獙鎷艰溅缁刞, `targetGroupSearch`, and merged selectable target-group handling.
 - Source search confirmed `change-preview` now accepts `target_group_search` and returns `group_context.searched_target_group`.
 - `node --check api/transport-requests/[id]/change-preview.js`
 - `npm --prefix apps/admin-vue run build` passed with only the existing Vite chunk-size warning; current generated bundle is `admin/assets/index-2GJNjjHH.js`.
@@ -287,24 +298,24 @@
 - `npm --prefix apps/admin-vue run build` passed with only the existing Vite chunk-size warning; current generated bundle is `admin/assets/index-2GJNjjHH.js`.
 - Restarted the local `3000` helper server after the template-example change.
 - Verified `read-excel-file` fails on `transport-bulk-import-group-test-v2.xlsx` with default trimming but succeeds with `{ trim: false }`.
-- Verified `transport-bulk-import-group-test-v2.xlsx` reads as 6 rows / 17 columns and preserves the group identifier values: blank, `测试组A`, `测试组A`, `测试组A`, `GRP-DOES-NOT-EXIST`.
+- Verified `transport-bulk-import-group-test-v2.xlsx` reads as 6 rows / 17 columns and preserves the group identifier values: blank, `娴嬭瘯缁凙`, `娴嬭瘯缁凙`, `娴嬭瘯缁凙`, `GRP-DOES-NOT-EXIST`.
 - `npm --prefix apps/admin-vue run build` passed with only the existing Vite chunk-size warning; current generated bundle is `admin/assets/index-BR-QHnT1.js`.
 - Restarted the local `3000` helper server after the XLSX upload fix.
-- Shared import template JSON parses successfully after removing the batch `是否愿意拼车` column.
+- Shared import template JSON parses successfully after removing the batch `鏄惁鎰挎剰鎷艰溅` column.
 - `node --check api/_lib/transport-manual-import.js`
-- Backend normalization test confirmed a row keyed by `拼车组标识（可选）` reads `测试组A` into `clean.group_id`.
+- Backend normalization test confirmed a row keyed by `鎷艰溅缁勬爣璇嗭紙鍙€夛級` reads `娴嬭瘯缁凙` into `clean.group_id`.
 - Backend preview test confirmed:
-  - blank group identifier -> `自动创建单人组`;
-  - three `测试组A` rows -> `创建新的多人拼车组：临时标识 测试组A`;
-  - `GRP-DOES-NOT-EXIST` -> red error `拼车组不存在`.
-- Regenerated CSV files start with UTF-8 BOM and no longer include `是否愿意拼车`.
+  - blank group identifier -> `鑷姩鍒涘缓鍗曚汉缁刞;
+  - three `娴嬭瘯缁凙` rows -> `鍒涘缓鏂扮殑澶氫汉鎷艰溅缁勶細涓存椂鏍囪瘑 娴嬭瘯缁凙`;
+  - `GRP-DOES-NOT-EXIST` -> red error `鎷艰溅缁勪笉瀛樺湪`.
+- Regenerated CSV files start with UTF-8 BOM and no longer include `鏄惁鎰挎剰鎷艰溅`.
 - `npm --prefix apps/admin-vue run build` passed with only the existing Vite chunk-size warning; current generated bundle is `admin/assets/index-BpHFgvGR.js`.
 - Restarted the local `3000` helper server after the functional change.
 - Browser navigation to `/admin/transport/requests` reached the admin login page; modal-level browser acceptance still requires a logged-in admin session.
 - Shared import template JSON parses successfully.
 - `npm --prefix apps/admin-vue run build` passed with only the existing Vite chunk-size warning after the batch import help-text clarification.
 - Source/generated-admin searches confirmed the clarified blank-row, repeated-temporary-key, and missing-`GRP` explanation text is present.
-- Source search confirms the visible `是否愿意拼车` select control, `request_shareable`, and temporary not-shareable warning copy are no longer present in `TransportOrderChangeDrawer.vue` / `change-preview.js`.
+- Source search confirms the visible `鏄惁鎰挎剰鎷艰溅` select control, `request_shareable`, and temporary not-shareable warning copy are no longer present in `TransportOrderChangeDrawer.vue` / `change-preview.js`.
 - `node --check api/transport-requests/[id]/change-preview.js`
 - `npm --prefix apps/admin-vue run build` passed with only the existing Vite chunk-size warning.
 - Restarted the local `3000` helper server after the functional change; `http://127.0.0.1:3000/admin/` now serves `admin/assets/index-D3-3GNNw.js` and `admin/assets/index-DJs6utB9.css`.
@@ -337,7 +348,7 @@
 - `npm --prefix apps/admin-vue run build` passed with only the existing Vite chunk-size warning after the transport list entry simplification.
 - Source/generated-admin searches found no active `transport/requests/:id`, `transport-request-detail`, `TransportRequestDetailView`, `openRequestDetail`, or `requestDetailHref` references in the routed admin list/bundle. The old `TransportRequestDetailView.vue` source file remains in the tree but is no longer imported by the router.
 - `npm --prefix apps/admin-vue run build` passed with only the existing Vite chunk-size warning after the itinerary edit drawer simplification.
-- Source/generated-admin search found no `保留当前拼车组` option text after rebuilding the local admin bundle.
+- Source/generated-admin search found no `淇濈暀褰撳墠鎷艰溅缁刞 option text after rebuilding the local admin bundle.
 - `node --check api/_lib/transport-manual-import.js`
 - `node --check api/transport-requests/[id]/change-preview.js`
 - `node --check api/transport-requests/[id]/change-confirm.js`
@@ -350,13 +361,13 @@
 ## Current Project State
 
 - Admin Vue source is the canonical admin UI source; `npm --prefix apps/admin-vue run build` refreshes the served `admin/` bundle.
-- The transport request list no longer links to a standalone transport request detail page; operators should use list filters for scanning, `调整行程` for full order view/edit with preview-confirm, and `操作记录` for audit review.
+- The transport request list no longer links to a standalone transport request detail page; operators should use list filters for scanning, `璋冩暣琛岀▼` for full order view/edit with preview-confirm, and `鎿嶄綔璁板綍` for audit review.
 - Manual single-order supplement now creates a single-member group by default or joins a compatible existing group by entered group code/id.
-- Bulk manual import now requires an explicit group outcome for every imported row through `拼车组标识（可选）`: blank creates a single-member group, existing `GRP-...` joins that group, and repeated temporary identifiers create one shared new group.
+- Bulk manual import now requires an explicit group outcome for every imported row through `鎷艰溅缁勬爣璇嗭紙鍙€夛級`: blank creates a single-member group, existing `GRP-...` joins that group, and repeated temporary identifiers create one shared new group.
 - One-click payment, email behavior, public pages, production deployment, and production database state were not changed.
 
 ## Open Risks / Follow-Up
 
-- Browser-level acceptance still needs a logged-in admin session to manually confirm the batch import modal, row-level `调整行程`, and `操作记录` drawers.
+- Browser-level acceptance still needs a logged-in admin session to manually confirm the batch import modal, row-level `璋冩暣琛岀▼`, and `鎿嶄綔璁板綍` drawers.
 - Historical database rows may still have old compatibility values; this task did not run cleanup SQL. If cleanup is needed, prepare a separate reviewable Supabase plan before any migration.
 - The repository had pre-existing unrelated modified files before this task; they were left intact.

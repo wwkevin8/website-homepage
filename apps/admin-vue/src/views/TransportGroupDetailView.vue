@@ -18,6 +18,7 @@ const route = useRoute();
 const group = ref(null);
 const loading = ref(false);
 const savingGroup = ref(false);
+const savingDriver = ref(false);
 const savingMember = ref("");
 const error = ref("");
 const notice = ref("");
@@ -33,7 +34,14 @@ const DISPATCH_SUMMARY_END = "[/dispatch_summary_override]";
 const form = reactive({
   max_passengers: 1,
   visible_on_frontend: false,
+  dispatch_status: "pending_dispatch",
   notes: ""
+});
+
+const driverForm = reactive({
+  driver_name: "",
+  driver_phone: "",
+  driver_note: ""
 });
 
 const memberColumns = [
@@ -64,7 +72,9 @@ const riskItems = computed(() => Array.isArray(group.value?.dispatch_risks) ? gr
 const operationLogs = computed(() => Array.isArray(group.value?.operation_logs) ? group.value.operation_logs.slice(0, 10) : []);
 const readableOperationLogs = computed(() => operationLogs.value.map(log => ({
   ...log,
-  message: operationLogMessage(log)
+  message: operationLogMessage(log),
+  changes: operationLogDisplayChanges(log),
+  emailNotice: operationEmailNotice(log)
 })));
 const dispatchReadinessItems = computed(() => readinessItemsForGroup());
 const dispatchReadinessText = computed(() => dispatchReadinessItems.value.map(item => item.label).join(" / "));
@@ -148,6 +158,25 @@ function statusTone(status) {
   if (status === "full" || status === "paid" || status === "published" || status === "matched") return "success";
   if (status === "closed" || status === "cancelled" || status === "canceled") return "neutral";
   return "warning";
+}
+
+function dispatchStatusLabel(status) {
+  const labels = {
+    pending_dispatch: "待调度",
+    driver_assigned: "已派车",
+    driver_notified: "已通知司机",
+    in_progress: "服务中",
+    completed: "已完成",
+    cancelled: "已取消"
+  };
+  return labels[status] || "待调度";
+}
+
+function dispatchStatusTone(status) {
+  if (status === "completed") return "success";
+  if (status === "cancelled") return "neutral";
+  if (status === "driver_assigned" || status === "driver_notified" || status === "in_progress") return "warning";
+  return "neutral";
 }
 
 function contactLabel(value) {
@@ -258,6 +287,30 @@ function visibleLabel(value) {
   return value ? "前台显示" : "前台隐藏";
 }
 
+function buildGroupDispatchSaveMessage(nextCapacity, nextVisibleOnFrontend, nextDispatchStatus, nextNotes) {
+  const savedCapacity = Number(group.value?.max_passengers || currentPassengerCount.value);
+  const savedVisibleOnFrontend = Boolean(group.value?.visible_on_frontend);
+  const savedDispatchStatus = group.value?.dispatch_status || "pending_dispatch";
+  const savedNotes = String(stripDispatchSummaryOverride(group.value?.notes) || "").trim();
+  const changes = [];
+
+  if (nextCapacity !== savedCapacity) {
+    changes.push(`最大人数：${savedCapacity} → ${nextCapacity}`);
+  }
+  if (nextVisibleOnFrontend !== savedVisibleOnFrontend) {
+    changes.push(`前台显示：${visibleLabel(savedVisibleOnFrontend)} → ${visibleLabel(nextVisibleOnFrontend)}`);
+  }
+  if (nextDispatchStatus !== savedDispatchStatus) {
+    changes.push(`调度状态：${dispatchStatusLabel(savedDispatchStatus)} → ${dispatchStatusLabel(nextDispatchStatus)}`);
+  }
+  if (nextNotes !== savedNotes) {
+    changes.push("内部备注");
+  }
+
+  const changeText = changes.length ? `将保存：${changes.join("；")}。` : "当前没有检测到设置变化，仍会重新保存当前设置。";
+  return `确认保存当前调度设置吗？${changeText}此操作不会修改订单人数或成员关系。`;
+}
+
 function riskTone() {
   return riskItems.value.length ? "warning" : "success";
 }
@@ -326,6 +379,7 @@ function stripDispatchSummaryOverride(notes) {
   const summaryMarkers = [
     DISPATCH_SUMMARY_START,
     DISPATCH_SUMMARY_END,
+    "订单摘要",
     "司机派单摘要",
     "派单信息",
     "派单准备度:",
@@ -347,7 +401,7 @@ function stripDispatchSummaryOverride(notes) {
     .trim();
   const compactLocalNote = normalized.replace(/[\s\]\-\/]+/g, "").toLowerCase();
   if (compactLocalNote.startsWith("p6local") && compactLocalNote.length <= 32) {
-    return "P6 本地测试：该组包含已付款/未付款、已线下记录/未记录的混合状态，用于验收付款与记录状态展示。";
+    return "本地测试：该组包含已付款/未付款、已线下记录/未记录的混合状态，用于验收付款与记录状态展示。";
   }
   return normalized;
 }
@@ -377,7 +431,7 @@ function buildDispatchSummary() {
   }).join("\n");
 
   return [
-    "司机派单摘要",
+    "订单摘要（司机/调度）",
     "",
     `Group ID: ${group.value.group_id || group.value.id || "--"}`,
     `服务类型: ${serviceLabel(group.value.service_type)}`,
@@ -399,7 +453,11 @@ function buildDispatchSummary() {
 function fillForm(record) {
   form.max_passengers = Number(record?.max_passengers || currentPassengerCount.value);
   form.visible_on_frontend = Boolean(record?.visible_on_frontend);
+  form.dispatch_status = record?.dispatch_status || "pending_dispatch";
   form.notes = stripDispatchSummaryOverride(record?.notes);
+  driverForm.driver_name = record?.driver_name || "";
+  driverForm.driver_phone = record?.driver_phone || "";
+  driverForm.driver_note = record?.driver_note || "";
 }
 
 function logAdminName(log) {
@@ -409,6 +467,7 @@ function logAdminName(log) {
 function logActionLabel(log) {
   const labels = {
     update_transport_group: "修改拼车组设置",
+    dispatch_status_update: "更新调度状态",
     update_transport_request_safe_fields: "更新成员状态",
     update_transport_request: "更新订单记录",
     set_transport_request_offline_recorded: "更新线下记录",
@@ -424,6 +483,7 @@ function logFieldLabel(field) {
   const labels = {
     max_passengers: "最大人数 / 座位容量",
     visible_on_frontend: "是否前台显示",
+    dispatch_status: "调度状态",
     notes: "组备注 / 司机备注 / 调度备注",
     contact_status: "联系状态",
     payment_collection_status: "付款状态",
@@ -436,6 +496,7 @@ function logFieldLabel(field) {
 function logValueLabel(field, value) {
   if (value === null || value === undefined || value === "") return "--";
   if (field === "visible_on_frontend") return value ? "前台显示" : "前台隐藏";
+  if (field === "dispatch_status") return dispatchStatusLabel(value);
   if (field === "offline_recorded") return value ? "已记录" : "未记录";
   if (field === "contact_status") return contactLabel(value);
   if (field === "payment_collection_status") return paymentCollectionLabel(value);
@@ -456,11 +517,38 @@ function logChangedFields(log) {
   }));
 }
 
+function operationLogDisplayChanges(log) {
+  return logChangedFields(log).map(item => ({
+    field: logFieldLabel(item.field || item.label),
+    before: logValueLabel(item.field, item.before),
+    after: logValueLabel(item.field, item.after)
+  }));
+}
+
 function logTargetLabel(log) {
   if (log?.metadata?.order_no) return `订单 ${log.metadata.order_no}`;
   if (log?.metadata?.group_id) return `拼车组 ${log.metadata.group_id}`;
   if (log?.target_type === "transport_group") return `拼车组 ${displayValue(group.value?.group_id || log.target_id)}`;
   return displayValue(log?.target_id);
+}
+
+function operationEmailNotice(log) {
+  const status = String(log?.metadata?.payment_email_status || "").trim();
+  if (log?.metadata?.payment_email_triggered === true) {
+    if (status === "local_mock") return "是（本地测试模拟发送）";
+    if (status === "sent") return "是（已触发）";
+    if (status === "failed") return `是（发送失败：${displayValue(log?.metadata?.payment_email_error)})`;
+    return "是";
+  }
+  if (log?.metadata?.payment_email_triggered === false) {
+    return "否";
+  }
+  const paymentChange = findLogChange(log, ["payment_collection_status", "manual_payment_status"]);
+  const after = paymentReadable(paymentChange?.after);
+  if (log?.metadata?.batch_payment_action === "mark_group_unpaid_paid" || after === "已付款") {
+    return "可能已触发（历史记录未记录邮件结果）";
+  }
+  return "否";
 }
 
 function logOrderNo(log) {
@@ -544,6 +632,11 @@ function operationLogMessage(log) {
     return `${admin} 将${groupTarget}前台展示从“${visibilityReadable(visibilityChange.before)}”改为“${visibilityReadable(visibilityChange.after)}”`;
   }
 
+  const dispatchStatusChange = findLogChange(log, "dispatch_status");
+  if (dispatchStatusChange) {
+    return `${admin} 将${groupTarget}调度状态从“${dispatchStatusLabel(dispatchStatusChange.before)}”改为“${dispatchStatusLabel(dispatchStatusChange.after)}”`;
+  }
+
   const notesChange = findLogChange(log, "notes");
   if (notesChange) {
     return `${admin} 更新了${groupTarget}备注`;
@@ -580,11 +673,14 @@ async function loadGroup() {
 async function saveGroupDispatchFields() {
   if (!group.value || savingGroup.value) return;
   const nextCapacity = Number(form.max_passengers || 0);
+  const nextVisibleOnFrontend = Boolean(form.visible_on_frontend);
+  const nextDispatchStatus = form.dispatch_status || "pending_dispatch";
+  const nextNotes = String(form.notes || "").trim();
   if (!Number.isInteger(nextCapacity) || nextCapacity < currentPassengerCount.value) {
     notice.value = `最大人数不能小于当前已入组人数 ${currentPassengerCount.value}。`;
     return;
   }
-  if (!window.confirm(`确认将拼车组最大人数调整为 ${nextCapacity} 吗？此操作只修改组容量，不修改订单人数或成员关系。`)) {
+  if (!window.confirm(buildGroupDispatchSaveMessage(nextCapacity, nextVisibleOnFrontend, nextDispatchStatus, nextNotes))) {
     return;
   }
   if (nextCapacity === currentPassengerCount.value && form.visible_on_frontend && window.confirm("最大人数已等于当前人数，是否同时关闭前台显示？")) {
@@ -596,10 +692,11 @@ async function saveGroupDispatchFields() {
     await updateTransportGroup(groupKey.value, {
       max_passengers: nextCapacity,
       visible_on_frontend: Boolean(form.visible_on_frontend),
-      notes: String(form.notes || "").trim() || null
+      dispatch_status: nextDispatchStatus,
+      notes: nextNotes || null
     });
     await loadGroup();
-    notice.value = "调度备注和前台显示状态已保存。";
+    notice.value = "调度设置已保存。";
   } catch (err) {
     notice.value = err.message || "保存调度信息失败。";
   } finally {
@@ -607,8 +704,35 @@ async function saveGroupDispatchFields() {
   }
 }
 
+async function saveDriverFields() {
+  if (!group.value || savingDriver.value) return;
+  savingDriver.value = true;
+  notice.value = "";
+  try {
+    await updateTransportGroup(groupKey.value, {
+      max_passengers: Number(form.max_passengers || currentPassengerCount.value),
+      visible_on_frontend: Boolean(form.visible_on_frontend),
+      dispatch_status: form.dispatch_status || "pending_dispatch",
+      notes: String(form.notes || "").trim() || null,
+      driver_name: String(driverForm.driver_name || "").trim() || null,
+      driver_phone: String(driverForm.driver_phone || "").trim() || null,
+      driver_note: String(driverForm.driver_note || "").trim() || null
+    });
+    await loadGroup();
+    notice.value = "司机信息已保存。";
+  } catch (err) {
+    notice.value = err.message || "保存司机信息失败。";
+  } finally {
+    savingDriver.value = false;
+  }
+}
+
 async function copySummary() {
   const text = dispatchSummary.value || "";
+  if (!text.trim()) {
+    notice.value = "暂无可复制的订单摘要。";
+    return;
+  }
   const originalNotes = form.notes;
   const activeElement = document.activeElement;
   const selection = activeElement && "selectionStart" in activeElement
@@ -652,16 +776,16 @@ async function copySummary() {
       throw new Error("clipboard unavailable");
     }
     restoreNotesAndFocus();
-    notice.value = "司机摘要已复制。";
+    notice.value = "已复制到剪贴板。";
   } catch (err) {
     if (copyWithTemporaryTextarea()) {
       restoreNotesAndFocus();
-      notice.value = "司机摘要已复制。";
+      notice.value = "已复制到剪贴板。";
       return;
     }
     restoreNotesAndFocus();
-    notice.value = "浏览器限制了自动复制，请手动复制弹窗中的司机摘要。";
-    window.prompt("复制失败，请手动复制以下司机派单摘要：", text);
+    notice.value = "浏览器不支持自动复制，请手动复制弹窗中的订单摘要。";
+    window.prompt("复制失败，请手动复制以下订单摘要：", text);
   }
 }
 
@@ -761,7 +885,7 @@ async function confirmBatchPayment() {
       ? `本地测试模式：已模拟发送付款确认邮件 ${localMockCount} 封`
       : `已触发付款确认邮件 ${emailCount} 封`;
     notice.value = [
-      `已成功标记 ${successCount} 单。`,
+      `一键全部付款完成：已成功标记 ${successCount} 单。`,
       emailText,
       `跳过 ${skippedCount} 单已付款订单。`,
       failures.length ? `失败：${failures.join("；")}` : ""
@@ -810,9 +934,9 @@ onMounted(loadGroup);
   <section class="transport-group-detail-view transport-legacy-detail">
     <div class="view-heading">
       <div>
-        <p class="view-heading__eyebrow">Transport dispatch · P6A</p>
+        <p class="view-heading__eyebrow">Transport dispatch</p>
         <h2>拼车组调度核对</h2>
-        <p>用于客服核对拼车组容量、前台展示、成员记录、付款状态和司机派单摘要。</p>
+        <p>用于客服核对拼车组容量、前台展示、成员记录、付款状态和订单摘要。</p>
       </div>
       <div class="view-heading__actions">
         <BackButton href="/admin/transport/groups" label="返回拼车组管理" />
@@ -828,21 +952,34 @@ onMounted(loadGroup);
       <p v-if="notice" class="inline-notice">{{ notice }}</p>
 
       <section class="admin-panel transport-detail-panel">
-        <h3>拼车组概览</h3>
-        <p class="detail-muted">关键调度信息一屏核对；行程、价格和成员关系字段在 P6A 保持只读。</p>
-        <div class="group-overview-cards group-overview-cards--detail">
-          <div class="group-overview-card"><span>Group ID</span><strong>{{ displayValue(group.group_id || group.id) }}</strong></div>
-          <div class="group-overview-card"><span>服务类型</span><strong>{{ serviceLabel(group.service_type) }}</strong></div>
-          <div class="group-overview-card"><span>机场 / 航站楼</span><strong>{{ displayValue(group.airport_code) }} / {{ terminalSummary }}</strong></div>
-          <div class="group-overview-card"><span>服务日期</span><strong>{{ formatDate(group.group_date) }}</strong></div>
-          <div class="group-overview-card"><span>服务时间</span><strong>{{ formatDateTime(group.summary?.arrival_time_range?.earliest || group.preferred_time_start || group.flight_time_reference) }} - {{ formatDateTime(group.summary?.arrival_time_range?.latest || group.preferred_time_end || group.flight_time_reference) }}</strong></div>
-          <div class="group-overview-card group-overview-card--highlight"><span>当前人数 / 容量</span><strong>{{ Number(group.current_passenger_count || 0) }} / {{ Number(group.max_passengers || 0) }}</strong></div>
-          <div class="group-overview-card"><span>行李数</span><strong>{{ totalLuggage() }} 件</strong></div>
-          <div class="group-overview-card"><span>当前人均价</span><strong>{{ money(paymentSummary.average_price_gbp || group.current_average_price_gbp) }}</strong></div>
-        </div>
-        <div class="group-overview-meta">
-          <span>组状态 <StatusBadge :tone="statusTone(group.status)">{{ statusLabel(group.status) }}</StatusBadge></span>
-          <span>前台展示 <StatusBadge :tone="visibleTone(group.visible_on_frontend)">{{ visibleLabel(group.visible_on_frontend) }}</StatusBadge></span>
+        <div class="transport-detail-top-grid">
+          <div>
+            <h3>拼车组概览</h3>
+            <div class="group-overview-cards group-overview-cards--detail">
+              <div class="group-overview-card"><span>Group ID</span><strong>{{ displayValue(group.group_id || group.id) }}</strong></div>
+              <div class="group-overview-card"><span>服务类型</span><strong>{{ serviceLabel(group.service_type) }}</strong></div>
+              <div class="group-overview-card"><span>机场 / 航站楼</span><strong>{{ displayValue(group.airport_code) }} / {{ terminalSummary }}</strong></div>
+              <div class="group-overview-card"><span>服务日期</span><strong>{{ formatDate(group.group_date) }}</strong></div>
+              <div class="group-overview-card"><span>服务时间</span><strong>{{ formatDateTime(group.summary?.arrival_time_range?.earliest || group.preferred_time_start || group.flight_time_reference) }} - {{ formatDateTime(group.summary?.arrival_time_range?.latest || group.preferred_time_end || group.flight_time_reference) }}</strong></div>
+              <div class="group-overview-card group-overview-card--highlight"><span>当前人数 / 容量</span><strong>{{ Number(group.current_passenger_count || 0) }} / {{ Number(group.max_passengers || 0) }}</strong></div>
+              <div class="group-overview-card"><span>行李数</span><strong>{{ totalLuggage() }} 件</strong></div>
+              <div class="group-overview-card"><span>当前人均价</span><strong>{{ money(paymentSummary.average_price_gbp || group.current_average_price_gbp) }}</strong></div>
+            </div>
+            <div class="group-overview-meta">
+              <span>组状态 <StatusBadge :tone="statusTone(group.status)">{{ statusLabel(group.status) }}</StatusBadge></span>
+              <span>调度状态 <StatusBadge :tone="dispatchStatusTone(group.dispatch_status)">{{ dispatchStatusLabel(group.dispatch_status) }}</StatusBadge></span>
+              <span>前台展示 <StatusBadge :tone="visibleTone(group.visible_on_frontend)">{{ visibleLabel(group.visible_on_frontend) }}</StatusBadge></span>
+            </div>
+          </div>
+          <div class="dispatch-summary-preview dispatch-summary-preview--top">
+            <div class="transport-panel-header">
+              <div>
+                <h4>订单摘要</h4>
+              </div>
+              <button class="table-action-button" type="button" @click="copySummary">复制摘要</button>
+            </div>
+            <pre>{{ dispatchSummary }}</pre>
+          </div>
         </div>
       </section>
 
@@ -871,7 +1008,7 @@ onMounted(loadGroup);
           </div>
           <div class="view-heading__actions">
             <button class="table-action-button" type="button" :disabled="savingGroup" @click="saveGroupDispatchFields">
-              {{ savingGroup ? "保存中..." : "保存设置" }}
+              {{ savingGroup ? "保存中..." : "保存设置与备注" }}
             </button>
           </div>
         </div>
@@ -887,19 +1024,50 @@ onMounted(loadGroup);
               <option :value="false">否</option>
             </select>
           </label>
-        </div>
-        <div class="dispatch-summary-preview">
-          <div class="transport-panel-header">
-            <div>
-              <h4>司机派单摘要</h4>
-            </div>
-            <button class="table-action-button" type="button" @click="copySummary">一键复制司机摘要</button>
-          </div>
-          <pre>{{ dispatchSummary }}</pre>
+          <label>
+            <span>调度状态</span>
+            <select v-model="form.dispatch_status">
+              <option value="pending_dispatch">待调度</option>
+              <option value="driver_assigned">已派车</option>
+              <option value="driver_notified">已通知司机</option>
+              <option value="in_progress">服务中</option>
+              <option value="completed">已完成</option>
+              <option value="cancelled">已取消</option>
+            </select>
+          </label>
         </div>
         <label class="dispatch-note-field">
           <span>内部备注</span>
-          <textarea v-model="form.notes" rows="3" placeholder="填写组备注、司机备注或调度备注"></textarea>
+          <textarea v-model="form.notes" rows="3" placeholder="请输入内部备注"></textarea>
+          <small v-if="!String(form.notes || '').trim()">暂无内部备注</small>
+        </label>
+      </section>
+
+      <section class="admin-panel transport-detail-panel">
+        <div class="transport-panel-header">
+          <div>
+            <h3>司机信息 / 微信通知备注</h3>
+          </div>
+          <div class="view-heading__actions">
+            <button class="table-action-button" type="button" :disabled="savingDriver" @click="saveDriverFields">
+              {{ savingDriver ? "保存中..." : "保存司机信息" }}
+            </button>
+          </div>
+        </div>
+        <div class="dispatch-control-grid">
+          <label>
+            <span>司机姓名</span>
+            <input v-model="driverForm.driver_name" placeholder="请输入司机姓名" />
+          </label>
+          <label>
+            <span>司机电话</span>
+            <input v-model="driverForm.driver_phone" placeholder="请输入司机电话" />
+          </label>
+        </div>
+        <label class="dispatch-note-field">
+          <span>司机备注</span>
+          <textarea v-model="driverForm.driver_note" rows="3" placeholder="请输入司机备注"></textarea>
+          <small v-if="!String(driverForm.driver_note || '').trim()">暂无司机备注</small>
         </label>
       </section>
 
@@ -914,7 +1082,7 @@ onMounted(loadGroup);
             :disabled="!batchPaymentTargets.length || batchPaymentDialog.saving"
             @click="openBatchPaymentDialog"
           >
-            {{ batchPaymentTargets.length ? "本组收款完成" : "本组已全部付款" }}
+            {{ batchPaymentTargets.length ? "一键全部付款" : "已全部付款" }}
           </button>
         </div>
         <p class="detail-muted">付款状态按成员订单处理；不会修改拼车组容量、订单人数或成员关系。</p>
@@ -939,7 +1107,7 @@ onMounted(loadGroup);
                 :disabled="savingMember === requestId(row)"
                 @click="setPaymentPaid(row, false)"
               >
-                取消标记
+                取消标记已付款
               </button>
               <button
                 v-else
@@ -957,7 +1125,6 @@ onMounted(loadGroup);
 
       <section class="admin-panel transport-detail-panel">
         <h3>组内成员明细</h3>
-        <p class="detail-muted">成员核心字段只读反馈。航站楼、航班、日期、时间、订单人数、价格和成员关系变更请在 P5 订单变更流程处理。</p>
         <AdminTable v-if="members.length" :columns="memberColumns" :rows="members">
           <template #cell-order_no="{ row }"><strong class="cell-truncate">{{ displayValue(row.request?.order_no || row.order_no) }}</strong></template>
           <template #cell-student="{ row }"><span class="cell-stack"><strong class="cell-truncate">{{ displayValue(row.request?.student_name || row.student_name) }}</strong><small>{{ row.is_initiator ? "发起人" : "成员" }}</small></span></template>
@@ -975,13 +1142,26 @@ onMounted(loadGroup);
       </section>
 
       <section class="admin-panel transport-detail-panel">
-        <h3>操作记录</h3>
+        <h3 class="transport-operation-log-title">操作记录</h3>
         <ul v-if="readableOperationLogs.length" class="transport-operation-log-list">
           <li v-for="log in readableOperationLogs" :key="log.id || `${log.action}-${log.created_at}`">
-            <div>
-              <strong>{{ log.message }}</strong>
-              <span>{{ formatDateTime(log.created_at) }} / {{ logAdminName(log) }} / {{ logTargetLabel(log) }}</span>
-            </div>
+            <strong>{{ log.message }}</strong>
+            <dl class="transport-operation-log-grid">
+              <div><dt>操作客服</dt><dd>{{ logAdminName(log) }}</dd></div>
+              <div><dt>操作时间</dt><dd>{{ formatDateTime(log.created_at) }}</dd></div>
+              <div><dt>操作类型</dt><dd>{{ logActionLabel(log) }}</dd></div>
+              <div><dt>操作对象</dt><dd>{{ logTargetLabel(log) }}</dd></div>
+              <div><dt>是否触发邮件通知</dt><dd>{{ log.emailNotice }}</dd></div>
+              <div class="transport-operation-log-grid__wide">
+                <dt>修改字段</dt>
+                <dd v-if="log.changes.length">
+                  <span v-for="change in log.changes" :key="`${log.id || log.created_at}-${change.field}`">
+                    {{ change.field }}：{{ change.before }} → {{ change.after }}
+                  </span>
+                </dd>
+                <dd v-else>未记录具体字段</dd>
+              </div>
+            </dl>
           </li>
         </ul>
         <p v-else class="detail-muted">暂无操作记录。</p>
@@ -992,7 +1172,7 @@ onMounted(loadGroup);
       <div class="transport-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="batch-payment-title">
         <div class="transport-panel-header">
           <div>
-            <h3 id="batch-payment-title">确认本组收款完成</h3>
+            <h3 id="batch-payment-title">确认一键全部付款</h3>
             <p class="detail-muted">Group ID：{{ groupKey }}</p>
           </div>
         </div>
@@ -1012,7 +1192,7 @@ onMounted(loadGroup);
         <div class="transport-confirm-actions">
           <button class="table-action-button" type="button" :disabled="batchPaymentDialog.saving" @click="closeBatchPaymentDialog">取消</button>
           <button class="table-action-button table-action-button--primary" type="button" :disabled="batchPaymentDialog.saving" @click="confirmBatchPayment">
-            {{ batchPaymentDialog.saving ? "正在处理..." : "确认标记已付款" }}
+            {{ batchPaymentDialog.saving ? "正在处理..." : "确认一键全部付款" }}
           </button>
         </div>
       </div>

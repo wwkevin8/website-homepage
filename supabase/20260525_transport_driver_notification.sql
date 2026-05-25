@@ -1,0 +1,10 @@
+-- P6 Recovery note: do not apply this migration for the current release.
+-- Driver email notification was removed from P6. Customer service will notify
+-- drivers manually via WeChat, so the email-specific notification log table and
+-- driver_email requirement are intentionally not part of the release.
+--
+-- If driver name / phone / note persistence is needed later, create a smaller
+-- additive migration for only those fields after the product flow is confirmed.
+--
+-- Rollback:
+-- No action needed because this migration intentionally performs no changes.

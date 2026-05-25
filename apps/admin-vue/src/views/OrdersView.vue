@@ -279,7 +279,7 @@ function orderDetailHref(order) {
     return `/admin/storage/${encodeURIComponent(sourceId)}?return_to=${encodeURIComponent("/admin/orders")}`;
   }
   if (order?.source_table === "transport_requests" && sourceId) {
-    return `/admin/transport/requests/${encodeURIComponent(sourceId)}?return_to=${encodeURIComponent("/admin/orders")}`;
+    return `/admin/transport/requests?return_to=${encodeURIComponent("/admin/orders")}`;
   }
   const id = order?.id || order?.order_id;
   return id

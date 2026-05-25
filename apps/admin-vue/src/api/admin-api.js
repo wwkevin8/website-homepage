@@ -227,7 +227,7 @@ export function commitTransportManualImport(rows = [], confirmedWarnings = {}) {
   });
 }
 
-export function createManualTransportRequest(row = {}, confirmWarnings = false) {
+export function createManualTransportRequest(row = {}, confirmWarnings = false, groupOptions = {}) {
   return request("/api/transport-manual-import/manual", {
     method: "POST",
     headers: {
@@ -235,7 +235,9 @@ export function createManualTransportRequest(row = {}, confirmWarnings = false) 
     },
     body: JSON.stringify({
       row,
-      confirm_warnings: confirmWarnings
+      confirm_warnings: confirmWarnings,
+      group_action: groupOptions.group_action || "create_single",
+      target_group_id: groupOptions.target_group_id || ""
     })
   });
 }
@@ -261,13 +263,6 @@ export function updateTransportRequestSafeFields(id, payload = {}) {
   });
 }
 
-export function adjustTransportRequestTime(id, payload = {}) {
-  return updateTransportRequest(id, {
-    action: "adjust_flight_time",
-    ...payload
-  });
-}
-
 export function previewTransportOrderChange(id, payload = {}) {
   return request(`/api/transport-requests/${encodeURIComponent(id)}/change-preview`, {
     method: "POST",
@@ -288,23 +283,17 @@ export function confirmTransportOrderChange(id, payload = {}) {
   });
 }
 
-export function fetchTimeAdjustCandidateGroups(id, params = {}) {
-  const search = new URLSearchParams();
-  Object.entries(params || {}).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && value !== "") {
-      search.set(key, value);
-    }
-  });
-  const query = search.toString();
-  const encodedId = encodeURIComponent(id);
-  const primaryPath = `/api/transport-requests/${encodedId}/time-adjust-candidate-groups${query ? `?${query}` : ""}`;
-  return request(primaryPath).catch(error => {
-    if (error?.status !== 404) {
-      throw error;
-    }
-    const fallbackSearch = new URLSearchParams(search);
-    fallbackSearch.set("action", "time_adjust_candidate_groups");
-    return request(`/api/transport-requests/${encodedId}?${fallbackSearch.toString()}`);
+export function fetchTransportRequestGroupCandidates(id) {
+  return request(`/api/transport-requests/${encodeURIComponent(id)}/group`);
+}
+
+export function updateTransportRequestGroup(id, payload = {}) {
+  return request(`/api/transport-requests/${encodeURIComponent(id)}/group`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(payload)
   });
 }
 

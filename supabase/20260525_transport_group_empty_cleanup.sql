@@ -1,0 +1,9 @@
+-- P6 Recovery note: do not apply this migration for the current release.
+-- The P6C requirement changed from delayed cleanup to immediate deletion when
+-- a transport group has zero members. That behavior is now handled in the
+-- server code with a fresh member-count check immediately before deletion.
+--
+-- No schema change is required for the immediate-delete version.
+--
+-- Rollback:
+-- No action needed because this migration intentionally performs no changes.

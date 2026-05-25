@@ -98,6 +98,14 @@ const operatorSelectOptions = computed(() => {
         </select>
       </label>
       <label class="field">
+        <span>订单归属</span>
+        <select v-model="model.groupStatus">
+          <option value="">全部</option>
+          <option value="false">无拼车组</option>
+          <option value="true">已入组</option>
+        </select>
+      </label>
+      <label class="field">
         <span>线下记录状态</span>
         <select v-model="model.offlineRecorded">
           <option value="">全部</option>

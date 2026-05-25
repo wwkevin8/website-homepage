@@ -3,6 +3,7 @@ const { requireAdminUser } = require("../_lib/admin-auth");
 const { ok, created, badRequest, parseJsonBody, methodNotAllowed, serverError } = require("../_lib/http");
 const { applyGroupFilters, applyEffectiveGroupCounts, mapGroupPayload, deriveDisplayGroupId } = require("../_lib/transport");
 const { loadGroupStatsMap } = require("../_lib/transport-group-stats");
+const { cleanupEmptyTransportGroups } = require("../_lib/transport-group-lifecycle");
 const { allocateGroupId } = require("../_lib/order-numbers");
 
 function isPerfLogEnabled() {
@@ -258,6 +259,30 @@ async function enrichGroupsBatch(supabase, groups, metrics = {}) {
     return [];
   }
 
+  let dispatchRows = [];
+  const { data: dispatchRowsResult, error: dispatchRowsError } = await supabase
+    .from("transport_groups")
+    .select("id, group_id, dispatch_status")
+    .in("group_id", groupIds);
+
+  if (dispatchRowsError) {
+    if (!isMissingColumnError(dispatchRowsError, "dispatch_status")) {
+      throw dispatchRowsError;
+    }
+  } else {
+    dispatchRows = dispatchRowsResult || [];
+  }
+
+  const dispatchStatusMap = new Map();
+  (dispatchRows || []).forEach(row => {
+    if (row.group_id) {
+      dispatchStatusMap.set(row.group_id, row.dispatch_status || "pending_dispatch");
+    }
+    if (row.id) {
+      dispatchStatusMap.set(row.id, row.dispatch_status || "pending_dispatch");
+    }
+  });
+
   const memberQueryStartedAt = nowMs();
   const { data: memberRows, error: memberRowsError } = await supabase
     .from("transport_group_members")
@@ -414,6 +439,7 @@ async function enrichGroupsBatch(supabase, groups, metrics = {}) {
       ...groupStats,
       id: group.id || groupRef,
       group_id: group.group_id || deriveDisplayGroupId(groupRef, group.group_date),
+      dispatch_status: dispatchStatusMap.get(groupRef) || group.dispatch_status || "pending_dispatch",
       source_order_nos: memberOrderMap.get(groupRef) || [],
       student_names: memberStudentMap.get(groupRef) || [],
       member_details: memberDetails,
@@ -494,6 +520,7 @@ module.exports = async function handler(req, res) {
 
   try {
     if (req.method === "GET") {
+      await cleanupEmptyTransportGroups(supabase);
       const queryParams = req.query || {};
       const orderNo = String(queryParams.order_no || "").trim().toUpperCase();
       const paginate = String(queryParams.paginate || "").toLowerCase() === "true";
@@ -575,11 +602,12 @@ module.exports = async function handler(req, res) {
         return;
       }
 
+      const allocatedGroupId = await allocateGroupId(supabase);
       let result = await supabase
         .from("transport_groups")
         .insert({
           ...payload,
-          group_id: await allocateGroupId(supabase)
+          group_id: allocatedGroupId
         })
         .select("*")
         .single();
@@ -589,6 +617,19 @@ module.exports = async function handler(req, res) {
           .from("transport_groups")
           .insert({
             ...payload
+          })
+          .select("*")
+          .single();
+      }
+
+      if (result.error && isMissingColumnError(result.error, "dispatch_status")) {
+        const fallbackPayload = { ...payload };
+        delete fallbackPayload.dispatch_status;
+        result = await supabase
+          .from("transport_groups")
+          .insert({
+            ...fallbackPayload,
+            group_id: allocatedGroupId
           })
           .select("*")
           .single();
