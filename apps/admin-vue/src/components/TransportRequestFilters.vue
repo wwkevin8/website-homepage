@@ -73,9 +73,9 @@ const operatorSelectOptions = computed(() => {
       <label class="field">
         <span>订单状态</span>
         <select v-model="model.status">
-          <option value="">全部</option>
           <option value="active">有效单</option>
-          <option value="closed">已关闭/过期单</option>
+          <option value="closed">无效单</option>
+          <option value="">全部</option>
         </select>
       </label>
     </div>
@@ -95,14 +95,6 @@ const operatorSelectOptions = computed(() => {
           <option value="unpaid">未收款</option>
           <option value="deposit_paid">已付定金</option>
           <option value="fully_paid">已付全款</option>
-        </select>
-      </label>
-      <label class="field">
-        <span>订单归属</span>
-        <select v-model="model.groupStatus">
-          <option value="">全部</option>
-          <option value="false">无拼车组</option>
-          <option value="true">已入组</option>
         </select>
       </label>
       <label class="field">

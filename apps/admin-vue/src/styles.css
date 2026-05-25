@@ -1530,6 +1530,15 @@ textarea {
   }
 }
 
+@media (max-width: 520px) {
+  .transport-request-filter-row,
+  .transport-request-filter-row--primary,
+  .transport-request-filter-row--secondary,
+  .transport-request-filter-row--controls {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .storage-all-orders-view .admin-table-wrap {
   border-color: #d8dee8;
   border-radius: 4px;

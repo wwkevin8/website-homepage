@@ -71,17 +71,16 @@ const defaultFilters = {
   search: "",
   serviceType: "",
   airportCode: "",
-  status: "",
+  status: "active",
   contactStatus: "",
   paymentCollectionStatus: "",
-  groupStatus: "",
   offlineRecorded: "",
   lastOperatedBy: "",
   importBatchId: "",
   source: "",
   dateFrom: "",
   dateTo: "",
-  sort: "submitted_latest",
+  sort: "flight_nearest",
   pageSize: 10
 };
 
@@ -813,7 +812,6 @@ function buildFilterQuery() {
     status: filters.status,
     contact_status: filters.contactStatus,
     payment_collection_status: filters.paymentCollectionStatus,
-    grouped: filters.groupStatus,
     offline_recorded: filters.offlineRecorded,
     last_operated_by: filters.lastOperatedBy,
     import_batch_id: filters.importBatchId.trim(),
