@@ -71,7 +71,7 @@ const defaultFilters = {
   search: "",
   serviceType: "",
   airportCode: "",
-  status: "",
+  status: "active",
   contactStatus: "",
   paymentCollectionStatus: "",
   groupStatus: "",
@@ -81,7 +81,7 @@ const defaultFilters = {
   source: "",
   dateFrom: "",
   dateTo: "",
-  sort: "submitted_latest",
+  sort: "flight_nearest",
   pageSize: 10
 };
 
