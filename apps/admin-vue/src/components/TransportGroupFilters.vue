@@ -60,6 +60,21 @@ const airportOptions = [
           <option value="closed">已关闭/取消</option>
         </select>
       </label>
+      <label class="field">
+        <span>有效性筛选</span>
+        <select v-model="model.validity">
+          <option value="active">有效单</option>
+          <option value="invalid">无效单</option>
+          <option value="all">全部</option>
+        </select>
+      </label>
+      <label class="field">
+        <span>时间排序</span>
+        <select v-model="model.sort">
+          <option value="service_time_asc">从最近到最远</option>
+          <option value="service_time_desc">从最远到最近</option>
+        </select>
+      </label>
       <div class="filter-actions transport-group-filter-panel__actions">
         <button class="primary-button" type="submit">筛选</button>
         <button class="secondary-button" type="button" @click="showAdvanced = !showAdvanced">

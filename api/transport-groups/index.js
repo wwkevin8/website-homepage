@@ -134,6 +134,29 @@ function buildDispatchRisks(group, memberDetails) {
   return risks;
 }
 
+function getLondonDateString(date = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/London",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).formatToParts(date);
+  const values = Object.fromEntries(parts.filter(part => part.type !== "literal").map(part => [part.type, part.value]));
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
+function normalizeValidityFilter(value) {
+  const normalized = String(value || "").trim().toLowerCase();
+  if (normalized === "all") return "all";
+  if (normalized === "invalid" || normalized === "expired") return "invalid";
+  return "active";
+}
+
+function normalizeServiceTimeSort(value) {
+  const normalized = String(value || "").trim().toLowerCase();
+  return normalized === "service_time_desc" || normalized === "time_desc" ? "service_time_desc" : "service_time_asc";
+}
+
 function normalizeLegacyGroupStatusInput(input = {}) {
   if (!input || typeof input !== "object" || Array.isArray(input)) return input;
   if (String(input.status || "").trim().toLowerCase() !== "open") return input;
@@ -239,14 +262,22 @@ async function findMatchedGroupIdsBySearchTerm(supabase, searchTerm) {
 
 function buildGroupsBaseQuery(supabase, queryParams, options = {}) {
   const normalizedQueryParams = normalizeLegacyGroupStatusInput(queryParams);
+  const sortDirection = normalizeServiceTimeSort(normalizedQueryParams.sort);
+  const ascending = sortDirection !== "service_time_desc";
   const query = supabase
     .from("transport_groups_public_view")
     .select("*", options.count ? { count: options.count } : undefined)
-    .order("group_date", { ascending: true })
-    .order("preferred_time_start", { ascending: true, nullsFirst: false })
+    .order("group_date", { ascending })
+    .order("preferred_time_start", { ascending, nullsFirst: false })
     .order("created_at", { ascending: false });
 
   applyGroupFilters(query, normalizedQueryParams);
+  const validity = normalizeValidityFilter(normalizedQueryParams.validity);
+  if (validity === "active") {
+    query.gte("group_date", getLondonDateString());
+  } else if (validity === "invalid") {
+    query.lt("group_date", getLondonDateString());
+  }
   if (Array.isArray(normalizedQueryParams._matched_group_ids) && normalizedQueryParams._matched_group_ids.length) {
     query.in("group_id", normalizedQueryParams._matched_group_ids);
   }
