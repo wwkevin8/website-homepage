@@ -7,78 +7,68 @@
 
 ## Last Updated Task
 
-- Date: 2026-05-25
-- Scope: Released the admin transport group management default status filter fix to production. GitHub commit `fcf2a07`; Vercel production deployment `dpl_HQus2qYYV1ehbrBXDMG99z1GpTjM` aliased to `https://ngn.best`. No database write, delete, migration, seed, test-data upload, API logic, email, price, order, or carpool data change.
+- Date: 2026-05-26
+- Scope: Released the admin registered airport pickup/dropoff order filter update to production. GitHub commit `eeb07eb`; Vercel production deployment `dpl_9empv8Qfeq6ixQGtEvgWRAayE6ZQ` is READY and aliased to `https://ngn.best`. No database write, delete, reset, seed, migration, test-data upload, API logic, email, payment, import, carpool group, or table operation-button change was made.
 
 ## Latest Completed Work
 
-- Released the transport group-management default-filter fix to production:
-  - confirmed `apps/admin-vue/src/views/TransportGroupsView.vue` had `defaultFilters.status = "active"`, which made the page default to the `进行中` filter;
-  - changed only that default to `status: ""`, so initial load and reset now mean `全部`;
-  - confirmed `resetFilters()` resets to the same default filter object;
-  - confirmed initial `loadGroups(1)` calls `fetchTransportGroups(buildQuery())` and does not add any extra `status=active` outside filter state;
-  - confirmed `TransportGroupFilters.vue` already has empty-value `全部` before `进行中`;
-  - did not change `api/transport-groups`, database schema/data, seed/migration files, price logic, export logic, order data, or入组/退组 logic;
-  - rebuilt with `npm --prefix apps/admin-vue run build`, producing `admin/assets/index-DC0ATA7m.js`;
-  - committed and pushed `fcf2a07` (`Fix transport groups default filter`) to `origin/codex/membership-v1`;
-  - deployed production with Vercel deployment `dpl_HQus2qYYV1ehbrBXDMG99z1GpTjM`;
-  - `https://ngn.best/admin/transport/groups` now serves HTML referencing `admin/assets/index-DC0ATA7m.js`;
-  - production bundle check confirmed the deployed transport group view state contains `status:""` and no default `status:"active"` for that filter object.
+- Updated `apps/admin-vue/src/components/TransportRequestFilters.vue`:
+  - removed the visible `订单归属` dropdown from the registered pickup/dropoff order filter area;
+  - kept the `订单状态` dropdown visible;
+  - kept the status options as `有效单`, `无效单`, and `全部`.
 
-- Released the order-list default-filter fix to production:
-  - confirmed `apps/admin-vue/src/views/TransportRequestsView.vue` has `defaultFilters.status = ""`;
-  - confirmed `resetFilters()` resets to that default filter object;
-  - confirmed initial `loadRequests(1)` calls `fetchTransportRequests(buildQuery(page))` and does not add `status=active` outside the filter state;
-  - confirmed the order-status dropdown has empty-value `全部`, then `有效单`, then `已关闭/过期单`;
-  - rebuilt with `npm --prefix apps/admin-vue run build`, producing `admin/assets/index-aWx2_NFV.js`;
-  - committed and pushed `893e0a4` (`Fix transport request default filter`) to `origin/codex/membership-v1`;
-  - deployed production with Vercel deployment `dpl_7fUBsVnFuyoy7K3s1yqTBNtqYw8P`;
-  - `https://ngn.best/admin/transport/requests` now serves HTML referencing `admin/assets/index-aWx2_NFV.js`, replacing the old production bundle `admin/assets/index-Qsmlano-.js`;
-  - production bundle check confirmed the deployed transport request view state contains `status:""`.
+- Updated `apps/admin-vue/src/views/TransportRequestsView.vue`:
+  - kept `defaultFilters.status = "active"`, so the page defaults to `有效单`;
+  - kept `status` in the request query builder, so `订单状态` still filters valid, invalid, and all orders;
+  - removed the former ownership filter state from defaults;
+  - removed the ownership filter request parameter from the transport request query.
 
-- Production verification notes for the default-filter release:
-  - browser navigation to `https://ngn.best/admin/transport/requests` reached `admin-login.html` because this Codex session has no production admin login cookie;
-  - unauthenticated direct production API checks for `/api/transport-requests?paginate=true&page=1&page_size=10` and the same URL with `status=active` both returned `401`, confirming admin API auth is enforced but preventing row-count comparison without a logged-in admin session;
-  - logged-in production acceptance still needs an operator session to confirm the visible default dropdown says `全部`, the default network request omits `status=active`, and manual status filters return the expected `published/matched` vs `closed` subsets.
-
-- Added and finalized the `行程地址` column in the admin `登记接送机订单` workbench table:
-  - source: `apps/admin-vue/src/views/TransportRequestsView.vue`;
-  - placement: after `航班时间` and before `人数`;
-  - width: `220px`;
-  - display: direct address text only;
-  - empty address display: `-`;
-  - long address behavior: one-line ellipsis with hover title;
-  - address source logic still reads existing fields only, with destination-first pickup handling and origin-first dropoff handling.
-
-- Preserved the existing registered-airport-order default status filter behavior:
-  - `defaultFilters.status` remains `""`, so the first load/reset state means `全部`;
-  - the existing status dropdown still allows operators to choose `有效单` or `已关闭/过期单`.
+- Updated `apps/admin-vue/src/styles.css`:
+  - added a narrow-screen single-column filter row rule so the reduced filter area does not leave awkward overflow or empty placement on small screens.
 
 - Rebuilt the generated admin bundle:
-  - `/admin/` now serves `admin/assets/index-aWx2_NFV.js`;
-  - stylesheet remains `admin/assets/index-DfE4uMCS.css`.
+  - `admin/index.html` now references `admin/assets/index-CDuY8suu.js` and `admin/assets/index-Cn3hgMJD.css`;
+  - generated admin assets were committed together with the source change.
+
+- Release details:
+  - branch: `codex/transport-order-status-filter-release`;
+  - commit: `eeb07eb` (`fix(admin): restore transport order status filter and remove ownership filter`);
+  - pushed to GitHub before production deployment;
+  - production deployment: `dpl_9empv8Qfeq6ixQGtEvgWRAayE6ZQ`;
+  - production URL: `https://webside-fbzdvmfaq-wwkevin8s-projects.vercel.app`;
+  - production aliases: `https://ngn.best`, `https://www.ngn.best`, `https://webside-chi.vercel.app`, `https://webside-wwkevin8s-projects.vercel.app`, `https://webside-wwkevin8-wwkevin8s-projects.vercel.app`.
 
 ## Verification
 
 - `npm --prefix apps/admin-vue run build` passed with only the existing Vite chunk-size warning.
 - `git diff --check` passed.
-- Source inspection confirmed the workbench column order is `wb_flight_datetime`, `wb_itinerary_address`, `wb_passenger_count`.
-- Source inspection confirmed `itineraryAddressText(row)` returns `address || "-"`.
-- Source inspection confirmed the address prefixes are no longer in `apps/admin-vue/src/views/TransportRequestsView.vue`.
-- Existing query/filter component, pagination component, export function import, and table wrapper/horizontal-scroll styling remain in place.
-- Local helper server was restarted after the final build.
-- `http://127.0.0.1:3000/admin/` returns `admin/assets/index-aWx2_NFV.js` and `admin/assets/index-DfE4uMCS.css`.
-- `http://127.0.0.1:3000/api/admin/session` returned LOCAL TEST MODE and unauthenticated admin state.
+- No lint or typecheck script is defined in the root or `apps/admin-vue` package scripts, so there was no project lint/typecheck command to run.
+- Local admin page verification passed at `http://127.0.0.1:3000/admin/transport/requests`:
+  - page opened successfully;
+  - filter area showed `订单状态`;
+  - filter area did not show `订单归属`;
+  - `订单状态` defaulted to `有效单`;
+  - switching `有效单`, `无效单`, and `全部` and querying did not show a page error;
+  - table rows displayed;
+  - row operation buttons remained visible;
+  - other requested filters remained available.
+- Production deployment verification:
+  - `https://ngn.best/admin/transport/requests` returned HTTP 200;
+  - served HTML references the new bundle `admin/assets/index-CDuY8suu.js`;
+  - production bundle contains `订单状态`, `有效单`, and `无效单`;
+  - production bundle does not contain `订单归属`;
+  - production bundle does not contain the removed front-end `groupStatus` filter state.
+- Production logged-in browser acceptance was not performed because this Codex session does not have a production admin login cookie, and logging in would update production admin account metadata such as last login time. This avoids modifying production data.
 
 ## Current Project State
 
-- Admin Vue source is the canonical admin UI source; `npm --prefix apps/admin-vue run build` refreshes the served `admin/` bundle.
-- The `登记接送机订单` page defaults the order-status filter to `全部`; operators can still manually choose `有效单`.
-- The admin transport request workbench includes a read-only `行程地址` column between `航班时间` and `人数`, derived from existing address fields only and shown without route-prefix labels.
-- Query, filter, pagination, horizontal-scroll table layout, export controls, price calculation, carpool grouping, API behavior, database schema, and email behavior were not intentionally changed by this task.
-- No test data was uploaded and no production data was modified.
+- Admin Vue source remains the canonical admin UI source; `npm --prefix apps/admin-vue run build` refreshes the served `admin/` bundle.
+- The `登记接送机订单` page keeps `订单状态` as an active filter and defaults it to `有效单`.
+- The `订单归属` filter has been removed from the visible filter area and from the front-end filter/query state.
+- Keyword search, service type, airport, start date, end date, offline record status, payment status, import batch, sorting, page size, table data display, import flow, carpool group flow, and row operation buttons were not intentionally changed.
+- API routes, database schema/data, email behavior, payment behavior, deployment settings, and environment variables were not intentionally changed.
+- No test data was uploaded and no production data was intentionally modified.
 
 ## Open Risks / Follow-Up
 
-- Browser-level row acceptance still requires a logged-in admin session for direct visual confirmation of rows with non-empty and empty addresses.
-- No deployment was performed in this task. Follow the release order in `AGENTS.md` before any production or preview deployment.
+- A logged-in production operator can do final human acceptance of the live page without Codex needing to create a new production login event.
