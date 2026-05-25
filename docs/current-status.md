@@ -8,9 +8,25 @@
 ## Last Updated Task
 
 - Date: 2026-05-25
-- Scope: Final regression check and commit preparation for the admin `行程地址` column display. The column now shows the raw address only, with no `目的地：`, `出发地：`, or `地址：` prefix. No API, database, price, carpool grouping, export, test-data, production-data, push, or deploy action.
+- Scope: Released the admin registered airport pickup/dropoff order-list default status filter fix to production. GitHub commit `893e0a4`; Vercel production deployment `dpl_7fUBsVnFuyoy7K3s1yqTBNtqYw8P` aliased to `https://ngn.best`. No database write, delete, migration, API logic, email, or carpool data change.
 
 ## Latest Completed Work
+
+- Released the order-list default-filter fix to production:
+  - confirmed `apps/admin-vue/src/views/TransportRequestsView.vue` has `defaultFilters.status = ""`;
+  - confirmed `resetFilters()` resets to that default filter object;
+  - confirmed initial `loadRequests(1)` calls `fetchTransportRequests(buildQuery(page))` and does not add `status=active` outside the filter state;
+  - confirmed the order-status dropdown has empty-value `全部`, then `有效单`, then `已关闭/过期单`;
+  - rebuilt with `npm --prefix apps/admin-vue run build`, producing `admin/assets/index-aWx2_NFV.js`;
+  - committed and pushed `893e0a4` (`Fix transport request default filter`) to `origin/codex/membership-v1`;
+  - deployed production with Vercel deployment `dpl_7fUBsVnFuyoy7K3s1yqTBNtqYw8P`;
+  - `https://ngn.best/admin/transport/requests` now serves HTML referencing `admin/assets/index-aWx2_NFV.js`, replacing the old production bundle `admin/assets/index-Qsmlano-.js`;
+  - production bundle check confirmed the deployed transport request view state contains `status:""`.
+
+- Production verification notes for the default-filter release:
+  - browser navigation to `https://ngn.best/admin/transport/requests` reached `admin-login.html` because this Codex session has no production admin login cookie;
+  - unauthenticated direct production API checks for `/api/transport-requests?paginate=true&page=1&page_size=10` and the same URL with `status=active` both returned `401`, confirming admin API auth is enforced but preventing row-count comparison without a logged-in admin session;
+  - logged-in production acceptance still needs an operator session to confirm the visible default dropdown says `全部`, the default network request omits `status=active`, and manual status filters return the expected `published/matched` vs `closed` subsets.
 
 - Added and finalized the `行程地址` column in the admin `登记接送机订单` workbench table:
   - source: `apps/admin-vue/src/views/TransportRequestsView.vue`;
