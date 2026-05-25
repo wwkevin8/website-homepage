@@ -8,9 +8,22 @@
 ## Last Updated Task
 
 - Date: 2026-05-25
-- Scope: Released the admin registered airport pickup/dropoff order-list default status filter fix to production. GitHub commit `893e0a4`; Vercel production deployment `dpl_7fUBsVnFuyoy7K3s1yqTBNtqYw8P` aliased to `https://ngn.best`. No database write, delete, migration, API logic, email, or carpool data change.
+- Scope: Released the admin transport group management default status filter fix to production. GitHub commit `fcf2a07`; Vercel production deployment `dpl_HQus2qYYV1ehbrBXDMG99z1GpTjM` aliased to `https://ngn.best`. No database write, delete, migration, seed, test-data upload, API logic, email, price, order, or carpool data change.
 
 ## Latest Completed Work
+
+- Released the transport group-management default-filter fix to production:
+  - confirmed `apps/admin-vue/src/views/TransportGroupsView.vue` had `defaultFilters.status = "active"`, which made the page default to the `进行中` filter;
+  - changed only that default to `status: ""`, so initial load and reset now mean `全部`;
+  - confirmed `resetFilters()` resets to the same default filter object;
+  - confirmed initial `loadGroups(1)` calls `fetchTransportGroups(buildQuery())` and does not add any extra `status=active` outside filter state;
+  - confirmed `TransportGroupFilters.vue` already has empty-value `全部` before `进行中`;
+  - did not change `api/transport-groups`, database schema/data, seed/migration files, price logic, export logic, order data, or入组/退组 logic;
+  - rebuilt with `npm --prefix apps/admin-vue run build`, producing `admin/assets/index-DC0ATA7m.js`;
+  - committed and pushed `fcf2a07` (`Fix transport groups default filter`) to `origin/codex/membership-v1`;
+  - deployed production with Vercel deployment `dpl_HQus2qYYV1ehbrBXDMG99z1GpTjM`;
+  - `https://ngn.best/admin/transport/groups` now serves HTML referencing `admin/assets/index-DC0ATA7m.js`;
+  - production bundle check confirmed the deployed transport group view state contains `status:""` and no default `status:"active"` for that filter object.
 
 - Released the order-list default-filter fix to production:
   - confirmed `apps/admin-vue/src/views/TransportRequestsView.vue` has `defaultFilters.status = ""`;
