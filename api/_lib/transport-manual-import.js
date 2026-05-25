@@ -1,5 +1,11 @@
-const { mapRequestPayload } = require("./transport");
-const { createRequestRecord } = require("./transport-group-lifecycle");
+const { DEFAULT_GROUP_MAX_PASSENGERS, mapRequestPayload } = require("./transport");
+const {
+  addRequestToGroup,
+  createGroupForRequest,
+  createRequestRecord,
+  deleteEmptyGroupIfEligible,
+  syncGroupState
+} = require("./transport-group-lifecycle");
 const { logAdminOperation } = require("./orders");
 const importColumns = require("../../shared/transport-manual-import-columns.json");
 
@@ -34,7 +40,26 @@ const FIELD_ALIASES = {
   deposit_amount_gbp: ["deposit_amount_gbp", "定金 GBP", "定金GBP", "定金", "price", "价格", "费用"],
   admin_note: ["admin_note", "客服备注", "notes", "备注"],
   notes: ["notes", "备注"],
-  group_id: ["group_id", "Group ID", "已有 Group ID", "是否加入已有 Group ID", "拼车组", "拼车组ID"]
+  group_id: [
+    "group_id",
+    "Group ID",
+    "已有 Group ID",
+    "是否加入已有 Group ID",
+    "group identifier",
+    "carpool group",
+    "temporary group",
+    "拼车组",
+    "拼车组ID",
+    "拼车组 ID",
+    "拼车组标识",
+    "拼车组标识（可选）",
+    "拼车组标识(可选)",
+    "拼车组编号",
+    "临时分组标识",
+    "临时拼车组标识",
+    "临时组",
+    "分组标识"
+  ]
 };
 
 FIELD_ALIASES.flight_date = ["flight_date", "flight date", "arrival date", "departure date", "航班日期", "抵达日期", "起飞日期"];
@@ -43,7 +68,8 @@ FIELD_ALIASES.service_date = ["service_date", "service date", "pickup date", "dr
 FIELD_ALIASES.service_time_only = ["service_time_only", "service clock", "pickup time", "dropoff time", "服务具体时间", "接机时间", "送机时间", "上车时间"];
 
 const WARNING_CODES = {
-  GROUP_DISABLED: "group_disabled_for_batch_manual_import",
+  GROUP_JOIN_RISK: "group_join_risk",
+  TEMP_GROUP_RISK: "temporary_group_risk",
   DUPLICATE: "possible_duplicate"
 };
 
@@ -52,7 +78,7 @@ function resolveAdminDisplayName(adminUser = {}) {
 }
 
 function normalizeKey(value) {
-  return String(value || "").trim().toLowerCase().replace(/\s+/g, "");
+  return String(value || "").replace(/^\uFEFF/, "").trim().toLowerCase().replace(/\s+/g, "");
 }
 
 function normalizeText(value) {
@@ -540,6 +566,163 @@ function statusFromIssues(errors, warnings) {
   return "ready";
 }
 
+function isExistingGroupIdentifier(value) {
+  return /^GRP-/i.test(String(value || "").trim());
+}
+
+function groupDateLabel(group = {}) {
+  return String(group.group_date || group.preferred_time_start || group.flight_time_reference || "").slice(0, 10);
+}
+
+function requestDateLabel(requestPayload = {}) {
+  return manualRequestServiceDate(requestPayload);
+}
+
+function sameGroupBasics(left = {}, right = {}) {
+  return left.service_type === right.service_type
+    && left.airport_code === right.airport_code
+    && requestDateLabel(left) === requestDateLabel(right);
+}
+
+function buildGroupSummary(group = {}, stats = null) {
+  return {
+    id: group.id || null,
+    group_id: groupDisplayCode(group),
+    group_ref: groupJoinRef(group),
+    status: group.status || null,
+    service_type: group.service_type || null,
+    airport_code: group.airport_code || null,
+    group_date: groupDateLabel(group),
+    current_passenger_count: stats?.current_passenger_count ?? null,
+    max_passengers: stats?.max_passengers ?? group.max_passengers ?? null,
+    remaining_passenger_count: stats?.remaining_passenger_count ?? null
+  };
+}
+
+async function addExistingGroupPreview(item, supabase, groupCode, groupCache) {
+  let cached = groupCache.get(groupCode);
+  if (!cached) {
+    try {
+      const group = await fetchManualTargetGroup(supabase, groupCode);
+      const stats = await getManualGroupPassengerStats(supabase, group);
+      cached = { group, stats };
+      groupCache.set(groupCode, cached);
+    } catch (error) {
+      if (error?.statusCode !== 400) {
+        throw error;
+      }
+      item.errors.push({
+        code: "group_not_found",
+        message: `拼车组不存在，不允许导入：${groupCode}`
+      });
+      item.group_plan = {
+        action: "join_existing",
+        input: groupCode,
+        label: `拼车组不存在：${groupCode}`,
+        can_commit: false
+      };
+      return;
+    }
+  }
+
+  const { group, stats } = cached;
+  const displayCode = groupDisplayCode(group) || groupCode;
+  item.target_group = buildGroupSummary(group, stats);
+  item.group_plan = {
+    action: "join_existing",
+    input: groupCode,
+    group_id: groupJoinRef(group),
+    group_code: displayCode,
+    label: `加入已有拼车组：${displayCode}`,
+    can_commit: true
+  };
+
+  const status = String(group.status || "").trim().toLowerCase();
+  const requestDate = requestDateLabel(item.request_payload);
+  const groupDate = groupDateLabel(group);
+  if (["closed", "cancelled", "canceled", "full"].includes(status)) {
+    item.warnings.push({
+      code: WARNING_CODES.GROUP_JOIN_RISK,
+      message: `目标拼车组当前状态为 ${group.status || "未知"}，请确认仍要加入。`
+    });
+  }
+  if (group.service_type !== item.request_payload.service_type || group.airport_code !== item.request_payload.airport_code || groupDate !== requestDate) {
+    item.warnings.push({
+      code: WARNING_CODES.GROUP_JOIN_RISK,
+      message: `目标拼车组与本行的服务类型、机场或日期不一致，请确认：${displayCode}`
+    });
+  }
+  if (stats.remaining_passenger_count < Number(item.request_payload.passenger_count || 0)) {
+    item.warnings.push({
+      code: WARNING_CODES.GROUP_JOIN_RISK,
+      message: `目标拼车组剩余座位可能不足，请确认仍要加入：${displayCode}`
+    });
+  }
+}
+
+function addTemporaryGroupWarnings(items) {
+  const byToken = new Map();
+  items.forEach(item => {
+    const token = item.group_plan?.action === "create_temporary_group" ? item.group_plan.input : "";
+    if (!token || item.errors.length) return;
+    byToken.set(token, [...(byToken.get(token) || []), item]);
+  });
+
+  byToken.forEach((groupItems, token) => {
+    if (groupItems.length < 2) return;
+    const [first] = groupItems;
+    const mismatched = groupItems.some(item => !sameGroupBasics(first.request_payload, item.request_payload));
+    const passengerTotal = groupItems.reduce((sum, item) => sum + Number(item.request_payload.passenger_count || 0), 0);
+    groupItems.forEach(item => {
+      if (mismatched) {
+        item.warnings.push({
+          code: WARNING_CODES.TEMP_GROUP_RISK,
+          message: `临时分组 ${token} 内存在服务类型、机场或日期不一致的行，请确认仍要合并为同一拼车组。`
+        });
+      }
+      if (passengerTotal > DEFAULT_GROUP_MAX_PASSENGERS) {
+        item.warnings.push({
+          code: WARNING_CODES.TEMP_GROUP_RISK,
+          message: `临时分组 ${token} 总人数 ${passengerTotal} 可能超过默认拼车组容量，请确认。`
+        });
+      }
+    });
+  });
+}
+
+async function attachGroupPlans(supabase, normalizedRows) {
+  const existingGroupCache = new Map();
+  for (const item of normalizedRows) {
+    const groupInput = String(item.clean.group_id || "").trim();
+    item.target_group = null;
+    item.candidate_groups = [];
+
+    if (!groupInput) {
+      item.group_plan = {
+        action: "create_single",
+        input: "",
+        label: "自动创建单人组",
+        can_commit: true
+      };
+      continue;
+    }
+
+    if (isExistingGroupIdentifier(groupInput)) {
+      await addExistingGroupPreview(item, supabase, groupInput, existingGroupCache);
+      continue;
+    }
+
+    item.group_plan = {
+      action: "create_temporary_group",
+      input: groupInput,
+      label: `创建新的多人拼车组：临时标识 ${groupInput}`,
+      can_commit: true
+    };
+  }
+
+  addTemporaryGroupWarnings(normalizedRows);
+}
+
 async function previewRows(supabase, rows = []) {
   const normalizedRows = (Array.isArray(rows) ? rows : []).map((row, index) => {
     const sourceRow = row?.raw || row?.raw_import_payload || row;
@@ -555,19 +738,12 @@ async function previewRows(supabase, rows = []) {
   });
 
   addBatchDuplicateWarnings(normalizedRows);
+  await attachGroupPlans(supabase, normalizedRows);
 
   for (const item of normalizedRows) {
     if (!item.errors.length) {
       item.warnings.push(...await findDatabaseDuplicates(supabase, item.clean));
     }
-    if (item.clean.group_id) {
-      item.warnings.push({
-        code: WARNING_CODES.GROUP_DISABLED,
-        message: "P4b 批量补录不会创建或加入拼车组，已忽略 Group ID。"
-      });
-    }
-    item.target_group = null;
-    item.candidate_groups = [];
     item.status = statusFromIssues(item.errors, item.warnings);
     item.can_import = item.status !== "error";
   }
@@ -650,10 +826,107 @@ async function createRequestOnlyFromPreview(supabase, adminUser, preview, option
   };
 }
 
+async function createRequestWithGroupFromPreview(supabase, adminUser, preview, options = {}) {
+  const created = await createRequestOnlyFromPreview(supabase, adminUser, preview, options);
+  const plan = preview.group_plan || { action: "create_single" };
+  const adminName = resolveAdminDisplayName(adminUser);
+
+  try {
+    if (plan.action === "join_existing") {
+      const targetGroup = await fetchManualTargetGroup(supabase, plan.group_id || plan.group_code || plan.input);
+      const joinedGroup = await addRequestToGroup(supabase, groupJoinRef(targetGroup), created.request);
+      await logTransportImportOperation(supabase, adminUser, created.request, "transport_request_added_to_group_from_batch_import", {
+        import_batch_id: options.importBatchId || null,
+        request_id: created.request.id,
+        group_id: groupJoinRef(targetGroup),
+        group_code: groupDisplayCode(targetGroup),
+        group_plan: plan,
+        created_by: adminName,
+        created_at: new Date().toISOString()
+      });
+      return {
+        ...created,
+        group: joinedGroup || targetGroup,
+        group_id: groupJoinRef(targetGroup),
+        group_plan: plan
+      };
+    }
+
+    if (plan.action === "create_temporary_group") {
+      const cache = options.temporaryGroupCache || new Map();
+      const token = String(plan.input || "").trim();
+      const cachedGroup = cache.get(token);
+      if (cachedGroup) {
+        const joinedGroup = await addRequestToGroup(supabase, groupJoinRef(cachedGroup), created.request);
+        await logTransportImportOperation(supabase, adminUser, created.request, "transport_request_added_to_temporary_batch_group", {
+          import_batch_id: options.importBatchId || null,
+          request_id: created.request.id,
+          group_id: groupJoinRef(cachedGroup),
+          group_code: groupDisplayCode(cachedGroup),
+          temporary_group_key: token,
+          group_plan: plan,
+          created_by: adminName,
+          created_at: new Date().toISOString()
+        });
+        return {
+          ...created,
+          group: joinedGroup || cachedGroup,
+          group_id: groupJoinRef(cachedGroup),
+          group_plan: plan
+        };
+      }
+
+      const group = await createGroupForRequest(supabase, created.request, { isInitiator: true });
+      const syncedGroup = await syncGroupState(supabase, groupJoinRef(group));
+      const finalGroup = syncedGroup || group;
+      cache.set(token, finalGroup);
+      await logTransportImportOperation(supabase, adminUser, created.request, "transport_group_created_from_temporary_batch_key", {
+        import_batch_id: options.importBatchId || null,
+        request_id: created.request.id,
+        new_group_id: groupJoinRef(finalGroup),
+        new_group_code: groupDisplayCode(finalGroup),
+        temporary_group_key: token,
+        group_plan: plan,
+        created_by: adminName,
+        created_at: new Date().toISOString()
+      });
+      return {
+        ...created,
+        group: finalGroup,
+        group_id: groupJoinRef(finalGroup),
+        group_plan: plan
+      };
+    }
+
+    const group = await createGroupForRequest(supabase, created.request, { isInitiator: true });
+    const syncedGroup = await syncGroupState(supabase, groupJoinRef(group));
+    const finalGroup = syncedGroup || group;
+    await logTransportImportOperation(supabase, adminUser, created.request, "transport_group_created_from_batch_import_single", {
+      import_batch_id: options.importBatchId || null,
+      request_id: created.request.id,
+      new_group_id: groupJoinRef(finalGroup),
+      new_group_code: groupDisplayCode(finalGroup),
+      group_plan: plan,
+      created_by: adminName,
+      created_at: new Date().toISOString()
+    });
+    return {
+      ...created,
+      group: finalGroup,
+      group_id: groupJoinRef(finalGroup),
+      group_plan: plan
+    };
+  } catch (error) {
+    await cleanupCreatedRequestAfterGroupFailure(supabase, created.request, error);
+    throw error;
+  }
+}
+
 async function commitRows(supabase, adminUser, rows = [], options = {}) {
   const previews = await previewRows(supabase, rows);
   const confirmedWarnings = options.confirmedWarnings || {};
   const importBatchId = options.importBatchId || generateImportBatchId();
+  const temporaryGroupCache = new Map();
   const results = [];
   const rejected = [];
 
@@ -669,10 +942,22 @@ async function commitRows(supabase, adminUser, rows = [], options = {}) {
       });
       continue;
     }
-    results.push(await createRequestOnlyFromPreview(supabase, adminUser, preview, {
-      importBatchId,
-      confirmedWarnings: preview.warnings
-    }));
+    try {
+      results.push(await createRequestWithGroupFromPreview(supabase, adminUser, preview, {
+        importBatchId,
+        confirmedWarnings: preview.warnings,
+        temporaryGroupCache
+      }));
+    } catch (error) {
+      const cleanup = await cleanupCommittedImportResults(supabase, results);
+      error.compensation = cleanup;
+      const cleanupFailed = cleanup.some(item => item && item.ok === false);
+      const importedRequestIds = results.map(item => item?.request?.id).filter(Boolean);
+      error.message = cleanupFailed
+        ? `${error.message || "manual import failed"}; rollback failed and some imported data may remain: requests=${importedRequestIds.join(",") || "none"}`
+        : `${error.message || "manual import failed"}; import aborted and previously created rows in this batch were rolled back`;
+      throw error;
+    }
   }
 
   return {
@@ -682,6 +967,193 @@ async function commitRows(supabase, adminUser, rows = [], options = {}) {
     items: results,
     rejected
   };
+}
+
+function normalizeManualGroupAction(value) {
+  const text = String(value || "").trim().toLowerCase();
+  if (!text) return "create_single";
+  if (text === "none" || text === "no_group" || text.includes("不加入")) return "none";
+  if (text === "create_single" || text === "create_group" || text.includes("创建")) return "create_single";
+  if (text === "join_existing" || text === "join_group" || text.includes("加入已有")) return "join_existing";
+  return "none";
+}
+
+function isUuid(value) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value || "").trim());
+}
+
+function isMissingColumnError(error, marker) {
+  return Boolean(error?.message && error.message.includes(marker));
+}
+
+function groupJoinRef(group = {}) {
+  return group.group_id || group.group_ref || group.id || null;
+}
+
+function groupDisplayCode(group = {}) {
+  return group.group_id || group.group_code || group.id || null;
+}
+
+function manualRequestServiceDate(request = {}) {
+  const source = request.preferred_time_start || request.flight_datetime || request.preferred_time_end || request.created_at;
+  if (!source) return "";
+  const parsed = new Date(source);
+  return Number.isNaN(parsed.getTime()) ? "" : parsed.toISOString().slice(0, 10);
+}
+
+async function fetchManualTargetGroup(supabase, targetGroupId) {
+  const target = String(targetGroupId || "").trim();
+  if (!target) {
+    const error = new Error("请输入目标拼车组编号。");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const byCode = await supabase
+    .from("transport_groups")
+    .select("*")
+    .eq("group_id", target)
+    .limit(1);
+  if (byCode.error && !isMissingColumnError(byCode.error, "transport_groups.group_id")) throw byCode.error;
+  const codeMatch = !byCode.error && Array.isArray(byCode.data) ? byCode.data[0] : null;
+  if (codeMatch) return codeMatch;
+
+  if (isUuid(target)) {
+    const byId = await supabase
+      .from("transport_groups")
+      .select("*")
+      .eq("id", target)
+      .limit(1);
+    if (byId.error) throw byId.error;
+    const idMatch = Array.isArray(byId.data) ? byId.data[0] : null;
+    if (idMatch) return idMatch;
+  }
+
+  const error = new Error("未找到目标拼车组，请检查编号。");
+  error.statusCode = 400;
+  throw error;
+}
+
+async function getManualGroupPassengerStats(supabase, group) {
+  const { data, error } = await supabase
+    .from("transport_group_members")
+    .select("passenger_count_snapshot, transport_requests(id,status,passenger_count)")
+    .eq("group_id", groupJoinRef(group));
+  if (error) throw error;
+
+  const activeMembers = (data || []).filter(member => member.transport_requests?.status !== "closed");
+  const currentPassengerCount = activeMembers.reduce((sum, member) => {
+    return sum + Number(member.transport_requests?.passenger_count || member.passenger_count_snapshot || 0);
+  }, 0);
+  const maxPassengers = Number(group.max_passengers || DEFAULT_GROUP_MAX_PASSENGERS);
+  return {
+    current_passenger_count: currentPassengerCount,
+    max_passengers: maxPassengers,
+    remaining_passenger_count: Math.max(maxPassengers - currentPassengerCount, 0)
+  };
+}
+
+async function validateManualTargetGroup(supabase, requestPayload, targetGroupId) {
+  const group = await fetchManualTargetGroup(supabase, targetGroupId);
+  const status = String(group.status || "").trim().toLowerCase();
+  const groupDate = String(group.group_date || "").slice(0, 10);
+  const requestDate = manualRequestServiceDate(requestPayload);
+
+  if (
+    status === "closed"
+    || status === "cancelled"
+    || status === "canceled"
+    || group.service_type !== requestPayload.service_type
+    || group.airport_code !== requestPayload.airport_code
+    || groupDate !== requestDate
+  ) {
+    const error = new Error("目标拼车组与当前订单的服务类型、机场或日期不一致，不能加入。");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const stats = await getManualGroupPassengerStats(supabase, group);
+  if (stats.remaining_passenger_count < Number(requestPayload.passenger_count || 0)) {
+    const error = new Error("目标拼车组已满，不能加入。");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  return { group, stats };
+}
+
+async function deleteCreatedManualRequest(supabase, request) {
+  if (!request?.id) return;
+  const { error } = await supabase
+    .from("transport_requests")
+    .delete()
+    .eq("id", request.id);
+  if (error) throw error;
+}
+
+async function cleanupCreatedRequestAfterGroupFailure(supabase, request, cause) {
+  if (!request?.id) return;
+  try {
+    await deleteCreatedManualRequest(supabase, request);
+  } catch (cleanupError) {
+    const message = cause?.message || "manual import group handling failed";
+    cause.message = `${message}; cleanup failed and request may remain without a group: ${request.id}; ${cleanupError?.message || String(cleanupError)}`;
+    cause.cleanup_error = cleanupError?.message || String(cleanupError);
+    cause.possible_residual_request_id = request.id;
+  }
+}
+
+async function cleanupCommittedImportResults(supabase, results = []) {
+  const requestIds = Array.from(new Set(results.map(item => item?.request?.id).filter(Boolean)));
+  const createdGroupRefs = Array.from(new Set(results
+    .filter(item => item?.group_plan?.action !== "join_existing")
+    .map(item => item?.group_id || groupJoinRef(item?.group))
+    .filter(Boolean)));
+  const cleanup = [];
+
+  if (requestIds.length) {
+    const membersDelete = await supabase
+      .from("transport_group_members")
+      .delete()
+      .in("request_id", requestIds);
+    cleanup.push({
+      step: "delete_created_group_members",
+      ok: !membersDelete.error,
+      message: membersDelete.error?.message || null,
+      request_ids: requestIds
+    });
+
+    const requestsDelete = await supabase
+      .from("transport_requests")
+      .delete()
+      .in("id", requestIds);
+    cleanup.push({
+      step: "delete_created_requests",
+      ok: !requestsDelete.error,
+      message: requestsDelete.error?.message || null,
+      request_ids: requestIds
+    });
+  }
+
+  for (const groupRef of createdGroupRefs) {
+    try {
+      cleanup.push({
+        step: "delete_created_group_if_empty",
+        ok: true,
+        group_id: groupRef,
+        result: await deleteEmptyGroupIfEligible(supabase, groupRef, { reason: "failed_manual_import_commit" })
+      });
+    } catch (error) {
+      cleanup.push({
+        step: "delete_created_group_if_empty",
+        ok: false,
+        group_id: groupRef,
+        message: error?.message || String(error)
+      });
+    }
+  }
+
+  return cleanup;
 }
 
 async function createManualRequest(supabase, adminUser, row = {}, options = {}) {
@@ -773,12 +1245,148 @@ async function createManualRequest(supabase, adminUser, row = {}, options = {}) 
   };
 }
 
+async function createManualRequestWithGroupHandling(supabase, adminUser, row = {}, options = {}) {
+  const groupAction = normalizeManualGroupAction(options.groupAction || options.group_handling);
+  const targetGroupId = normalizeText(options.targetGroupId || options.target_group_id || pickField(row, "target_group_id") || pickField(row, "group_id"));
+
+  if (groupAction === "none") {
+    return {
+      ok: false,
+      preview: {
+        row_index: 1,
+        raw_import_payload: { ...row },
+        clean: null,
+        target_group: null,
+        candidate_groups: [],
+        status: "error",
+        can_import: false,
+        errors: [{ code: "manual_group_action_required", message: "补录订单必须创建新的单人拼车组，或加入已有拼车组。" }],
+        warnings: []
+      }
+    };
+  }
+
+  if (normalizeText(pickField(row, "group_id")) && groupAction !== "join_existing") {
+    return {
+      ok: false,
+      preview: {
+        row_index: 1,
+        raw_import_payload: { ...row },
+        clean: null,
+        target_group: null,
+        candidate_groups: [],
+        status: "error",
+        can_import: false,
+        errors: [{ code: "group_disabled_for_single_manual_request", message: "补录订单只有选择“加入已有拼车组”时才能填写目标拼车组编号。" }],
+        warnings: []
+      }
+    };
+  }
+
+  const [preview] = await previewRows(supabase, [row]);
+  if (!preview || preview.errors.length) {
+    return { ok: false, preview };
+  }
+  if (preview.clean.group_id && groupAction !== "join_existing") {
+    return {
+      ok: false,
+      preview: {
+        ...preview,
+        status: "error",
+        can_import: false,
+        errors: [
+          ...(preview.errors || []),
+          { code: "group_disabled_for_single_manual_request", message: "补录订单只有选择“加入已有拼车组”时才能填写目标拼车组编号。" }
+        ]
+      }
+    };
+  }
+  if (preview.warnings.length && options.confirmWarnings !== true) {
+    return { ok: false, preview, requires_confirmation: true };
+  }
+
+  if (pickField(row, "shareable") === undefined) {
+    preview.clean.shareable = false;
+    preview.request_payload.shareable = false;
+  }
+
+  const adminName = resolveAdminDisplayName(adminUser);
+  const requestPayload = mapRequestPayload(preview.request_payload);
+  const targetValidation = groupAction === "join_existing"
+    ? await validateManualTargetGroup(supabase, requestPayload, targetGroupId)
+    : null;
+
+  const request = await createRequestRecord(supabase, {
+    ...requestPayload,
+    source: "admin_manual",
+    created_by_admin_id: adminUser.id || null,
+    created_by_admin_name: adminName,
+    import_batch_id: null,
+    raw_import_payload: preview.raw_import_payload || null,
+    manual_price_gbp: preview.clean.deposit_amount_gbp,
+    manual_payment_status: null,
+    contact_status: preview.clean.contact_status || "uncontacted",
+    payment_collection_status: preview.clean.payment_collection_status || "unpaid",
+    deposit_amount_gbp: preview.clean.deposit_amount_gbp,
+    offline_recorded: true,
+    last_operated_by: adminName,
+    last_operated_at: new Date().toISOString()
+  });
+
+  await logTransportImportOperation(supabase, adminUser, request, "create_transport_manual_request_request_only", {
+    source: "admin_manual",
+    import_batch_id: null,
+    group_id: null,
+    confirmed_warnings: options.confirmWarnings === true ? preview.warnings : [],
+    warning_count: preview.warnings.length
+  });
+
+  if (groupAction === "create_single") {
+    try {
+      const group = await createGroupForRequest(supabase, request, { isInitiator: true });
+      const syncedGroup = await syncGroupState(supabase, groupJoinRef(group));
+      const finalGroup = syncedGroup || group;
+      await logTransportImportOperation(supabase, adminUser, request, "transport_group_created_from_manual_request", {
+        request_id: request.id,
+        new_group_id: groupJoinRef(finalGroup),
+        new_group_code: groupDisplayCode(finalGroup),
+        created_by: adminName,
+        created_at: new Date().toISOString()
+      });
+      return { ok: true, preview, request, group: finalGroup, group_id: groupJoinRef(finalGroup) };
+    } catch (error) {
+      await cleanupCreatedRequestAfterGroupFailure(supabase, request, error);
+      throw error;
+    }
+  }
+
+  if (groupAction === "join_existing") {
+    try {
+      const targetGroup = targetValidation.group;
+      const joinedGroup = await addRequestToGroup(supabase, groupJoinRef(targetGroup), request);
+      await logTransportImportOperation(supabase, adminUser, request, "transport_request_added_to_group_from_manual_entry", {
+        request_id: request.id,
+        group_id: groupJoinRef(targetGroup),
+        group_code: groupDisplayCode(targetGroup),
+        created_by: adminName,
+        created_at: new Date().toISOString()
+      });
+      return { ok: true, preview, request, group: joinedGroup || targetGroup, group_id: groupJoinRef(targetGroup) };
+    } catch (error) {
+      await cleanupCreatedRequestAfterGroupFailure(supabase, request, error);
+      throw error;
+    }
+  }
+
+  return { ok: true, preview, request, group: null, group_id: null };
+}
+
 module.exports = {
   normalizeRow,
   parseDateTimeDetailed,
   previewRows,
   commitRows,
-  createManualRequest,
+  createManualRequest: createManualRequestWithGroupHandling,
   generateImportBatchId,
   WARNING_CODES
 };

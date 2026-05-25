@@ -2,7 +2,7 @@ const { getSupabaseAdmin } = require("../../_lib/supabase");
 const { requireAdminUser } = require("../../_lib/admin-auth");
 const { ok, badRequest, methodNotAllowed, serverError, parseJsonBody } = require("../../_lib/http");
 const { deriveDisplayGroupId } = require("../../_lib/transport");
-const { findTimeAdjustCandidateGroups } = require("../../_lib/transport-group-lifecycle");
+const { findTimeAdjustCandidateGroups, validateRequestCanJoinGroup } = require("../../_lib/transport-group-lifecycle");
 const { computeTransportGroupPricingSnapshot, roundCurrency } = require("../../_lib/transport-group-stats");
 const crypto = require("crypto");
 
@@ -17,15 +17,24 @@ const CHANGE_FIELDS = [
   "flight_datetime",
   "preferred_time_start",
   "preferred_time_end",
+  "location_from",
+  "location_to",
   "passenger_count",
   "luggage_count",
-  "shareable"
+  "deposit_amount_gbp",
+  "shareable",
+  "notes",
+  "admin_note"
 ];
 
 const REPRICE_FIELDS = new Set([
   "service_type",
   "airport_code",
   "terminal",
+  "preferred_time_start",
+  "preferred_time_end",
+  "location_from",
+  "location_to",
   "passenger_count",
   "luggage_count",
   "shareable",
@@ -76,13 +85,6 @@ function datePart(value) {
   return Number.isNaN(parsed.getTime()) ? "" : parsed.toISOString().slice(0, 10);
 }
 
-function hoursApart(left, right) {
-  const leftDate = new Date(left);
-  const rightDate = new Date(right);
-  if (Number.isNaN(leftDate.getTime()) || Number.isNaN(rightDate.getTime())) return null;
-  return Math.abs(leftDate.getTime() - rightDate.getTime()) / (60 * 60 * 1000);
-}
-
 function auditValue(field, value) {
   if (value === undefined || value === null || value === "") return null;
   if (["flight_datetime", "preferred_time_start", "preferred_time_end"].includes(field)) {
@@ -90,6 +92,9 @@ function auditValue(field, value) {
   }
   if (["passenger_count", "luggage_count"].includes(field)) {
     return normalizeInteger(value, null);
+  }
+  if (field === "deposit_amount_gbp") {
+    return normalizeMoney(value);
   }
   if (field === "shareable") {
     return Boolean(value);
@@ -121,9 +126,14 @@ function buildDraftRequest(existing, body = {}) {
     next.preferred_time_start = normalizeDateTime(changes.preferred_time_start, existing.preferred_time_start || next.flight_datetime);
   }
   if (Object.prototype.hasOwnProperty.call(changes, "preferred_time_end")) next.preferred_time_end = normalizeDateTime(changes.preferred_time_end, existing.preferred_time_end);
+  if (Object.prototype.hasOwnProperty.call(changes, "location_from")) next.location_from = normalizeText(changes.location_from) || existing.location_from;
+  if (Object.prototype.hasOwnProperty.call(changes, "location_to")) next.location_to = normalizeText(changes.location_to) || existing.location_to;
   if (Object.prototype.hasOwnProperty.call(changes, "passenger_count")) next.passenger_count = normalizeInteger(changes.passenger_count, existing.passenger_count);
   if (Object.prototype.hasOwnProperty.call(changes, "luggage_count")) next.luggage_count = normalizeInteger(changes.luggage_count, existing.luggage_count);
+  if (Object.prototype.hasOwnProperty.call(changes, "deposit_amount_gbp")) next.deposit_amount_gbp = normalizeMoney(changes.deposit_amount_gbp);
   if (Object.prototype.hasOwnProperty.call(changes, "shareable")) next.shareable = normalizeBoolean(changes.shareable, existing.shareable);
+  if (Object.prototype.hasOwnProperty.call(changes, "notes")) next.notes = normalizeText(changes.notes);
+  if (Object.prototype.hasOwnProperty.call(changes, "admin_note")) next.admin_note = normalizeText(changes.admin_note);
 
   return next;
 }
@@ -328,7 +338,7 @@ function classifyGroupRetention(existing, next, currentGroup, nextPricingMembers
       can_keep: false,
       reason: "request_not_grouped",
       reasons: ["request_not_grouped"],
-      required_action: next.shareable ? "new_single_pending_group" : "no_group"
+      required_action: "no_group_change"
     };
   }
 
@@ -344,24 +354,21 @@ function classifyGroupRetention(existing, next, currentGroup, nextPricingMembers
   if (next.service_type !== existing.service_type) reasons.push("service_type_changed");
   if (next.airport_code !== existing.airport_code || next.airport_code !== currentGroup.airport_code) reasons.push("airport_changed");
   if (nextDate !== currentDate || nextDate !== groupDate) reasons.push("service_date_changed");
-  if (String(next.terminal || "").trim().toUpperCase() !== String(existing.terminal || "").trim().toUpperCase()) reasons.push("terminal_changed");
   if (next.shareable === false) reasons.push("shareable_disabled");
   if (passengerTotal > maxPassengers) reasons.push("capacity_exceeded");
-  if (["closed", "cancelled", "full"].includes(String(currentGroup.status || "").trim().toLowerCase())) reasons.push("group_not_joinable");
-
-  const distance = hoursApart(next.preferred_time_start || next.flight_datetime, currentGroup.preferred_time_start || currentGroup.flight_time_reference);
-  if (distance === null || distance > 3) reasons.push("time_window_exceeded");
+  if (["closed", "cancelled"].includes(String(currentGroup.status || "").trim().toLowerCase())) reasons.push("group_not_joinable");
 
   return {
     can_keep: reasons.length === 0,
     reason: reasons[0] || "compatible",
     reasons,
-    required_action: reasons.length ? (next.shareable ? "move_out_or_transfer" : "move_out_no_group") : "keep_group"
+    required_action: reasons.length ? "move_out_new_single" : "keep_group"
   };
 }
 
 function derivePaidAmount(existing, body, risks) {
-  const directPaid = normalizeMoney(body.paid_amount_gbp ?? body.received_amount_gbp);
+  const changes = body.changes && typeof body.changes === "object" ? body.changes : {};
+  const directPaid = normalizeMoney(changes.deposit_amount_gbp ?? body.deposit_amount_gbp ?? body.paid_amount_gbp ?? body.received_amount_gbp);
   if (directPaid !== null) {
     return directPaid;
   }
@@ -466,6 +473,73 @@ function hasServiceDateChange(changedFieldNames, existing, next) {
   return datePart(existing.preferred_time_start || existing.flight_datetime) !== datePart(next.preferred_time_start || next.flight_datetime);
 }
 
+function hasMultiMemberRouteBreakingChange(changedFieldNames, existing, next) {
+  return changedFieldNames.has("airport_code")
+    || changedFieldNames.has("service_type")
+    || hasServiceDateChange(changedFieldNames, existing, next);
+}
+
+function targetGroupErrorMessage(error) {
+  const message = String(error?.message || "");
+  if (/multiple \(or no\) rows|not found|no rows/i.test(message)) return "未找到这个拼车组编号，请检查 Group ID 是否输入正确。";
+  if (/current group/i.test(message)) return "目标拼车组就是当前拼车组，不能重复加入。";
+  if (/not joinable|closed|cancel/i.test(message)) return "该拼车组已关闭、已取消或状态不可加入。";
+  if (/service_type/i.test(message)) return "服务类型不一致，接机订单只能加入接机组，送机订单只能加入送机组。";
+  if (/airport_code|airport/i.test(message)) return "机场不一致，不能加入这个拼车组。";
+  if (/date/i.test(message)) return "服务日期不一致，不能加入这个拼车组。";
+  if (/no active members/i.test(message)) return "该拼车组没有有效成员，不能作为目标组加入。";
+  if (/capacity|seat|remaining/i.test(message)) return "该拼车组人数已满或剩余座位不足。";
+  if (/time is outside|allowed window/i.test(message)) return "服务时间与该拼车组相差超过 3 小时，不能加入。";
+  if (/passenger_count/i.test(message)) return "订单人数无效，不能校验目标拼车组。";
+  if (/already in target group/i.test(message)) return "该订单已经在这个目标拼车组中。";
+  return message || "该拼车组暂时不能加入，请检查服务类型、机场、日期、时间和剩余座位。";
+}
+
+function summarizeTargetGroup(group, stats, warnings = []) {
+  return {
+    group_id: group.group_id || group.id,
+    group_ref: group.group_ref || group.id || group.group_id,
+    status: group.status,
+    service_type: group.service_type,
+    airport_code: group.airport_code,
+    airport_name: group.airport_name,
+    terminal: group.terminal,
+    group_date: group.group_date,
+    preferred_time_start: group.preferred_time_start,
+    flight_time_reference: group.flight_time_reference,
+    current_passenger_count: stats.current_passenger_count,
+    remaining_passenger_count: stats.remaining_passenger_count,
+    max_passengers: stats.max_passengers,
+    member_order_nos: stats.member_order_nos,
+    warnings
+  };
+}
+
+async function searchTargetGroup(supabase, request, searchText, currentGroupId) {
+  const targetGroupId = normalizeText(searchText);
+  if (!targetGroupId) return null;
+  try {
+    const validation = await validateRequestCanJoinGroup(supabase, request, targetGroupId, {
+      flight_datetime: request.flight_datetime,
+      preferred_time_start: request.preferred_time_start || request.flight_datetime
+    }, {
+      currentGroupIds: currentGroupId ? [currentGroupId] : []
+    });
+    return {
+      query: targetGroupId,
+      joinable: true,
+      reason: "可以加入该拼车组。",
+      group: summarizeTargetGroup(validation.group, validation.stats, validation.warnings || [])
+    };
+  } catch (error) {
+    return {
+      query: targetGroupId,
+      joinable: false,
+      reason: targetGroupErrorMessage(error)
+    };
+  }
+}
+
 module.exports = async function handler(req, res) {
   if (req.method !== "POST") {
     methodNotAllowed(res, ["POST"]);
@@ -539,12 +613,6 @@ module.exports = async function handler(req, res) {
     const classification = onlyOrdinaryTimeFields ? "ordinary_time_adjustment" : "order_change";
     const requiresReprice = classification === "order_change" && (repriceFieldsChanged || priceChanged);
 
-    if (classification === "ordinary_time_adjustment") {
-      risks.push({
-        code: "use_adjust_flight_time",
-        message: "This looks like an ordinary flight/service-time adjustment. Keep using the existing adjust_flight_time flow."
-      });
-    }
     if (changedFieldNames.has("airport_code")) {
       risks.push({
         code: "airport_change_requires_group_review",
@@ -557,6 +625,12 @@ module.exports = async function handler(req, res) {
         message: "Terminal changes can trigger cross-terminal pricing and group compatibility checks."
       });
     }
+    if (["location_from", "location_to"].some(field => changedFieldNames.has(field))) {
+      risks.push({
+        code: "route_location_change_requires_price_review",
+        message: "Pickup/dropoff address changes can affect price. Customer service must confirm the fee."
+      });
+    }
     if (changedFieldNames.has("passenger_count")) {
       risks.push({
         code: "passenger_count_changes_group_average",
@@ -565,6 +639,12 @@ module.exports = async function handler(req, res) {
     }
 
     let candidateGroups = [];
+    const searchedTargetGroup = await searchTargetGroup(
+      supabase,
+      next,
+      body.target_group_search || body.target_group_id_search || "",
+      currentGroupId
+    );
     if (next.shareable !== false && !groupRetention.can_keep) {
       try {
         candidateGroups = await findTimeAdjustCandidateGroups(supabase, next, {
@@ -581,12 +661,27 @@ module.exports = async function handler(req, res) {
       }
     }
 
+    const isMultiMemberRouteBreakingChange = currentGroup
+      && currentMembers.length > 1
+      && hasMultiMemberRouteBreakingChange(changedFieldNames, existing, next);
+
+    if (isMultiMemberRouteBreakingChange) {
+      risks.push({
+        code: "multi_member_group_requires_move_out",
+        message: hasServiceDateChange(changedFieldNames, existing, next)
+          ? "服务日期已变化，该订单不能继续保留在当前多人拼车组。"
+          : "该订单已加入多人拼车组，修改机场或服务类型会影响拼车匹配。"
+      });
+    }
+
     let resolvedGroupAction = "no_group_change";
     if (currentGroup) {
-      if (groupRetention.can_keep) {
+      if (isMultiMemberRouteBreakingChange) {
+        resolvedGroupAction = "move_out_new_single";
+      } else if (groupRetention.can_keep) {
         resolvedGroupAction = "keep_group";
       } else if (next.shareable === false) {
-        resolvedGroupAction = "move_out_no_group";
+        resolvedGroupAction = "move_out_new_single";
       } else {
         resolvedGroupAction = "move_out_new_single";
       }
@@ -633,6 +728,8 @@ module.exports = async function handler(req, res) {
       reason: normalizeText(body.reason) || null,
       changed_fields: changedFields,
       requires_reprice: requiresReprice,
+      price_recheck_required: requiresReprice,
+      summary_refreshed: true,
       old_price_gbp: oldPricing.price,
       new_price_gbp: newPricingSnapshot.price,
       price_delta_gbp: priceDelta,
@@ -650,11 +747,14 @@ module.exports = async function handler(req, res) {
       group_context: {
         current_group_id: currentGroup?.group_id || currentGroupId,
         current_group_display_id: currentGroup ? (currentGroup.group_id || deriveDisplayGroupId(currentGroup.id, currentGroup.group_date)) : null,
+        current_member_count: currentMembers.length,
         can_keep_original_group: groupRetention.can_keep,
         keep_original_group_reason: groupRetention.reason,
         keep_original_group_reasons: groupRetention.reasons || [],
+        multi_member_route_update_requires_move_out: Boolean(isMultiMemberRouteBreakingChange),
         required_group_action: resolvedGroupAction,
-        candidate_groups: candidateGroups
+        candidate_groups: candidateGroups,
+        searched_target_group: searchedTargetGroup
       },
       preview_is_read_only: true,
       risks

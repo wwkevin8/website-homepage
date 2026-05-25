@@ -3,12 +3,11 @@ const { getSupabaseAdmin } = require("../../_lib/supabase");
 const { requireAdminUser } = require("../../_lib/admin-auth");
 const { ok, badRequest, methodNotAllowed, serverError, parseJsonBody } = require("../../_lib/http");
 const {
-  createGroupForRequest,
   getGroupByBusinessId,
   getGroupMembersWithRequests,
+  moveRequestToNewSingleGroupSafely,
   syncGroupState,
   transferRequestToExistingGroup,
-  removeRequestFromGroup
 } = require("../../_lib/transport-group-lifecycle");
 const previewHandler = require("./change-preview");
 const { verifyPreviewToken } = previewHandler;
@@ -22,15 +21,21 @@ const CONFIRMABLE_FIELDS = new Set([
   "flight_datetime",
   "preferred_time_start",
   "preferred_time_end",
+  "location_from",
+  "location_to",
   "passenger_count",
   "luggage_count",
-  "shareable"
+  "deposit_amount_gbp",
+  "shareable",
+  "notes",
+  "admin_note"
 ]);
+
+const MULTI_MEMBER_GROUP_MOVE_OUT_MESSAGE = "该订单已加入多人拼车组，修改机场/日期/服务类型会影响拼车匹配。请选择“移出并创建新的单人拼车组”。";
 
 const GROUP_ACTIONS = new Set([
   "no_group_change",
   "keep_group",
-  "move_out_no_group",
   "move_out_new_single",
   "transfer_existing_group"
 ]);
@@ -191,6 +196,17 @@ async function assertNoDuplicateMembership(supabase, requestId) {
   return memberships;
 }
 
+async function assertSingleMembership(supabase, requestId) {
+  const memberships = await assertNoDuplicateMembership(supabase, requestId);
+  if (memberships.length !== 1) {
+    const error = new Error("request must have exactly one group membership after change-confirm");
+    error.statusCode = 409;
+    error.memberships = memberships;
+    throw error;
+  }
+  return memberships[0];
+}
+
 async function logAdminOperation(supabase, payload) {
   const { data, error } = await supabase
     .from("admin_operation_logs")
@@ -275,16 +291,34 @@ async function updateChangeLog(supabase, logId, payload) {
 }
 
 function getCandidateGroupIds(preview) {
-  return new Set((preview.group_context?.candidate_groups || []).flatMap(group => {
+  const candidateGroups = preview.group_context?.candidate_groups || [];
+  const searchedGroup = preview.group_context?.searched_target_group?.joinable
+    ? preview.group_context.searched_target_group.group
+    : null;
+  const groups = searchedGroup ? [...candidateGroups, searchedGroup] : candidateGroups;
+  return new Set(groups.flatMap(group => {
     return [group.group_id, group.group_ref, group.id].filter(Boolean).map(String);
   }));
 }
 
+function isMultiMemberGroup(preview) {
+  const currentMembers = preview.group_context?.current_member_count;
+  return Number(currentMembers || 0) > 1;
+}
+
+function hasBlockedMultiMemberChange(preview) {
+  const changedFields = new Set((preview.changed_fields || []).map(item => item.field));
+  const serviceDateChanged = (preview.group_context?.keep_original_group_reasons || []).includes("service_date_changed");
+  return changedFields.has("airport_code") || changedFields.has("service_type") || serviceDateChanged;
+}
+
 function validateGroupAction(preview, groupAction, targetGroupId) {
-  if (preview.classification === "ordinary_time_adjustment") {
-    const error = new Error("ordinary time adjustments must continue to use adjust_flight_time");
-    error.statusCode = 400;
-    throw error;
+  if (isMultiMemberGroup(preview) && hasBlockedMultiMemberChange(preview)) {
+    if (!["move_out_new_single", "transfer_existing_group"].includes(groupAction)) {
+      const error = new Error(MULTI_MEMBER_GROUP_MOVE_OUT_MESSAGE);
+      error.statusCode = 400;
+      throw error;
+    }
   }
 
   const groupContext = preview.group_context || {};
@@ -298,9 +332,9 @@ function validateGroupAction(preview, groupAction, targetGroupId) {
 
   if (
     groupAction === "keep_group"
-    && (changedFields.has("airport_code") || changedFields.has("terminal") || changedFields.has("shareable"))
+    && (changedFields.has("airport_code") || changedFields.has("service_type") || changedFields.has("shareable"))
   ) {
-    const error = new Error("airport, terminal, or shareable changes cannot keep the original group");
+    const error = new Error("airport, service type, or shareable changes cannot keep the original group");
     error.statusCode = 400;
     throw error;
   }
@@ -316,8 +350,8 @@ function validateGroupAction(preview, groupAction, targetGroupId) {
 
   if (changedFields.has("shareable")) {
     const shareableChange = (preview.changed_fields || []).find(item => item.field === "shareable");
-    if (shareableChange?.after === false && groupAction !== "move_out_no_group") {
-      const error = new Error("non-shareable changes must use move_out_no_group");
+    if (shareableChange?.after === false && groupAction !== "move_out_new_single") {
+      const error = new Error("non-shareable changes must use move_out_new_single");
       error.statusCode = 400;
       throw error;
     }
@@ -346,6 +380,25 @@ async function updateRequest(supabase, requestId, payload) {
   if (error) {
     throw error;
   }
+}
+
+async function assertCurrentMembershipStillInGroup(supabase, requestId, expectedGroupId) {
+  if (!expectedGroupId) {
+    return null;
+  }
+
+  const memberships = await getMemberships(supabase, requestId);
+  if (memberships.length !== 1 || String(memberships[0].group_id) !== String(expectedGroupId)) {
+    const error = new Error("订单拼车组状态已变化，请重新预览后再保存。");
+    error.statusCode = 409;
+    error.details = {
+      expected_group_id: expectedGroupId,
+      current_group_ids: memberships.map(item => item.group_id).filter(Boolean)
+    };
+    throw error;
+  }
+
+  return memberships[0];
 }
 
 async function restoreRequestFields(supabase, requestId, beforeValues, previousMeta) {
@@ -414,26 +467,11 @@ async function applyGroupAction(supabase, groupAction, existing, requestPayload,
     };
   }
 
-  if (groupAction === "move_out_no_group") {
-    await updateRequest(supabase, existing.id, requestPayload);
-    const lifecycle = await removeRequestFromGroup(supabase, existing.id, {
-      regroup: false,
-      closeRequest: false
-    });
-    return {
-      old_group_id: oldGroupId,
-      new_group_id: null,
-      old_group: lifecycle?.affected_groups?.[0] || null,
-      new_group: null,
-      lifecycle
-    };
-  }
-
   if (groupAction === "move_out_new_single") {
-    await updateRequest(supabase, existing.id, requestPayload);
-    const lifecycle = await removeRequestFromGroup(supabase, existing.id, {
-      regroup: true,
-      closeRequest: false
+    const lifecycle = await moveRequestToNewSingleGroupSafely(supabase, existing, requestPayload, {
+      oldGroupId,
+      operatedBy: resolveAdminDisplayName(adminUser),
+      operatedAt
     });
     return {
       old_group_id: oldGroupId,
@@ -540,11 +578,13 @@ module.exports = async function handler(req, res) {
     const operatedAt = new Date().toISOString();
     const requestPayload = buildUpdatePayload(preview.changed_fields, operatedBy, operatedAt);
     const beforeValues = buildBeforeValues(preview.changed_fields);
+    const afterValues = buildAfterValues(preview.changed_fields);
     const previousMeta = {
       last_operated_by: existing.last_operated_by,
       last_operated_at: existing.last_operated_at
     };
     const oldGroupId = preview.group_context?.current_group_id || null;
+    const oldGroupCode = preview.group_context?.current_group_display_id || oldGroupId || null;
     const logRow = await insertChangeLog(supabase, preview, body, adminUser, groupAction, oldGroupId, targetGroupId);
     let groupLifecycle = null;
     let compensation = [];
@@ -560,12 +600,14 @@ module.exports = async function handler(req, res) {
         targetGroupId,
         operatedAt
       );
-      await assertNoDuplicateMembership(supabase, existing.id);
+      if (oldGroupId || groupAction !== "no_group_change") {
+        await assertSingleMembership(supabase, existing.id);
+      } else {
+        await assertNoDuplicateMembership(supabase, existing.id);
+      }
     } catch (mutationError) {
       compensation = mutationError.compensation || [];
-      if (!compensation.length) {
-        compensation.push(await restoreRequestFields(supabase, existing.id, beforeValues, previousMeta));
-      }
+      compensation.push(await restoreRequestFields(supabase, existing.id, beforeValues, previousMeta));
       if (oldGroupId) {
         try {
           compensation.push({ step: "sync_old_group_after_failure", result: await syncGroupState(supabase, oldGroupId) });
@@ -584,14 +626,49 @@ module.exports = async function handler(req, res) {
       throw mutationError;
     }
 
+    let removalOperation = null;
+    if (groupAction === "move_out_new_single" && oldGroupId) {
+      removalOperation = await logAdminOperation(supabase, {
+        admin_user_id: adminUser.id || null,
+        target_type: "transport_request",
+        target_id: existing.id,
+        action: "transport_request_removed_from_group",
+        before_data: {
+          group_id: oldGroupId,
+          group_code: oldGroupCode
+        },
+        after_data: {
+          group_id: null,
+          group_code: null
+        },
+        metadata: {
+          order_no: preview.order_no,
+          admin_name: operatedBy,
+          request_id: preview.request_id,
+          old_group_id: oldGroupId,
+          old_group_code: oldGroupCode,
+          new_group_id: groupLifecycle?.new_group_id || null,
+          new_group_state: "single_member_group",
+          changed_fields: preview.changed_fields || [],
+          old_values: beforeValues,
+          new_values: afterValues,
+          reason: normalizeText(body.reason) || preview.reason || null,
+          removed_from_group: true,
+          payment_preserved: true,
+          request_preserved: true,
+          group_lifecycle: groupLifecycle
+        }
+      });
+    }
+
     const adminOperation = await logAdminOperation(supabase, {
       admin_user_id: adminUser.id || null,
       target_type: "transport_request",
       target_id: existing.id,
-      action: "confirm_transport_order_change",
+      action: "transport_request_route_update",
       before_data: beforeValues,
       after_data: {
-        ...buildAfterValues(preview.changed_fields),
+        ...afterValues,
         group_action: groupAction,
         old_group_id: groupLifecycle?.old_group_id || oldGroupId || null,
         new_group_id: groupLifecycle?.new_group_id || targetGroupId || null,
@@ -604,9 +681,25 @@ module.exports = async function handler(req, res) {
       metadata: {
         order_no: preview.order_no,
         admin_name: operatedBy,
+        request_id: preview.request_id,
+        group_id: groupLifecycle?.new_group_id || groupLifecycle?.old_group_id || oldGroupId || null,
+        old_group_id: oldGroupId,
+        old_group_code: oldGroupCode,
+        changed_fields: preview.changed_fields || [],
+        old_values: beforeValues,
+        new_values: afterValues,
+        reason: normalizeText(body.reason) || preview.reason || null,
+        removed_from_group: groupAction === "move_out_new_single",
+        payment_preserved: groupAction === "move_out_new_single",
+        request_preserved: true,
+        affects_group: Boolean(oldGroupId || groupAction !== "no_group_change"),
+        requires_rematch: !["no_group_change", "keep_group"].includes(groupAction),
+        price_recheck_required: Boolean(preview.price_recheck_required || preview.requires_reprice),
+        summary_refreshed: Boolean(preview.summary_refreshed ?? true),
         preview_token: preview.preview_token,
         source_snapshot_hash: preview.source_snapshot_hash,
         order_change_log_id: logRow.id,
+        removal_operation_log_id: removalOperation?.id || null,
         group_lifecycle: groupLifecycle
       }
     });
@@ -620,13 +713,14 @@ module.exports = async function handler(req, res) {
       metadata: {
         confirmed: true,
         admin_operation_log_id: adminOperation.id,
+        removal_operation_log_id: removalOperation?.id || null,
         group_lifecycle: groupLifecycle
       }
     });
 
     const { data: updatedRequest, error: updatedRequestError } = await supabase
       .from("transport_requests")
-      .select("id,order_no,status,service_type,airport_code,airport_name,terminal,flight_no,flight_datetime,preferred_time_start,preferred_time_end,passenger_count,luggage_count,shareable,payment_collection_status,deposit_amount_gbp,last_operated_by,last_operated_at")
+      .select("id,order_no,status,service_type,airport_code,airport_name,terminal,flight_no,flight_datetime,preferred_time_start,preferred_time_end,location_from,location_to,passenger_count,luggage_count,shareable,notes,admin_note,payment_collection_status,deposit_amount_gbp,last_operated_by,last_operated_at")
       .eq("id", existing.id)
       .single();
 
@@ -649,7 +743,8 @@ module.exports = async function handler(req, res) {
         balance_due_gbp: preview.balance_due_gbp,
         refund_due_gbp: preview.refund_due_gbp,
         pricing_before: preview.pricing_before,
-        pricing_after: preview.pricing_after
+        pricing_after: preview.pricing_after,
+        price_recheck_required: Boolean(preview.price_recheck_required || preview.requires_reprice)
       },
       order_change_log_id: confirmedLog.id,
       admin_operation_log_id: adminOperation.id,

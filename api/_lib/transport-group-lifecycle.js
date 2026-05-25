@@ -22,7 +22,6 @@ const BLOCKED_JOIN_GROUP_STATUSES = new Set([
 ]);
 
 const MAX_TIME_ADJUST_CANDIDATE_HOURS = 3;
-
 function isMissingColumnError(error, marker) {
   return Boolean(error?.message && error.message.includes(marker));
 }
@@ -108,6 +107,35 @@ function getGroupDisplayId(group, fallback) {
 
 function buildCandidateWarning(code, message) {
   return { code, message };
+}
+
+async function logEmptyGroupDeletion(supabase, group, deletedAt, reason) {
+  try {
+    await supabase
+      .from("admin_operation_logs")
+      .insert({
+        admin_user_id: null,
+        target_type: "transport_group",
+        target_id: group.group_ref || group.id || null,
+        action: "empty_group_deleted",
+        before_data: {
+          group_id: group.group_ref || group.id || null,
+          group_code: group.group_id || null
+        },
+        after_data: null,
+        metadata: {
+          group_id: group.group_ref || group.id || null,
+          group_code: group.group_id || null,
+          deleted_at: deletedAt,
+          reason
+        }
+      });
+  } catch (error) {
+    console.warn("empty_group_delete_log_failed", {
+      group_id: group.group_id || group.id || null,
+      message: error?.message || String(error)
+    });
+  }
 }
 
 function summarizeCandidateGroup(group, stats, warnings = []) {
@@ -200,6 +228,10 @@ async function createGroupForRequest(supabase, request, options = {}) {
     group = primaryInsert.data;
   }
 
+  if (options.skipMembership === true) {
+    return normalizeGroupRecord(group, request);
+  }
+
   const memberPayload = {
     group_id: groupRef,
     request_id: request.id,
@@ -208,6 +240,7 @@ async function createGroupForRequest(supabase, request, options = {}) {
     is_initiator: options.isInitiator !== false
   };
 
+  let memberError = null;
   const memberInsert = await supabase
     .from("transport_group_members")
     .insert(memberPayload);
@@ -222,10 +255,20 @@ async function createGroupForRequest(supabase, request, options = {}) {
         luggage_count_snapshot: request.luggage_count
       });
     if (legacyMemberInsert.error) {
-      throw legacyMemberInsert.error;
+      memberError = legacyMemberInsert.error;
     }
   } else if (memberInsert.error) {
-    throw memberInsert.error;
+    memberError = memberInsert.error;
+  }
+
+  if (memberError) {
+    try {
+      await deleteEmptyGroupIfEligible(supabase, groupRef, { reason: "failed_group_membership_insert" });
+    } catch (cleanupError) {
+      memberError.cleanup_error = cleanupError?.message || String(cleanupError);
+      memberError.message = `${memberError.message || "failed to create group membership"}; cleanup of newly-created empty group failed: ${memberError.cleanup_error}`;
+    }
+    throw memberError;
   }
 
   return normalizeGroupRecord(group, request);
@@ -311,6 +354,92 @@ async function getGroupMembersWithRequests(supabase, groupId) {
   return data || [];
 }
 
+async function getTransportGroupMemberCount(supabase, groupId) {
+  const { count, error } = await supabase
+    .from("transport_group_members")
+    .select("id", { count: "exact", head: true })
+    .eq("group_id", groupId);
+
+  if (error) {
+    throw error;
+  }
+
+  return Number(count || 0);
+}
+
+async function deleteEmptyGroupIfEligible(supabase, groupOrId, options = {}) {
+  const groupId = typeof groupOrId === "string" ? groupOrId : (groupOrId?.group_id || groupOrId?.id || null);
+  if (!groupId) {
+    return { deleted: false, reason: "missing_group_id" };
+  }
+
+  let group = typeof groupOrId === "string" ? null : groupOrId;
+  if (!group || !group.group_ref) {
+    try {
+      group = await getGroupByBusinessId(supabase, groupId);
+    } catch (error) {
+      if (String(error?.message || "").includes("multiple (or no) rows")) {
+        return { deleted: false, reason: "group_not_found" };
+      }
+      throw error;
+    }
+  }
+
+  const memberCount = await getTransportGroupMemberCount(supabase, group.group_id || groupId);
+  if (memberCount !== 0) {
+    return { deleted: false, reason: "members_exist", member_count: memberCount, group };
+  }
+
+  const deletedAt = new Date().toISOString();
+  const reason = options.reason || "zero_members";
+  await logEmptyGroupDeletion(supabase, group, deletedAt, reason);
+
+  const { error } = await supabase
+    .from("transport_groups")
+    .delete()
+    .eq("id", group.group_ref || group.id);
+
+  if (error) {
+    throw error;
+  }
+
+  return {
+    deleted: true,
+    group_id: group.group_id || groupId,
+    deleted_at: deletedAt,
+    reason
+  };
+}
+
+async function cleanupEmptyTransportGroups(supabase, options = {}) {
+  const limit = Math.min(Math.max(Number(options.limit || 200), 1), 500);
+  const { data, error } = await supabase
+    .from("transport_groups")
+    .select("*")
+    .order("updated_at", { ascending: false, nullsFirst: false })
+    .limit(limit);
+
+  if (error) {
+    throw error;
+  }
+
+  const deleted = [];
+  const skipped = [];
+  for (const group of data || []) {
+    const result = await deleteEmptyGroupIfEligible(supabase, normalizeGroupRecord(group), {
+      ...options,
+      reason: "zero_members"
+    });
+    if (result.deleted) {
+      deleted.push(result);
+    } else {
+      skipped.push(result);
+    }
+  }
+
+  return { skipped: false, deleted, skipped_items: skipped };
+}
+
 function getActiveMembers(members) {
   return (members || []).filter(member => member.transport_requests && member.transport_requests.status !== "closed");
 }
@@ -383,7 +512,10 @@ function validateGroupJoinShape(request, group, stats, times = {}, options = {})
   const requestTerminal = normalizeText(request.terminal);
   const groupTerminal = normalizeText(group.terminal);
   if (requestTerminal && groupTerminal && !sameNormalizedText(requestTerminal, groupTerminal)) {
-    throw buildTransportLifecycleError("target group terminal does not match", 400);
+    warnings.push(buildCandidateWarning(
+      "cross_terminal_surcharge",
+      "订单航站楼与目标组不同，可跨航站楼加入；请客服确认跨航站楼费用和拼车组价格。"
+    ));
   }
   if (!requestTerminal || !groupTerminal) {
     warnings.push(buildCandidateWarning("terminal_partial", "订单或目标组航站楼为空，请客服确认航站楼兼容。"));
@@ -511,7 +643,7 @@ async function setRequestStatuses(supabase, requestIds, status) {
   }
 }
 
-async function syncGroupState(supabase, groupId) {
+async function syncGroupState(supabase, groupId, options = {}) {
   const group = await getGroupByBusinessId(supabase, groupId);
   if ([GROUP_STATUS.CLOSED, GROUP_STATUS.CANCELLED].includes(group.status)) {
     return group;
@@ -519,19 +651,24 @@ async function syncGroupState(supabase, groupId) {
 
   const members = await getGroupMembersWithRequests(supabase, groupId);
   if (!members.length) {
-    const { error } = await supabase
-      .from("transport_groups")
-      .delete()
-      .eq("id", group.group_ref || group.id);
-
-    if (error) {
-      throw error;
+    const cleanupResult = await deleteEmptyGroupIfEligible(supabase, group, {
+      reason: options.emptyReason || "zero_members"
+    });
+    if (cleanupResult.deleted) {
+      return {
+        ...group,
+        deleted: true,
+        status: GROUP_STATUS.CLOSED,
+        current_passenger_count: 0,
+        remaining_passenger_count: Number(group.max_passengers || 0),
+        cleanup: cleanupResult
+      };
     }
 
     return {
       ...group,
-      deleted: true,
-      status: GROUP_STATUS.CLOSED,
+      deleted: false,
+      empty_pending_cleanup: false,
       current_passenger_count: 0,
       remaining_passenger_count: Number(group.max_passengers || 0)
     };
@@ -714,6 +851,178 @@ async function safeSyncGroupState(supabase, groupId) {
   }
 }
 
+async function getSingleMembershipForRequest(supabase, requestId, expectedGroupId = null) {
+  const { data: memberships, error } = await supabase
+    .from("transport_group_members")
+    .select("id, group_id, request_id, passenger_count_snapshot, luggage_count_snapshot, is_initiator")
+    .eq("request_id", requestId);
+
+  if (error) {
+    throw error;
+  }
+  if (!memberships || memberships.length === 0) {
+    throw buildTransportLifecycleError("request is not in a group", 400);
+  }
+  if (memberships.length > 1) {
+    throw buildTransportLifecycleError("request has multiple active group memberships; please inspect manually", 409);
+  }
+
+  const membership = memberships[0];
+  if (expectedGroupId && String(membership.group_id) !== String(expectedGroupId)) {
+    throw buildTransportLifecycleError("request group membership changed; please refresh and try again", 409);
+  }
+  return membership;
+}
+
+async function restoreMembership(supabase, membership) {
+  return insertGroupMembership(supabase, {
+    group_id: membership.group_id,
+    request_id: membership.request_id,
+    passenger_count_snapshot: membership.passenger_count_snapshot,
+    luggage_count_snapshot: membership.luggage_count_snapshot,
+    is_initiator: membership.is_initiator !== false
+  });
+}
+
+async function moveRequestToNewSingleGroupSafely(supabase, request, requestPayload = {}, options = {}) {
+  const oldMembership = await getSingleMembershipForRequest(supabase, request.id, options.oldGroupId || null);
+  const oldGroupId = oldMembership.group_id;
+  const requestAfter = { ...request, ...requestPayload };
+  let newGroup = null;
+  let newGroupRef = null;
+  let insertedMembership = null;
+  let oldMembershipDeleted = false;
+  let requestUpdated = false;
+  const compensation = [];
+
+  try {
+    newGroup = await createGroupForRequest(supabase, requestAfter, {
+      isInitiator: true,
+      skipMembership: true
+    });
+    newGroupRef = getGroupJoinRef(newGroup, newGroup.group_ref || newGroup.group_id || newGroup.id);
+
+    const deleteOld = await supabase
+      .from("transport_group_members")
+      .delete()
+      .eq("id", oldMembership.id);
+    if (deleteOld.error) {
+      throw deleteOld.error;
+    }
+    oldMembershipDeleted = true;
+
+    insertedMembership = await insertGroupMembership(supabase, {
+      group_id: newGroupRef,
+      request_id: request.id,
+      passenger_count_snapshot: requestAfter.passenger_count,
+      luggage_count_snapshot: requestAfter.luggage_count,
+      is_initiator: true
+    });
+
+    const update = await supabase
+      .from("transport_requests")
+      .update(requestPayload)
+      .eq("id", request.id);
+    if (update.error) {
+      throw update.error;
+    }
+    requestUpdated = true;
+
+    await getSingleMembershipForRequest(supabase, request.id, newGroupRef);
+    const oldGroup = await safeSyncGroupState(supabase, oldGroupId);
+    const syncedNewGroup = await safeSyncGroupState(supabase, newGroupRef);
+
+    return {
+      old_group_id: oldGroupId,
+      new_group_id: getGroupDisplayId(newGroup, newGroupRef),
+      new_group_ref: newGroupRef,
+      old_group: oldGroup,
+      new_group: syncedNewGroup || newGroup,
+      replacement_group: syncedNewGroup || newGroup,
+      inserted_membership: insertedMembership
+    };
+  } catch (error) {
+    if (insertedMembership?.id) {
+      const cleanup = await supabase
+        .from("transport_group_members")
+        .delete()
+        .eq("id", insertedMembership.id);
+      compensation.push({
+        step: "delete_new_single_membership",
+        ok: !cleanup.error,
+        message: cleanup.error?.message || null
+      });
+    } else if (newGroupRef) {
+      const cleanup = await supabase
+        .from("transport_group_members")
+        .delete()
+        .eq("group_id", newGroupRef)
+        .eq("request_id", request.id);
+      compensation.push({
+        step: "delete_new_single_membership_by_request",
+        ok: !cleanup.error,
+        message: cleanup.error?.message || null
+      });
+    }
+
+    if (oldMembershipDeleted) {
+      try {
+        await restoreMembership(supabase, oldMembership);
+        compensation.push({ step: "restore_old_membership", ok: true, message: null });
+      } catch (restoreError) {
+        compensation.push({
+          step: "restore_old_membership",
+          ok: false,
+          message: restoreError?.message || String(restoreError)
+        });
+      }
+    }
+
+    if (requestUpdated) {
+      const restorePayload = Object.keys(requestPayload || {}).reduce((payload, field) => {
+        payload[field] = request[field] === undefined ? null : request[field];
+        return payload;
+      }, {});
+      const restoreRequest = await supabase
+        .from("transport_requests")
+        .update(restorePayload)
+        .eq("id", request.id);
+      compensation.push({
+        step: "restore_request_after_new_single_failure",
+        ok: !restoreRequest.error,
+        message: restoreRequest.error?.message || null
+      });
+    }
+
+    if (newGroupRef) {
+      try {
+        const cleanupGroup = await deleteEmptyGroupIfEligible(supabase, newGroupRef, { reason: "failed_move_out_new_single" });
+        compensation.push({ step: "delete_new_single_group_if_empty", ok: true, result: cleanupGroup });
+      } catch (cleanupError) {
+        compensation.push({
+          step: "delete_new_single_group_if_empty",
+          ok: false,
+          message: cleanupError?.message || String(cleanupError)
+        });
+      }
+    }
+
+    compensation.push({
+      step: "sync_old_group_after_new_single_failure",
+      result: await safeSyncGroupState(supabase, oldGroupId)
+    });
+    if (newGroupRef) {
+      compensation.push({
+        step: "sync_new_group_after_new_single_failure",
+        result: await safeSyncGroupState(supabase, newGroupRef)
+      });
+    }
+
+    error.compensation = compensation;
+    throw error;
+  }
+}
+
 async function transferRequestToExistingGroup(supabase, request, targetGroupId, times = {}, options = {}) {
   const { data: memberships, error: membershipError } = await supabase
     .from("transport_group_members")
@@ -738,11 +1047,15 @@ async function transferRequestToExistingGroup(supabase, request, targetGroupId, 
   const newGroupId = validation.group_ref;
   const operatedAt = options.operatedAt || new Date().toISOString();
   const requestUpdatePayload = {
-    flight_datetime: times.flight_datetime,
-    preferred_time_start: times.preferred_time_start,
     last_operated_by: options.operatedBy || request.last_operated_by || null,
     last_operated_at: operatedAt
   };
+  if (times.flight_datetime !== undefined) {
+    requestUpdatePayload.flight_datetime = times.flight_datetime;
+  }
+  if (times.preferred_time_start !== undefined) {
+    requestUpdatePayload.preferred_time_start = times.preferred_time_start;
+  }
   const restorePayload = {
     flight_datetime: request.flight_datetime,
     preferred_time_start: request.preferred_time_start,
@@ -782,7 +1095,9 @@ async function transferRequestToExistingGroup(supabase, request, targetGroupId, 
       is_initiator: false
     });
 
-    const oldGroup = await syncGroupState(supabase, oldGroupId);
+    const oldGroup = await syncGroupState(supabase, oldGroupId, {
+      emptyReason: options.emptyReason || "zero_members"
+    });
     const newGroup = await syncGroupState(supabase, newGroupId);
 
     return {
@@ -915,7 +1230,9 @@ async function removeRequestFromGroup(supabase, requestId, options = {}) {
 
   const groups = [];
   for (const groupId of groupIds) {
-    groups.push(await syncGroupState(supabase, groupId));
+    groups.push(await syncGroupState(supabase, groupId, {
+      emptyReason: options.emptyReason || "zero_members"
+    }));
   }
 
   const shouldCreateReplacementGroup = !options.closeRequest
@@ -957,9 +1274,12 @@ module.exports = {
   getGroupByBusinessId,
   getGroupMembersWithRequests,
   syncGroupState,
+  cleanupEmptyTransportGroups,
+  deleteEmptyGroupIfEligible,
   addRequestToGroup,
   findTimeAdjustCandidateGroups,
   validateRequestCanJoinGroup,
+  moveRequestToNewSingleGroupSafely,
   transferRequestToExistingGroup,
   removeRequestFromGroup
 };

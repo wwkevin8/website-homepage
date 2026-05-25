@@ -8,2700 +8,343 @@
 ## Last Updated Task
 
 - Date: 2026-05-25
-- Scope: P6B-B1 group batch payment action planning/implementation
+- Scope: Restored route-breaking multi-member transport order changes so operators can choose either a replacement single-member group or a compatible target carpool group. No database, public-page, email, deployment, migration, or production data change.
 
 ## Latest Completed Work
 
-- Adjusted the P6B-B1 group-level batch mark-paid action to be detail-page only:
-  - transport group list row actions now stay read-only/low-risk with only `查看详情` and `复制司机摘要`; list rows no longer expose `批量标记付款`, disabled `已全部付款`, or any payment write operation;
-  - transport group detail `费用与付款` keeps the current-group-only payment entry as `本组收款完成`, and shows disabled `本组已全部付款` when no unpaid member orders remain;
-  - the detail confirmation modal now uses customer-service copy: `确认本组收款完成`, target unpaid order count, processed member/order/amount list, already-paid skip notice, LOCAL TEST MODE mock-email notice, and `确认标记已付款`;
-  - batch execution processes only the current group and only unpaid member orders, skips `fully_paid` orders, does not bulk-cancel payment, and does not modify prices, passenger counts, member relationships, airport/terminal/flight/date/time fields, group status, or frontend visibility;
-  - each successful order update reuses the existing safe-field mark-paid flow, writes `admin_operation_logs`, and now triggers the same payment-confirmation email path as single mark-paid; LOCAL TEST MODE returns `local_mock` instead of sending real email;
-  - operation logs carry batch metadata so the detail page can show a readable Chinese batch-payment audit entry, while individual order payment changes remain visible;
-  - local browser-source verification executed the batch action once on `GRP-P6LOCAL-FULL`, which updated its local test member orders to paid and produced the expected `LOCAL TEST MODE` mock-email feedback/logs;
-  - no SQL/schema/config change, migration, build, deploy, production access, cross-group payment, current-filter payment, all-list payment, or next-stage work occurred.
-
-- Refreshed the local generated admin bundle for the P6B-B1 batch-payment UI:
-  - `http://127.0.0.1:3000/admin/transport/groups` now serves `admin/assets/index-BykUa2Rt.js` and `admin/assets/index-D9NC8lrO.css`;
-  - hotfixed the current local generated JS without running a new build and added a local cache-busting query to `admin/index.html` so the served `3000` admin page immediately removes list-page payment write actions and shows the detail-only `本组收款完成` confirmation copy;
-  - restarted the local `3000` helper server after the generated-bundle hotfix;
-  - verified the served list page no longer contains `批量标记付款`, still shows `查看详情` and `复制司机摘要`, and keeps `派单准备度` visible;
-  - verified `/api/admin/session` still reports `LOCAL TEST MODE`, `is_local_test=true`, and `is_production=false`;
-  - no build, deploy, migration, SQL/schema/config change, production access, commit, or next-stage work occurred.
-
-- Adjusted P6B-B1 local test internal-note copy:
-  - updated the LOCAL TEST database note for `GRP-P6LOCAL-PAYMIX` to `P6 本地测试：该组包含已付款/未付款、已线下记录/未记录的混合状态，用于验收付款与记录状态展示。`;
-  - updated the detail-page local pollution fallback text to the same Chinese note so future local cleanup does not reintroduce English copy;
-  - searched the source tree for a P6 seed/reseed script containing the old English note; none was found outside generated admin assets and current-status history;
-  - no business logic, API, SQL/schema/config, migration, build, deploy, production access, member relationship, or itinerary/core order-field behavior was changed.
-
-- Adjusted the P6B-B1 group detail dispatch-settings UI:
-  - replaced the large notes textarea in the highlighted dispatch-settings area with a read-only `司机派单摘要` preview rendered from the current group and member data;
-  - moved `一键复制司机摘要` into the summary preview header; copy remains clipboard-only and does not write notes or trigger saving;
-  - kept editable notes as a separate compact `内部备注` textarea that saves only manual group/driver/dispatch notes;
-  - lightened operation-log row styling so audit entries read as secondary audit text rather than main content headings;
-  - refreshed the local generated admin bundle and restarted the local `3000` helper server for browser verification after the UI source update;
-  - no API, SQL/schema/config change, migration, Vercel deploy, production access, member relationship change, itinerary/core order-field change, or next-stage work occurred.
-
-- Adjusted P6B-B1 detail-page notes and operation-log presentation:
-  - hardened the note sanitizer so legacy embedded driver-summary blocks recover the real group note and do not show driver summaries, passenger details, dispatch-readiness text, or corrupted `P6LOCAL / x /` fragments in the notes textarea;
-  - cleaned the local test `GRP-P6LOCAL-PAYMIX` group note in the LOCAL TEST database only;
-  - moved operation logs out of the payment panel into a final independent `操作记录` card at the bottom of the group detail page;
-  - changed operation-log display to concise customer-service-readable Chinese sentences while keeping time, admin, and order/group target context;
-  - kept payment controls, dispatch-readiness display, member detail actions, CSV/list behavior, and P6A/P6B-A flows intact;
-  - refreshed the local generated admin bundle and restarted the local `3000` helper server for browser verification after the UI source update;
-  - no SQL/schema/config change, migration, Vercel deploy, production access, member relationship change, itinerary/core order-field change, or next-stage work occurred.
-
-- Adjusted P6B-B1 detail-page payment and audit controls in source only:
-  - protected `一键复制司机摘要` so it copies only to clipboard/fallback copy, restores the active note field after fallback selection, and does not modify `notes` or any textarea;
-  - kept dispatch-settings save scoped to capacity, frontend visibility, and the cleaned manual note text;
-  - added `取消标记` for already paid members; it writes `payment_collection_status=unpaid` through the existing safe-field update path, requires confirmation, and does not trigger the payment-confirmation email path;
-  - kept `标记已付款` on the existing safe-field update path (`payment_collection_status=fully_paid`), so already paid members do not show a duplicate mark-paid action;
-  - extended the existing transport-group detail API response with existing `admin_operation_logs` for the group and member transport requests, without adding SQL/schema or migrations;
-  - displayed the latest 10 operation logs in the group detail payment section, including time, admin, action, target, and changed-field summary;
-  - verification used source-level SFC/template checks, `node -c` for the touched API route, local `3000` session check (`LOCAL TEST MODE`, `is_production=false`), API response check confirming `operation_logs` is returned, and Vite dev-source browser verification confirming the copy action leaves the note textarea unchanged and shows the new buttons/log section;
-  - no static admin build, Vercel deploy, SQL/schema/config change, migration, production access, member relationship change, itinerary/core order-field change, or next-stage work occurred.
-
-- Adjusted the P6B-B1 group detail page to avoid duplicate driver summaries:
-  - the dispatch settings notes textarea now contains only group/driver/dispatch notes after stripping any stored driver-summary override block or older inline driver-summary text;
-  - saving dispatch settings writes only the note textarea content and no longer merges a generated driver summary into `transport_groups.notes`;
-  - added a compact `一键复制司机摘要` button in the dispatch settings header with clipboard fallback and removed the duplicate bottom driver-summary textarea section;
-  - removed the long helper sentence under `调度设置` to keep the operator UI compact;
-  - refreshed the local generated admin bundle after user approval (`npm run build:admin-vue`) and restarted the local `3000` helper server, so `http://127.0.0.1:3000/admin/transport/groups` now serves `admin/assets/index-BXxbmJWC.js`;
-  - browser verification on `3000` confirmed one notes textarea, no bottom driver-summary preview, no long helper sentence, one `一键复制司机摘要` button, dispatch readiness still visible, copy feedback works, and console checks had no errors;
-  - local session verification still reports `LOCAL TEST MODE`, `is_local_test=true`, and `is_production=false`;
-  - no API route, SQL/schema, config, migration, deployment, production access, formal dispatch status, or member relationship behavior was changed.
-
-- Adjusted P6B-B1 source after manual UI review:
-  - transport group list member cells now show only member/order names plus a count; phone, WeChat, and full contact details remain available only in detail, driver summary, and CSV export;
-  - dispatch-readiness no longer renders a generic `有风险` badge, so risk groups show concrete inline risk text instead of duplicated badge-plus-risk messaging; risk filters and CSV risk fields remain intact;
-  - the group detail source keeps the P6A polished workbench structure: overview cards, compact dispatch risk/readiness, compact dispatch settings, restored fees/payment section with per-member payment state/action, member detail table, and bottom driver dispatch summary;
-  - no API route, SQL/schema, config, migration, deployment, production access, driver notification, formal dispatch status, or member relationship behavior was changed;
-  - this source follow-up has now been refreshed into the local generated `admin/` bundle after explicit user approval.
-
-- Refreshed the local generated admin bundle after the P6B-B1 UI cleanup:
-  - ran the local admin Vue build only (`npm run build:admin-vue`) after user approval so `http://127.0.0.1:3000/admin/transport/groups` serves the latest source changes;
-  - the generated admin bundle now includes the fixed UTF-8 Chinese detail-page text, the removed standalone risk column, compact inline risk summaries under dispatch readiness, and the existing dispatch-readiness/risk filters and CSV fields;
-  - local session verification still reports `LOCAL TEST MODE`, `is_local_test=true`, and `is_production=false`;
-  - no Vercel deployment, SQL schema change, migration, API route change, config change, email behavior change, production data access, or production deployment occurred.
-
-- Adjusted P6B-B1 source after UI review:
-  - fixed literal question-mark mojibake in the Vue transport group detail source and restored UTF-8 Chinese labels, notices, member table text, and driver dispatch-summary text;
-  - removed the standalone transport-group list risk column in source and moved risk summaries under the dispatch-readiness badge area as compact red inline text while keeping risk filtering and CSV risk export fields intact;
-  - kept P6B-B1 read-only: no API route, SQL/schema, config, migration, deployment, production access, driver notification, formal dispatch status, or member relationship behavior was changed;
-  - this cleanup has now been refreshed into the local generated `admin/` bundle after explicit user approval.
-
-- Refreshed the local generated admin bundle for P6B-B1:
-  - ran the local admin Vue build only (`npm run build:admin-vue`) after user approval so `http://127.0.0.1:3000/admin/transport/groups` serves the latest P6B-B1 generated admin assets;
-  - no Vercel build, deployment, SQL schema change, migration, API route change, config change, email behavior, production data access, or production deployment occurred;
-  - the local generated admin now shows the P6B-B1 dispatch-readiness column and badges on the transport group list, the dispatch-readiness advanced filter, and the dispatch-readiness display on group detail;
-  - local browser verification on port `3000` confirmed default group-status filtering shows 5 active/current P6 groups, switching group status to all shows all 6 P6 local test groups, dispatch-readiness badges render, the advanced dispatch-readiness filter is present, the detail page summary includes readiness, no delete button is visible on the checked list/detail pages, and console checks showed no errors.
-
-- Completed P6B-B1 in local/source only:
-  - no production data, SQL schema, migrations, build, deployment, API route, config, email behavior, public pages, transport group status writes, frontend visibility automation, or transport member relationship operations were touched;
-  - admin source changes are limited to the Vue transport group list/filter/detail presentation layer and shared admin CSS;
-  - `/admin/transport/groups` now derives read-only dispatch readiness from existing API response data: pending contact, incomplete payment, pending offline record, risk present, dispatch ready, and completed record;
-  - dispatch readiness is displayed as badges in the group list without replacing existing group status, frontend visibility, or payment/offline status; risk reminders are shown as compact inline text in the readiness area instead of a standalone column;
-  - the advanced group filter panel now includes a dispatch-readiness filter for all, pending contact, incomplete payment, pending offline record, risk present, dispatch ready, and completed record; filtering is client-side only against the already loaded API response;
-  - current-filter CSV export now includes a `派单准备度` field, and list/detail driver dispatch summaries include a `派单准备度` line;
-  - the group detail page now shows the same read-only dispatch readiness badges near the dispatch risk area and does not add formal state-flow buttons or driver information fields;
-  - formal `dispatch_status`, `dispatch_note`, `driver_name`, `driver_phone`, `driver_car_info`, notification timestamps, and member passenger-confirmation fields remain deferred to P6B-B2 and require a future migration;
-  - local verification confirmed `LOCAL TEST MODE`, `is_production=false`, all 6 P6 local test groups are still present when the group-status filter is cleared, readiness badges render on the source Vue list/detail pages, readiness filters work, driver summary copy includes readiness, SFC parse/template checks pass, console has no errors in the checked source pages, and no build/deploy/migration/production access occurred.
-
-- Completed P6B-A in local/source only:
-  - no production data, SQL schema, migrations, build, deployment, email behavior, public pages, or transport member relationship operations were touched;
-  - admin source changes are limited to the Vue transport group list/filter/detail presentation layer and shared admin CSS;
-  - `/admin/transport/groups` now has clearer base filters plus folded advanced filters for keyword, service type, airport, terminal, group status, frontend visibility, risk type, date range, payment status, and offline-record status;
-  - advanced list filtering is computed from existing `transport-groups` API response fields such as `member_details`, `dispatch_risks`, `payment_summary`, and `luggage_summary`; no SQL fields or migrations were added;
-  - group list rows now present Group ID, service type, airport/terminal, service date/time, member contact summary, current people/capacity, total luggage, current average price, estimated total price, payment status, offline-record status, frontend visibility, group status, and risk badges;
-  - high-risk list actions remain absent: no delete button, no member add/remove/transfer, and no direct order core-field edits were added;
-  - list and detail pages can copy a driver-ready dispatch summary containing service type/date/time, airport/terminal, people/capacity, luggage, average/total price, passenger contact/flight/address/payment/contact/offline-record state, and group/driver/dispatch notes;
-  - copy success shows an inline notice; copy failure falls back to manual copy selection/prompt without changing order data;
-  - list page can export only the current filtered group results as `transport-groups-dispatch-YYYYMMDD.csv` for dispatch/customer-service use;
-  - local verification confirmed `LOCAL TEST MODE`, `is_production=false`, all 6 P6 local groups still exist in local Supabase, list filters work, risk/payment/offline filters work, driver summary copy works, current-filter CSV export works, P6A detail summary remains available, forbidden member move/delete/join terms are absent on the checked detail page, console has no errors, network has no non-favicon 4xx/5xx responses, and no build/deploy/migration/production access occurred.
-
-- Completed final small P6A UI polish on the local transport group detail page:
-  - no production data, API behavior, business logic, SQL schema, migrations, admin build, deployment, P6B implementation, or broad refactor was touched;
-  - final tweaks were limited to the generated-admin P6A detail override presentation layer;
-  - stabilized the `返回拼车组管理` button in the heading area by explicitly controlling the title/action flex layout and preventing the button label from wrapping;
-  - unified card vertical spacing to a consistent 16px rhythm and kept card padding compact for smaller screens;
-  - improved table horizontal scrolling with a bounded scroll wrapper and touch scrolling while preventing body-level horizontal overflow on small viewports;
-  - kept the driver dispatch summary at the bottom with a reachable, moderate-height textarea and improved copy fallback behavior for restricted clipboard environments;
-  - retained unified badge wording for payment/offline/contact states: `已付款` / `未付款`, `已记录` / `未记录`, and `已联系` / `未联系`;
-  - added a lightweight floating success toast in addition to the existing inline notice so save, payment, and copy confirmations are visible without disrupting the current scroll position;
-  - local browser verification confirmed `LOCAL TEST MODE`, `is_production=false`, all 6 P6 local groups open, required sections render, high-risk member add/remove/transfer controls are absent, card gaps are 16px, the table scrolls horizontally on small width, the return button remains visible, the summary area is reachable, success prompts appear for save/copy/payment, clean page load has no console errors, failed requests, or 4xx/5xx responses, and local test payment data was restored.
-
-- Completed P6A local transport group detail UI polish:
-  - no production data, API behavior, SQL schema, migrations, admin build, deployment, P6B implementation, or broad refactor was touched;
-  - the local generated-admin P6A group detail override now presents the page as a formal customer-service dispatch workbench instead of a temporary debug panel;
-  - layout now uses a constrained page width, consistent 8px-radius cards, clear section headers, compact spacing, unified badges, and consistent button sizing;
-  - the top summary card now displays Group ID, service type, group status, frontend visibility, airport/terminal, service date/time, current people/capacity, luggage count, and current average price in a 3-4 column information grid;
-  - dispatch risks are shown in a light risk area, with a green `无明显风险` badge when no risks are present and warning badges/cards when risks exist;
-  - dispatch settings are now a formal form card with controlled-width capacity input, frontend visibility select, compact notes textarea, and a primary save button;
-  - fees/payment now use three statistic cards for total price, current average price, and cross-terminal surcharge, plus a compact per-member payment list with paid/unpaid badges and single-member `标记已付款` actions;
-  - member details are now a cleaner table with grouped phone/WeChat, flight/time, airport/terminal, people/luggage, address, price, payment, offline-record, contact, and record-operation columns;
-  - driver dispatch summary now sits at the bottom in its own card with a moderate-height text area and a primary copy button;
-  - existing P6A behavior was preserved: controlled capacity save, frontend visibility save, notes save, local mock payment email behavior, contact/offline toggles, readonly high-risk fields, and no member add/remove/transfer controls;
-  - local browser verification confirmed `LOCAL TEST MODE`, `is_production=false`, all 6 P6 local groups open with the expected sections, forbidden high-risk action text is absent, and console/network checks have no errors, failed requests, or 4xx/5xx responses.
-
-- Adjusted P6A local transport group detail rules after business review:
-  - no production data, SQL schema, migrations, admin build, deployment, P6B implementation, or broad refactor was touched;
-  - local verification continued to report `runtime_environment.mode=local_test`, `LOCAL TEST MODE`, and `is_production=false`;
-  - maximum passengers / seat capacity is no longer fully readonly in P6A; it is now a controlled dispatch setting that can be edited only at group-capacity level, not order passenger-count or member-relationship level;
-  - capacity save validates that the value is not below the current joined member/passenger count, asks for operator confirmation, persists through the existing group update API, and relies on the existing group update log path for `admin_operation_logs`;
-  - when capacity is set equal to the current member count, the local P6A detail asks whether to also turn off frontend visibility so operators can stop further public matching;
-  - airport, terminal, flight number, service date/time, order passenger count, prices, member relationships, member add/remove, and group transfer remain unavailable for direct P6A editing;
-  - the served local generated-admin detail now uses business sections such as `调度设置` and `费用与付款` instead of the developer-style low-risk-operation wording;
-  - per-member `标记已付款` was restored in the P6A detail as a single-order action with confirmation; already-paid rows do not expose a repeat-send action;
-  - the existing `PATCH /api/transport-requests/:id` payment update flow is reused so payment state persists, payment confirmation email logic is preserved, and operation logging continues through the existing request update behavior;
-  - local runtime now skips real transport payment email delivery with a `local_mock` result so local validation does not send real mail while production email behavior remains available outside local mode;
-  - member contacted/uncontacted and offline-recorded/unrecorded controls remain available and persist through refresh;
-  - browser verification on the local generated admin checked capacity validation and persistence, optional frontend visibility closing, restored test mutations, payment marking with local mock messaging, contact/offline toggles, driver summary copy, absence of forbidden member-move controls, and no console/network 4xx/5xx errors.
-
-- Fixed P6A local transport group detail boundary bugs in the currently served local admin page:
-  - no production data, SQL schema, migrations, admin build, deployment, P6B implementation, or broad refactor was touched;
-  - local verification continued to report `runtime_environment.mode=local_test`, `LOCAL TEST MODE - 本地测试库，非真实订单`, and `is_production=false`;
-  - source Vue group detail no longer exposes P6A member core-change entry points from the group detail action column;
-  - because local `localhost:3000` serves the existing generated `admin/` bundle and an admin build was not allowed, a small generated-admin P6A detail override script was added only for `/admin/transport/groups/:id`; it hides the stale generated detail component and renders a P6A-only detail panel beside it;
-  - the served P6A detail now shows core itinerary/group fields as readonly: airport, terminal, flight, service date/time, people count, luggage, dynamic price, and member relationship data;
-  - the served P6A detail now exposes only the allowed low-risk actions: save group/driver/dispatch notes plus frontend visibility, mark member offline-recorded/unrecorded, mark member contacted/uncontacted, and copy the driver dispatch summary;
-  - high-risk generated controls are no longer visible or actionable in the served P6A detail page: maximum-passenger edit, service-time edit, member add/remove/move, payment toggle, and direct order-change/detail entry points;
-  - contact-state 404 root cause was the stale generated page/old path; the correct existing API is `PATCH /api/transport-requests/:id` with `action=update_safe_fields`, which returns 200 and writes `admin_operation_logs` through the existing safe-field log path;
-  - local browser verification confirmed all 6 P6 groups render the P6A detail panel, no forbidden controls are visible, notes/frontend visibility save and persist then were restored, member contacted/uncontacted save and persist then were restored, offline-recorded/unrecorded save and persist then were restored, driver summary copy works, and console/network had no errors or 4xx/5xx responses.
-
-- Completed P6A local transport dispatch final acceptance cleanup against the current source dev server and local Supabase only:
-  - accepted the empty-group audit conclusion for `GRP-260524-K7UY`: it was old local/old-port dirty data and is not returned by the current local Supabase or current local API, so it does not block P6A;
-  - no production data, SQL schema, migrations, admin build, deployment, P6B implementation, or broad refactor was touched;
-  - verified `/admin/transport/groups/GRP-P6LOCAL-PAYMIX` through the admin Vue source dev server with API proxying to the local-only backend (`runtime_environment.mode=local_test`, `is_production=false`);
-  - verified P6A group detail no longer exposes direct high-risk edit controls for maximum passengers, airport, terminal, flight number, service date/time, passenger count, or price;
-  - verified P6A group detail no longer exposes high-risk member/group operation buttons for joining members, moving/removing members, changing carpool group, group-level/member payment marking, or direct member core-field edits;
-  - verified the only editable controls on the group detail page are the allowed low-risk frontend visibility selector and dispatch/driver notes text areas;
-  - verified line-item offline-recorded status is clearly displayed, can be toggled, persists after refresh, and was restored on local test data;
-  - verified line-item contact status is clearly displayed, can be toggled through `PATCH /api/transport-requests/:id` with `action=update_safe_fields`, persists after refresh, and was restored on local test data;
-  - the previous contact-status `404` was not reproduced on the current source/API path; browser console and network checks showed no non-favicon 4xx/5xx requests;
-  - P6A can now be accepted at the source/local-test level. The root `admin/` folder remains generated build output and was not rebuilt in this task.
-
-- Recorded the empty-group lifecycle cleanup follow-up as `P6C: transport group lifecycle cleanup mechanism`; this is a future cleanup phase only and was not implemented:
-  - current priority is the explicitly approved P6B-A source/local work; do not enter P6C implicitly;
-  - P6C should use a management-side explicit cleanup flow: dry-run candidate report first, then human confirmation before deletion;
-  - P6C deletion must be real backend/database deletion, not CSS/frontend filtering or hiding to pretend the group is gone;
-  - P6C must write `admin_operation_logs` with before snapshot, validation result, reason, operator identity, and target group details;
-  - P6C should not start with scheduled background deletion and should not clean automatically before normal API reads;
-  - P6C should not be implemented as frontend hiding, and should not add a background job in the first pass;
-  - P6C must keep the same blocker checks: current member rows, effective order/group references, active grouped orders, protected/manual-hold flags, and foreign-key failures block deletion;
-  - historical audit logs alone should not be treated as active business usage, but must be preserved and never cascade-deleted as part of empty-group cleanup.
-
-- Completed P6A local acceptance check against the reseeded local Supabase dataset:
-  - guard check confirmed the browser/API session is local-only: `runtime_environment.mode=local_test`, label `LOCAL TEST MODE - 本地测试库，非真实订单`, and `is_production=false`;
-  - no production data, SQL schema, migrations, admin build, deployment, P6B implementation, or feature changes were touched;
-  - `/admin/transport/requests` loaded with the local environment badge and API returned exactly 13 local P6 test orders: `PU260925-P6-UNGROUPED`, `PU260925-P6-SINGLE`, `PU260925-P6-TWO-A`, `PU260925-P6-TWO-B`, `PU260925-P6-FULL-A`, `PU260925-P6-FULL-B`, `PU260925-P6-FULL-C`, `PU260925-P6-RISK-T2`, `PU260925-P6-RISK-T5`, `PU260925-P6-MISSING`, `PU260925-P6-CLOSED`, `PU260925-P6-PAID`, and `PU260925-P6-UNPAID`;
-  - `/admin/transport/groups` loaded with the local environment badge and API returned exactly 6 local P6 test groups: `GRP-P6LOCAL-SINGLE`, `GRP-P6LOCAL-TWO`, `GRP-P6LOCAL-FULL`, `GRP-P6LOCAL-XTERM`, `GRP-P6LOCAL-CLOSED`, and `GRP-P6LOCAL-PAYMIX`;
-  - each group detail API opened successfully and returned the expected member counts: single=1, two=2, full=3, cross-terminal=2, closed=1, payment-mix=2;
-  - risk API flags are present for `GRP-P6LOCAL-XTERM` (`cross_terminal`) and `GRP-P6LOCAL-FULL` (`full_visible`), while `GRP-P6LOCAL-CLOSED` correctly shows `status=closed` and `visible_on_frontend=false`;
-  - `PU260925-P6-MISSING` is present as an ungrouped local order with empty `phone`, `wechat`, and `flight_no`;
-  - group notes/frontend visibility PATCH persisted and was restored on local data; offline-recorded PATCH persisted and was restored on local data;
-  - Earlier P6A acceptance blockers were later rechecked on the current source/local-test path and resolved: group detail no longer exposes direct high-risk controls or member join/move/remove/payment buttons, and contact-state save no longer returns `404`;
-  - driver summary content is generated, the `一键复制` button copied the summary to the clipboard, and the copied content includes service timing, airport/terminal, flight details, price/payment state, passenger contacts, and addresses;
-  - the original check had seen two local contact-state `404` responses, but the final source/local-test recheck showed no non-favicon 4xx/5xx requests.
-
-- Completed local-only Supabase transport test-data cleanup and P6 acceptance reseed:
-  - operation guard confirmed local runtime before cleanup: `APP_ENV=local`, `runtime mode=local_dev`, Supabase project ref `127.0.0.1`, `is_production=false`, and `production data=no`;
-  - no production data, SQL schema, migrations, admin build, deployment, UI, API business logic, or P6B implementation was touched;
-  - pre-cleanup local counts were `transport_requests=36`, `transport_groups=37`, `transport_group_members=28`, `admin_operation_logs=47`, and `order_change_logs=21`;
-  - cleared the local noisy transport test dataset and local test audit/change logs only;
-  - first reseed attempt was blocked by local table check constraints, after which the data was reseeded with allowed enum values (`source=admin_manual`, `payment_collection_status=fully_paid/unpaid`);
-  - final local counts are `transport_requests=13`, `transport_groups=6`, `transport_group_members=11`, `admin_operation_logs=0`, and `order_change_logs=0`;
-  - P6 acceptance seed groups now present: `GRP-P6LOCAL-SINGLE`, `GRP-P6LOCAL-TWO`, `GRP-P6LOCAL-FULL`, `GRP-P6LOCAL-XTERM`, `GRP-P6LOCAL-CLOSED`, and `GRP-P6LOCAL-PAYMIX`;
-  - P6 acceptance coverage now includes ungrouped order, single-member group, two-member group, full group, cross-terminal risk group, missing flight/contact risk order, closed frontend-hidden group, paid/unpaid mixed group, and offline-recorded/unrecorded mixed group;
-  - post-check `/api/admin/session` still returns `LOCAL TEST MODE - 本地测试库，非真实订单` with `is_production=false`.
-
-- Completed local environment startup process audit after the browser still showed `PRODUCTION` on `localhost:3000`:
-  - no production data, local data, SQL schema, migrations, admin build, deployment, or transport business logic was changed;
-  - port audit showed `localhost:3000` was occupied by Docker/WSL forwarding for container `webside-web-1`, while ports `3100`, `3101`, and `3103` were free;
-  - the old `webside-web-1` container returned `/api/admin/session` with `runtime_environment.label=PRODUCTION`, explaining the stale browser badge;
-  - that old web app container was stopped; local Supabase containers were left running;
-  - `npm run dev` was restarted safely on port `3000` through `scripts/dev-local.js`;
-  - the active port `3000` listener is now Windows `node.exe` running `scripts/dev-local.js`;
-  - startup/session checks now report `APP_ENV=local`, `runtime mode=local_dev`, Supabase project ref `127.0.0.1`, `production data=no`, and `allow production in dev=no`;
-  - `apps/admin-vue` reads the left environment badge from `sessionStore.session.runtime_environment.label`, which comes from `/api/admin/session`;
-  - a browser automation check opened `http://127.0.0.1:3000/admin/transport/requests`; without an admin cookie it redirected to login, and a no-cache `/api/admin/session` fetch returned `LOCAL TEST MODE - 本地测试库，非真实订单`.
-
-- Implemented local dev Supabase environment isolation guard without touching production data, SQL schema, migrations, admin build, deployment, or transport business logic:
-  - `npm run dev` now runs the safe local wrapper and defaults to `LOCAL_SUPABASE_URL`, `LOCAL_SUPABASE_ANON_KEY`, and `LOCAL_SUPABASE_SERVICE_ROLE_KEY`;
-  - `npm run dev:local` remains the explicit local Supabase command and uses the same safe local wrapper;
-  - the local wrapper now fails fast if any required `LOCAL_SUPABASE_*` value is missing, instead of silently falling back to production `SUPABASE_*`;
-  - added `npm run dev:prod` as the explicit local-app-to-production-data command; it sets `APP_ENV=production`, `RUNTIME_MODE=local_dev_prod_data`, and `ALLOW_PROD_IN_DEV=true`;
-  - `dev-server.js` now logs sanitized runtime environment details on startup: app/runtime mode, Supabase project ref, production-data flag, local-runtime flag, and whether production in dev is allowed;
-  - `dev-server.js` now blocks local startup when `SUPABASE_URL` points to non-local production-like Supabase data and `ALLOW_PROD_IN_DEV` is not true;
-  - verification showed `npm run dev` and `npm run dev:local` resolve to local Supabase project ref `127.0.0.1`, `production data=no`; direct unapproved production startup is blocked with the required error; `npm run dev:prod` starts only with the explicit allow flag.
-
-- Completed a read-only production transport group/member/request manual audit:
-  - no production data was inserted, updated, deleted, migrated, built, or deployed;
-  - audited all current production rows: `transport_groups=9`, `transport_group_members=10`, and `transport_requests=10`;
-  - final classification: `SAFE_DELETE=0`, `UNKNOWN=0`, `MIXED=1`, and the remaining groups are `SAFE_KEEP`;
-  - `GRP-260519-R3T7` is `MIXED` because it contains the operator-confirmed retained test-account request `PU260522-0043` plus the real request `PU260519-0021`; the group must not be deleted;
-  - no current `request_id`, `transport_group_members.id`, or `group_id` is approved as safely deletable in this audit;
-  - all current group IDs should be retained unless a later operator-reviewed cleanup scope changes this conclusion.
-
-- Completed a read-only production test-data cleanup dry-run audit for transport groups/orders:
-  - no production data was inserted, updated, deleted, migrated, built, or deployed;
-  - local admin-vue requests use same-origin `/api/...`; in Vite dev, `/api` proxies to `http://127.0.0.1:3000`;
-  - the running local API reported `runtime_environment.mode=production` and uses `SUPABASE_URL=https://brmsymzkmdnxzhrcaghw.supabase.co` (`project_ref=brmsymzkmdnxzhrcaghw`);
-  - current local `npm run dev` environment values were read from `E:\webside\.env`; no root `.env.local`, `.env.development`, or `.env.production` file was present in the workspace scan, and the package scripts do not pass `--mode production`;
-  - a Vercel-pulled `.vercel\.env.preview.local` file exists and also points `SUPABASE_URL` to `brmsymzkmdnxzhrcaghw`, but the custom local `dev-server.js` path does not load that file;
-  - `npm run dev` loads `.env` as-is, while `npm run dev:local` would override `SUPABASE_*` with `LOCAL_SUPABASE_*`;
-  - production row counts during the audit were `transport_groups=9`, `transport_group_members=10`, `transport_requests=10`, and `admin_operation_logs=254`;
-  - operator clarification after the initial dry-run: `PU260522-0043` / request `cfb0c396-2c50-402d-9057-27e8fb3e9442` is the operator's own intentional test-account record and should be retained, so the final approved cleanup-candidate count for current production transport group/member/request rows is 0;
-  - strict matching against the requested English/code test markers found no current `transport_groups` or `transport_requests` candidates;
-  - one current transport request was flagged as an obvious production test-data candidate because `student_name=测试` and `admin_note=测试1`: `PU260522-0043` / request `cfb0c396-2c50-402d-9057-27e8fb3e9442`;
-  - that request is linked by membership `873b16ed-056c-4b3f-b2da-c0c7e9389d55` to `GRP-260519-R3T7`;
-  - `GRP-260519-R3T7` is not a delete candidate because it also contains a non-test request `PU260519-0021`; any future confirmed cleanup must delete only the test membership/request and then recheck/sync the containing group state;
-  - three associated `admin_operation_logs` rows were identified for the test request and should be retained by default unless an explicit audit-log cleanup policy is approved.
-
-- Implemented P6A transport dispatch workbench foundation without deployment, database migration, SQL/config changes, or admin build:
-  - `/admin/transport/groups` is now a dispatch-oriented group workbench rather than a simple group-management table;
-  - the group list surfaces group/order summary, service type, airport/terminal summary, service date/time range, members, people/luggage totals, payment/offline-record summary, public visibility, group status, and readonly dispatch risk count;
-  - the group list no longer exposes daily group-level bulk payment or delete actions; operators enter a group through the detail/check action;
-  - the group detail page now focuses on dispatch verification: overview, frontend visibility, risk prompts, member contact/flight/terminal/count/address/price-reference/payment/offline/contact status, and driver dispatch summary copy;
-  - P6A allows only low-risk actions in the group detail view: save group dispatch notes/driver notes, toggle frontend visibility, mark member offline-recorded, and mark member contacted/uncontacted;
-  - high-risk fields such as airport, terminal, flight number, service date/time, passenger count, luggage count, price, and member group movement are displayed only and remain outside P6A direct editing;
-  - existing P5 order-change entry remains available from member rows, but P6A did not change P5 order-change rules;
-  - admin group APIs now return P6A member detail, luggage summary, payment/offline-record state, and readonly dispatch risk flags; group PATCH now writes `admin_operation_logs` for group field changes;
-  - `docs/PROJECT_MAP.md` was updated for the enriched admin group API behavior.
-
-- Production empty transport group cleanup final record:
-  - cleanup scope was historical empty transport groups with 0 members, no `transport_group_members`, no `transport_requests.group_id` reference, and no valid order attached;
-  - after cleanup, `transport_groups` went from 28 rows to 9 rows;
-  - `transport_group_members` stayed at 10 rows;
-  - groups with members/current passenger counts were not processed;
-  - transport request list remains normal;
-  - transport group list remains normal;
-  - P6 dispatch workbench was not started;
-  - follow-up remains to implement a formal automatic empty-group cleanup rule and deletion audit flow.
-
-- Completed a read-only production post-cleanup audit after manual empty-group cleanup:
-  - no production data was inserted, updated, deleted, restored, or deployed during this audit;
-  - `transport_groups` currently has 9 rows with status distribution `active=1`, `closed=3`, `single_member=5`;
-  - `transport_group_members` remains at 10 rows;
-  - all 9 remaining groups have members/current passengers and each group detail API opens successfully;
-  - no `transport_group_members.group_id` points to a missing `transport_groups.group_id`;
-  - production `transport_requests` currently has no direct `group_id` column, so direct request-to-missing-group references are not present;
-  - active/published/grouped/matched member orders have no orphan group references;
-  - no paid/deposit/non-unpaid orphan member orders were found;
-  - admin transport group list, admin transport request list, group detail APIs, and public carpool board API returned successfully; public board still does not expose `shareable=false` rows;
-  - current cleanup result is acceptable from a referential-integrity and active-order-impact perspective; no restore is required based on this audit.
-
-- Recorded `P6C: transport group lifecycle cleanup mechanism` as a future cleanup phase; this is a design record only and no production data was changed:
-  - P6C should not be implemented now and must not be used as a substitute for finishing P6A bug fixes;
-  - priority for P6C is management-side explicit cleanup, not scheduled automatic deletion and not API-read-before-cleanup;
-  - the flow should generate a dry-run candidate report first, then require manual operator confirmation before deleting anything;
-  - cleanup must delete eligible empty/orphan groups in the backend/database layer; frontend-only hiding, CSS hiding, or list filtering is not an acceptable cleanup mechanism;
-  - every deletion must write `admin_operation_logs` with a before snapshot, validation details, skip/delete reason, operator identity, target `group_id`, and operation timestamp;
-  - candidate validation must recheck current references at confirmation time: `transport_group_members`, effective order/group references, valid linked order numbers, active/published/grouped orders, protected/manual-hold flags, and foreign-key constraints;
-  - do not delete if any current business reference or protection check fails; return a skip reason in the dry-run/confirmation result;
-  - historical `order_change_logs`, historical `admin_operation_logs`, and historical group codes should be preserved as audit history and must never be cascade-deleted as part of empty-group cleanup;
-  - P6C may later add additive helper fields such as `became_empty_at`, `admin_keep`, `manual_hold`, `protected`, or cleanup notes only through an explicitly approved migration; no migration is part of the current P6A scope;
-  - local validation for P6C should cover true orphan empty groups, groups with members, groups with effective order references, protected/manual-hold groups, new empty groups, stale empty groups, and historical-audit-only groups.
-
-- Recorded the transport group empty/dirty-data governance rule and cleanup audit plan:
-  - default admin views may hide 0-member empty groups to reduce operator noise, but this must be a default filter only, not a data-quality workaround;
-  - every hidden group must remain discoverable through an explicit admin filter such as `空组/异常数据`, including 0-member, no-member-row, stale status, orphaned, and suspected test groups;
-  - admin list/API behavior must distinguish visibility from cleanup: CSS-only or frontend-only hiding is not an acceptable fix for dirty production data;
-  - clearly identified test garbage can be deleted only through a guarded cleanup flow with a candidate list, secondary validation, admin confirmation, before snapshot, and audit log;
-  - uncertain or possibly historical-business data must not be deleted directly; it should be closed, cancelled, archived, or queued for manual review;
-  - production deletion must always be preceded by a generated candidate report and explicit human approval;
-  - every production delete must write `admin_operation_logs` with object type, `group_id` / `order_no`, deletion reason, before snapshot, operator identity, and operation timestamp;
-  - public carpool board visibility rules remain separate from admin cleanup rules; public filtering must not be reused as admin data governance.
-- Proposed follow-up implementation plan for a future cleanup/audit phase, not P6:
-  - add/standardize backend query flags for `include_empty_groups`, `anomaly_filter`, and `status=all` so admin can intentionally view hidden empty/anomalous groups;
-  - add an admin-only dry-run endpoint or script that returns candidate groups with classification A/B/C and all validation fields, without writing data;
-  - add a confirm endpoint/script that accepts only a reviewed whitelist and repeats all validations in the same write flow before delete/archive;
-  - make delete and archive separate actions: delete only for confirmed test garbage, archive/close for uncertain records;
-  - include regression checks that default group management stays quiet while `空组/异常数据` can still find hidden records.
-
-- Executed production empty test transport group cleanup Step 1 after operator confirmation:
-  - intended scope was A-list only: `GRP-260416-BY3H`, `GRP-260508-6E2D`, and `GRP-260523-U6LE`;
-  - pre-delete validation showed all 3 A-list groups met the required conditions: `current_passenger_count=0`, no member rows, no valid order references, no payment logs, no `order_change_logs` references, explicit test-like text, and whitelist membership;
-  - `admin_operation_logs` rows were written for the 3 A-list groups with action `cleanup_test_empty_transport_group`, before snapshots, validation details, and delete metadata;
-  - the 3 A-list groups were deleted from `transport_groups`;
-  - post-check confirmed those 3 group codes no longer exist and the 9 groups with members/current passengers still exist.
-- Cleanup Step 1 anomaly requiring operator review:
-  - later post-checks showed production `transport_groups` now contains only the 9 member-bearing groups;
-  - the previously audited B-list empty groups are also absent, despite no `cleanup_test_empty_transport_group` log rows for them;
-  - no further write operations were performed after this was detected;
-  - next step should be an explicit operator decision: accept removal of all empty orphan groups, investigate Supabase/Vercel/admin delete history further, or recover B-list groups from a backup/PITR if business requires them.
-
-- Completed a read-only production cleanup audit for transport groups after the admin list started showing 0-member historical groups:
-  - no production data was deleted, updated, archived, or inserted;
-  - production `transport_groups` still has 28 rows and `transport_group_members` has 10 rows;
-  - 19 groups are cleanup candidates because `current_passenger_count=0` and/or there are no `transport_group_members` rows;
-  - none of the 19 cleanup candidates currently has member rows, direct `transport_requests.group_id` references, or valid linked order numbers from the audited references;
-  - 3 candidates have explicit test-like indicators and can be considered safe-delete candidates after operator confirmation;
-  - 16 candidates have no members/references but not enough explicit test signals, so they should be closed/archived or reviewed rather than blindly deleted;
-  - 9 groups have members or current passengers and should not be cleaned in this pass;
-  - P6 dispatch workbench was not started.
-
-- Investigated the production `/admin/transport/groups` empty-state report without entering P6, changing production data, or adding new product features:
-  - production data exists: `transport_groups` has 28 rows and `transport_group_members` has 10 rows;
-  - group status distribution is `single_member=20`, `closed=4`, `active=3`, `full=1`;
-  - at least 9 groups have members, including one `active` group with two members and several `single_member` groups with one member;
-  - `/api/transport-groups/index` returned JSON, but `/api/transport-groups` was being served as static JavaScript source with `content-type: application/javascript`;
-  - root cause: Vercel served the nested `api/transport-groups/index.js` source file for the extensionless route `/api/transport-groups`, so the Vue page received non-JSON and rendered the empty state;
-  - added `api/transport-groups.js` as a top-level shim to route `/api/transport-groups` to the existing admin list/create handler;
-  - updated admin group status filtering so `status=all` is treated as no status filter while existing `active` / `open` / `single_member` compatibility remains intact;
-  - removed the admin group-list `current_passenger_count > 0` restriction so backend operators can see empty/stale groups as well as member-bearing groups;
-  - tightened public carpool board filtering to explicitly require `shareable = true`, while admin group management remains unrestricted by public-board visibility rules.
-- Production hotfix deployment and verification:
-  - route hotfix deploy: `dpl_CaQDkJmmpqGENk7PbA7qVWzfDk2Z`;
-  - public-board boundary deploy: `dpl_8ts98nKnv8zqBLaE4p51B9VtNNBn`;
-  - final admin group-list deploy: `dpl_3pjZsUYCRrRUsXWuHCW9g4Tgxs9F`, URL `https://webside-olbvcn4rv-wwkevin8s-projects.vercel.app`, aliased to `https://ngn.best`;
-  - `/api/transport-groups` now returns JSON for no status, `active`, `open`, `single_member`, `full`, and `all`;
-  - production API counts after the final deploy: no status `28/28`, `active=24/24`, `open=24/24`, `single_member=20/20`, `full=1/1`, `all=28/28`;
-  - production `/admin/transport/groups` now renders real `GRP-*` rows and no longer shows the empty state;
-  - Group ID search, order-number search, group detail API, and member order-change preview all passed read-only production verification;
-  - public board verification passed with `has_shareable_false=false`;
-  - UI verification screenshot: `E:\webside\output\production-transport-groups-final-hotfix.png`.
-
-- Completed P5 Release Prep 3 production deployment and smoke test:
-  - followed the GitHub-first release rule before deploying: committed and pushed the P5 release changes in `7ae04ae` (`feat: release P5 transport order changes`), then committed and pushed the Vercel cloud-build fix in `17b5c79` (`fix: install admin app dependencies on Vercel`);
-  - first Vercel production deploy attempt failed before aliasing because the cloud build did not install `apps/admin-vue` dependencies and `npm run build` exited 127;
-  - fixed only deployment install configuration by adding Vercel `installCommand` to install root dependencies and run `npm --prefix apps/admin-vue ci`; no P5 business logic, UI behavior, API semantics, database schema, or production env values were changed in that blocker fix;
-  - second Vercel production deploy succeeded: deployment `dpl_3DE6ePQDmTsFC9oBAU2Rc5vHViTi`, URL `https://webside-6q9rzgr2x-wwkevin8s-projects.vercel.app`, aliased to `https://ngn.best`, ready state `READY`;
-  - Vercel build passed with the existing Vue/Vite chunk-size warning only, and production `npm install` reported one existing moderate root audit advisory while `apps/admin-vue` dependencies reported zero vulnerabilities.
-- Production smoke test passed using production admin authentication and synthetic P5 smoke rows only:
-  - `/api/admin/login` succeeded for an approved super-admin account, `/api/admin/session` returned `runtime_environment.label = PRODUCTION`, and the admin shell loaded without `LOCAL TEST MODE`;
-  - `/api/transport-requests` loaded real production orders, service-type filtering/pagination returned successfully, and filtered CSV export returned successfully; the `membership_benefit_claim_id does not exist` error did not recur;
-  - P4 manual supplement and batch supplement preview/commit both worked with synthetic rows;
-  - P5 order detail path was smoke-tested through `change-preview` and `change-confirm` on synthetic orders: flight-number-only change returned order-level price fields (`old_price_gbp=190`, `new_price_gbp=190`, `request_total_price_gbp=190`) and wrote both `order_change_logs` and `admin_operation_logs`;
-  - duplicate confirm was rejected, stale preview was rejected, expired preview was rejected, and the legacy `adjust_flight_time` flow still worked on a synthetic order;
-  - the production transport group list endpoint returned a valid empty list at the time of testing; because there was no real production group sample, a temporary synthetic group/member was created with service-role data, the group-detail/member order-change preview path returned a valid preview token and order-level price shape, then the synthetic group/member/request rows were deleted;
-  - public board smoke confirmed the synthetic `shareable=false` test order did not appear;
-  - security smoke confirmed anon REST direct select on `order_change_logs` returns 401, service role can read `order_change_logs`, `public`/`anon`/`authenticated` have no direct select privilege, RLS is enabled and forced, and no public API handler references `order_change_logs`.
-- Production smoke cleanup:
-  - synthetic `P5 Production Smoke` transport requests, synthetic `P5PRODGROUP` groups, and related group memberships were deleted after the test;
-  - production audit rows created by the synthetic confirm smoke test remain in `order_change_logs` / `admin_operation_logs` as expected audit evidence and do not expose real student data.
-- P5 production conclusion:
-  - final note: P5 production released on deployment `dpl_3DE6ePQDmTsFC9oBAU2Rc5vHViTi`;
-  - deployed commit: `17b5c79` (`fix: install admin app dependencies on Vercel`), containing prior P5 release commit `7ae04ae` (`feat: release P5 transport order changes`);
-  - production smoke test passed;
-  - `order_change_logs` security verification passed: RLS enabled, force RLS enabled, no direct `public`/`anon`/`authenticated` table access, anon REST direct select rejected, and service-role/admin API access works;
-  - no rollback was needed;
-  - P5 can be marked production released;
-  - P6 dispatch workbench was not started.
-
-- Completed P5 Release Prep 2.5 without Vercel deployment, Supabase changes, UI changes, or P6 work:
-  - generated a strong random `P5_CHANGE_PREVIEW_TOKEN_SECRET` and configured it in Vercel Production only; the secret was not written to code or docs;
-  - configured Vercel Production `P5_CHANGE_PREVIEW_TOKEN_TTL_MS=900000`;
-  - configured Vercel Production `APP_BASE_URL=https://ngn.best`;
-  - configured Vercel Production `PUBLIC_SITE_URL=https://ngn.best`.
-- P5 Release Prep 2.5 env verification:
-  - production `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` exist, are non-empty, match the local production Supabase values, and contain no localhost target;
-  - `SUPABASE_URL` points to `brmsymzkmdnxzhrcaghw.supabase.co`;
-  - `ADMIN_SESSION_SECRET` exists and is non-empty;
-  - `P5_CHANGE_PREVIEW_TOKEN_SECRET` exists and is non-empty;
-  - `P5_CHANGE_PREVIEW_TOKEN_TTL_MS` exists with value `900000`;
-  - `APP_BASE_URL` and `PUBLIC_SITE_URL` both exist with production URL `https://ngn.best`;
-  - existing email envs remain present: `RESEND_API_KEY`, `AUTH_EMAIL_FROM`, `STORAGE_SYNC_AUDIT_EMAIL_FROM`, and `STORAGE_SYNC_AUDIT_NOTIFY_EMAIL`;
-  - temporary Vercel env pull files were deleted after verification.
-- P5 Release Prep 2.5 static verification:
-  - `npm run build:admin-vue` passed with the existing Vue/Vite chunk-size warning only;
-  - `git diff --check` passed with Windows LF-to-CRLF warnings only.
-- P5 Release Prep 2.5 conclusion:
-  - production env blockers from Release Prep 2 are resolved;
-  - P5 can proceed to Release Prep 3 / Deploy when explicitly approved, following the GitHub-first release rule;
-  - production has still not been deployed with P5 code, and P6 dispatch workbench remains out of scope.
-
-- Completed P5 Release Prep 2 without Vercel deployment, UI changes, or P6 work:
-  - production Supabase `public.order_change_logs` remains present and hardened: RLS enabled, force RLS enabled, no direct `public`/`anon`/`authenticated` grants, no policies, `source_snapshot_hash` present, and the partial unique `preview_token` index exists;
-  - raw anon REST select against `order_change_logs` still returns `401 permission denied`, authenticated role simulation still returns `rejected_permission_denied`, and service-role select works;
-  - production `transport_requests` has the P5/P4 support fields needed by current code, including `membership_benefit_claim_id`, `payment_collection_status`, `deposit_amount_gbp`, `manual_price_gbp`, `manual_payment_status`, `offline_recorded`, `last_operated_by`, and `last_operated_at`;
-  - production `admin_operation_logs`, `transport_groups`, and `transport_group_members` exist.
-- Vercel production environment readiness check:
-  - production `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` exist and match the local production `.env` values used for the successful production Supabase verification; `SUPABASE_URL` points to `brmsymzkmdnxzhrcaghw.supabase.co`;
-  - `ADMIN_SESSION_SECRET` exists;
-  - `RESEND_API_KEY`, `AUTH_EMAIL_FROM`, `STORAGE_SYNC_AUDIT_EMAIL_FROM`, and `STORAGE_SYNC_AUDIT_NOTIFY_EMAIL` exist;
-  - `P5_CHANGE_PREVIEW_TOKEN_SECRET` is missing and should be explicitly added before deploy instead of relying long-term on the fallback to `ADMIN_SESSION_SECRET`;
-  - `P5_CHANGE_PREVIEW_TOKEN_TTL_MS` is missing; code has a default TTL, but adding an explicit production value is recommended for operational clarity;
-  - `APP_BASE_URL` and `PUBLIC_SITE_URL` are missing and should be set to the production site URL before deploy/smoke testing so links and environment checks are unambiguous;
-  - SMTP fallback variables (`SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`) are missing; this is acceptable if Resend is the intended sole provider, otherwise add them before release.
-- P5 Release Prep 2 static verification:
-  - `node --check` passed for `api/transport-requests/[id]/change-confirm.js`, `api/transport-requests/[id]/change-preview.js`, `api/transport-requests/index.js`, `api/transport-requests/export.js`, `api/_lib/transport-group-stats.js`, `api/_lib/transport-group-lifecycle.js`, and `api/transport-groups/[id].js`;
-  - `npm run build:admin-vue` passed with the existing Vue/Vite chunk-size warning only;
-  - `git diff --check` passed with Windows LF-to-CRLF warnings only.
-- P5 Release Prep 2 conclusion:
-  - code and database are ready for Release Prep 3 / Deploy after adding or explicitly accepting the missing production env variables;
-  - current blocker/risk before deploy is configuration, not schema: missing explicit `P5_CHANGE_PREVIEW_TOKEN_SECRET`, missing explicit TTL, and missing production site URL variables;
-  - production has still not been deployed with P5 code, and P6 dispatch workbench remains out of scope.
-
-- Completed P5 Release Prep 1 for production `public.order_change_logs` security hardening without Vercel deployment, UI changes, or P6 work:
-  - rechecked production through Supabase pg_catalog and raw REST; the earlier RC REST HEAD probe was a false positive, and `public.order_change_logs` did not exist before this step;
-  - applied the idempotent P5 `order_change_logs` DDL/security SQL to production, creating the table and adding `preview_token`, `source_snapshot_hash`, request/order/pricing/payment/group/admin audit fields, indexes, and the updated-at trigger;
-  - enabled and forced RLS on `public.order_change_logs`;
-  - revoked all direct table privileges from `public`, `anon`, and `authenticated`;
-  - verified no RLS policies exist on `public.order_change_logs`, so there is no permissive read policy to remove;
-  - verified the partial unique preview-token index exists: `idx_order_change_logs_preview_token on preview_token where preview_token is not null`;
-  - verified direct privileges are denied: `public_select=false`, `anon_select=false`, `authenticated_select=false`, `anon_insert=false`, and `authenticated_insert=false`.
-- Production access verification after hardening:
-  - raw anon REST `GET /rest/v1/order_change_logs?select=id&limit=1` now returns `401 permission denied for table order_change_logs`;
-  - SQL role simulation for `authenticated` returns `rejected_permission_denied`;
-  - service-role REST select works and returned an empty result;
-  - service-role insert/read/delete using a synthetic `P5-SECURITY-CHECK` log row worked and the synthetic row was deleted immediately after verification;
-  - static scan found `order_change_logs` referenced only by `api/transport-requests/[id]/change-confirm.js`, not by public API handlers.
-- Supabase security advisors after the change:
-  - `order_change_logs` appears under the expected `RLS Enabled No Policy` info lint, which is intentional for this admin-only service-role table;
-  - other existing project security advisor items were not changed in this task.
-- P5 Release Prep 1 conclusion:
-  - production `order_change_logs` storage is now present and hardened for service-role/admin-server use;
-  - production Vercel was not deployed, so production `change-confirm` cannot be smoke-tested through the live admin route until the P5 code is released;
-  - P5 can proceed to Release Prep 2 after reviewing the remaining deployment/env checklist.
-
-- Completed P5 Final QA / Release Candidate checks without deploying production and without applying production migrations:
-  - P5 local main chain remains functional from the order detail entry and the transport group detail member entry;
-  - locally rechecked `no_group_change`, price-field semantics, duplicate-confirm rejection, stale/expired preview handling, and the previously accepted `keep_group`, `move_out_no_group`, `move_out_new_single`, and `transfer_existing_group` flows;
-  - local old-flow regression passed for the transport request list page, filters/pagination, filtered export, manual supplement, batch supplement preview/commit, transport group list, transport group detail, sync inspection logs, and the public board exclusion check for the local non-shareable/source test row;
-  - local duplicate-confirm check used a complete preview payload: the first `change-confirm` write succeeded and the second call with the same preview token was rejected;
-  - price fields still distinguish order-level receivable totals from `per_person_price_gbp` and `group_total_price_gbp`.
-- P5 Final QA environment and database findings:
-  - `npm run dev` currently uses the normal remote `SUPABASE_URL` and is labeled `PRODUCTION`;
-  - `npm run dev:local` maps `LOCAL_SUPABASE_URL`, `LOCAL_SUPABASE_ANON_KEY`, and `LOCAL_SUPABASE_SERVICE_ROLE_KEY` onto runtime `SUPABASE_*` keys and is labeled `LOCAL TEST MODE - 本地测试库，非真实订单`;
-  - production `transport_requests.membership_benefit_claim_id` is present;
-  - production `order_change_logs` already exists according to REST/schema reachability checks, even though this session did not apply it;
-  - production anon REST probing against `order_change_logs` did not return an access error, so P5 is not production-release-ready until `order_change_logs` RLS and grants are explicitly hardened and rechecked;
-  - the Supabase MCP connection required reauthentication and Supabase CLI had no access token, so direct pg_catalog verification of production RLS/grants was not available in this pass.
-- P5 Final QA verification:
-  - `node --check` passed for `api/transport-requests/[id]/change-confirm.js`, `api/transport-requests/[id]/change-preview.js`, `api/_lib/transport-group-stats.js`, `api/_lib/transport-group-lifecycle.js`, `api/transport-groups/[id].js`, and `api/transport-requests/[id].js`;
-  - `npm run build:admin-vue` passed with the existing Vue/Vite chunk-size warning only;
-  - `git diff --check` passed with Windows LF-to-CRLF warnings only.
-- P5 release-candidate conclusion:
-  - code/UI can move into production release preparation;
-  - production release is blocked until `supabase/20260524_transport_order_change_logs.sql` or equivalent hardening is applied/verified on production, especially `enable row level security`, `force row level security`, and `revoke all from public, anon, authenticated` for `public.order_change_logs`;
-  - no production deployment or production migration was performed in this QA pass.
-
-- Completed P5C-2 local UI integration for opening the P5 order-change flow from the transport group detail member list, without production deployment or production migration:
-  - added a reusable `TransportOrderChangeDrawer` component so transport request details and transport group details share the same change-preview/change-confirm UI and logic;
-  - added an `订单变更` action to each member row on the transport group detail page;
-  - the group detail entry reuses `change-preview`, `change-confirm`, `preview_token`, `source_snapshot_hash`, backend `group_action` validation, and preview candidate-group validation;
-  - high-risk fields on the group detail page are still not edited directly; airport, terminal, service date/time, passenger count, shareable intent, price, confirmed price, balance, and refund changes continue to go through P5;
-  - after a successful member change, the group detail page reloads the current group, member list, payment/price summary, group status, current per-person price, group total, and driver-dispatch summary;
-  - if a member leaves the current group through `move_out_no_group`, `move_out_new_single`, or `transfer_existing_group`, the refreshed member list removes that member and the success notice describes the result.
-- P5C-2 local UI acceptance used local Supabase fake-only rows under `P5C2-*`:
-  - member-row `订单变更` button opened the shared drawer and loaded the selected member order;
-  - `no_group_change`: flight-number-only change confirmed and the member remained in `P5C2-G-NO`;
-  - `move_out_no_group`: `shareable=false` confirmed and the member was removed from `P5C2-G-OUT` without creating a group;
-  - `move_out_new_single`: airport change to `STN` confirmed and the member moved from `P5C2-G-NEW` into a new single pending/matched group;
-  - `transfer_existing_group`: target group selection was restricted to preview candidates and the member moved from `P5C2-G-XFER` into `P5C2-G-XFER-TARGET`;
-  - stale preview displayed `订单或拼车组信息已变化，请重新预览后再确认。`;
-  - expired preview displayed `预览已过期，请重新预览。` and the confirm button stayed disabled;
-  - refreshed target/current group pages showed updated members, payment/price area, current per-person/group totals, and driver-dispatch summary;
-  - screenshot captured at `output/p5c2-group-order-change-drawer.png`.
-- P5C-2 verification:
-  - `node --check` passed for `api/transport-requests/[id]/change-confirm.js`, `api/transport-requests/[id]/change-preview.js`, `api/_lib/transport-group-stats.js`, `api/_lib/transport-group-lifecycle.js`, and `api/transport-groups/[id].js`;
-  - `npm run build:admin-vue` passed and regenerated the admin bundle;
-  - `git diff --check` passed with Windows LF-to-CRLF warnings only.
-- Scope intentionally unchanged:
-  - no production deployment;
-  - no production `order_change_logs` migration application;
-  - no P4 manual/batch supplement change;
-  - no ordinary `adjust_flight_time` semantic change;
-  - no P6 dispatch workbench, Excel-style group list, or group-list refactor.
-
-- Added an admin environment safety indicator without changing business logic, production configuration, or deploying:
-  - admin session responses now include a safe `runtime_environment` label only, without exposing Supabase URLs or keys;
-  - the admin sidebar displays `LOCAL TEST MODE - 本地测试库，非真实订单` when the running backend is connected to `LOCAL_SUPABASE_URL` or another localhost Supabase URL;
-  - the admin sidebar displays `PRODUCTION` when the running backend uses the normal remote `SUPABASE_URL`;
-  - added `npm run dev:local`, which loads root `.env` and maps `LOCAL_SUPABASE_URL`, `LOCAL_SUPABASE_ANON_KEY`, and `LOCAL_SUPABASE_SERVICE_ROLE_KEY` onto the runtime `SUPABASE_*` variables before starting `dev-server.js`;
-  - verified `npm run dev` on this machine returns `runtime_environment.mode = production`, because root `.env` `SUPABASE_URL` points at the remote `brmsymzkmdnxzhrcaghw.supabase.co`;
-  - verified `npm run dev:local` returns `runtime_environment.mode = local_test`, because it explicitly uses `LOCAL_SUPABASE_URL`;
-  - local admin page screenshot with the safety banner was captured at `output/local-test-mode-banner.png`.
-- Local Supabase data safety note:
-  - local Supabase currently contains P5/P5B/P5C fake test rows such as `P5BLOCAL-*`, `P5CLOCAL-*`, and `P5CQA-*`;
-  - production orders do not appear in the local test database;
-  - seeing `P5BLOCAL`, `P5CLOCAL`, or similar local test rows means the admin is connected to the test environment;
-  - do not judge whether real production orders are missing while connected to local Supabase.
-- Verification for the environment banner:
-  - `node --check api/admin/[...action].js` passed;
-  - `node --check scripts/dev-local.js` passed;
-  - `npm run build:admin-vue` passed.
-
-- Aligned the local Supabase schema only; no Vue pages, business APIs, Docker files, business logic, remote Supabase, or Vercel deployment were changed:
-  - checked `supabase/migrations` and root `supabase/*.sql` for the requested membership, transport claim, storage address/detail, and offline tracking migrations;
-  - applied existing local SQL files to local Supabase instead of creating duplicate fields: `supabase/20260513_membership_entitlements.sql`, `supabase/20260514_membership_activation_codes.sql`, `supabase/20260515_membership_activation_code_birthday.sql`, `supabase/20260515_membership_entitlement_grant_source_activation_code.sql`, `supabase/20260519_transport_request_offline_tracking.sql`, `supabase/20260519_storage_order_offline_tracking.sql`, `supabase/20260520_membership_birthday_reminders.sql`, `supabase/20260520_storage_sync_audit_logs.sql`, `supabase/20260520_storage_sync_audit_logs_cutover_notification.sql`, `supabase/20260416_transport_sync_audit_logs.sql`, and `supabase/20260416_transport_sync_audit_logs_perf.sql`;
-  - also applied existing `supabase/migrations/*.sql` files that local Supabase had not fully reflected, including the storage order type/detail constraint migration and storage suborder fields;
-  - no new migration file was needed because all requested missing schema pieces were already represented by existing project SQL. The earlier `storage_orders.full_address` note was a test/seed naming issue: current backend and schema use `storage_orders.address_full`, and the Vue list derives display address from that field.
-- Local schema now has the current code dependencies needed for the tested flows:
-  - membership tables: `membership_entitlements`, `membership_benefit_claims`, `membership_activation_codes`, `membership_audit_logs`, `membership_birthday_reminders`;
-  - transport fields: `membership_benefit_claim_id`, `membership_discount_amount`, `extra_charge_amount`, `final_price`, `membership_discount_breakdown_json`, `offline_recorded`, `last_operated_by`, `last_operated_at`;
-  - storage fields: `address_full`, membership claim/discount fields, suborder/date fields, `offline_recorded`, `last_operated_by`, `last_operated_at`;
-  - audit tables: `storage_sync_audit_logs` and `transport_sync_audit_logs`.
-- Reran the requested local verification:
-  - `npm run build` passed;
-  - `npm run preview` passed and served the local preview used for regression;
-  - `docker compose config --quiet` passed;
-  - `docker compose up -d --build web` built the image and started `webside-web-1` after stopping the preview process that was occupying port 3000.
-- Reran the focused business regression against `npm run preview` with local fake `REGSCHEMA-*` data, then cleaned the test rows:
-  - admin login/session, dashboard data load, `/admin/transport/requests` list API, seeded transport list visibility, and `DELETE /api/transport-requests/:id` passed without 500s;
-  - `/admin/memberships`, membership activation-code list, and birthday reminder list passed without 500s;
-  - `/admin/storage/orders` no longer reports the missing storage tracking migration;
-  - seeded storage order read, edit/save, and delete through the preview admin API passed;
-  - browser visits to `/admin/`, `/admin/transport/requests`, `/admin/memberships`, and `/admin/storage/orders` had no local 4xx/5xx network responses and no red console errors.
-- Remaining local caveat:
-  - Supabase CLI still reports local RLS disabled on several baseline tables (`admin_users`, `site_users`, `storage_orders`, `transport_requests`, `transport_groups`, and related local-only tables). This was not auto-fixed because enabling RLS without matching policies can break local admin/API testing; treat it as a local baseline/security drift item to plan separately.
-- Completed P5C-1 QA/UI closeout for the admin transport request detail order-change drawer, still without production deployment or production migration:
-  - localized stale, expired, invalid group-action, invalid target-group, and price/payment confirmation errors in the drawer;
-  - preview result now labels `old_price_gbp`, `new_price_gbp`, and `price_delta_gbp` as order-level receivable totals, and separately shows `per_person_price_gbp` as current per-person price and `group_total_price_gbp` as group total;
-  - high-risk changes now show prominent warnings for airport, terminal, service-date, passenger-count, and shareable=false changes;
-  - ordinary time adjustment previews continue to tell operators to use the existing normal time-adjustment flow instead of forcing P5;
-  - confirm is disabled until a valid preview exists, the preview is not expired, a reason is filled, and a preview candidate has been selected for `transfer_existing_group`; submitting shows a loading label to reduce duplicate clicks.
-- P5C-1 QA found and fixed a lifecycle regression:
-  - `backfillMissingPickupGroups` now excludes `source = admin_manual` by default, so P4 single/batch supplement rows remain request-only even if admin/public detail flows trigger backfill;
-  - the earlier `shareable === false` skip remains in place, so non-carpool orders are not auto-regrouped.
-- P5C-1 QA local acceptance used fake-only local Supabase rows under `P5CQA-*`:
-  - `no_group_change`: flight-number-only confirmed, no reprice, membership unchanged;
-  - `keep_group`: passenger count 1 -> 2 confirmed, order-level total changed 190 -> 210, per-person price shown separately as 105, original group retained;
-  - `move_out_no_group`: `shareable=false` confirmed, request refreshed with zero memberships;
-  - `move_out_new_single`: airport change to `STN` confirmed, old group closed/deleted and a new single group created;
-  - `transfer_existing_group`: LGW/date/terminal change confirmed using a preview candidate only;
-  - stale preview displayed `订单或拼车组信息已变化，请重新预览后再确认。`;
-  - expired preview displayed `预览已过期，请重新预览。` and confirm stayed disabled;
-  - duplicate confirm double-click produced one order-change log only;
-  - lifecycle regression checks passed: shareable=true request entered group/backfill path, shareable=false request stayed ungrouped, P4 `admin_manual` single/batch rows stayed ungrouped, and public board did not include the shareable=false test order;
-  - screenshot captured at `output/p5c1-qa-order-change-drawer.png`.
-- P5C-1 QA verification:
-  - `node --check` passed for `api/transport-requests/[id]/change-confirm.js`, `api/transport-requests/[id]/change-preview.js`, `api/_lib/transport-group-stats.js`, `api/_lib/transport-group-lifecycle.js`, and `api/transport-groups/[id].js`;
-  - `npm run build:admin-vue` passed and regenerated the admin bundle.
-- Scope intentionally unchanged:
-  - no production deployment;
-  - no production `order_change_logs` migration application;
-  - no P4 manual/batch supplement behavior change except protecting it from unintended backfill;
-  - no ordinary `adjust_flight_time` semantic change;
-  - no P6 dispatch workbench or carpool group-list refactor.
-
-- Completed P5C-1 admin order-detail UI integration without production deployment or production migration:
-  - added an `订单变更` entry on the admin transport request detail page;
-  - added an order-change drawer that shows current order, group, price/payment context, editable change draft fields, change-preview results, risk warnings, candidate groups, final `group_action`, and change-confirm status;
-  - wired the drawer to `POST /api/transport-requests/:id/change-preview` and `POST /api/transport-requests/:id/change-confirm`, carrying `preview_token` and `source_snapshot_hash`;
-  - ordinary time-adjustment previews now show a UI warning to use the existing time-adjustment flow instead of forcing P5;
-  - `transfer_existing_group` target selection is restricted to preview candidate groups and sends the candidate business `group_id`, not arbitrary typed values;
-  - high-risk detail fields on the existing detail form are now read-only; the direct save path only saves the admin note, so airport/terminal/flight/service-time/passenger/payment/carpool changes must go through P5;
-  - the previous direct group-replacement panel on the detail page is no longer an editable bypass and now points operators to the order-change flow.
-- P5C-1 local UI acceptance used local Supabase fake-only `P5CLOCAL-*` data through `http://localhost:3145`, with no production data:
-  - `no_group_change`: flight-number-only change confirmed, `requires_reprice=false`, membership unchanged;
-  - `move_out_no_group`: `shareable=false` confirmed, request became ungrouped after detail refresh;
-  - `move_out_new_single`: airport change to `STN` confirmed, old group closed/deleted and a new single pending group was created;
-  - `transfer_existing_group`: LGW/date/terminal change confirmed using a preview candidate group only, old group closed/deleted and target group became active;
-  - stale preview rejection displayed `Order or group has changed. Please preview again.`;
-  - screenshot captured at `output/p5c-order-change-drawer.png`.
-- P5C-1 backend side-effect fix:
-  - `backfillMissingPickupGroups` now skips requests with `shareable === false`, preventing a `move_out_no_group` order from being automatically re-grouped when the admin detail endpoint refreshes.
-- P5C-1 verification:
-  - `node --check` passed for `api/transport-requests/[id]/change-confirm.js`, `api/transport-requests/[id]/change-preview.js`, `api/_lib/transport-group-stats.js`, `api/_lib/transport-group-lifecycle.js`, and `api/transport-groups/[id].js`;
-  - `npm run build:admin-vue` passed and regenerated the admin bundle.
-- P5C/P6 scope still not entered:
-  - no production deployment;
-  - no production `order_change_logs` migration application;
-  - no P4 manual/batch supplement change;
-  - no ordinary `adjust_flight_time` semantic change;
-  - no carpool dispatch workbench, Excel-style group list, or group-list refactor.
-
-- Completed a local run/build consistency pass without changing business logic:
-  - added a root `Dockerfile`, `.dockerignore`, and `docker-compose.yml` for running the website/admin/API project in Docker while connecting to the Supabase CLI stack already running in Docker Desktop;
-  - added `npm run build` as the plain project build command and `npm run preview` as a production-built local preview command;
-  - kept `npm run build:preview` and `npm run build:prod` as Vercel output build checks, and pinned Vercel build/output settings in `vercel.json` so local Vercel build no longer depends on hidden project settings;
-  - updated `.env.example` with local Supabase, Docker Supabase aliases, session/admin, email, cron, Turnstile, QA, and P5 preview-token variables;
-  - added `README.md` with full local startup steps for Supabase, npm preview, Docker compose, and verification commands;
-  - updated `.vercelignore` so local `.env` files are not uploaded by Vercel CLI deploys.
-- Docker/preview verification completed:
-  - `npm run build` passed;
-  - `npm run build:prod` passed after fixing the local Vercel output-directory/build-command configuration and Windows build environment handling;
-  - `npm run preview` started locally, returned HTTP 200 for `/`, and `/api/public/auth-config` returned local Supabase URL `http://127.0.0.1:54321` with an anon key present;
-  - `docker compose config --quiet` passed;
-  - `docker compose up -d --build web` built and started the container, returned HTTP 200 for `/`, and `/api/public/auth-config` returned Docker Supabase URL `http://host.docker.internal:54321` with an anon key present;
-  - the Docker container was stopped with `docker compose down` after verification.
-- Remaining local/production differences after this pass:
-  - Supabase itself remains managed by the Supabase CLI, not manually duplicated in `docker-compose.yml`, to avoid drifting from `supabase/config.toml`;
-  - local preview is HTTP, so production HTTPS cookie behavior is not identical;
-  - Vercel cron scheduling is not executed by local preview;
-  - application email still depends on Resend/SMTP env values and may send real mail if real provider keys are used locally;
-  - Docker build still reports the existing moderate root npm advisory and an existing Vue/Vite chunk-size/compiler warning; no dependency or business fix was made in this environment-only pass.
-- Implemented P5A backend infrastructure for transport order-change preview without committing, deploying, or applying database changes to production:
-  - added `supabase/20260524_transport_order_change_logs.sql` for future `order_change_logs` audit persistence, with request/order/pricing/payment/group/admin fields, indexes, forced RLS, and direct public/anon/authenticated revokes;
-  - added the shared `computeTransportGroupPricingSnapshot` helper in `api/_lib/transport-group-stats.js` and refactored `api/transport-groups/[id].js` to use the same pricing口径 as group statistics;
-  - added admin-only `POST /api/transport-requests/:id/change-preview` as a read-only preview endpoint that returns field changes, order-change classification, repricing impact, paid/balance/refund impact, group-retention status, candidate groups, and risk codes without writing business tables;
-  - wired the local helper server route in `dev-server.js`;
-  - updated `docs/PROJECT_MAP.md` for the new endpoint, migration, and `order_change_logs` table.
-- P5A verification:
-  - `node --check` passed for the changed/related transport API and helper files, including `api/_lib/transport-group-stats.js`, `api/transport-groups/[id].js`, `api/transport-groups/index.js`, `api/transport-requests/[id]/change-preview.js`, `api/transport-requests/[id].js`, `api/_lib/transport-group-lifecycle.js`, and `dev-server.js`;
-  - `npm run build:admin-vue` passed;
-  - static scan of `change-preview` found no insert/update/upsert/delete/RPC calls;
-  - no production config, Vercel deployment, `adjust_flight_time`, `transfer_existing_group`, P4 manual supplement/import behavior, payment email, or UI modal wiring was intentionally changed.
-- P5B/P5C remain out of scope:
-  - no `change-confirm` endpoint;
-  - no actual request mutation from P5;
-  - no group move/transfer/create execution from the new change flow;
-  - no refund/collection mutation;
-  - no operator UI integration beyond the backend-ready response shape.
-- Completed P5A local acceptance testing for `change-preview` using existing transport request `PU260508-0027` / `5d7044e0-735c-42b1-89ed-ec30c9e7b77b`:
-  - time-only change was classified as `ordinary_time_adjustment` with `requires_reprice=false`;
-  - airport, terminal, service-date, passenger-count, and shareable changes were classified as `order_change`;
-  - flight-number-only change was classified as `order_change` with `requires_reprice=false`;
-  - unpaid payment handling returned `paid_amount_gbp=0`, `balance_due_gbp=new_price_gbp`, and `refund_due_gbp=0`;
-  - explicit `paid_amount_gbp=50` override correctly produced `balance_due_gbp=135` against a 185 GBP preview price;
-  - static scan found no insert/update/delete/upsert/RPC calls in `change-preview`;
-  - `transport_requests`, `transport_groups`, and `transport_group_members` counts were unchanged before/after the preview calls.
-- Completed P5A-1 price semantics correction for `change-preview`:
-  - `api/_lib/transport-group-stats.js` now exposes explicit `group_total_price_gbp` and `per_person_price_gbp` aliases while preserving existing group pricing fields;
-  - `change-preview` top-level `old_price_gbp`, `new_price_gbp`, and `price_delta_gbp` now represent the current order's total receivable amount, not group total or per-person average;
-  - pricing snapshots now include `passenger_count`, `per_person_price_gbp`, `group_total_price_gbp`, and `request_total_price_gbp`;
-  - local acceptance with `PU260508-0027` passenger count `1 -> 3` returned `old_price_gbp=185`, `per_person_price_gbp=75`, `new_price_gbp=225`, `price_delta_gbp=40`, unpaid `balance_due_gbp=225`, and explicit `paid_amount_gbp=50` `balance_due_gbp=175`;
-  - `transport_requests`, `transport_groups`, and `transport_group_members` counts remained unchanged before/after the preview calls.
-- P5A acceptance risks before P5B:
-  - local existing transport data only has `payment_collection_status=unpaid`, so `deposit_paid` and `fully_paid` status branches could not be validated against existing real rows without modifying data;
-  - `order_change_logs` is not applied in the current Supabase schema cache, matching the current "migration file only" state;
-  - P5B should continue using order-level `old_price_gbp/new_price_gbp` semantics for all collection, balance, refund, and audit-log writes.
-- Implemented P5B backend confirmation code path locally, but did not apply the migration to the visible Supabase project because the only connected project is `ngn-transport` and appears to be the current remote/production project:
-  - added admin-only `POST /api/transport-requests/:id/change-confirm`;
-  - `change-preview` now returns `preview_token` and `source_snapshot_hash`, and `change-confirm` recomputes preview before saving to reject stale submissions;
-  - `change-confirm` supports `no_group_change`, `keep_group`, `move_out_no_group`, `move_out_new_single`, and `transfer_existing_group`, with transfer targets restricted to backend preview candidates;
-  - `order_change_logs` migration was extended with `preview_token`, `source_snapshot_hash`, and a unique preview-token index for duplicate-confirm prevention;
-  - syntax checks and admin Vue build passed, and preview smoke checks returned tokens/hashes plus expected default group actions;
-  - full write-path tests for `order_change_logs`, `admin_operation_logs`, and group mutation/sync remain blocked until a non-production local/test Supabase target is available and the migration is applied there.
-- P5B write acceptance was requested again but was not run because no safe local/test Supabase target is currently available:
-  - `supabase status` is unavailable because the Supabase CLI is not installed in the current shell;
-  - current `.env` points at the remote `brmsymzkmdnxzhrcaghw.supabase.co` project;
-  - Supabase connector lists only one project, `ngn-transport`, so there is no separate visible test project to apply the migration or create test transport data;
-  - to avoid production-data mutation, no migration, test data creation, `change-confirm`, group membership change, or log write was executed.
-- P5B-Env local Supabase setup attempted without touching production:
-  - Docker CLI is installed (`Docker version 29.2.1`), but Docker Desktop's Linux engine is not running/available from this shell, so `npx supabase start` failed before any local database was created;
-  - Supabase CLI was added as a local dev dependency (`supabase` 2.101.0) and `npx supabase init` generated local project files under `supabase/`, including `supabase/config.toml` and `supabase/.gitignore`;
-  - no production Supabase project, paid Supabase branch, Vercel deployment, business API, UI, or P5 change-confirm behavior was modified during this environment setup;
-  - `order_change_logs` migration has not been applied to any non-production database yet because local Supabase could not start;
-  - no fake transport test data was imported and no P5B write validation was run;
-  - once Docker Desktop is running, rerun `npx supabase start`, capture local key names only, apply the baseline schema plus `supabase/20260524_transport_order_change_logs.sql`, seed fake transport request/group/member rows, and then run P5B write acceptance;
-  - `npm audit` after installing the CLI reports one moderate transitive `ws` advisory with a fix available; it was not fixed in this setup pass.
-- Completed P5B-Env and local P5B write validation against local Supabase only:
-  - Docker Desktop was running and `npx supabase start` succeeded locally; local API, DB, Studio, anon key, and service-role key were generated, with the key values stored only in ignored local `.env` entries named `LOCAL_SUPABASE_URL`, `LOCAL_SUPABASE_ANON_KEY`, and `LOCAL_SUPABASE_SERVICE_ROLE_KEY`;
-  - production `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `.env.local`, and `vercel.json` were not modified;
-  - baseline admin/transport/order schema plus `supabase/20260524_transport_order_change_logs.sql` were applied to the local database; `order_change_logs` exists locally with RLS enabled and forced;
-  - fake-only local rows were seeded under `P5BLOCAL-*`, including one admin, transport requests, groups, and group memberships; no production or real student data was imported;
-  - `change-preview` now returns a signed expiring `preview_token`, `preview_expires_at`, and `source_snapshot_hash`; `change-confirm` verifies token signature, expiry, and hash before mutating;
-  - write validation passed locally for `no_group_change`, `keep_group`, `move_out_no_group`, `move_out_new_single`, and `transfer_existing_group`, with five `order_change_logs` and five `admin_operation_logs` written;
-  - transfer to a hand-entered non-candidate group was rejected, duplicate confirmation was rejected, stale snapshot after group membership change was rejected, and an expired preview token was rejected;
-  - local validation noted one behavior to keep in mind for P5C/P6 copy and operator expectations: when a one-member kept group is synced, current lifecycle logic can leave the member request status as `published` while the group remains `single_member`.
-  - verification passed: `node --check` for `api/transport-requests/[id]/change-confirm.js`, `api/transport-requests/[id]/change-preview.js`, `api/_lib/transport-group-stats.js`, `api/_lib/transport-group-lifecycle.js`, `api/transport-groups/[id].js`, plus `npm run build:admin-vue`.
-
-- Started production post-deploy lightweight acceptance for the P3/P4 transport workbench release and stopped at the first blocking step:
-  - target production URL: `https://ngn.best/admin/transport/requests`;
-  - browser was redirected to `https://ngn.best/admin-login.html?return_to=%2Fadmin%2Ftransport%2Frequests`;
-  - existing local bootstrap admin credentials were rejected by production with `账号或密码错误`;
-  - local signed admin-session fallback was also checked through `/api/admin/session` and production returned `authenticated: false`;
-  - screenshot recorded at `output/playwright/prod-postdeploy-admin-login-blocked.png`;
-  - no `PRODTEST-*` request/group/member test data was created during this blocked pass.
-- Production post-deploy acceptance status:
-  - login/session blocker was later cleared using an approved `test-admin` production admin account;
-  - production `/api/admin/login` returned 200, set `ngn_admin_session`, and `/api/admin/session` returned `authenticated: true`, `is_admin: true`, `role: operations_admin`;
-  - production `/admin/transport/requests` opened with 3 filter rows and no visible `还原` button in the loaded workbench page;
-  - a production post-deploy mutation pass was started with `PRODTEST-18813764-*` and stopped during the inline-save setup because the automation locator did not find the visible table row within 15 seconds;
-  - failure screenshot: `output/playwright/prod-postdeploy-failure-18813764.png`;
-  - the temporary `PRODTEST-18813764-SAVE` request was cleaned immediately; follow-up read-only counts confirmed `PRODTEST-*` requests = 0, `transport_groups` = 28, and `transport_group_members` = 10;
-  - this was confirmed as an automation locator issue rather than a business failure; the follow-up pass avoided `tbody tr hasText` and instead used order-number filtering plus input-value/first-row checks.
-- Completed the P4 production post-deploy lightweight acceptance with `PRODTEST-19184303-*`:
-  - inline save passed: created `PRODTEST-19184303-SAVE` (`PU260524-0095`), edited客服备注 to `production save test 19184303`, saved back to `已保存`, refreshed, and confirmed the note persisted;
-  - single supplement passed: created `PRODTEST-19184303-SINGLE`, confirmed `source = admin_manual`, `offline_recorded = true`, no request membership, no new `transport_groups` / `transport_group_members`, and no public board/groups exposure;
-  - batch supplement passed: paste preview showed the `PRODTEST-19184303-BATCH-*` rows and did not write the database, import created 2 request-only rows with import batch `TMI-20260524104026-CH5AFN`, `source = admin_manual`, `offline_recorded = true`, and no group/member rows;
-  - search/filter/export passed: keyword `PRODTEST`, `source = admin_manual`, and `offline_recorded = true` found the 4 test rows; current-filter export contained them; selected-id export contained the selected row even with a conflicting search filter;
-  - public isolation passed: `PRODTEST-*` admin manual rows did not appear in public board or public groups, while production still had normal `public_form` rows available;
-  - cleanup passed: removed 4 `PRODTEST-19184303-*` requests, removed 0 memberships, confirmed remaining `PRODTEST-*` requests = 0, `transport_groups` = 28, and `transport_group_members` = 10.
-- P4 production acceptance is complete for the P3/P4 scope; no production redeploy, P4c, P5, database structure change, or business-code change was made during this acceptance pass.
-
-- Deployed the accepted P3/P4 transport request workspace and manual supplement release to Vercel Production:
-  - production deployment command used: `npm run deploy:prod`;
-  - Vercel production deployment URL: `https://webside-mu100mmdk-wwkevin8s-projects.vercel.app`;
-  - Vercel production deployment id: `dpl_7NtA4ZuRT8X73V9S2hKQ6ErKMayL`;
-  - Vercel ready state: `READY`;
-  - production aliases assigned: `https://ngn.best`, `https://www.ngn.best`, `https://webside-chi.vercel.app`, `https://webside-wwkevin8s-projects.vercel.app`, and `https://webside-wwkevin8-wwkevin8s-projects.vercel.app`;
-  - deployed GitHub commit: `84a375faab2dd3f3a8b64ad1e340d5e574498d74` on `codex/membership-v1`;
-  - deployment target: `production`;
-  - Vercel metadata commit message: `feat(admin): make batch transport supplements request-only`.
-- Scope intentionally unchanged during production deployment:
-  - did not enter P4c;
-  - did not expand the existing adjust-time dialog into airport/terminal/flight-number change or repricing;
-  - did not change database structure, supplement logic, public-board admin_manual isolation logic, `adjust_flight_time`, or `transfer_existing_group`.
-- Required post-production acceptance remains:
-  - open `/admin/transport/requests` on production and verify the three-row filter layout, inline save, single manual supplement, batch manual supplement, search/filter/export, and `admin_manual` public-board/public-groups isolation;
-  - create only temporary `P4FINAL-PROD-*` records if needed and clean all test requests plus any unexpected group/member rows immediately after verification.
-
-- Completed P4b final sealing check without committing or deploying:
-  - `git status --short` / `git diff --name-status` show only P4b batch manual supplement files, template/docs/status files, `PLAN.md`, and regenerated admin bundle files;
-  - confirmed the old generated admin JS hash is deleted and the new generated admin JS hash exists in the worktree;
-  - confirmed the new batch template includes `联系状态`, `收款状态`, `定金 GBP`, `是否愿意拼车`, and `客服备注`, and no longer includes `Group ID`;
-  - confirmed old template aliases still work: `price` maps to `deposit_amount_gbp`, `payment_status` maps to `payment_collection_status`, and `notes` maps to `admin_note`;
-  - confirmed paste/CSV/XLSX import paths still normalize headers/cells and send rows through the same preview/commit APIs;
-  - confirmed preview does not write database rows, and commit only inserts `transport_requests`;
-  - confirmed P4b batch import does not call `createGroupForRequest`, `addRequestToGroup`, `adjust_flight_time`, or `transfer_existing_group`, and does not touch `transport_groups` / `transport_group_members` in request-only verification;
-  - confirmed `Group ID` in old sheets produces the P4b warning-only path and is ignored after warning confirmation;
-  - confirmed `shareable` defaults false and remains a normal request field even when true;
-  - confirmed public board source filtering remains `source is null OR source != admin_manual`, preserving normal `source = public_form` rows while excluding explicit admin manual supplement orders;
-  - confirmed no `P4B-*` temporary request/group leftovers remain.
-- P4b final sealing check verification:
-  - `git diff --check` reported only LF/CRLF warnings and no whitespace errors;
-  - template field verification passed;
-  - old-template compatibility verification passed;
-  - paste/CSV/XLSX shared mapping path verification passed;
-  - Group ID warning-only verification passed;
-  - preview no-write and commit request-only mock verification passed;
-  - P4B cleanup request/group verification passed;
-  - public-form preservation check found normal `source = public_form` samples and verified the public-board source filter does not exclude them.
-
-- Implemented P4b for the existing `/admin/transport/requests` batch manual supplement flow:
-  - reused the existing `批量补录` button, modal, paste, CSV template, Excel template, CSV/XLSX upload, preview, and import actions;
-  - updated the batch template source to P4a/P3 workbench fields: `联系状态`, `收款状态`, `定金 GBP`, `是否愿意拼车`, and `客服备注`;
-  - kept backward-compatible aliases for old `price`, `payment_status`, and `notes` columns while mapping them into `deposit_amount_gbp`, `payment_collection_status`, and `admin_note`;
-  - changed batch preview to parse, normalize, validate, and check duplicate transport requests only; it no longer queries candidate groups or validates existing groups;
-  - old `Group ID` / group columns now produce a clear warning and are ignored after warning confirmation; no group join or group creation is performed;
-  - changed batch commit to create `transport_requests` only, with `source = admin_manual`, `offline_recorded = true`, `import_batch_id = TMI-*`, creator/operator metadata, raw payload, and P3 workbench fields;
-  - preserved `shareable` as a normal request field with default `false`; even `shareable = true` does not create or join a group;
-  - did not change database structure, production deployment, `adjust_flight_time`, `transfer_existing_group`, transport group management, or public join flows.
-- P4b verification:
-  - `node --check api/_lib/transport-manual-import.js` passed;
-  - `node --check api/transport-manual-import/preview.js` passed;
-  - `node --check api/transport-manual-import/commit.js` passed;
-  - `node --check public-api-handlers/transport-board.js` passed;
-  - `npm run build:admin-vue` passed and regenerated the root `admin/` bundle;
-  - mock request-only verification confirmed a row containing `group_id` imports as `source = admin_manual`, does not touch `transport_groups`, `transport_group_members`, or `transport_groups_public_view`, and preserves `shareable` only as an ordinary field;
-  - legacy/default mapping verification confirmed old `price`, `payment_status`, and `notes` aliases still map to the new workbench fields and missing shareable defaults to false;
-  - local UI verification on `http://localhost:3142/admin/transport/requests` confirmed the existing batch modal still has paste/template/upload/preview/import actions, the new template fields are present, and Group ID / group selection controls are absent;
-  - real local data verification created and cleaned P4B temporary rows, confirmed `transport_requests` rows were created with `admin_manual` source and P3 fields, `transport_groups` and `transport_group_members` counts did not change, and public board did not return the admin manual supplement row;
-  - admin API verification confirmed P4B rows are searchable/filterable by workbench filters, current-filter export includes them, selected-id export includes them even with a conflicting search filter, and cleanup left no `P4B-*` temporary transport requests.
-- Scope intentionally unchanged in P4b:
-  - no production deployment was run;
-  - no database schema, email flow, batch-import second entry, Excel-upload rewrite, 拼车组管理 page, `adjust_flight_time`, `transfer_existing_group`, or `transport_groups` / `transport_group_members` structure was changed.
-
-- Completed P4a final sealing check without committing or deploying:
-  - changed the public board `source` protection from a plain `source != admin_manual` style filter to `source is null OR source != admin_manual` in both the public board list query and the pickup backfill path, so only explicit `source = admin_manual` supplement orders are excluded;
-  - verified no remaining public-board source filter uses `.neq("source", "admin_manual")`;
-  - current local DB rejects inserting `source = null` because `transport_requests.source` is NOT NULL, so a live null-source sample could not be created without a schema change; the code-level public query now preserves null-source rows, and a Supabase `source is null` query was accepted;
-  - verified a `source = public_form` temporary pickup appears on public board/public groups and gets normal public-board backfill;
-  - verified a `source = admin_manual` temporary pickup does not appear on public board/public groups and does not get public-board backfill;
-  - verified P4a single manual supplement pickup/dropoff creates only `transport_requests`, not `transport_groups` or `transport_group_members`;
-  - verified manual supplement orders remain searchable/filterable/exportable in the admin workbench.
-- Final P4a/P3.2 verification:
-  - `node --check public-api-handlers/transport-board.js` passed;
-  - `node --check api/_lib/transport-group-lifecycle.js` passed;
-  - `node --check api/_lib/transport-manual-import.js` passed;
-  - `node --check api/transport-manual-import/manual.js` passed;
-  - `node --check api/transport-requests/export.js` passed;
-  - `npm run build:admin-vue` passed and regenerated the root `admin/` bundle;
-  - local API validation on `http://localhost:3141` created and removed temporary `P4A-FINAL-*` orders; cleanup restored transport group/member counts;
-  - local Playwright UI validation on `http://localhost:3141/admin/transport/requests` passed at 1440px and 2560px widths for the P3.2 filter layout: exactly three rows, fields start from the left, table horizontal scroll and bulk toolbar remain intact;
-  - local Playwright UI validation confirmed the P4a modal hides Group ID / group validation controls, defaults shareable to false, shows the expected field labels, keeps the modal open and preserves form content on a forced submit failure, and creates a backend-visible `admin_manual` order on success without creating group/member rows.
-- Scope intentionally unchanged:
-  - no commit was made;
-  - no production deployment was run;
-  - no database schema, batch import, Excel upload, email flow, `adjust_flight_time`, `transfer_existing_group`, or transport group/member structure was changed.
-
-- Completed P3.2 admin transport request filter panel layout repair:
-  - fixed `/admin/transport/requests` filter panel CSS so the three filter rows stretch across the full filter card width instead of inheriting right-aligned flex-item behavior;
-  - the filter fields now start from the left edge of the panel and use full-width grid rows, with six fields in the first row, six fields in the second row, and sort/page/actions in the third row;
-  - the third-row action buttons remain right-aligned within their own grid cell without pushing the whole form to the right;
-  - no filter parameters, API logic, export logic, supplement-order flow, transport group logic, database structure, email behavior, or deployment behavior was changed.
-- P3.2 verification:
-  - `npm run build:admin-vue` passed and regenerated the root `admin/` bundle;
-  - local Playwright layout verification on `http://localhost:3140/admin/transport/requests` passed at 1440px and 2560px widths: the filter panel had exactly three `.transport-request-filter-row` rows, each row started at the same left edge, the first field in each row started from the row's left edge, and row widths filled the filter panel;
-  - table horizontal scrolling remained available and the bulk action toolbar remained present after the filter panel.
-
-- Implemented P4a for the existing `/admin/transport/requests` single manual supplement flow:
-  - reused the current right-side `补录接送机订单` entry and modal instead of adding a new entry;
-  - removed the modal's single-order Group ID flow from the visible UI and stopped submitting Group ID from `buildManualRow`;
-  - defaulted the modal's `是否愿意拼车` field to `否`, while keeping `shareable` as an ordinary request field;
-  - renamed the modal's P3 workbench fields to `联系状态`, `收款状态`, `定金 GBP`, and `客服备注`, mapped to `contact_status`, `payment_collection_status`, `deposit_amount_gbp`, and `admin_note`;
-  - `POST /api/transport-manual-import/manual` now creates `transport_requests` only, writes `source = admin_manual`, `offline_recorded = true`, creator/operator metadata, raw payload, and P3 workbench fields, and returns no group id;
-  - direct Group ID input in the single manual API now returns a clear `group_disabled_for_single_manual_request` validation error;
-  - `/api/transport-manual-import/preview` and `/commit` batch import behavior was intentionally left unchanged;
-  - public transport board listing now excludes `source = admin_manual`, and its pickup backfill call excludes `admin_manual` so public-board reads cannot create groups for P4a supplement orders.
-- P4a verification:
-  - `node --check api/transport-manual-import/manual.js` passed;
-  - `node --check api/_lib/transport-manual-import.js` passed;
-  - `node --check api/_lib/transport-group-lifecycle.js` passed;
-  - `node --check public-api-handlers/transport-board.js` passed;
-  - `node --check api/transport-requests/export.js` passed;
-  - `npm run build:admin-vue` passed and regenerated the root `admin/` bundle;
-  - local API/UI validation on `http://localhost:3139/admin/transport/requests` created temporary `P4A-*` pickup/dropoff/shareable-true orders and a UI-created `P4A-UI-*` order, then removed them;
-  - verified created records are in `transport_requests` with `source = admin_manual`, `offline_recorded = true`, default UI `shareable = false`, and saved contact/payment/deposit/admin-note fields;
-  - verified `transport_groups` and `transport_group_members` counts do not change during P4a create flows, including when `shareable = true`;
-  - verified Group ID is rejected for single manual create and no group/member rows are created;
-  - verified keyword search hits name, phone, WeChat, flight number, and order number for P4a orders;
-  - verified filters hit service type, airport, service date, contact status, payment collection status, offline-recorded state, and source;
-  - verified current-filter export and selected-id export both include P4a orders correctly, with selected export not restricted by a conflicting search filter;
-  - verified `/api/public/transport-board` excludes admin manual P4a rows and does not backfill P4a groups, and `/api/public/transport-groups` contains no P4a group content;
-  - cleanup check confirmed no `P4A-*` temporary transport request or group rows remain.
-- Scope intentionally unchanged in P4a:
-  - no production deployment was run;
-  - no database schema, email flow, batch import `/preview` or `/commit`, Excel upload,补录 batch workflow,拼车组管理 page, `adjust_flight_time`, `transfer_existing_group`, or `transport_groups` / `transport_group_members` structure was changed.
-
-- Completed P3 admin transport request workbench filtering and bulk-action polish:
-  - added `PLAN.md` for the P3 implementation scope, acceptance constraints, test plan, and risks;
-  - updated `docs/PROJECT_MAP.md` for the expanded `/api/transport-requests` list/export filter behavior;
-  - `/admin/transport/requests` filter panel now uses the existing order-number input as a single keyword field with placeholder `订单号 / 姓名 / 电话 / 微信 / 航班号`, instead of adding a second search box;
-  - added top-level contact-status and payment-collection-status filters, kept the existing operator filter source from `operator_options`, and renamed the offline-recorded filter copy to `线下记录状态`;
-  - reorganized the filter panel into three operator-focused rows: core trip filters, customer-service state filters, then sort/page/actions;
-  - list and export now share `applyRequestFilters` for keyword, contact status, payment collection status, offline-recorded, airport, status, source/import batch, and service-date filtering;
-  - service-date filtering now matches the workbench display rule: use `preferred_time_start` first, then fall back to `flight_datetime` only when `preferred_time_start` is null;
-  - selected-order export still sends only `ids`, and the server keeps the ids branch independent from current filters;
-  - selected rows are cleared when filters, keyword, pagination, or page size changes; selected-row bulk mark/cancel and export remain disabled until at least one row is selected;
-  - selected-row bulk mark/cancel now shows a second confirmation before mutating and refreshes the list after success;
-  - workbench row save failures now state that the draft is retained, and the action column is more compact while keeping high-risk fields readonly and without adding visible `锁` text.
-- P3 verification:
-  - `node --check api/_lib/transport.js` passed;
-  - `node --check api/transport-requests/index.js` passed;
-  - `node --check api/transport-requests/export.js` passed;
-  - `npm run build:admin-vue` passed and regenerated the root `admin/` bundle;
-  - read-only local API checks with a signed admin session passed for keyword search, airport, contact status, payment collection status, offline-recorded, active status, service-date filtering, current-filter export, and selected-id export with a conflicting search filter;
-  - the selected-id export check confirmed ids export is not secondarily restricted by current filters;
-  - local Playwright UI verification on `http://localhost:3133/admin/transport/requests` passed: the filter panel rendered as three rows, keyword placeholder was correct, contact/payment/offline filters were visible, batch buttons were disabled without selection and enabled after selection, bulk mark displayed the second confirmation, keyword and page-size changes cleared selection, and table horizontal scroll remained available.
-- P3 acceptance repair follow-up:
-  - a temporary local QA transport request `P3QA-*` was inserted with `preferred_time_start = null` and `flight_datetime` set, then removed after verification;
-  - keyword search was verified against order number, student name, phone, WeChat, and flight number;
-  - combination filters passed for airport + contact status + payment status, service date + offline-recorded status using the fallback sample, and keyword + active order status;
-  - UI checks confirmed keyword changes, regular filter changes, and page-size changes clear selected rows; pagination clearing was skipped because the filtered local result had no page 2 in that run;
-  - current-filter export and selected-id export were both verified, including a selected export with a conflicting search filter to confirm `ids` is not secondarily restricted;
-  - export columns were expanded to include current workbench fields: phone, terminal, service datetime, contact status, payment collection status, deposit amount, offline-recorded state, admin note, last operation, and group id;
-  - export content was verified for Chinese headers/labels, Excel-safe date text, and `88.50` style amount formatting;
-  - cleanup check confirmed no `P3QA-*` transport request rows remained.
-- P3.1 small operator-experience polish:
-  - removed the always-visible inline `还原` button from `/admin/transport/requests` workbench rows to reduce action-column crowding;
-  - kept the underlying row draft initialization/reset logic for load/save flows and kept save-failure behavior that preserves the draft and shows the row error message;
-  - dirty rows now show the simple inline state `未保存修改` without offering a restore button;
-  - local build and UI validation passed on `http://localhost:3135/admin/transport/requests`: default row actions were `已保存 / 调整时间 / 详情 / 关闭订单`, dirty row actions were `保存 / 调整时间 / 详情 / 关闭订单 / 未保存修改`, and `还原` was absent in both states.
-- P3/P3.1 final sealing check:
-  - `git status --short` and `git diff --name-status` show only P3/P3.1 workbench source files, shared transport list/export filtering, docs, `PLAN.md`, and regenerated `admin/` bundle files;
-  - no supplement-order workflow, transport group management page, `adjust_flight_time`, `transfer_existing_group`, database structure, email behavior, or production deployment files were changed;
-  - `npm run build:admin-vue` passed again and regenerated the root admin bundle;
-  - final local UI validation passed on `http://localhost:3137/admin/transport/requests` with temporary `P3FINAL-*` data: the filter panel rendered as exactly three rows, keyword/contact/payment/offline filters existed, the bulk action bar was present, inline restore was absent, save success returned to `已保存`, and forced save failure kept the draft with the row error message;
-  - cleanup check confirmed no `P3FINAL-*` transport request rows remained.
-- Scope intentionally unchanged in P3:
-  - no production deployment was run;
-  - no database migration, public page, email behavior,補录订单 logic, `adjust_flight_time`, `transfer_existing_group`, transport group lifecycle, or `transport_groups` / `transport_group_members` structure was changed.
-
-- Preview deployment completed for the admin transport workbench display polish:
-  - GitHub commit deployed: `0fd35b3` (`fix(admin): improve transport workbench table display`);
-  - Vercel preview URL: `https://webside-9xgz5aq2u-wwkevin8s-projects.vercel.app`;
-  - Vercel deployment id: `dpl_J3Dyw4XnUaZgJjqBiDq7qjArGzwg`;
-  - Vercel ready state: `READY`;
-  - CLI deployment output showed build completed and deployment ready, with no build error reported; `vercel inspect` confirmed target `preview` and status `Ready`.
-  - Preview validation passed after user review: the backend workbench route was accessible in Preview and the admin transport workbench display polish was accepted; production deployment has not been run.
-
-- Completed a small admin transport workbench display polish pass:
-  - `/admin/transport/requests` workbench now includes a `是否已记录` column between `定金` and `客服备注`, using the existing `transport_requests.offline_recorded` value and the existing `已记录` / `未记录` labels;
-  - the existing top `线下记录状态` filter logic was not changed;
-  - locked high-risk fields still render as read-only cells with the existing tooltip styling, but the visible `锁` prefix was removed from cell content;
-  - no backend API, database field, transport group lifecycle, automatic matching, or public-facing page logic was changed.
-- Verification for this display polish:
-  - `npm run build:admin-vue` passed and regenerated the root `admin/` bundle;
-  - local admin UI check on `http://localhost:3000/admin/transport/requests` using the existing signed admin-session QA pattern confirmed headers include `是否已记录`, exclude `拼音`, show `已记录` / `未记录` values, keep the top offline-record filter, keep safe-field inputs/selects/notes visible, keep the time-adjust button visible, and show no locked cells whose visible text starts with `锁`.
-  - safe-field save regression used temporary order `PU260524-0001` in group `GRP-260524-BWS9`; `update_safe_fields` saved contact/payment/deposit/admin-note values successfully, and the temporary request, membership, and group were deleted after the check.
-
-- Preview deployment completed for the P0/P1/P2a transport workbench release candidate:
-  - GitHub commit deployed: `c8f8b14` (`fix(admin): clean up P2a test data controls`);
-  - Vercel preview URL: `https://webside-c1o3k0kpi-wwkevin8s-projects.vercel.app`;
-  - Vercel deployment id: `dpl_Ba71dPadvSV7dHnY7uEnCDPncWmy`;
-  - Vercel ready state: `READY`;
-  - CLI deployment output showed build completed and deployment ready, with no build error reported.
-- Preview environment acceptance is currently blocked in the normal browser by Vercel Deployment Protection:
-  - opening `https://webside-c1o3k0kpi-wwkevin8s-projects.vercel.app/admin/transport/requests` redirects to the Vercel login page before the NGN admin app loads;
-  - authenticated `vercel curl` can reach the protected deployment and returned HTTP 200 for `/admin/transport/requests`, so the deployment exists and serves the admin bundle behind protection;
-  - no Vercel bypass secret/cookie is present locally, and the available local/preview bootstrap password check did not produce a working app admin login;
-  - full Preview UI acceptance still needs either a browser session logged into the Vercel team with access or an approved Deployment Protection bypass URL/token; production deployment should wait until that Preview UI check is completed.
-
-- Completed the P2a wrap-up patch before deployment:
-  - queried Supabase for obvious P2/P2a test transport requests matching P2A/regression/test markers in `student_name`, `wechat`, or `admin_note`; no persistent matching rows remained in the database before the patch verification;
-  - verified the old P2a UI test names such as `P2A Move Regression`, `P2A UI Old Mate Safe`, `TEST P2A UI`, `p2aui_target`, and `p2aui_current` no longer appear on `/admin/transport/requests`;
-  - restored the workbench operation-column dangerous action as a safe split action: normal/real rows show `关闭订单`, while rows with obvious P2A/predeploy test markers show `删除测试单`;
-  - real rows use the existing `PATCH /api/transport-requests/:id` close behavior, preserving the transport request row and letting the existing lifecycle remove membership and sync affected groups;
-  - test rows still use the existing `DELETE /api/transport-requests/:id` path, with a clearer second-confirmation dialog that says physical deletion is only for obvious P2A/temporary test data;
-  - local UI verification on `http://localhost:3000/admin/transport/requests` created temporary test order `PU260523-0100` in group `GRP-260523-WZVD`, confirmed `删除测试单` and the confirmation dialog were visible, then deleted the temporary request, its membership, and the now-empty test group through the UI;
-  - the same UI check confirmed real rows show `关闭订单`, the workbench headers still exclude pinyin, safe-field inputs remain visible, and the time-adjust modal still shows the P1/P2a options including `transfer_existing_group`.
-
-- Implemented P2a for the admin transport request time-adjustment flow:
-  - added `GET /api/transport-requests/:id/time-adjust-candidate-groups` for admin-only candidate group lookup;
-  - extended `PATCH /api/transport-requests/:id` `action: "adjust_flight_time"` with `handling_method: "transfer_existing_group"` and `target_group_id`;
-  - candidate groups are generated by the backend only and filtered by service type, airport, new service date, joinable status, non-empty membership, remaining seats, current-group exclusion, 3-hour time window, and terminal compatibility;
-  - save-time transfer revalidates the target group on the server, rejects current-group targets, mismatch targets, insufficient capacity, and multiple current memberships, then updates the request time, moves membership to the target group, syncs old and target groups, and writes `admin_operation_logs`;
-  - the transfer flow uses an application-layer compensation path instead of a Supabase RPC transaction: if a mid-flow failure occurs, it attempts to delete the target membership, restore the old membership, restore request time/operator fields, and resync both groups;
-  - `/admin/transport/requests` now shows a third grouped-order option in the time-adjust modal, loads backend candidate groups, requires choosing one before save, and still keeps P1 `keep_group` / `move_out` behavior unchanged.
-- P2a verification:
-  - `node --check` passed for `api/transport-requests/[id].js`, `api/_lib/transport-group-lifecycle.js`, `api/transport-requests/[id]/time-adjust-candidate-groups.js`, and `dev-server.js`;
-  - `npm run build:admin-vue` passed and regenerated the root `admin/` bundle;
-  - `npm run build:prod` passed without deployment;
-  - local UI check on `http://localhost:3107/admin/transport/requests` passed: the workbench opens, safe-field inputs exist, pinyin is absent, the time-adjust button opens the modal, and the three grouped options including transfer are visible;
-  - real API test data used temporary orders `PU260523-0067` through `PU260523-0072`, then cleaned up requests/groups; audit logs remain;
-  - candidate API returned matching target group `GRP-260523-JX76`, excluded the current group `GRP-260523-2R9A`, and excluded a mismatched-airport group;
-  - successful transfer moved order `PU260523-0067` from `GRP-260523-2R9A` to `GRP-260523-JX76`; target group changed from 1 passenger / 4 remaining seats to 2 passengers / 3 remaining seats and operation log metadata recorded old/new group ids, reason, and `transfer_existing_group`;
-  - insufficient capacity returned 409, current-group target returned 400, airport mismatch target returned 400, and the request stayed in its original group after rejected transfers;
-  - P0 safe-field save still returned 200 and a high-risk `airport_code` field in `update_safe_fields` still returned 400;
-  - P1 `keep_group` kept membership and group counts unchanged, and P1 `move_out` still moved the order into a new single-member group;
-  - the live database has a unique `transport_group_members_request_id_key`, so a true multiple-membership row cannot be constructed through normal inserts; a helper-level mock verified the P2a transfer function returns 409 if multiple memberships are ever read.
-- Scope intentionally unchanged in P2a:
-  - no database migration, new field, SQL function, or Supabase RPC was added;
-  - no public-facing page logic, automatic matching logic, batch transfer, or P0 `update_safe_fields` logic was changed;
-  - `keep_group` and `move_out` semantics remain as in P1.
-- P2a candidate API 404 follow-up:
-  - browser request inspection confirmed the modal sends `GET /api/transport-requests/{database_uuid}/time-adjust-candidate-groups` with both `flight_datetime` and `preferred_time_start` query parameters;
-  - the 404 seen during UI review was caused by the running local helper server not having the newly added route mapping loaded yet; after restarting the local helper server, the same request returned 200 and the candidate area showed the normal empty-state message instead of `Request failed with 404`;
-  - `api/transport-requests/[id]/time-adjust-candidate-groups.js` now also returns an explicit 404 JSON response for a genuinely unknown request id, while real UI request ids return 200 with a `candidate_groups` array.
-- P2a candidate-card UI follow-up:
-  - fixed the candidate-card render blocker caused by a missing `statusLabel` formatter in `TransportRequestsView.vue`;
-  - real UI validation used temporary order `PU260523-0079`, old group `GRP-260523-VE5C`, and target group `GRP-260523-PZBV`; the candidate API returned 200, the candidate card rendered with group id/status/date-time/airport-terminal/capacity/member summary, the target card was selectable, and save returned 200;
-  - after save, `PU260523-0079` had only target membership `GRP-260523-PZBV`; old group `GRP-260523-VE5C` changed from 2 passengers / 3 remaining seats to 1 passenger / 4 remaining seats, and target group `GRP-260523-PZBV` changed from 1 passenger / 4 remaining seats to 2 passengers / 3 remaining seats;
-  - `admin_operation_logs` recorded old group, new group, before/after times, reason, and `handling_method: transfer_existing_group`;
-  - no-candidate UI showed the friendly empty-state message, a genuinely unknown id returned 404 JSON, P0 `update_safe_fields` returned 200, P1 `keep_group` kept membership/counts unchanged, P1 `move_out` created a replacement single-member group, and sidebar widths remained 248px expanded / 64px collapsed.
-- P2a 404 recheck after commit:
-  - rechecked `localhost:3107` and a fresh `localhost:3111` helper server plus `vercel dev` at `localhost:3001`; all returned 200 for a real request id on `GET /api/transport-requests/:id/time-adjust-candidate-groups` with both time query parameters;
-  - captured the real UI request URL as `http://localhost:3107/api/transport-requests/d0c8b4be-c05f-48fa-b994-2ab6ae678160/time-adjust-candidate-groups?...`; the id used by the Vue UI was the `transport_requests.id` UUID, not order number, group id, or `undefined`;
-  - temporary test orders `PU260523-0090` / `PU260523-0091` showed one candidate card for target group `GRP-260523-9UST`, then a no-candidate time showed the friendly empty-state message with 200 + empty array; the temporary requests and groups were cleaned up after verification;
-  - conclusion: the observed `Request failed with 404` is consistent with a stale local helper server or stale browser/bundle that had not loaded the committed route; the current source and rebuilt local routes no longer reproduce the 404 for real orders.
-- P2a candidate-route hardening after the 404 persisted in UI:
-  - `apps/admin-vue/src/api/admin-api.js` still tries the required canonical path `/api/transport-requests/{request.id}/time-adjust-candidate-groups` first, but if that specific call returns 404 it retries the existing hot-reloaded detail route `/api/transport-requests/{request.id}?action=time_adjust_candidate_groups...`;
-  - `/api/transport-requests/:id` now supports GET `action=time_adjust_candidate_groups`, which avoids stale local dev-server route tables without adding a second flat candidate API route;
-  - `dev-server.js` maps the canonical nested candidate route for local testing;
-  - direct API verification on `localhost:3112` returned 200 for both canonical and fallback routes using request id `210a4902-9ffc-482a-9e73-db5955831f47`, while an invalid fallback `request_id` still returned 404 JSON;
-  - direct API verification on the already-running stale `localhost:3000` server returned 200 for `/api/transport-requests/210a4902-9ffc-482a-9e73-db5955831f47?action=time_adjust_candidate_groups...`;
-  - a Playwright test on `localhost:3000` forced the canonical route to return 404 and confirmed the Vue UI retried the existing detail-route fallback and showed the friendly empty-state message instead of `request not found`.
-- P2a time-adjust modal disabled-save hint follow-up:
-  - `/admin/transport/requests` now shows the current reason why `保存调整` is disabled instead of only greying out the button;
-  - disabled reasons cover missing new flight/pickup times, missing adjustment reason, missing grouped handling method, candidate loading/error states, and missing target group for `transfer_existing_group`;
-  - local UI verification on `localhost:3000` used temporary orders `PU260523-0092` through `PU260523-0094`: after selecting `transfer_existing_group` and target group `GRP-260523-AN55` while the reason was empty, the modal displayed `请填写调整原因` and kept save disabled; after filling a reason, the prompt cleared and save became enabled;
-  - save verification moved `PU260523-0093` from old group `GRP-260523-KHVB` to target group `GRP-260523-AN55`; the old group became empty and was removed by the existing lifecycle cleanup, the target group held two passengers with three remaining seats, and the temporary requests/groups were cleaned up after verification.
-
-- Implemented the narrow P1 transport request workbench update:
-  - `/admin/transport/requests` no longer shows the `student_pinyin` column and no longer includes pinyin in the row draft/save payload;
-  - each workbench row now has an `调整时间` action that opens a modal showing current flight time, current pickup time, current group information, editable new flight/pickup times, required adjustment reason, and handling method for grouped orders;
-  - `/api/transport-requests/:id` now has an independent `action: "adjust_flight_time"` branch separate from `update_safe_fields`;
-  - the P1 time branch updates `transport_requests.flight_datetime` and `transport_requests.preferred_time_start`, plus `last_operated_by` and `last_operated_at`, and writes `admin_operation_logs` with before/after times, reason, group ids, and handling method;
-  - ungrouped orders save the new times directly and do not create groups, auto-match, or touch other orders;
-  - grouped orders using `keep_group` keep their existing `transport_group_members` relationship and do not call group sync/backfill/remove helpers;
-  - grouped orders using `move_out` call the existing `removeRequestFromGroup` helper with replacement regroup enabled, so the request is removed from the old group, the old group is resynced, and the request receives a new single-member group container without auto-matching to any existing group;
-  - no database fields were added or removed in P1, and no public-facing pages, automatic matching flow, or transport group table schema was changed.
-- Verification for the P1 implementation:
-  - `node --check api/transport-requests/[id].js` passed;
-  - `npm run build:admin-vue` passed and regenerated the root `admin/` bundle;
-  - `npm run build:prod` passed without deployment.
-- P1 real acceptance passed:
-  - ran against Supabase project `ngn-transport` using temporary `TEST P1` orders and the local signed admin-session QA fallback;
-  - ungrouped order `PU260523-0052` adjusted successfully with no membership before or after, updated only `flight_datetime` / `preferred_time_start`, wrote `last_operated_by` / `last_operated_at`, and wrote operation log `b88a32b8-3bc7-476e-81f6-40a721c5bc17`;
-  - grouped keep-group order `PU260523-0053` in group `GRP-260523-ALCF` adjusted successfully: membership stayed unchanged, group stayed `single_member`, passenger count stayed `1`, remaining seats stayed `4`, missing reason returned 400, missing grouped handling method returned 400, and operation log `866e5998-af62-444f-9837-695e2c7194f1` recorded before/after time, reason, and `keep_group`;
-  - grouped move-out order `PU260523-0054` moved from old group `GRP-260523-9GRG` to new single-member group `GRP-260523-23XN`; old group changed from 2 passengers / 3 remaining seats to 1 passenger / 4 remaining seats, the new group had 1 passenger / 4 remaining seats with status `single_member`, and operation log `2ab387b0-d957-400f-800c-9d1849736fb2` recorded old group, new group, before/after time, reason, and `move_out`;
-  - temporary test requests/groups were cleaned after verification; admin operation logs remain as audit evidence;
-  - local UI verification passed: `/admin/transport/requests` has no pinyin column, the time-adjust modal opens, radio options are left-aligned with descriptions, and the save button is disabled while reason is empty.
-
-- Implemented the P0 Vue transport request customer-service workbench:
-  - added `supabase/20260523_transport_request_workbench_fields.sql` for `student_pinyin`, `contact_status`, `payment_collection_status`, and `deposit_amount_gbp` on `transport_requests`; the migration is now strictly additive, using `add column if not exists` plus `pg_constraint` existence checks before adding check constraints, with no drop/rebuild statements;
-  - `/api/transport-requests/:id` now has an `action: "update_safe_fields"` branch limited to student/contact/payment-note fields and rejects airport, flight, time, passenger, luggage, shareable, and group fields with a 400 before saving;
-  - the safe-field PATCH branch skips transport group backfill, close-expired cleanup, group-member removal, group status sync, and payment-confirmation email logic; existing GET, legacy PATCH, and DELETE behavior retains the pre-existing lifecycle handling;
-  - `/api/transport-requests` now returns the workbench fields needed by the Vue list while preserving the existing legacy fallback when the migration has not been applied yet;
-  - `/admin/transport/requests` now renders a dense customer-service table with per-row drafts, per-row save buttons, dirty-row marking, error preservation, and locked high-risk fields;
-  - this pass did not modify public pages, transport group tables, group-member tables, automatic matching, or transport group lifecycle logic.
-- Verification for the P0 workbench:
-  - `node --check api/transport-requests/[id].js` passed;
-  - `node --check api/transport-requests/index.js` passed;
-  - `npm run build:admin-vue` passed and regenerated the root `admin/` bundle;
-  - `npm run build:prod` passed;
-  - local browser check reached `/admin/transport/requests` and correctly showed the protected admin login gate when unauthenticated;
-  - Supabase migration `transport_request_workbench_fields` was applied to project `ngn-transport` and verified: the four new columns and three check constraints exist on `public.transport_requests`;
-  - local password login with the current `.env` bootstrap credentials returned 401, so the real password-login portion of acceptance still needs a current approved admin password;
-  - using the existing local signed admin-session QA fallback, `/admin/transport/requests` opened and showed the workbench table headers and row save controls;
-  - using the same local signed admin-session QA fallback, `action: "update_safe_fields"` saved a grouped order's `admin_note`, a follow-up GET returned the saved value, and the test restored the original `admin_note`;
-  - high-risk fields `airport_code`, `flight_datetime`, `passenger_count`, and `group_id` each returned 400 when included in an `update_safe_fields` request, and the blocked requests did not change the saved note;
-  - the tested grouped order stayed in group `GRP-260508-8HBV`; group status, member count, max passengers, and remaining seats were unchanged before save, after blocked-field tests, and after restoration;
-  - full safe-field acceptance then saved `student_name`, `student_pinyin`, `phone`, `wechat`, `contact_status`, `payment_collection_status`, `deposit_amount_gbp`, and `admin_note` on grouped order `PU260508-0027`, verified the saved values through direct GET and refreshed list-by-order-number reads, confirmed the four high-risk fields still returned 400, and restored the original safe-field values;
-  - Supabase advisors were checked after the migration; they reported existing project-wide RLS/no-policy, function search path, extension, unused-index, and duplicate-index notices, but no new workbench-specific table or constraint failure was found.
-
-- Implemented the 2.0 NGN admin collapsible sidebar:
-  - desktop sidebar now toggles between the existing 248px expanded layout and a 64px icon-only collapsed layout;
-  - collapsed state is stored in `localStorage` as `ngn-admin-sidebar-collapsed`, so refresh preserves the operator's last sidebar state;
-  - existing menu-group expanded/collapsed state stays separate from the sidebar collapsed state and is restored when expanding the sidebar again;
-  - collapsed navigation uses simple icon-only links with native title tooltips and no flyout interaction;
-  - sidebar account/footer adapts between full username/logout controls and compact user/logout icons;
-  - small screens now hide the sidebar by default and expose a basic left drawer through a mobile menu button and overlay.
-- Verification for the sidebar update:
-  - `npm run build:admin-vue` passed and regenerated the root `admin/` bundle;
-  - Playwright checked `/admin/transport/requests`, `/admin/storage/orders`, `/admin/storage/box-orders`, and `/admin/managers`;
-  - each checked page expanded from 1192px main content width to 1376px after sidebar collapse at a 1440px viewport;
-  - focused checks found no body-level horizontal overflow and no filter, pagination, or top/action toolbar overflow after collapse;
-  - refresh persistence, menu-group state preservation, mobile drawer open, and overlay close all passed;
-  - `npm run build:prod` passed after clearing stale `.vercel/output/`.
-
-- Completed the final production regression acceptance against `https://ngn.best`; the current production version is ready for boss demo:
-  - admin login, session refresh persistence, and logout-protected API behavior passed;
-  - pickup/dropoff manual supplement import, Excel template download, CSV template download, copy-template action, date recognition, CSV/XLSX preview, import commit/list/filter/detail workflow, detail editing, and export all passed;
-  - supported import date formats verified in production included `13/09/2026 14:30`, `13-09-2026 14:30`, `2026/09/13 14:30`, `2026-09-13 14:30`, and Excel serial dates;
-  - carpool full-group display rules passed: full groups are hidden from the student public list, full groups remain visible in the admin backend, and underfull groups remain publicly visible;
-  - no P0 or P1 issue was found during the final regression;
-  - all production `TEST_` temporary test orders were cleaned up, and the final remaining count was 0.
-
-- Fixed the production 2.0 admin transport QA findings:
-  - transport manual import date parsing now supports Excel serial dates, `YYYY/MM/DD HH:mm`, `YYYY-MM-DD HH:mm`, `DD/MM/YYYY HH:mm`, `DD-MM-YYYY HH:mm`, date-only `DD/MM/YYYY`, `YYYY/MM/DD`, and `YYYY-MM-DD`, with UK/China-style day/month parsing by default;
-  - manual import can combine split date/time columns through aliases such as `flight_date` + `flight_time` and `service_date` + `service_time_only`;
-  - added `scripts/verify-transport-manual-import-dates.js` covering `13/09/2026 14:30`, date-only values, Excel serial dates, and split date/time columns;
-  - the Vue admin batch-import dialog now has a separate `下载 CSV 模板` button using the same shared import headers/examples as the existing template controls;
-  - public transport board/group list responses now filter out full groups, while admin group/request views remain unchanged.
-- Verification before release:
-  - `node --check api/_lib/transport-manual-import.js` passed;
-  - `node --check public-api-handlers/transport-board.js` and `node --check public-api-handlers/transport-groups.js` passed;
-  - `node scripts/verify-transport-manual-import-dates.js` passed;
-  - `npm run build:admin-vue` passed and regenerated the root `admin/` bundle;
-  - `npm run build:prod` passed;
-  - `npm run qa:playwright:smoke` passed locally, using the existing local signed admin-session fallback because local password login still does not accept the bootstrap password.
-- Release and production smoke for this fix:
-  - GitHub commit `ff0a888` (`Fix transport import smoke findings`) was pushed to `origin/codex/membership-v1`;
-  - follow-up GitHub commit `cfdbc39` (`Use London time for import date parsing`) was pushed to ensure import datetime construction is fixed to `Europe/London` semantics on Vercel;
-  - Vercel Production deployment `dpl_FS4dfZ7YfHr12NpfoijkGDQzCeq3` completed with ready URL `https://webside-o4fly0d8k-wwkevin8s-projects.vercel.app` and was aliased to `https://ngn.best`;
-  - production smoke confirmed the admin bundle contains `transport-manual-import-template.csv`, the batch dialog shows `下载 CSV 模板`, `/api/transport-manual-import/preview` accepts `13/09/2026 14:30` as `2026-09-13T13:30:00.000Z`, a temporary full group reached `full` at 5/5, public `/api/public/transport-groups` and `/api/public/transport-board` no longer returned that full group, and all `TEST Fix Full Group 2` smoke orders were deleted with 0 remaining.
-
-- Ran a production 2.0 NGN admin transport smoke QA against `https://ngn.best` using the approved temporary test admin account without storing credentials in code:
-  - admin login to `/admin/`, navigation to `/admin/transport/requests`, session persistence after refresh, and logout API blocking all passed;
-  - transport request list loading, published status filtering, offline-recorded filtering, current-filter export, and single-order detail loading passed;
-  - created a production test order named `TEST Transport Smoke`, confirmed it appeared in the list, edited detail fields, refetched persistence, and confirmed filtered export included it;
-  - CSV upload entered the batch-import preview table, XLSX template download worked, and a filled XLSX upload entered preview with one importable row;
-  - manual pickup test order received a `group_id`, joining an existing group worked, passenger count synced to full at 5/5, the public board showed full groups as not joinable, and removing one member resynced the group count;
-  - unauthenticated `/api/transport-requests` and `/api/transport-manual-import/preview` returned 401, and unauthenticated `/admin/transport/requests` redirected to login without exposing test/order data;
-  - all production test orders with names containing `TEST Transport Smoke` created during the run were deleted, and the follow-up search returned 0 remaining rows.
-- Production QA findings from this pass:
-  - P1: batch preview did not accept the requested UK-style datetime `13/09/2026 14:30`; that row stayed red with missing datetime errors while `2026/9/13 14:30` and Excel serial datetime rows were importable with duplicate warnings;
-  - P2: the batch dialog has `复制导入模板` and `下载 Excel 模板`, but no separate `下载 CSV 模板` action, so the explicit CSV-template-download requirement is not currently met;
-  - no P0 issue was found, so no business code was changed or deployed during this task.
-
-- Fixed the Vue admin manager-create error shown after entering an email address in the `账号` field:
-  - backend manager validation messages in `api/_lib/admin-managers.js` now return readable Chinese instead of mojibake;
-  - manager create/update success and duplicate-account messages in `api/admin/[...action].js` were cleaned up for the manager endpoints;
-  - `/admin/managers` now validates the account format before submitting and tells operators that the account must be 4-32 characters using lowercase letters, numbers, `.`, `_`, or `-`, and cannot be an email address;
-  - the manager edit modal uses the app's own validation message instead of a browser-native pattern bubble, so the error appears in the same inline red notice area as other admin errors.
-- Verification for this fix:
-  - `node --check api/_lib/admin-managers.js` passed;
-  - `node --check api/admin/[...action].js` passed;
-  - direct helper smoke confirmed `test-admin@ngn.best` as `username` returns the readable account-format message;
-  - local browser smoke opened `/admin/managers`, clicked `新增管理员`, entered the screenshot-equivalent email-format account, and confirmed the inline readable validation message appears without creating data;
-  - `npm run build:admin-vue` passed and regenerated the root `admin/` bundle;
-  - `npm run build:prod` passed.
-- Release for this fix:
-  - GitHub commit `7de8e27` (`Fix manager validation error text`) was pushed to `origin/codex/membership-v1`;
-  - Vercel Production deployment `dpl_DXG3bUpJaZE73R4FY7K2uE6v3ocw` completed and was aliased to `https://ngn.best`;
-  - production `/admin/` now references `admin/assets/index-re9AUhRU.js`, and that asset contains the new `4-32` account-format validation copy;
-  - unauthenticated production `/api/admin/session` still returns `authenticated: false`.
-
-- Ran read-only production checks against `https://ngn.best`:
-  - `/`, `/pickup`, `/storage`, `/moving`, `/transport-board.html`, and `/admin-login.html` returned reachable responses;
-  - `/pickup.html` returned the expected canonical redirect to `/pickup`;
-  - `/admin/transport/requests` returned the Vue admin shell HTML, confirming the production route rewrite is active;
-  - unauthenticated `/api/transport-manual-import/preview` returned 401;
-  - unauthenticated `/api/transport-requests` returned 401;
-  - unauthenticated `/api/admin/session` returned `authenticated: false`;
-  - public-only checks did not create or mutate production data.
-- Production admin protected-page caveat from this check:
-  - `PLAYWRIGHT_BASE_URL=https://ngn.best npm run qa:playwright:smoke` could open public pages, but the admin page assertion did not pass because password login still failed with the local bootstrap credentials and the local signed admin-session fallback was rejected by production;
-  - direct debug confirmed the signed cookie attempt redirects to `/admin-login.html?return_to=%2Fadmin%2Ftransport%2Frequests`, so production cannot be fully admin-smoked without a current approved admin login.
-
-- Updated `scripts/playwright-smoke.js` for the 2.0 NGN admin routes:
-  - admin smoke login now targets `/admin/transport/requests` instead of the retired `transport-admin-groups.html` path;
-  - the admin assertion now waits for the Vue transport request view and its `批量补录` action instead of old HTML backend copy;
-  - the admin screenshot output is now `output/playwright/smoke-admin-transport-requests.png`;
-  - when the local bootstrap password has been changed in the database and password login returns `账号或密码错误`, the smoke test now uses the existing local signed admin-session QA pattern to verify the protected Vue admin page.
-- Verification for this smoke-test update:
-  - `node --check scripts/playwright-smoke.js` passed;
-  - `npm run qa:playwright:smoke` passed against `http://localhost:3000`;
-  - the run produced screenshots for pickup home, transport board, and the Vue admin transport request page;
-  - the run reported that local password login did not reach `/admin/transport/requests` and used the signed admin session fallback because the current local bootstrap credentials are no longer accepted.
-
-- Deployed the current 2.0 NGN admin transport/manual-import backend update to Vercel Production:
-  - GitHub-first release order was followed: commit `9812e98` (`Launch transport manual import admin updates`) was pushed to `origin/codex/membership-v1` before deployment;
-  - Vercel Production deployment `dpl_BNSMhvzh9jbnTUjSgWnxV44Mzf3u` completed with ready URL `https://webside-llnbfzh8h-wwkevin8s-projects.vercel.app`;
-  - production alias `https://ngn.best` was updated to the deployment.
-- Verification for this production release:
-  - `node --check` passed for `api/_lib/transport.js`, `api/_lib/transport-manual-import.js`, `api/admin/[...action].js`, transport request/group API routes, and the three manual-import API routes;
-  - `npm --prefix apps/admin-vue audit` returned 0 vulnerabilities;
-  - `npm run build:admin-vue` passed and regenerated the root `admin/` bundle;
-  - `npm run build:prod` passed for the production target;
-  - `git diff --check` passed with only existing line-ending warnings;
-  - local fallback checks returned 200 for `/admin/transport/requests`, 200 for `/transport-board.html`, and 401 for unauthenticated `/api/transport-manual-import/preview`;
-  - production checks on `https://ngn.best` returned 200 for `/admin/transport/requests`, 200 for `/transport-board.html`, and 401 for unauthenticated `/api/transport-manual-import/preview`.
-- Fixed the batch manual-import XLSX date-cell parsing path after operator screenshot review:
-  - frontend CSV/XLSX/paste parsing now canonicalizes date-time cells before sending preview rows to the backend;
-  - `航班日期时间` and `服务日期时间` cells that arrive from Excel as `Date` objects, Excel serial numbers, or common object-shaped values are converted to stable `YYYY/MM/DD HH:mm` text before preview;
-  - backend date parsing now also accepts object-shaped date values with `value`, `text`, `result`, `date`, `v`, or `w` fields as a defensive fallback;
-  - screenshot-equivalent rows with `5/22/2026 12:00` / `5/22/2026 10:00` under the correct headers preview as ready in the backend smoke test, while time-only values still fail as required.
-- Verification for this XLSX date-cell fix:
-  - `node --check` passed for `api/_lib/transport-manual-import.js` and the three manual-import API routes;
-  - direct smoke confirmed the screenshot-equivalent row previews as ready, Excel serial date-time values preview as ready, old `航班时间` / `服务时间` aliases still work, empty templates still return the no-order-data message, and time-only values still return red date-time errors;
-  - `npm run build:admin-vue` passed and regenerated the root `admin/` bundle;
-  - `npm run build:prod` passed.
-
-- Unified batch manual-import field definitions around a single shared source of truth:
-  - added `shared/transport-manual-import-columns.json` with the canonical column order, labels, aliases, template notes, and example values;
-  - the Vue admin now derives copy-template headers, Excel workbook headers, sample paste data, template notes, and frontend header parsing from that shared column file;
-  - frontend CSV/XLSX/paste parsing canonicalizes aliases before checking required headers, so old `航班时间` and `服务时间` spreadsheets are accepted as aliases for `航班日期时间` and `服务日期时间`;
-  - newly generated templates only use `航班日期时间` and `服务日期时间`;
-  - backend preview and commit validation now build template-field aliases from the same shared column file before running the existing normalization/validation flow;
-  - uploading the system-generated empty Excel template should now produce `模板已读取，但没有订单数据。请在第二行开始填写订单后重新上传。` rather than reporting missing date-time columns.
-- Required regression checks after this field unification all passed:
-  - downloaded-template header order matches the required 16 fields and does not contain old `航班时间` / `服务时间` labels;
-  - empty downloaded-template simulation returns the no-order-data message instead of missing-field errors;
-  - downloaded-template with one data row previews as ready;
-  - copy-template paste with one data row previews as ready;
-  - old `航班时间` / `服务时间` headers preview as ready through aliases;
-  - time-only `12:00` / `10:00` still returns red date-time errors;
-  - `5/22/2026 12:00` is recognized and normalizes to `2026/05/22 12:00` in the preview display logic.
-- Verification for this pass:
-  - `node --check` passed for `api/_lib/transport-manual-import.js` and the three manual-import API routes;
-  - `npm run build:admin-vue` passed and regenerated the root `admin/` bundle;
-  - `npm run build:prod` passed;
-  - source scan confirmed only the shared alias config retains old time-field labels, while new frontend templates and preview headers use the new date-time labels;
-  - `git diff --check` passed with only existing line-ending warnings.
-
-- Fixed the batch manual-import file upload preview chain in the Vue admin:
-  - uploading `.csv` or `.xlsx` now sets an explicit parsing status, clears stale preview rows, parses the file, stores parsed rows in the import row state, and immediately calls the backend preview flow when data rows exist;
-  - upload states are now visible in the dialog: `正在解析文件……`, `已解析 X 行，正在预览……`, `预览完成：可导入 X 行，警告 X 行，错误 X 行`, unsupported-file errors, parse failures, or empty-template guidance;
-  - empty templates now show `模板已读取，但没有订单数据。请在第二行开始填写订单后重新上传。` instead of silently falling back to the generic paste/upload prompt;
-  - `重新校验预览` now enables when pasted text exists, parsed uploaded rows exist, or preview rows already exist, so uploaded-file preview can be retried without requiring textarea content;
-  - upload and paste remain independent inputs: if the textarea is empty but uploaded rows exist, preview/re-preview uses the uploaded rows instead of asking the operator to paste content;
-  - the batch dialog still renders the full preview table after successful upload preview with status, original row number, parsed fields, editable Group ID, and error/warning reasons.
-- Verification for the upload preview state fix:
-  - source scan confirmed `importStatusMessage`, `canPreviewImport`, the upload parse statuses, empty-template message, and the updated `重新校验预览` disabled condition are present;
-  - `npm run build:admin-vue` passed and regenerated the root `admin/` bundle;
-  - `npm run build:prod` passed.
-
-- Extended batch manual-import datetime parsing for Excel auto-formatted complete dates:
-  - backend import parsing now accepts `2026/05/22 12:00`, `2026-05-22 12:00`, `5/22/2026 12:00`, `05/22/2026 12:00`, XLSX `Date` objects, and Excel serial date-time numbers;
-  - `M/D/YYYY HH:mm` input is interpreted as US-style `MM/DD/YYYY HH:mm`, so `5/22/2026 12:00` previews as the same London-time moment shown in the admin table as `2026/05/22 12:00`;
-  - ambiguous US-style values where both month and day are <= 12, such as `5/6/2026`, now remain importable but receive the yellow warning `检测到美式日期格式，请确认是否为 ...`;
-  - time-only text such as `12:00`, Excel time-only serial values, and Excel default dates in 1899/1900 remain invalid and stay red in preview;
-  - the Excel/template notes now recommend `2026/05/22 12:00` while explicitly noting that Excel's `5/22/2026 12:00` display is supported.
-- Verification for Excel date compatibility:
-  - `node --check` passed for `api/_lib/transport-manual-import.js` and the three manual-import API routes;
-  - direct helper smoke confirmed the four supported string formats, XLSX-style `Date` objects, Excel serial date-time numbers, time-only rejection, and the ambiguous US-date yellow warning;
-  - source scan confirmed the updated template guidance is present;
-  - `npm run build:admin-vue` passed and regenerated the root `admin/` bundle;
-  - `npm run build:prod` passed.
-
-- Fixed batch manual-import datetime handling for Excel time-only values:
-  - template headers, clipboard template, sample paste text, Excel workbook sheets, and preview table now use `航班日期时间` and `服务日期时间` instead of `航班时间` and `服务时间`;
-  - template notes now explicitly require complete date-time values such as `2026/05/24 12:00` or `2026-05-24 12:00`;
-  - backend import parsing now rejects time-only text such as `12:00`, Excel time-only serial values such as `0.5`, and Excel default-date values in 1899/1900 instead of converting them to `1899/12/30`;
-  - backend aliases still accept the old `航班时间` and `服务时间` headers for compatibility, but the generated template now guides operators to the stricter date-time fields;
-  - invalid date-time rows stay red in preview with `请填写完整日期时间，例如 2026/05/24 12:00。`, so they cannot be imported.
-- Verification for this datetime fix:
-  - `node --check api/_lib/transport-manual-import.js` passed;
-  - direct helper smoke confirmed complete date-time values parse, while `12:00`, Excel serial `0.5`, and `1899-12-30` Date values are rejected as red preview errors;
-  - source scan confirmed the new `航班日期时间` / `服务日期时间` template and preview labels are present;
-  - `node --check` passed for the three manual-import API routes;
-  - `npm run build:admin-vue` passed and regenerated the root `admin/` bundle;
-  - `npm run build:prod` passed when rerun after the admin bundle build completed;
-  - `git diff --check` passed with only existing line-ending warnings.
-
-- Fixed batch manual-import file upload preview state:
-  - uploading `.csv` or `.xlsx` now parses the file and immediately enters the backend preview flow instead of only showing the file name;
-  - `.xls` and other unsupported formats are rejected with `当前文件格式不支持，请上传 .xlsx 或 .csv 文件。`, and the file picker now advertises only CSV/XLSX formats;
-  - uploaded template files with only headers now show `已读取模板，但未检测到订单数据行，请填写数据后重新上传`;
-  - successful upload stores parsed rows in `importRows`, so `重新校验预览` becomes available and reuses the uploaded file data;
-  - if paste text is empty but uploaded rows exist, `预览粘贴内容` re-previews the uploaded rows instead of asking the operator to paste content;
-  - the disabled import button now has a visible reason when there is no successful preview, no importable row, or unconfirmed yellow warning rows.
-- Verification for the upload preview fix:
-  - `npm run build:admin-vue` passed and regenerated the root `admin/` bundle;
-  - `npm run build:prod` passed;
-  - `node --check api/_lib/transport-manual-import.js` passed;
-  - source scan confirmed the unsupported-format and empty-template messages, `parseSheetRows`, and the CSV/XLSX-only file accept list are present;
-  - `git diff --check` passed with only existing line-ending warnings;
-  - local helper server on port 3001 returned 200 for `/admin/transport/requests`.
-
-- Added `docs/NGN_2_ADMIN_PREPROD_QA.md` as the local准线上 QA flow for 2.0 NGN admin before Vercel Production:
-  - documents the required Vercel CLI sequence: `vercel link`, `vercel pull --environment=preview`, `vercel build`, and `vercel dev`;
-  - captures automated checks for `npm run build:admin-vue`, `npm run build:prod`, `vercel build`, `vercel dev`, and the four manual-import API `node --check` commands;
-  - includes a source scan procedure for localhost, hardcoded domains, local/Windows paths, and test-account leakage;
-  - records environment-variable presence checks without exposing secret values;
-  - records Supabase migration verification SQL and notes that the implemented creator fields are `created_by_admin_id` and `created_by_admin_name`, not a literal `created_by` column;
-  - provides the Vercel-dev manual workflow checklist for admin login, transport list loading, manual supplement with/without Group ID, paste/CSV/XLSX preview, commit, group passenger/payment sync, import-batch filtering, and public pickup form submission.
-- Verification performed during this QA-process pass:
-  - `vercel link --yes` passed for `wwkevin8s-projects/webside`;
-  - `vercel pull --environment=preview --yes` passed and refreshed `.vercel/.env.preview.local`;
-  - `node --check` passed for `api/transport-manual-import/preview.js`, `commit.js`, `manual.js`, and `api/_lib/transport-manual-import.js`;
-  - `npm run build:admin-vue` passed;
-  - `npm run build:prod` passed;
-  - `vercel build` passed for Preview;
-  - `npm run dev` was blocked by port 3000 already being in use, but the existing local service returned 200 for `/admin/transport/requests`;
-  - `vercel dev --listen 3109` served `/admin/transport/requests` with 200 and returned 401 for unauthenticated `/api/transport-manual-import/preview`;
-  - Supabase project `ngn-transport` was checked for the manual-import fields, constraints, and indexes, and all expected implemented objects were present;
-  - source scan found expected local/QA/official endpoint hits and flagged hardcoded `https://ngn.best` email fallbacks plus Preview/local env differences for release confirmation.
-- Deployment recommendation from this pass:
-  - Preview deployment is reasonable after GitHub commit/push of the intended changes;
-  - Production deployment is not yet recommended until an approved admin account and QA data are used to complete the mutation-heavy Vercel-dev workflow tests.
-
-- Fixed the batch manual-import paste preview parser:
-  - `预览粘贴内容` now reads the current textarea value from the active batch-import panel before parsing, so recently pasted content is not missed by stale state;
-  - pasted content parsing now prioritizes Tab-separated Excel/Google Sheet data, keeps spaces inside fields such as `Nottingham NG1 1AA`, and does not split columns by ordinary spaces;
-  - empty content, missing/invalid header rows, missing required template headers, and space-separated text now show specific operator guidance instead of the generic `请先粘贴表格内容或上传 CSV/XLSX 文件`;
-  - the batch dialog now includes a ready-to-copy sample block with the requested two-line Tab-separated example;
-  - backend datetime parsing now prioritizes unambiguous `YYYY/MM/DD HH:mm` and `YYYY-MM-DD HH:mm` patterns before falling back to `Date`, reducing US/UK slash-date ambiguity.
-- Verification for the paste parser fix:
-  - `node --check api/_lib/transport-manual-import.js` passed;
-  - direct helper smoke confirmed `2026/05/24 22:10` and `2026-05-24 23:00` parse, and `Nottingham NG1 1AA` stays intact;
-  - `npm run build:admin-vue` passed and regenerated the root `admin/` bundle;
-  - `npm run build:prod` passed;
-  - `git diff --check` passed with only existing line-ending warnings;
-  - local helper server on port 3001 returned 200 for `/admin/transport/requests`.
-
-- Refined the transport manual supplement UI and Excel template again:
-  - all confirmation dialogs now keep their footer action area fixed inside the modal, so the single supplement cancel/submit buttons stay visible while the form body scrolls;
-  - the single supplement student section now shows the explicit hint `手机号和微信号至少填写一个。`;
-  - `下载 Excel 模板` now creates a real `.xlsx` workbook without adding dependencies, with two sheets: `导入模板` containing only the header row and `填写示例` containing one auto-new-group example plus one existing-Group-ID example;
-  - the batch preview table now renders separate columns for row status, original row number, student name, phone/WeChat, service type, airport, terminal, flight number, flight time, service time, address, passenger count, luggage quantity, price, payment status, editable Group ID, and error/warning reasons;
-  - import eligibility is still gated by successful preview, red rows remain excluded by backend commit validation, and yellow rows still require admin confirmation.
-- Verification for this refinement:
-  - `node --check api/_lib/transport-manual-import.js` passed;
-  - `npm run build:admin-vue` passed and regenerated the root `admin/` bundle;
-  - `npm run build:prod` passed;
-  - `git diff --check` passed with only existing line-ending warnings;
-  - source scan confirmed `导入模板`, `填写示例`, the phone/WeChat hint, and the requested preview-table columns are present;
-  - local helper server on port 3001 returned 200 for `/admin/transport/requests`.
-
-- Completed the batch manual-import template controls:
-  - the batch supplement dialog now includes both `复制导入模板` and `下载 Excel 模板` actions next to paste preview and CSV/XLSX upload;
-  - the copied template is exactly one tab-separated header row in this order: student name, phone, WeChat, service type, airport, terminal, flight number, flight time, service time, address, passenger count, luggage quantity, price, payment status, Group ID, and notes;
-  - the Excel download uses the same header source as the clipboard copy, includes one sample row plus field notes, and avoids adding the vulnerable `xlsx` package;
-  - backend field aliases were checked against the template headers, with address aliases and text luggage-quantity handling tightened so the template maps consistently during preview/commit.
-- Verification for template controls:
-  - `node --check api/_lib/transport-manual-import.js` passed;
-  - direct helper smoke confirmed the template headers map to pickup, LHR from Heathrow, flight number, flight/service time, unpaid payment status, address, and text luggage notes;
-  - `npm run build:admin-vue` passed and regenerated the root `admin/` bundle;
-  - `npm run build:prod` passed;
-  - `git diff --check` passed with only existing line-ending warnings;
-  - local helper server on port 3001 returned 200 for `/admin/transport/requests`.
-
-- Refined the 2.0 NGN transport manual supplement and batch import operator UI:
-  - the single supplement dialog is now wider and split into student information, trip information, carpool/payment, and notes sections;
-  - required-field warnings no longer show immediately on dialog open, and only appear after the operator clicks submit with missing fields;
-  - field-level required messages now appear below the relevant inputs after submit, and phone/WeChat is presented as an at-least-one contact requirement instead of two separately required fields;
-  - existing Group ID validation still runs through the backend preview path, and the confirmed group summary now exposes Group ID, service type, airport, terminal, date, current passenger count, and destination/pickup location;
-  - the batch preview table now labels the required columns clearly: row status, original row number, parsed fields, error/warning reasons, candidate Group ID, and editable Group ID.
-- Verification for this UI refinement:
-  - `npm run build:admin-vue` passed and regenerated the root `admin/` bundle;
-  - `npm run build:prod` passed;
-  - `node --check api/_lib/transport-manual-import.js` passed;
-  - `git diff --check` passed with only existing line-ending warnings;
-  - local helper server on port 3001 returned 200 for `/admin/transport/requests`.
-
-- Tightened the 2.0 NGN transport manual supplement completion details:
-  - single manual supplement now has front-end required-field marking and blocking validation for service type, student name, phone/WeChat contact, passenger count, airport, terminal, flight number, flight date/time, service time, and address;
-  - the backend manual-import validator now also rejects missing phone/WeChat contact, terminal, flight number, service time, and address instead of relying only on the frontend;
-  - the address label now changes by service type: pickup shows destination address, and dropoff shows pickup/contact address;
-  - entering an existing Group ID in the single supplement dialog now requires a backend preview/validation check and shows the target group summary before submission is allowed;
-  - bulk supplement now keeps the import button disabled until a preview table exists, blocks unconfirmed yellow rows, keeps red rows out of import, and includes a copy-template button;
-  - bulk preview rows continue to show duplicate warnings and candidate group hints, while candidate groups must still be selected manually and are not auto-merged.
-- Verification for this tightening pass:
-  - `node --check api/_lib/transport-manual-import.js` passed;
-  - `node --check` passed for the three manual-import API routes;
-  - direct helper smoke confirmed incomplete rows are marked `error` with missing contact, terminal, flight number, and service time codes;
-  - `npm run build:admin-vue` passed and regenerated the root `admin/` bundle;
-  - `npm run build:prod` passed;
-  - `git diff --check` passed with only existing line-ending warnings;
-  - local helper server on port 3001 returned 200 for `/admin/transport/requests`, and the preview API still returned 401 without an admin session as expected.
-
-- Applied the 2.0 NGN transport manual supplement migration to Supabase project `ngn-transport`:
-  - `supabase/20260521_transport_manual_import.sql` was executed through the Supabase plugin on project ref `brmsymzkmdnxzhrcaghw`;
-  - verified `transport_requests.source`, `created_by_admin_id`, `created_by_admin_name`, `import_batch_id`, `raw_import_payload`, `manual_price_gbp`, and `manual_payment_status` exist with the expected types/defaults;
-  - verified `transport_requests_source_check`, `transport_requests_manual_payment_status_check`, `idx_transport_requests_import_batch_id`, and `idx_transport_requests_source_created_at` exist;
-  - Supabase Security and Performance Advisors were run after the migration; findings are broad existing project advisories plus the two new manual-import indexes being reported as unused before real traffic.
-
-- Hotfixed the transport request list for databases that have not yet applied the manual supplement migration:
-  - `/api/transport-requests` now first attempts to select the new manual-import fields, then automatically retries with the legacy field list if Supabase reports missing manual-import columns such as `transport_requests.source`;
-  - source/import-batch filters are ignored only during this legacy fallback path, so the 2.0 transport list can keep loading before `supabase/20260521_transport_manual_import.sql` is applied;
-  - no public page, database schema, email behavior, deployment config, or transport mutation workflow was changed by this hotfix.
-- Verification for the hotfix:
-  - `node --check api/transport-requests/index.js` passed;
-  - `npm run build:admin-vue` passed and regenerated the root `admin/` bundle;
-  - `npm run build:prod` passed;
-  - `git diff --check` passed.
-
-- Added 2.0 NGN transport manual supplement and bulk import support:
-  - `/admin/transport/requests` now has entry points for single manual supplement and bulk supplement preview/import;
-  - bulk supplement supports pasted spreadsheet rows plus CSV/XLSX upload using `read-excel-file` in the Vue admin only; frontend parsing is only for preview UX;
-  - new admin-only APIs `/api/transport-manual-import/preview`, `/api/transport-manual-import/commit`, and `/api/transport-manual-import/manual` rerun server-side mapping, cleaning, validation, duplicate checks, group warning checks, and permission checks;
-  - new helper `api/_lib/transport-manual-import.js` creates normal `transport_requests`, creates new groups or joins existing `transport_groups` through the existing lifecycle helpers, writes `transport_group_members`, and records admin operation logs;
-  - `supabase/20260521_transport_manual_import.sql` adds additive manual-import fields on `transport_requests`: `source`, `created_by_admin_id`, `created_by_admin_name`, `import_batch_id`, `raw_import_payload`, `manual_price_gbp`, and `manual_payment_status`;
-  - existing `last_operated_by` and `last_operated_at` remain the canonical latest-operator fields; no duplicate `last_operator` field was added;
-  - group payment summaries and group detail payment display now prefer `manual_payment_status` before falling back to the legacy `[payment:paid|unpaid]` marker in `admin_note`;
-  - `public-api-handlers/my-transport-requests.js` now selects an explicit public-safe transport request field list so `raw_import_payload` and admin-only import fields are not returned to ordinary user pages;
-  - no public submit flow, public board route, email behavior, or deployment config was intentionally changed.
-- Verification for the manual supplement work:
-  - `node --check` passed for `api/_lib/transport-manual-import.js`, the three new manual-import API routes, transport request/group routes touched by the change, `public-api-handlers/my-transport-requests.js`, and `dev-server.js`;
-  - `npm --prefix apps/admin-vue audit --audit-level=high` passed with 0 vulnerabilities after replacing the initially tested `xlsx` package with `read-excel-file`;
-  - `npm run build:admin-vue` passed and regenerated the root `admin/` bundle;
-  - `npm run build:prod` passed;
-  - `git diff --check` passed;
-  - local helper server on port 3001 returned 200 for `/admin/transport/requests`, and the new preview API returned 401 without an admin session as expected.
-
-- Refined the storage execution membership label and today worksheet coverage:
-  - `/admin/storage/orders`, `/admin/storage/today-work-orders`, and `GET /api/admin/storage-orders-export` now label member-used storage services as `会员服务` instead of showing a discount amount wording;
-  - `/admin/storage/today-work-orders` now includes same-day buy-box rows as well as storage collection and storage return rows, so same-day buy-box services visible in all-orders also appear in the daily worksheet;
-  - buy-box rows in the daily worksheet open the buy-box detail route, while storage collection/return rows still open the storage-service detail route;
-  - the empty-state and summary copy now describe `寄存服务工单`, not only取送寄存工单;
-  - no database schema, public page, email behavior, API route shape, or storage mutation workflow was changed.
-- Verification after this refinement:
-  - `node --check api/admin/[...action].js` passed;
-  - `npm run build:admin-vue` passed and regenerated the root `admin/` bundle;
-  - `npm run build:prod` passed;
-  - local helper server returned 200 for `/admin/storage/orders` and `/admin/storage/today-work-orders`.
-
-- Added `/admin/storage/today-work-orders` as the storage daily execution worksheet:
-  - the Vue admin sidebar under `寄存管理` now includes `当天工单`;
-  - the page defaults to the current Europe/London date and lists that date's取寄存/送寄存 orders from the existing `/api/admin/storage-orders` endpoint;
-  - the execution table columns are sequence, service date/order number, service time, name, service project, estimated box count, full address/postcode, phone, WeChat, fee/payment note, payment toggle, customer-service remark, and actions;
-  - sortable headers support toggling ascending/descending for service time, name, service project, estimated box count, and payment status;
-  - payment and customer-service remark edits reuse the existing storage order PATCH behavior and do not add database fields;
-  - no public page, database schema, email behavior, API route shape, or deployment config was changed.
-- Verification after adding the worksheet:
-  - `npm run build:admin-vue` passed and regenerated the root `admin/` bundle;
-  - `npm run build:prod` passed;
-  - local helper server returned 200 for `/admin/storage/today-work-orders`;
-  - `git diff --check` passed.
-
-- Refined `/admin/storage/orders` after operator review:
-  - removed the visible `每页数量` control and kept the all-orders execution table fixed at 10 rows per page;
-  - renamed the editable `备注` column to `客服备注`;
-  - the customer-service remark cell now starts from existing admin service notes and appends student-facing notes as `同学备注：...` when present, so the source of each note is clear;
-  - widened the execution table and disabled ellipsis truncation inside this view so zoomed/narrow windows can use horizontal scrolling instead of hiding text behind `...`;
-  - updated `GET /api/admin/storage-orders-export` so the export column is `客服备注` and follows the same admin-note plus labeled student-note rule;
-  - repaired garbled visible Chinese labels and the GBP symbol on the buy-box detail page at `/admin/storage/box-orders/:id`;
-  - no database schema, public page, email behavior, deployment config, or storage mutation workflow was changed.
-- Verification after this cleanup:
-  - `node --check api/admin/[...action].js` passed;
-  - `npm run build:admin-vue` passed and regenerated the root `admin/` bundle;
-  - `npm run build:prod` passed;
-  - local helper server returned 200 for `/admin/storage/orders` and `/admin/storage/box-orders/1`;
-  - `git diff --check` passed.
-
-- Updated the `/admin/storage/orders`收款 button to toggle both directions:
-  - rows that are not marked paid show `已收款`; clicking writes `payment_status=paid` and `payment_note=已收款` into existing admin billing metadata;
-  - rows already marked paid show `未收款`; clicking writes `payment_status=unpaid` and `payment_note=未收款`;
-  - the button is no longer disabled just because an order is already paid, and the fee/payment note column now shows `未收款` instead of becoming blank;
-  - no database schema, API route shape, public page, email behavior, deployment config, or export field layout was changed.
-- Verification after the payment toggle update:
-  - `npm run build:admin-vue` passed and regenerated the root `admin/` bundle;
-  - `npm run build:prod` passed;
-  - local helper server returned 200 for `/admin/storage/orders`;
-  - `git diff --check` passed.
-
-- Moved the visible storage all-orders order number under the `服务日期` cell:
-  - `/admin/storage/orders` now shows the service date on the first line and the order number directly below it in the same cell;
-  - no API behavior, database schema, export fields, payment/remark saving, public pages, email behavior, or deployment config was changed.
-- Verification after moving the order number:
-  - `npm run build:admin-vue` passed and regenerated the root `admin/` bundle;
-  - local helper server returned 200 for `/admin/storage/orders`;
-  - `git diff --check` passed.
-
-- Refined `/admin/storage/orders` execution-view columns and inline operations:
-  - removed the visible `拼音` and `是否收费` columns from the all-orders table;
-  - kept `费用/支付备注` as a read-only scan column, then added a separate `收款` button column immediately to its right;
-  - the `已收款` button writes existing admin billing metadata into `customer_form_json.admin.billing` through the existing storage order PATCH path, without adding database fields;
-  - added a separate editable `备注` column after the `收款` button column; operators can type directly in the list and save, with blur-save plus an explicit save button;
-  - removed extra note text from the service-content column so operational notes live in the dedicated remark column;
-  - updated storage export columns to remove pinyin/charge-status and include remark after payment/fee note;
-  - no Supabase schema, public page, email behavior, deployment config, or old admin page behavior was changed.
-- Verification for the inline payment/remark refinement:
-  - `node --check api/admin/[...action].js` passed;
-  - `npm run build:admin-vue` passed and regenerated the root `admin/` bundle;
-  - `npm run build:prod` passed;
-  - local helper server returned 200 for `/admin/storage/orders`;
-  - Playwright confirmed unauthenticated `/admin/storage/orders` still redirects to the `2.0 NGN管理后台` login boundary.
-
-- Updated `/admin/storage/orders` in `2.0 NGN管理后台` into a compact operator execution view:
-  - the all-orders table now uses Excel-like columns for sequence, service date, time slot, name, pinyin, service content, apartment/address, phone, charge status, price, payment/fee note, and actions;
-  - the row sequence is continuous across pagination based on the current filtered result, while the existing row checkbox is preserved inside the sequence cell for batch operations;
-  - service content is composed from the existing storage order kind and purchased-box/estimated-box fields, with existing concise notes appended when present;
-  - apartment/address display now combines apartment/room, detailed address, and postcode without showing empty/null fragments;
-  - price display is normalized to GBP format and charge/free status is derived from the existing total price/membership signals;
-  - payment/fee notes now prefer existing admin billing payment status/note data when present, then fall back to membership-free/free/pending-fee wording;
-  - existing filters, pagination, details navigation, delete, mark-recorded, selected-row batch actions, and selected-row export remain in place.
-- Updated `GET /api/admin/storage-orders-export` so storage exports use the same execution-view columns: sequence, service date, time slot, name, pinyin, service content, apartment/address, phone, charge status, price, and payment/fee note.
-- Updated `docs/PROJECT_MAP.md` to document the storage export endpoint's execution-view output.
-- Verification for the execution-view change:
-  - `node --check api/admin/[...action].js` passed;
-  - `npm run build:admin-vue` passed and regenerated the root `admin/` bundle;
-  - `npm run build:prod` passed;
-  - Vite preview served `/admin/storage/orders` with HTTP 200 through the SPA fallback and the generated JS/CSS assets returned 200;
-  - Playwright opened the preview route and confirmed unauthenticated access redirects to the admin login boundary.
-
-- Changed the official 2.0 NGN admin access path from `/admin-vue/` to `/admin/`:
-  - Vue Router now uses `createWebHistory("/admin/")`;
-  - Vite now builds admin assets with `base: "/admin/"` and outputs to the root `admin/` static directory;
-  - normal admin links, login return paths, old admin bridge links, dashboard/detail/back links, storage/transport/member/community links, and sync-audit email admin links now use `/admin/`;
-  - `vercel.json` rewrites `/admin/:path*` to `/admin/index.html` so direct refreshes under `/admin/` do not 404;
-  - `vercel.json` and the local helper server keep old `/admin-vue` and `/admin-vue/*` links compatible by redirecting to the matching `/admin/` path;
-  - `/api/...` routes were intentionally left unchanged.
-- Verification for the admin path change:
-  - GitHub release commits: `779b778` (`move 2.0 admin path to /admin`) and `9c27451` (`redirect admin-vue slash path`) on `codex/membership-v1`;
-  - Vercel production deployment: `dpl_HwS8BNn3e8Ar3P5Kyu1AxR8Bi2NX`, URL `https://webside-9pzirt36t-wwkevin8s-projects.vercel.app`, aliased to `https://ngn.best`;
-  - `node --check` passed for `admin-legacy-guard.js`, `admin-shell.js`, `admin-pages.js`, `transport-admin.js`, `api/_lib/transport-sync-audit-email.js`, `api/_lib/storage-sync-audit-email.js`, `api/admin/[...action].js`, and `dev-server.js`;
-  - `npm run build:admin-vue` passed and generated the new root `admin/` bundle with `/admin/assets/...`;
-  - `npm run build:prod` passed after confirming `.vercel/output/` was not present before the build;
-  - local HTTP checks on port 3001 confirmed `/admin/`, `/admin/orders`, `/admin/storage`, `/admin/members`, `/admin/storage/orders`, `/admin/storage/box-orders`, `/admin/transport/requests`, and `/admin/managers` return 200;
-  - local HTTP checks confirmed `/admin-vue/` redirects to `/admin/` and `/admin-vue/orders` redirects to `/admin/orders`;
-  - Playwright verified local admin login, sidebar/menu navigation, refresh on orders/memberships/managers/storage/pickup pages, real order detail refresh, real storage detail refresh, real pickup detail refresh, old-path redirect, and logout.
-  - production HTTP checks confirmed `/admin/`, `/admin/orders`, `/admin/storage/orders`, `/admin/memberships`, `/admin/managers`, and `/admin/transport/requests` return 200, while `/admin-vue`, `/admin-vue/`, and `/admin-vue/orders` redirect to matching `/admin/` paths;
-  - production Playwright verified admin login, sidebar/menu navigation, refresh on orders/storage/memberships/managers/pickup pages, old-path redirect to `/admin/orders`, and logout.
-
-- Completed the production pre-demo smoke check for `2.0 NGN admin` on `https://ngn.best`:
-  - Vercel inspect confirmed production deployment `dpl_4nTMgN9HVocwTRtRgqdSuS5G3qEu` is Ready and aliased to `https://ngn.best`;
-  - initial smoke login failed because the available demo/bootstrap admin password no longer matched the existing active `super_admin` row;
-  - fixed the P0 login blocker by updating only the existing active `super_admin` password hash in Supabase `admin_users`; no schema, order data, membership data, email behavior, API code, or frontend code was changed;
-  - verified admin login, `/api/admin/session`, logout, Dashboard page/API, Dashboard risk links to `/admin/orders`, transport list/API/detail, storage list/API/detail, storage type APIs, membership list/API, activation-code/birthday APIs, old admin URL redirects, direct refresh behavior, and narrow-screen basic layout;
-  - verified visible 2.0 admin pages do not show `打开旧订单页`, `旧后台详情页`, `旧后台`, or `旧订单页`;
-  - did not perform destructive production order mutations such as delete/archive; status/offline-record controls and APIs were checked in read-only smoke mode.
-
-- Prepared `2.0 NGN管理后台` as the official backend entry:
-  - GitHub launch commit: `fee3859` (`launch-2.0-ngn-admin-backend`);
-  - Vercel production deployment: `dpl_4nTMgN9HVocwTRtRgqdSuS5G3qEu`, URL `https://webside-e39y4jsad-wwkevin8s-projects.vercel.app`, aliased to `https://ngn.best`;
-  - `admin-login.html` now brands the login flow as `2.0 NGN管理后台` and sends successful/default admin sessions to `/admin/`;
-  - added `admin-legacy-guard.js` and attached it to old admin HTML pages so normal visits to old backend URLs redirect to the matching `/admin/` route;
-  - old backend HTML files remain in the repo for emergency rollback access only and are no longer linked from normal admin navigation/buttons;
-  - updated old admin shell/navigation hrefs to point at `/admin/` routes instead of old admin pages;
-  - updated transport/admin internal links and the transport sync audit email link to prefer `/admin/` routes;
-  - updated Vue order-center detail routing so transport/storage source records open 2.0 transport/storage detail pages, not old detail pages;
-  - removed the remaining 2.0 login-copy reference to an old login page;
-  - no Supabase schema, production data, email sending behavior, or public customer page behavior was changed.
-- Verification for the official backend launch prep:
-  - `node --check admin-legacy-guard.js`, `admin-shell.js`, `admin-pages.js`, `transport-admin.js`, and `api/_lib/transport-sync-audit-email.js` passed;
-  - source scan found no old-backend entry links or visible "old backend / old detail" prompts in 2.0 admin source, login page, shared admin shell, transport admin script, or admin email helper;
-  - `npm run build:admin-vue` passed and regenerated `admin-vue/`;
-  - Playwright verified old URLs such as `/admin-dashboard.html`, `/admin-storage.html?order_type=box_order`, `/admin-storage-detail.html?id=...`, `/transport-admin-request-edit.html?id=...`, `/transport-admin-group-edit.html?id=...`, and `/transport-admin-sync-logs.html` redirect into the corresponding `/admin/` route and then, when unauthenticated, to `admin-login.html` with a 2.0 `return_to`;
-  - post-deployment Vercel inspect confirmed the deployment is Ready and aliased to `ngn.best`;
-  - post-deployment Playwright verified representative old production URLs redirect into 2.0 admin/login with 2.0 `return_to`, and `/admin-login.html` has title `后台登录 | 2.0 NGN管理后台`;
-  - `npm run build:prod` passed.
-
-- Completed the pre-launch safety checkpoint for the Vue admin now formally named `2.0 NGN 管理后台`:
-  - created the Git checkpoint commit with message `before-vue-admin-production-launch`;
-  - confirmed the Vue admin source and generated `/admin/` output use `2.0 NGN 管理后台` in the document title/sidebar/dashboard heading;
-  - kept the old admin HTML entry files in place as rollback/fallback routes, did not delete old admin pages, and removed the remaining Vue sidebar legacy-entry rendering path so the old backend is not presented as a visible frontend navigation choice;
-  - confirmed Vercel project `webside` currently has Ready production deployments available for rollback, including latest production `https://webside-gcd0iy2nc-wwkevin8s-projects.vercel.app` and prior production `https://webside-a7sndd45s-wwkevin8s-projects.vercel.app`;
-  - did not run a production deployment as part of this checkpoint;
-  - did not directly modify Supabase schema or production data during this checkpoint;
-  - reviewed SQL changes in `supabase/` and confirmed the pending/new field work is represented by explicit SQL files using additive `add column if not exists` style changes, so old-row reads remain compatible with null/default values.
-- Verification before the `before-vue-admin-production-launch` GitHub checkpoint:
-  - `node --check api/admin/[...action].js` passed;
-  - `node --check api/_lib/membership.js` passed;
-  - `node --check api/_lib/orders.js` passed;
-  - `node --check api/_lib/storage-orders.js` passed;
-  - `node --check api/_lib/transport.js` passed;
-  - `npm run build:admin-vue` passed;
-  - `npm run build:prod` passed;
-  - `git diff --check` passed after cleaning non-functional trailing whitespace in Vue source files.
-
-- Re-ran the membership birthday reminder test after adding the registered birthday-date wording:
-  - temporarily set the same Wkevin-owned active membership to the UK test date `2026-05-20`;
-  - sent one advisor birthday reminder email to `haoranw44@gmail.com`;
-  - Resend returned message id `18193549-bb8d-435a-b881-cfdc4fde5080`, with `matched_count=1`, `sent_count=1`, and `failed_count=0`;
-  - restored the simulated birthday fields to null and deleted the simulated reminder row after the send test.
-
-- Added a `当前人均` column to Vue Admin transport group management:
-  - `/admin/transport/groups` now shows each group's existing `current_average_price_gbp` value between `付款状态` and `付款操作`;
-  - the amount is formatted as GBP and uses the same backend-computed pricing/stats value already used by the group detail page;
-  - adjusted nearby table column widths so the new column fits without changing group actions or payment behavior;
-  - rebuilt the generated root `admin-vue/` output so the static admin bundle includes the new column;
-  - no public page, API, database, email behavior, deployment config, or transport grouping workflow was changed.
-- Verification after adding the transport group average column:
-  - `npm run build:admin-vue` passed;
-  - source/build scan confirmed `当前人均` and `current_average_price_gbp` are present in the Vue source and generated admin output;
-  - local helper server on port 3000 returned `200 OK` for `/admin/transport/groups`.
-
-- Updated the advisor birthday reminder email wording:
-  - each member entry in the plain-text and HTML email now includes `她/他登记的生日日期为：xx月xx日`;
-  - the change only affects the advisor-facing birthday reminder email body and does not change reminder matching, recipient selection, database schema, cron timing, or student-facing notifications.
-- Verification after the wording update:
-  - `node --check api/_lib/membership-birthday-reminders.js` passed.
-
-- Tested the membership birthday reminder email path against Wkevin's advisor account:
-  - confirmed Wkevin admin account exists in Supabase with email `haoranw44@gmail.com`;
-  - temporarily set one Wkevin-owned active membership to the UK test date `2026-05-20`;
-  - ran `runMembershipBirthdayReminders` locally with the real Supabase and Resend environment from `.env`;
-  - Resend returned message id `ccaf459b-c2eb-4f4f-b690-1bf0abc59798`, with `matched_count=1`, `sent_count=1`, and `failed_count=0`;
-  - restored the simulated member birthday fields to their original null state and deleted the simulated reminder row so production membership data does not retain the fake birthday test state.
-
-- Refined the Vue Admin dashboard `今日待处理事项` alignment after visual review:
-  - replaced the stretched two-column grid with a flex row that keeps the status label at its natural pill width;
-  - fixed only the right-side order/customer/time block to a stable width so order numbers still align vertically;
-  - kept the small-screen layout stacked so the todo rows remain readable on mobile;
-  - rebuilt the generated root `admin-vue/` output so the static admin bundle includes the refined styling;
-  - no public page, API, database, email behavior, deployment config, or business workflow behavior was changed.
-- Verification after the visual refinement:
-  - `npm run build:admin-vue` passed;
-  - source/build scan confirmed the generated CSS uses the fixed right-side info column and no longer uses the previous stretched grid rule.
-
-- Fixed the Vue Admin order-center detail page failing to open for transport orders:
-  - removed the nonexistent `transport_requests.group_id` column from the order-center source-record query in `api/_lib/orders.js`;
-  - removed the order-center detail page's dependency on that field, so the customer-service summary no longer breaks when the transport table has no group column;
-  - kept the current `已登记 / 未登记` detail cleanup intact and did not change registration mutation behavior.
-- Verification after the source-field compatibility fix:
-  - `node --check api/_lib/orders.js` passed;
-  - `node --check api/admin/[...action].js` passed;
-  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` build output.
-
-- Aligned order numbers in the Vue Admin dashboard `今日待处理事项` list:
-  - updated the dashboard task row styling so the right-side order information uses a stable fixed-width column;
-  - kept the mobile layout stacked through the existing small-screen media query;
-  - rebuilt the generated root `admin-vue/` output so the live static admin bundle includes the alignment fix;
-  - no public page, API, database, email behavior, deployment config, or business workflow behavior was changed.
-- Verification after the dashboard todo alignment fix:
-  - `npm run build:admin-vue` passed;
-  - source/build scan confirmed the new `dashboard-task-row` grid rule is present in both Vue source CSS and generated admin CSS.
-
-- Renamed the visible Vue Admin sidebar brand from `Vue Admin` to `2.0 NGN 管理后台`:
-  - updated the source sidebar brand in `apps/admin-vue/src/components/AppSidebar.vue`;
-  - updated the Vue admin document title in `apps/admin-vue/index.html`;
-  - updated the hidden dashboard eyebrow source copy so old `NGN Vue Admin` wording is not left in Vue source;
-  - rebuilt the generated root `admin-vue/` output so the live static admin bundle reflects the new title;
-  - no public page, API, database, email, deployment config, or business workflow behavior was changed.
-- Verification after the brand title rename:
-  - `npm run build:admin-vue` passed;
-  - source/build scan confirmed `2.0 NGN 管理后台` is present in the Vue source and generated admin output.
-
-- Cleaned the Vue Admin order-center detail page for customer-service use:
-  - `/admin/orders/:id` no longer shows raw JSON/code blocks for order payloads, status logs, notes, attachments, or detail payloads;
-  - removed the old readonly placeholder operation area for archive/cancel archive/save note/bulk archive, keeping the page aligned with the current `已登记 / 未登记` workflow;
-  - the detail page now shows a concise customer-service summary: registration state, recent registration operator/time, customer contact, service arrangement, notes, recent operations, and a link to the professional source detail page;
-  - `fetchOrderDetail` now returns the matching transport/storage source record as readonly `source_record` so the order-center detail can display useful business fields without exposing raw payloads;
-  - no public page, database schema, email behavior, deployment config, or registration mutation logic was changed.
-- Verification after the order-center detail cleanup:
-  - `node --check api/_lib/orders.js` passed;
-  - `node --check api/admin/[...action].js` passed;
-  - `npm --prefix apps/admin-vue run build` passed and regenerated the root `admin-vue/` build output;
-  - local browser opened `/admin/orders/test-order-detail-check` and unauthenticated access redirected to `admin-login.html`, confirming the protected admin route still loads through the login boundary.
-
-- Fixed the local helper-server route mapping for the recent birthday panel:
-  - `dev-server.js` now routes `/api/admin/membership-birthdays` into the existing admin aggregate handler instead of returning a local 404;
-  - restarted the local helper server on port 3000 so the new route mapping is active;
-  - unauthenticated local request now returns 401 instead of 404, confirming the route reaches the protected Admin API.
-
-- Corrected the Vue Admin overdue risk wording and data filter:
-  - renamed the visible risk label from `超过 24 小时未处理` to `超过 24 小时未登记` in the dashboard risk cards, order-center active filter, and order-center risk dropdown;
-  - updated the helper copy to say the order was created more than 24 hours ago and still has not completed offline registration;
-  - changed the backend `overdue_unprocessed` source query to require `offline_recorded=false`, so already registered orders no longer appear in this risk bucket;
-  - updated the dashboard overdue todo titles to `接送机超过 24 小时未登记` and `寄存超过 24 小时未登记`.
-- Verification after the overdue-registration risk correction:
-  - `node --check api/admin/[...action].js` passed;
-  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` build output;
-  - source scan confirmed the Vue order-center visible copy now uses `超过 24 小时未登记`;
-  - `npm run build:prod` passed.
-
-- Added Vue Admin manager creation and clarified password handling:
-  - `/admin/managers` now has a `新增管理员` action in the page heading;
-  - the manager modal now switches between `新增管理员` and `编辑管理员` modes;
-  - creating a manager uses the existing protected `POST /api/admin/managers` endpoint and requires an initial password of at least 8 characters;
-  - editing a manager now explicitly says the current password cannot be viewed; operators can leave the password blank or set a new one;
-  - this keeps password storage hash-only and does not add any plaintext password display, storage, or API exposure;
-  - no public page, database schema, email behavior, deployment config, or new route was changed.
-- Verification after adding manager creation:
-  - `node --check apps/admin-vue/src/api/admin-api.js` passed;
-  - `node --check api/_lib/admin-managers.js` passed;
-  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` build output;
-  - source/build scan confirmed `新增管理员`, `初始密码`, and `当前密码不可查看` are present;
-  - local browser opened `/admin/managers` and confirmed unauthenticated access still redirects to the admin login flow.
-
-- Added a lightweight recent-birthday panel under the one-time membership activation-code section:
-  - `/api/admin/membership-birthdays` now returns active members in the selected cycle whose birthday fell within the recent 30-day window, including user contact, benefit type, advisor, and the latest birthday reminder record;
-  - `/admin/memberships` now shows `最近生日会员` below `一次性会员激活码`, with birthday date, member, contact, cycle, benefit, reminder advisor, reminder status, and a detail button;
-  - this is an admin-only customer-service visibility feature and does not send student birthday messages or add marketing automation.
-- Verification after adding the recent-birthday panel:
-  - `node --check api/admin/[...action].js` passed;
-  - `node --check apps/admin-vue/src/api/admin-api.js` passed;
-  - `npm --prefix apps/admin-vue run build` passed and regenerated the root `admin-vue/` build output;
-  - Supabase query confirmed there is currently 1 active member with birthday month/day stored.
-
-- Adjusted the Vue Admin dashboard inspection KPIs:
-  - added `今日巡检总次数` immediately before `今日巡检异常数`;
-  - `今日巡检总次数` is computed as today's transport sync audit runs plus storage sync audit runs;
-  - `今日巡检异常数` remains today's transport/storage sync audit `mismatch_count` sum;
-  - removed the misleading click-through from `今日巡检异常数` because the metric is a transport + storage aggregate and should not jump to only the storage sync log page.
-- Verification after the inspection KPI update:
-  - `node --check api/admin/[...action].js` passed;
-  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` build output;
-  - `npm run build:prod` initially hit a stale hashed admin-vue asset reference during generated-output refresh, then passed on rerun after the generated assets settled.
-
-- Added direct password setting to the Vue Admin manager edit flow:
-  - `/admin/managers` edit modal now includes a `设置密码` field with `留空不修改；填写至少 8 位新密码` guidance;
-  - the Vue save payload sends the optional password field together with the manager profile fields;
-  - `PATCH /api/admin/managers?id=...` now hashes and saves a supplied non-empty password, while leaving the password unchanged when the field is blank;
-  - the endpoint still requires the existing super-admin server-side permission checks and keeps the Wkevin/root username rule plus self-delete/last-active-super-admin protections;
-  - `docs/PROJECT_MAP.md` was updated to document optional password setting on the manager PATCH endpoint;
-  - no public page, database schema, email behavior, deployment config, or new route was changed.
-- Verification after adding direct manager password setting:
-  - `node --check api/_lib/admin-managers.js` passed;
-  - `node --check apps/admin-vue/src/api/admin-api.js` passed;
-  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` build output;
-  - source/build scan confirmed the `设置密码` field and backend `password_hash` update path are present;
-  - local browser opened `/admin/managers` and confirmed unauthenticated access still redirects to the admin login flow.
-
-- Simplified the Vue Admin dashboard KPI row for the current customer-service workflow:
-  - removed the `7日登录` and `异常订单数` KPI cards from `DashboardView.vue`;
-  - changed the former `已登记订单` card to `未登记总订单`, using the same red warning visual style as the previous exception card;
-  - `未登记总订单` is computed as `待登记接送机 + 待登记寄存` and links to `/admin/orders?offline_recorded=false`;
-  - added `今日巡检异常数`, computed from today's `mismatch_count` totals in `transport_sync_audit_logs` and `storage_sync_audit_logs`.
-- Verification after the dashboard KPI simplification:
-  - `node --check api/admin/[...action].js` passed;
-  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` build output;
-  - source scan confirmed `DashboardView.vue` no longer contains `已登记订单`, `7日登录`, or `异常订单数`;
-  - `npm run build:prod` passed.
-
-- Applied the missing membership birthday database migrations to Supabase project `ngn-transport` after the Vue membership page showed `column membership_activation_codes.member_birthday does not exist`:
-  - applied the additive `membership_activation_codes.member_birthday` column from `supabase/20260515_membership_activation_code_birthday.sql`;
-  - applied the additive membership birthday reminder schema from `supabase/20260520_membership_birthday_reminders.sql`, including `membership_entitlements` birthday/reminder/advisor fields and the service-role-only `membership_birthday_reminders` table;
-  - verified the expected columns now exist in Supabase and that `membership_activation_codes` can select `id, code_prefix, member_birthday`;
-  - ran Supabase security advisors after the schema change; findings are existing RLS-no-policy/service-role style advisories plus the new service-role-only birthday reminder table using the same pattern.
-
-- Connected the Vue Admin manager action buttons to the existing protected manager APIs:
-  - `/admin/managers` row actions no longer show the placeholder `后续阶段实现` notice for edit, reset password, or delete;
-  - edit opens a Vue modal and saves name, email, phone, role, and status through `PATCH /api/admin/managers?id=...`; Wkevin/root can also edit username, matching the existing server-side rule;
-  - reset password opens a confirmation dialog and calls `POST /api/admin/managers?id=...&manager_action=reset-password`, then shows the generated temporary password in the page notice;
-  - delete opens a confirmation dialog and calls `DELETE /api/admin/managers?id=...`;
-  - Vue now mirrors the old manager page's root/self-protection affordances, while the existing server-side super-admin and last-active-super-admin protections remain authoritative;
-  - no public page, database schema, email behavior, deployment config, or new admin route was changed.
-- Verification after wiring manager actions:
-  - `node --check apps/admin-vue/src/api/admin-api.js` passed;
-  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` build output;
-  - source/build scan confirmed the manager page no longer contains the manager action placeholder text and does contain the edit/reset/delete action wiring;
-  - local browser opened `http://localhost:3000/admin/managers` and confirmed unauthenticated access still shows the protected admin login flow.
-
-- Added a lightweight backend-only membership birthday reminder service:
-  - `membership_entitlements` now has additive birthday month/day, reminder opt-out, advisor admin, and creator admin fields through `supabase/20260520_membership_birthday_reminders.sql`;
-  - the new `membership_birthday_reminders` table records one reminder result per membership/date with advisor, recipient email, Resend message id, status, and any send error, preventing repeat reminders for the same UK date;
-  - `api/cron/send-membership-birthday-reminders.js` is protected by `CRON_SECRET` and calls the new Resend helper to send one grouped email per advisor, not one email per member;
-  - advisor resolution now uses membership advisor, then creator admin, then activation-code creator, then a default operations recipient;
-  - `vercel.json` schedules the cron at `5 0,23 * * *`, so the job can hit approximately 00:05 UK time across GMT/BST while the reminder table keeps sends idempotent;
-  - the admin membership aggregate now returns birthday reminder metadata, and the Vue membership detail page shows clearer labels for member birthday, reminder state, advisor, and last reminder time;
-  - no student birthday email, SMS, WeChat reminder, marketing automation, membership level, points, package, or complex benefit system was added.
-- Verification after adding membership birthday reminders:
-  - `node --check api/_lib/membership.js` passed;
-  - `node --check api/_lib/membership-birthday-reminders.js` passed;
-  - `node --check api/cron/send-membership-birthday-reminders.js` passed;
-  - `node --check api/admin/[...action].js` passed;
-  - `vercel.json` parsed successfully;
-  - `npm --prefix apps/admin-vue run build` passed and regenerated the root `admin-vue/` build output;
-  - Supabase CLI was not available locally, so the SQL migration file was created first and then applied through the Supabase plugin in the follow-up database fix.
-
-- Cleaned the Vue Admin page headings:
-  - all Vue admin pages now hide the small eyebrow/subtitle line above the main page title, including legacy migration labels such as `Phase 2 foundation`;
-  - the main `h2` heading no longer keeps the old top offset, so pages show a single clean title such as `用户管理` or `订单中心`;
-  - this was a frontend-only admin UI polish and did not change APIs, database schema, email behavior, public pages, or deployment configuration.
-- Verification after the page heading cleanup:
-  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` build output;
-  - source/build scan confirmed `.view-heading__eyebrow` is now hidden globally.
-
-- Corrected the Vue Admin order-center registration wording and behavior:
-  - `/admin/orders` now treats the visible `订单状态` as customer-service registration state only, with `未登记` and `已登记` as the only filter choices;
-  - the order table `状态` badge now displays `未登记` / `已登记` from `offline_recorded`, rather than lower-level source statuses such as transport `published` or storage `pending_confirmation`;
-  - the old line-tracking column is now `最近登记人`, showing the operator and time tied to registration/last-operation fields;
-  - `一键登记` still updates selected source orders through `/api/admin/orders`, then reloads the list. If the current filter is `未登记`, newly registered rows drop out of the list; if the current filter is another risk bucket, they remain visible but show `已登记`.
-- Corrected Dashboard KPI/status semantics:
-  - the previous `活跃订单` card is now `已登记订单`, so it no longer overlaps conceptually with `异常订单数`;
-  - `异常订单数` remains a risk summary and can include duplicate risk hits because one order may match more than one risk bucket;
-  - dashboard order status distribution now shows only `未登记` and `已登记`, matching the order-center operator workflow.
-- Extended `/api/admin/orders` list filtering:
-  - `GET /api/admin/orders?offline_recorded=true/false` now returns source-table rows filtered by registration state;
-  - risk-filtered order lists also respect `offline_recorded=true/false` and `source_table=...`.
-- Verification after the registration status correction:
-  - `node --check api/admin/[...action].js` passed;
-  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` build output;
-  - unauthenticated `GET /api/admin/orders?offline_recorded=true&page_size=1` returned 401, confirming registration-state lists remain admin-only;
-  - `npm run build:prod` passed.
-
-- Applied small follow-up refinements to keep the Vue membership page simple and customer-service friendly:
-  - activation-code delete success now shows a short success notice that clears after 3 seconds instead of leaving a long-lived top message;
-  - membership status display now treats entitlement status separately, so active members show `有效`;
-  - benefit/claim statuses now use clearer wording such as `已选择权益`, `已登记权益`, and `权益已使用` instead of a standalone `已选择`;
-  - membership operation log labels were generalized away from order-binding language, using labels such as `创建会员`, `登记权益`, `修改权益`, `使用激活码兑换`, and `更新会员信息`;
-  - membership and activation-code deletion now require a second confirmation before calling the existing delete endpoints;
-  - no membership-level, order-forcing, redemption, points, package, public page, database schema, email, or deployment behavior was added.
-- Verification after the membership page follow-up:
-  - `npm --prefix apps/admin-vue run build` passed and regenerated the root `admin-vue/` build output;
-  - source scan confirmed the Vue membership views no longer contain standalone `已选择`, `解绑订单`, `绑定订单`, or `已删除激活码` strings.
-- Refined the Vue admin membership workflow for customer-service operations:
-  - `/api/admin/memberships` now returns each membership with user/contact fields, current claim, advisor, activation-code source, enriched audit logs, and a `last_operation` summary derived from membership audit logs;
-  - `/api/admin/memberships/:id` now supports fetching a single membership detail through the same admin aggregate used by the list;
-  - `/admin/memberships` now adds a `最后操作` column showing operator, time, and action, and clicking a membership row or `权益详情` opens the detail route;
-  - `/admin/memberships/:id` now focuses on customer-service detail: user basics, membership information, activation-code source, latest operation information, and reverse-time operation records;
-  - `/api/admin/membership-codes` now accepts a batch count and can generate up to 200 one-time activation codes in one request while preserving the existing unique `NGN-2026-XXXX` style generation;
-  - `/admin/memberships` now has a batch activation-code dialog with quantity, membership cycle, benefit type, current-admin advisor, and optional notes, then shows the generated full code list for copying and refreshes the code table;
-  - no public page, order-required membership binding, complex benefit redemption workflow, email behavior, deployment config, or database schema was changed for this task.
-- Verification after the membership workflow refinement:
-  - `node --check api/_lib/membership.js` passed;
-  - `node --check api/admin/[...action].js` passed;
-  - `npm --prefix apps/admin-vue run build` passed and regenerated the root `admin-vue/` build output;
-  - unauthenticated local `GET /api/admin/memberships?cycle=2026-27&page_size=1` returned 401, confirming the membership aggregate remains admin-only.
-- Aligned the Vue Admin dashboard registration cards with the real operator workflow:
-  - the first KPI is now `待登记接送机`, sourced from transport orders that are not marked `offline_recorded`;
-  - the second KPI is now `待登记寄存`, sourced from storage orders that are not marked `offline_recorded`;
-  - both cards jump directly to `/admin/orders?risk=offline_unrecorded&source_table=...`, so the list view shows the exact order set behind the dashboard number.
-- Added actionable bulk handling to the Vue order center:
-  - `/admin/orders` now preserves `source_table` query filters from dashboard links and shows them in the current-filter banner;
-  - the order table now has a `选择订单` column, selected-count summary, `全选当前页`, `导出选中`, and `一键登记` actions;
-  - selected rows can be exported as a CSV from the current order-center data;
-  - `一键登记` marks selected transport/storage source orders as `offline_recorded=true`, updates last operator/time fields, writes admin operation logs, clears selection, and reloads the list.
-- Extended `/api/admin/orders` without adding schema:
-  - risk lists can now be narrowed by `source_table`, service/status/search/date filters, keeping dashboard counts and click-through lists traceable;
-  - `PATCH /api/admin/orders` supports selected-order `action=set_offline_recorded` for transport and storage source rows, still behind existing admin auth.
-- Verification after the dashboard/order-center registration update:
-  - `node --check api/admin/[...action].js` passed;
-  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` build output;
-  - unauthenticated `PATCH /api/admin/orders` returned 401, confirming one-click registration remains admin-only;
-  - `npm run build:prod` passed;
-  - `docs/PROJECT_MAP.md` was updated for the expanded `/api/admin/orders` GET/PATCH behavior.
-
-- Simplified the public NGN student information plaza submit flow so it behaves like a quick student community post instead of an application form:
-  - `community-submit.html` now keeps the core fields to category, title,正文, optional contact, optional images, folded optional extra info, and one short privacy/truth confirmation checkbox;
-  - title now has no minimum length and is limited to 60 characters;
-  -正文 now has no minimum length and is limited to 500 characters;
-  - city, university, area, price, and extra notes are moved into folded `更多信息（选填）`;
-  - contact is optional and simplified to one type selector plus one content field, with copy that it is only visible to backend/customer support;
-  - image upload remains optional and category-gated to second-hand and sublet/short-let posts, with the existing 3-image and 2MB-per-image limits.
-- Removed public expiry behavior from the current information plaza flow:
-  - `community-submit.html` no longer renders an expiry/effective-period field;
-  - `community.js` no longer renders expiry metadata in the post list or detail page;
-  - `api/_lib/community.js` no longer assigns category-based expiry dates to new posts;
-  - public list/detail/comment-report visibility now uses visible post statuses instead of hiding posts by `expires_at`;
-  - new public posts are created with status `active`, while legacy `published` posts remain visible for compatibility.
-- Added minimal admin compatibility for the new status model:
-  - `api/_lib/admin-community.js` treats `active` plus legacy `published` as normal visible posts and restores hidden posts to `active`;
-  - Vue community admin list/detail labels now recognize `active` and `closed`;
-  - Vue community admin list/detail no longer display expiry-time columns, fields, filters, or placeholder buttons.
-- Added `supabase/20260520_community_simplify_post_constraints.sql` for the required database-side alignment:
-  - allows `community_posts.expires_at` to be null;
-  - changes the default post status to `active`;
-  - allows `active`, `closed`, `hidden`, plus legacy `published`, `expired`, and `deleted`;
-  - updates title/content checks to 1-60 and 1-500 characters using `NOT VALID` constraints so historical longer titles do not block the migration while new writes are still checked.
-- Verification after simplifying community submit:
-  - `node --check community-submit.js` passed;
-  - `node --check community.js` passed;
-  - `node --check api/_lib/community.js` passed;
-  - `node --check api/_lib/admin-community.js` passed;
-  - `CommunityView.vue` and `CommunityPostDetailView.vue` parsed successfully with the local Vue SFC compiler;
-  - source scan confirmed the submit page has no `minlength`, no expiry/effective-period field, and no remaining 200/300-character submit copy;
-  - local browser verification confirmed title max 60,正文 max 500, no minimum lengths, no expiry input, folded optional info, category-gated image upload, no horizontal overflow on desktop/mobile, and screenshots were saved under `output/playwright/community-submit-simple-desktop.png` and `output/playwright/community-submit-simple-mobile.png`;
-  - database migration file was created but not applied to Supabase in this task.
-- Corrected the Vue Admin dashboard to match real operator workflows:
-  - removed the visible dashboard `未归档订单`, `已归档`, and `已取消` dashboard concepts;
-  - replaced the sixth KPI with `异常订单数`, computed as the sum of the four dashboard risk buckets;
-  - dashboard status distribution now only shows `待处理`, `处理中 / 已确认`, and `已完成`;
-  - dashboard risk cards now link to `/admin/orders?risk=...` rather than generic pages.
-- Added shared risk filtering for dashboard and the Vue order center:
-  - `/api/admin/dashboard` and `/api/admin/orders?risk=...` now use the same source-table risk query for `overdue_unprocessed`, `no_operator`, `offline_unrecorded`, and `missing_fields`;
-  - `/admin/orders` reads the `risk` query parameter on load, automatically applies the filter, shows `当前筛选：...`, and keeps an explicit empty state when no orders match;
-  - the Vue order center now shows source tracking fields such as offline-recorded state and last operator, and falls back to the source business detail page when a derived risk row has no unified order record.
-- Cleaned daily Vue order center display:
-  - removed the routine `归档状态` column from `/admin/orders`;
-  - removed the visible `已取消` option from the Vue order filter/status labels for this operator dashboard flow;
-  - kept underlying legacy archive APIs untouched for compatibility and rollback.
-- Verification after the dashboard/risk alignment:
-  - `node --check api/admin/[...action].js` passed;
-  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` build output;
-  - source scan found no `归档`, `已取消`, `cancelled`, `archived`, or `unarchived` strings in `DashboardView.vue`, `OrdersView.vue`, or `OrderFilters.vue`;
-  - unauthenticated `GET /api/admin/orders?risk=no_operator&page_size=1` returned 401, confirming the risk list remains admin-only;
-  - `npm run build:prod` passed.
-- Polished the current `ngn.best` information plaza homepage so it feels more like a real student community discussion list:
-  - post cards now use a stronger title hierarchy, two-line summaries, clearer metadata grouping, category color dots, and a stronger hover state;
-  - right-side NGN service entries now render as clickable rows with arrows and a light green hover background;
-  - the rules card was shortened to three easy-to-scan bullets about privacy, ads/false content/attacks, and moderation;
-  - when the post list is short, the page now shows a lightweight `更多信息正在陆续发布中` module with a small publish button, reducing the unfinished empty-page feeling;
-  - the search panel was slimmed down by visually hiding the `搜索信息` micro-title and aligning input/button heights;
-  - no Flarum deployment, PHP/MySQL server, account integration, API, database, email, cron, or deployment configuration was added or changed.
-- Verification after the community homepage detail polish:
-  - `node --check community.js` passed;
-  - Playwright opened `http://localhost:3000/community.html` at desktop and mobile widths and captured screenshots under `output/playwright/community-polish-desktop.png` and `output/playwright/community-polish-mobile.png`;
-  - desktop verification confirmed stronger discussion-card styling, the short-content module, arrow service rows, three rule bullets, and no horizontal overflow;
-  - mobile verification confirmed the order: top navigation, title intro, publish button, search, chips, post list, content module, then rules/service cards, with no horizontal overflow.
-- Upgraded the Vue Admin homepage/control panel into a business dashboard:
-  - `apps/admin-vue/src/views/DashboardView.vue` now renders KPI cards, 7-day order trends, order status distribution, today/overdue todos, risk alerts, recent operation logs, quick links, and cache metadata;
-  - `apps/admin-vue/src/styles.css` now includes the dashboard-specific responsive layout, white cards, soft shadows, KPI icon blocks, lightweight CSS bar/donut charts, task/risk lists, log table, and quick-entry buttons;
-  - existing sidebar/menu structure and other Vue admin pages were intentionally left unchanged.
-- Extended the existing admin dashboard aggregate API without adding database schema:
-  - `/api/admin/dashboard` now returns `cards`, `trends`, `status_distribution`, `today_todos`, `risk_alerts`, `recent_operations`, and `generated_at`;
-  - the endpoint still requires server-side admin auth through the existing admin aggregate route;
-  - optional dashboard subqueries degrade to zero or empty lists if a non-critical source is unavailable, so the dashboard should not fail just because one secondary table/field cannot be read.
-- Updated `docs/PROJECT_MAP.md` to document the expanded `/api/admin/dashboard` response and its use of `admin_operation_logs`.
-- Verification after the Vue Admin dashboard refresh:
-  - `node --check api/admin/[...action].js` passed;
-  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` build output;
-  - `npm run build:prod` passed;
-  - local browser navigation to `/admin/` without an active admin session redirected to `admin-login.html?return_to=/admin/`, confirming the dashboard remains behind existing admin auth.
-- Implemented the short-term plan B for the current `ngn.best` information plaza homepage without deploying Flarum or adding any PHP/MySQL server:
-  - `community.html` was rebuilt as a Flarum-inspired forum homepage with a simple NGN topbar, primary discussion area, forum category chips, and a lightweight right sidebar;
-  - forum categories are limited to 全部, 找搭子, 二手交易, 转租/短租, 求助问答, 官方公告;
-  - NGN service links are only shown in the right sidebar card: 接机/拼车, 寄存, 搬家, 订房咨询, 新生礼包;
-  - `community.js` now renders the homepage post list as clickable discussion-style rows with title, two-line summary, category tag, city/area, published date, comment count, view count, and expiry text;
-  - the empty state shows `暂无相关信息，可以发布第一条信息。` with a publish button;
-  - `community.css` now uses NGN green plus a soft rainbow accent, white cards, light shadows, consistent 8px radius, Flarum-like tag chips, and mobile single-column ordering.
-- Verification after the plan B homepage refresh:
-  - `node --check community.js` passed;
-  - `node --check site-auth.js` passed;
-  - Playwright opened `http://localhost:3000/community.html` at desktop and mobile widths and captured screenshots under `output/playwright/community-forum-desktop.png` and `output/playwright/community-forum-mobile.png`;
-  - desktop verification confirmed the left discussion list/right sidebar structure, no large service strip, forum-only category chips, and no horizontal overflow;
-  - mobile verification confirmed top navigation, publish button, search, chips, posts, then rules/service cards in a single column with no horizontal overflow.
-- Created a membership benefits SOP deliverable:
-  - corrected `docs/member-benefits-sop.docx` to match the real booking-member business logic: there are no membership levels, and the only business path to membership is completing an NGN accommodation booking;
-  - the SOP now treats admin direct grant and one-time activation codes as post-booking qualification delivery methods, not independent ways to become a member;
-  - the SOP documents one active entitlement per user/cycle, one primary benefit selection per cycle, public four-choice benefits (`storage`, `pickup`, `moving`, `welcome_pack`), order-backed binding for storage/pickup, offline/manual handling for moving/welcome pack, and admin audit actions for mark-used/cancel/reset/unbind;
-  - updated `docs/member-benefits-flowchart.md` with a Mermaid source flowchart for the corrected booking-member qualification and benefit-use process;
-  - regenerated and embedded a corrected visual process flowchart in the Word document;
-  - this was a documentation-only task and did not change public pages, admin pages, APIs, database schema, email behavior, deployment configuration, or runtime code.
-- Verification after creating the membership benefits SOP:
-  - re-audited the membership logic in `api/_lib/membership.js`, public membership handlers, admin membership handlers, `service-center.js`, `profile.js`, storage submit, transport submit, membership SQL, and `docs/PROJECT_MAP.md`;
-  - rendered `docs/member-benefits-sop.docx` to five PNG pages with the Documents artifact renderer;
-  - visually inspected all rendered pages and confirmed Chinese text, tables, the corrected flowchart, and footer layout render without clipping, overlap, or missing glyphs.
-- Completed a technical evaluation for using Flarum as an independent NGN student information plaza/forum:
-  - recommendation is to keep the current `ngn.best` Vercel + Supabase main site unchanged and deploy Flarum on an independent PHP hosting target under `forum.ngn.best` or `bbs.ngn.best`;
-  - Flarum should not be copied from `discuss.flarum.org.cn` and should not be forced into the existing Vercel project;
-  - Vercel is not recommended for production Flarum because Flarum expects a traditional PHP web server, Composer/CLI maintenance, MySQL/MariaDB, and persistent writable runtime storage, while Vercel Functions are serverless with a read-only filesystem except `/tmp`;
-  - first-phase account strategy should be independent forum accounts, with the main site only linking to the forum subdomain;
-  - later SSO can be evaluated through OAuth/OIDC using Supabase Auth as an OAuth/OIDC provider or a dedicated auth bridge, but this should be treated as a second phase.
-- Added the approved storage sync audit scheduled phase:
-  - storage audit now uses `STORAGE_SYNC_AUDIT_SITE_USER_CUTOVER_AT`, defaulting to `2026-05-07T00:00:00Z`, to split legacy missing `site_user_id` from new-order missing `site_user_id`;
-  - `created_at < cutover_at` with no `site_user_id` is skipped with `reason: legacy_no_site_user_id`;
-  - `created_at >= cutover_at` with no `site_user_id` is a mismatch with `reason: no_site_user_id_after_cutover`;
-  - sensitive mismatch fields matching phone, WeChat/WhatsApp, email, or address are recorded as presence-only values (`present` / `missing`) instead of full customer values;
-  - `storage_sync_audit_logs` now has additive `cutover_at` and `notification` metadata columns, applied to Supabase project `ngn-transport`;
-  - added cron-only `GET /api/cron/run-storage-sync-audit`, protected by `CRON_SECRET`, which runs passive storage audit and then sends one daily summary email;
-  - `vercel.json` now schedules `/api/cron/run-storage-sync-audit` at `30 8 * * *`;
-  - the cron path writes only `storage_sync_audit_logs` and does not modify `storage_orders`, `orders`, `order_status_logs`, `site_users`, public submit/delete flows, or QA data;
-  - no active QA user creation, QA buy-box/collection/return order creation, automated cleanup, automated repair, or instant anomaly notification was added.
-- Added storage sync audit daily summary email support:
-  - recipient uses `STORAGE_SYNC_AUDIT_NOTIFY_EMAIL`;
-  - sender uses `STORAGE_SYNC_AUDIT_EMAIL_FROM`, then `AUTH_EMAIL_FROM`, then `SMTP_FROM`, then a safe default;
-  - Resend uses existing `RESEND_API_KEY`; SMTP fallback uses existing SMTP env vars;
-  - if recipient or provider configuration is missing, the audit still succeeds and records `notification.skipped=true`;
-  - summary email includes run time, sampled count, order-center count, personal-center count, mismatch count, skipped count, recent safe mismatch/skipped summaries, cutover, and the admin log URL, without full phone, WeChat, email, or address values.
-- Verification after adding storage audit cron and daily summary:
-  - `node --check` passed for `api/_lib/storage-sync-audit.js`, `api/_lib/storage-sync-audit-email.js`, `api/cron/run-storage-sync-audit.js`, `api/run-storage-sync-audit.js`, `api/storage-sync-audit-logs.js`, and `dev-server.js`;
-  - `vercel.json` parsed successfully;
-  - local cron route without a secret returned 403;
-  - storage cron auth was tightened to accept only `Authorization: Bearer <CRON_SECRET>`; query-string `secret` and `x-cron-secret` are not accepted by `/api/cron/run-storage-sync-audit`;
-  - local verification confirmed no Authorization returns 403, query-string secret returns 403, and correct Bearer secret returns 200;
-  - manual `GET /api/run-storage-sync-audit` returned 405 and unauthenticated manual `POST /api/run-storage-sync-audit` returned 401;
-  - temporary local cron verification with `CRON_SECRET` and `sample_size=1` returned 200 and wrote one storage audit log with `notification.skipped=true` because the notify email was intentionally blank;
-  - Supabase column check confirmed `storage_sync_audit_logs.cutover_at` and `storage_sync_audit_logs.notification` exist;
-  - `npm run build:prod` passed.
-
-- Refreshed the public community information plaza homepage:
-  - `community.html` now uses a simple NGN topbar with logo, `信息广场`, `发布信息`, and the compact site-auth user slot;
-  - removed the large service-button strip from the forum homepage and kept service links only in the lighter right sidebar;
-  - the homepage category filters are now forum categories only: 全部, 找搭子, 二手交易, 转租/短租, 求助问答, 官方公告;
-  - the main content uses a two-column layout with the post list as the primary area and lightweight rules/service cards on the right;
-  - search and category chips were restyled to feel like a student community board instead of an admin filter bar;
-  - post cards now show title, two-line summary, category, city/area, publish date, comment count, view count, and expiry text, with stronger treatment only when a post is close to expiry;
-  - empty results now show `暂无相关信息，可以发布第一条信息。` with a publish button;
-  - the shared site-auth dropdown now exposes `我的发布`, `个人资料`, and `退出登录`.
-- Verification after refreshing the community homepage:
-  - `node --check community.js` passed;
-  - `node --check site-auth.js` passed;
-  - Playwright opened `http://localhost:3000/community.html` at desktop and mobile widths, captured screenshots under `output/playwright/`, and confirmed no horizontal overflow, the desktop split, mobile stacking, forum-only chips, and removal of the large service strip.
-- Removed the unused "最少能接受几人拼车价位" option group from the public carpool request form:
-  - `pickup-form.html` no longer renders the `share_goal` radio group shown above the 同行人数 section;
-  - `pickup-form.js` no longer reads `share_goal`, no longer includes 拼车价位 in the generated summary or notes, and submits new front-office carpool requests with `shareable: true`;
-  - this is a public frontend form cleanup only and does not change admin pages, APIs, database schema, email, payment, deployment configuration, or transport public-board privacy behavior.
-- Verification after removing the public carpool form option:
-  - `node --check pickup-form.js` passed;
-  - source scan confirmed `pickup-form.html` and `pickup-form.js` no longer contain `share_goal`, `最少能接受`, `拼车价位`, `只想包车`, or the removed carpool price choices.
-- Confirmed the manually opened `/admin/storage/sync-logs` page state after the user verified the list loads:
-  - current loaded audit records show `mismatch_count = 0`;
-  - a log with one skipped check is consistent with the known legacy storage order without `site_user_id`;
-  - the page currently has no repair, delete-log, rerun-sync, cron, notification, daily summary, QA order creation, or public submit/delete behavior;
-  - `GET /api/storage-sync-audit-logs` remains admin-only and returns audit summary fields rather than full storage order rows;
-  - skipped checks currently store `reason: no_site_user_id`, and the Vue page maps that reason to readable text rather than displaying `unknown`;
-  - privacy follow-up before treating the audit log page as release-ready: future mismatch rows can include `expected` / `actual` values for fields such as `phone` and `wechat_or_whatsapp`, so those values should be masked or omitted before cron/notification/release use.
-- Added direct detail access for membership pickup reservations in the personal center:
-  - `service-center.html` now has a direct `查看详情` button in the pickup summary card;
-  - `service-center.js` wires that button to the existing personal-center order detail modal for both normal pickup reservations and membership-bound pickup reservations;
-  - membership-bound pickup reservations remain deduplicated from the ordinary recent-record list, but the pickup summary card can still open the linked order details;
-  - `service-center.js` also adds a `查看详情` action inside the membership benefit card when the selected pickup benefit is bound to an order;
-  - pickup membership displays no longer show the membership discount/price amount, and the detail modal hides the `当前每人价格` row for membership pickup orders;
-  - this is a public personal-center display-only change and does not change APIs, database schema, admin behavior, membership binding behavior, email, payment, or deployment configuration.
-- Verification after adding the detail button and hiding pickup membership prices:
-  - `node --check service-center.js` passed;
-  - UTF-8 sanity checks confirmed `service-center.js` and `service-center.html` still contain readable Chinese text and not mojibake;
-  - `npm run build:prod` passed.
-- Rechecked the storage sync audit log 404 after the browser still showed `Request failed with 404`:
-  - confirmed the Vue admin page requests the correct API paths: `GET /api/storage-sync-audit-logs` and `POST /api/run-storage-sync-audit`;
-  - confirmed the API files exist at `api/storage-sync-audit-logs.js` and `api/run-storage-sync-audit.js`;
-  - found the active local `npm run dev` process on port 3000 was still running the old in-memory route table from before the local `dev-server.js` route fix;
-  - restarted the local dev server on port 3000 so it now uses the updated route mappings;
-  - unauthenticated `GET /api/storage-sync-audit-logs` now returns 401 instead of 404;
-  - unauthenticated `POST /api/run-storage-sync-audit` now returns 401 instead of 404;
-  - no Vercel cron, email notification, daily summary, QA order creation, public submit/delete flow, database schema, or Vue page behavior was changed in this recheck.
-- Fixed the personal-center pickup summary card for membership-bound pickup reservations:
-  - `service-center.js` now keeps membership-bound pickup orders hidden from the duplicate ordinary order list, but the ordinary pickup summary card no longer says `当前无接机预约` when the current pickup is the linked membership reservation;
-  - the pickup summary card now shows `当前为会员预约` and uses the linked pickup service time to show either `9 月接机免费` or `非 9 月或其他时间接机优惠 100 镑`;
-  - if the service month cannot be resolved but the claim has a 100 GBP discount amount, the card falls back to the 100 GBP discount copy;
-  - the summary card remains non-clickable for the membership-bound duplicate; the membership benefit card remains the canonical place to show the linked order number and membership benefit state;
-  - this is a public personal-center display/copy change only and does not change APIs, database schema, admin behavior, membership binding behavior, email, payment, or deployment configuration.
-- Verification after fixing the pickup summary card:
-  - `node --check service-center.js` passed;
-  - `npm run build:prod` passed.
-- Fixed local dev-server routing for storage sync audit APIs:
-  - `dev-server.js` now maps `GET /api/storage-sync-audit-logs` to `api/storage-sync-audit-logs.js`;
-  - `dev-server.js` now maps `POST /api/run-storage-sync-audit` to `api/run-storage-sync-audit.js`;
-  - this fixes local `/admin/storage/sync-logs` showing `Request failed with 404` even though the Vue page and API files existed;
-  - this is a local helper server routing fix only and does not change the API handlers, database schema, Vue page logic, Vercel cron, notifications, public pages, storage submit, or delete behavior.
-- Verification after fixing the local storage audit API routes:
-  - `node --check dev-server.js` passed;
-  - unauthenticated `GET /api/storage-sync-audit-logs` on the local helper server returned 401 instead of 404;
-  - unauthenticated `POST /api/run-storage-sync-audit` returned 401 instead of 404;
-  - authenticated `GET /api/storage-sync-audit-logs?page=1&page_size=2` returned 200 with stored log data;
-  - authenticated `POST /api/run-storage-sync-audit?sample_size=3` returned 200 and stored a small manual audit log.
-- Updated personal-center copy for pickup membership reservations:
-  - `service-center.js` now renders pickup membership-bound reservations as `当前为会员预约`;
-  - if the linked pickup service time is in September, the membership card copy says `9 月接机免费`;
-  - if the linked pickup service time is outside September, the copy says `非 9 月或其他时间接机优惠 100 镑`;
-  - if the service month cannot be resolved but the claim already has a 100 GBP discount amount, the copy falls back to `本次接机优惠 100 镑`;
-  - this is a public personal-center copy/display change only and does not change APIs, database schema, membership binding, admin behavior, email, payment, or deployment configuration.
-- Verification after updating pickup membership reservation copy:
-  - `node --check service-center.js` passed;
-  - `npm run build:prod` passed.
-- Removed duplicate display of membership-bound orders in the personal center:
-  - `service-center.js` now filters the current membership claim's linked order out of the ordinary pickup/storage summary cards and the recent-record list;
-  - the membership benefit card remains the canonical place to show the linked membership service order;
-  - non-membership pickup/dropoff and storage orders still appear normally in the personal center;
-  - this is a public personal-center display-only change and does not change APIs, database schema, membership binding, admin behavior, email, payment, or deployment configuration.
-- Verification after the personal-center deduplication:
-  - `node --check service-center.js` passed;
-  - `npm run build:prod` passed.
-- Fixed stale membership claim order bindings after order deletion:
-  - deleting a transport request through the authenticated admin `DELETE /api/transport-requests/:id` path now releases the linked membership benefit claim when the deleted request had `membership_benefit_claim_id`;
-  - deleting a storage order through the authenticated admin storage-order delete path now releases the linked membership benefit claim in the same way;
-  - releasing a claim changes it from `reserved` back to `selected`, clears `linked_order_table`, `linked_order_id`, `linked_order_no`, membership discount, extra charge, final price, and discount breakdown, and writes a `membership_claim_order_unbound` audit log;
-  - `/admin/memberships` now shows a guarded `解绑订单` action for reserved claims with a linked order, so existing stale records from already-deleted orders can be manually repaired;
-  - membership detail and old membership audit labels now display `membership_claim_order_unbound` as `解绑订单`;
-  - this is an admin API/member-state consistency change and does not change database schema, public API exposure, payment behavior, email behavior, or deployment configuration.
-- Verification after fixing membership claim unbinding:
-  - `node --check api/_lib/membership.js` passed;
-  - `node --check api/transport-requests/[id].js` passed;
-  - `node --check api/admin/[...action].js` passed;
-  - `MembershipsView.vue` and `MembershipDetailView.vue` parsed with `@vue/compiler-sfc`;
-  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` bundle;
-  - `npm run build:prod` passed.
-- Fixed Vue admin membership-order highlighting:
-  - `/admin/transport/requests` now receives `membership_benefit_claim_id` and `membership_discount_amount` from the transport request list API, so pickup/dropoff orders bound to a membership benefit can be identified in the list;
-  - the shared Vue `AdminTable` now supports an optional row class function, and membership-bound transport rows are highlighted yellow;
-  - Vue storage all-orders and storage sub-list pages also use the same membership highlight rule for consistency: rows with a membership benefit claim or a positive membership discount are highlighted yellow;
-  - this is an admin display/API-field exposure change only; no public page, database schema, email, payment, membership binding behavior, or deployment configuration was changed.
-- Verification after fixing membership-order highlighting:
-  - `node --check api/transport-requests/index.js` passed;
-  - `node --check api/transport-requests/export.js` passed;
-  - `AdminTable.vue`, `TransportRequestsView.vue`, `StorageOrdersView.vue`, and `StorageAllOrdersView.vue` parsed with `@vue/compiler-sfc`;
-  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` bundle;
-  - `npm run build:prod` passed.
-- Added the manual storage sync audit log phase:
-  - created `storage_sync_audit_logs` with RLS forced and anon/authenticated access revoked;
-  - added a shared read-only storage audit helper that samples recent `storage_orders`, checks the unified `orders` mirror row, checks bound users through the personal-center storage orders path, records mismatches/skipped checks, and writes one summary row;
-  - added authenticated admin APIs `GET /api/storage-sync-audit-logs` and `POST /api/run-storage-sync-audit`;
-  - added `/admin/storage/sync-logs` with filtering, pagination, details, and a guarded `手动巡检一次` button;
-  - added the storage sync log entry to the Vue storage sidebar;
-  - no Vercel cron, email notification, QA order creation, public page, storage submit, or delete behavior was changed.
-- Before enabling any storage audit cron or notifications, the `site_user_id` missing check must be tightened:
-  - use `storage_orders.created_at` plus a configurable cutover timestamp; do not use `order_type`, order number format, or `service_label` to decide old/new orders;
-  - recommended environment variable: `STORAGE_SYNC_AUDIT_SITE_USER_CUTOVER_AT=2026-05-07T00:00:00Z`;
-  - if the environment variable is missing, use `2026-05-07T00:00:00Z` as the default and record the actual `cutover_at` used in each audit log;
-  - when `created_at < cutover_at` and `site_user_id` is empty, record a skipped check with reason `legacy_no_site_user_id`;
-  - when `created_at >= cutover_at` and `site_user_id` is empty, record a mismatch with reason/field `no_site_user_id_after_cutover`;
-  - the Vue log details should clearly show skipped reasons, mismatch reasons, and the `cutover_at` used by that run.
-- Applied and verified the storage audit table on Supabase project `ngn-transport`:
-  - `storage_sync_audit_logs` exists with RLS enabled and forced;
-  - one manual audit run completed and stored successfully: sampled 10 orders, checked 10 order-center rows, checked 9 personal-center rows, skipped 1 old order without `site_user_id`, and found 0 mismatches;
-  - notifications remain disabled and reported as skipped.
-- Verification after adding the manual storage audit phase:
-  - `node --check api/_lib/storage-sync-audit.js` passed;
-  - `node --check api/storage-sync-audit-logs.js` passed;
-  - `node --check api/run-storage-sync-audit.js` passed;
-  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` bundle;
-  - `npm run build:prod` passed.
-- Restored real actions on the Vue membership entitlement list:
-  - `/admin/memberships` now runs real admin actions for `开通会员`, `生成激活码`, row-level `登记权益` / `重新登记权益`, row-level `删除` membership entitlement, and activation-code `删除`;
-  - the Vue API helper now wraps the existing authenticated admin membership endpoints for grant, delete, manual claim creation, claim action, code creation, and code deletion;
-  - generated activation codes are shown once in the Vue page after creation, matching the existing backend behavior;
-  - destructive membership and activation-code deletes still require confirmation and reuse the existing server-side admin authorization boundaries;
-  - this is an admin Vue membership UI/API-client wiring change and does not change public pages, API route behavior, database schema, email behavior, payment behavior, or deployment configuration.
-- Verification after restoring Vue membership actions:
-  - `MembershipsView.vue` parsed and template-compiled with `@vue/compiler-sfc`;
-  - `node --check api/admin/[...action].js` passed;
-  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` bundle;
-  - the active generated bundle was scanned and confirmed to contain the restored action text such as `完整激活码`, `开通中...`, `重新登记权益`, and delete success text.
-- Restored the Vue transport request list row delete action:
-  - `/admin/transport/requests` now shows a guarded single-row `删除` action in the operation column between `查看详情` and `标记/取消已记录`;
-  - deletion uses the existing authenticated `DELETE /api/transport-requests/:id` path through the shared Vue admin API helper;
-  - the action opens the shared confirmation-dialog pattern and warns that related transport group membership cleanup runs with the delete;
-  - this is an admin Vue list action restoration and does not change public pages, API routes, database schema, email behavior, payment behavior, or deployment configuration.
-- Verification after restoring the transport request list delete action:
-  - `TransportRequestsView.vue` parsed and template-compiled with `@vue/compiler-sfc` from the `apps/admin` dependency context;
-  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` bundle;
-  - the active generated bundle was scanned and confirmed to contain `确认删除接送机订单`, `删除中...`, and the delete confirmation warning;
-  - `npm run build:prod` passed.
-- Replaced the old order-status display on Vue storage sub-lists with offline-recorded tracking:
-  - `/admin/storage/box-orders`, `/admin/storage/collections`, and `/admin/storage/returns` now filter by `offline_recorded` instead of the legacy storage `status`;
-  - the order-number badge and buy-box status column now show `未记录` / `已记录` instead of legacy values such as `待确认`;
-  - each storage sub-list row now has a `标记已记录` / `取消已记录` action using the existing authenticated storage order PATCH path;
-  - this is an admin Vue/customer-service tracking change and does not change public pages, database schema, email, payment, or deployment configuration.
-- Verification after replacing storage sub-list status display:
-  - `rg` confirmed `StorageOrdersView.vue` no longer contains `待确认`, `pending_confirmation`, `filters.status`, `statusLabel(row.status)`, or `statusTone(row.status)`;
-  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` bundle.
-- Adjusted Vue storage sub-list search behavior:
-  - `/admin/storage/box-orders`, `/admin/storage/collections`, and `/admin/storage/returns` now automatically search across all dates whenever the search box has a keyword or order number;
-  - when the search box is empty, the existing date range filter behavior remains unchanged;
-  - this prevents older orders such as `ST260410-0001` from being hidden by the default `当前及未来` date filter during direct searches;
-  - this is a Vue admin query-parameter change only and does not change storage APIs, database schema, public pages, email, payment, delete/export behavior, or deployment configuration.
-- Verification after widening storage sub-list search:
-  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` bundle;
-  - the generated bundle was scanned and confirmed to contain the new search-driven `date_scope=all` behavior.
-- Tightened the Vue storage sub-list address display:
-  - `/admin/storage/box-orders`, `/admin/storage/collections`, and `/admin/storage/returns` now split room/apartment, full address, and postcode fields on `/` before display;
-  - repeated address fragments, room/building names, and postcodes are filtered by a normalized address key so values already present in a more complete address segment are not shown again;
-  - this is a Vue admin display-only change and does not change storage APIs, database schema, public pages, email, payment, delete/export behavior, or deployment configuration.
-- Verification after tightening the storage sub-list address display:
-  - `StorageOrdersView.vue` parsed and template-compiled with `@vue/compiler-sfc`;
-  - sample address cases matching the operator screenshot were checked with the new deduplication logic;
-  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` bundle.
-- Restored the Vue transport group detail driver dispatch summary behavior:
-  - `/admin/transport/groups/:id` now generates the driver dispatch summary with the same legacy template as `transport-admin-group-edit.html`, including flight info, price/cross-terminal text, contact/payment lines, luggage totals, address/departure address, and the final driver line;
-  - saved custom summaries now use the same `[dispatch_summary_override]` marker pattern as the old admin so regular group notes and dispatch-summary overrides stay compatible between old admin and Vue admin;
-  - this did not change transport group APIs, database schema, email behavior, public pages, payment logic, member logic, or deployment configuration.
-- Verification after restoring the dispatch summary:
-  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` bundle;
-  - the source was checked for the restored legacy summary markers and sections.
-- Adjusted the Vue transport group detail page title size:
-  - `/admin/transport/groups/:id` now gives the `拼车组详情` page title stronger visual weight so it matches the registered pickup/dropoff detail page title;
-  - this was a CSS-only admin Vue change and did not touch transport group business logic, APIs, database schema, public pages, email behavior, or deployment configuration.
-- Verification after the title-size adjustment:
-  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` bundle.
-- Restored the Vue storage all-orders row delete action:
-  - `/admin/storage/orders` now shows a guarded single-row `删除` action in the operation column alongside `查看详情` and line-record toggles;
-  - deletion uses the existing authenticated `DELETE /api/admin/storage-orders?id=...` path through the shared Vue admin API helper;
-  - the action opens the existing confirmation-dialog pattern before deleting and does not add batch delete;
-  - no API route, database schema, public page, email, or deployment behavior changed.
-- Verification after restoring the storage all-orders delete action:
-  - `StorageAllOrdersView.vue` parsed and template-compiled with `@vue/compiler-sfc`;
-  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` bundle;
-  - the active generated bundle was scanned and confirmed to contain the restored delete labels and confirmation text.
-- Reworked `/admin/transport/groups/:id` to follow the previous admin detail layout:
-  - restored the legacy-style sections: `组概要`, `费用与付款`, `组内成员列表`, `加入成员`, and `司机派单摘要`;
-  - fields that were editable in the old detail stay editable in Vue: max passengers, service time, payment status, adding/removing members, and driver dispatch summary;
-  - readonly fields such as Group ID, created time, service type, airport, terminal summary, current member count, order/member details, fees, and joined time remain readonly;
-  - the member table now mirrors the old-detail information density with order status, contact, flight/time, terminal, luggage, destination, surcharge, payment status, joined time, and actions;
-  - the dispatch summary now has one-click copy, reset to auto-generated content, and save actions.
-- Verification after aligning the Vue group detail with the old layout:
-  - `TransportGroupDetailView.vue` parsed and template-compiled with `@vue/compiler-sfc`;
-  - `node --check api/transport-groups/[id].js` passed;
-  - `node --check api/transport-groups/[id]/members.js` passed;
-  - `node --check api/transport-requests/[id].js` passed;
-  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` bundle;
-  - the active generated bundle was scanned and confirmed to contain the restored legacy-style section/action labels;
-  - `npm run build:prod` passed.
-- Moved the Vue admin account controls from the top-right header into the lower-left sidebar:
-  - the logged-in admin name and `退出登录` button now render at the bottom of the Vue admin sidebar;
-  - the global top header was removed from the Vue admin layout so page content starts higher and the previous blank horizontal area is gone;
-  - mobile sidebar layout keeps the account name and logout button below the navigation without changing routes or business behavior.
-- Verification after the Vue admin account-layout adjustment:
-  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` bundle;
-  - `npm run build:prod` passed;
-  - Playwright opened `/admin/transport/groups` on the local server and confirmed unauthenticated access still redirects to `admin-login.html?return_to=...`.
-- Restored `/admin/transport/groups/:id` from a readonly summary into a management-style Vue detail page:
-  - the page now keeps operators inside the new Vue admin while showing editable group controls;
-  - restored management sections for group info, pricing/payment summary, adding a member by order number, and current members;
-  - restored actions for saving group status/max passengers/service time/notes, marking a member paid/unpaid, removing a member, viewing the linked request, adding an order to the group, and deleting an empty group;
-  - dangerous actions remain guarded: removing members and deleting groups require confirmation, and non-empty groups still cannot be deleted directly.
-- Added the Vue API wrapper for the existing `PATCH /api/transport-groups/:id` endpoint.
-- Verification after restoring the Vue group management detail:
-  - `node --check api/transport-groups/[id].js` passed;
-  - `node --check api/transport-groups/[id]/members.js` passed;
-  - `TransportGroupDetailView.vue` parsed and template-compiled with `@vue/compiler-sfc`;
-  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` bundle;
-  - the active generated bundle was scanned and confirmed to contain the restored management actions;
-  - `npm run build:prod` passed.
-- Reverted the mistaken old-admin transport group detail jump:
-  - Vue transport group list `查看详情` now opens `/admin/transport/groups/:id` again;
-  - Group ID links from Vue transport request list and request detail also stay inside the Vue admin group detail route;
-  - direct visits to `/admin/transport/groups/:id` no longer redirect to `transport-admin-group-edit.html`;
-  - restored payment and delete actions on the Vue group list remain unchanged.
-- Verification after keeping group detail in Vue:
-  - `TransportGroupsView.vue`, `TransportRequestsView.vue`, `TransportRequestDetailView.vue`, and `TransportGroupDetailView.vue` parsed and template-compiled with `@vue/compiler-sfc`;
-  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` bundle;
-  - the active generated bundle was scanned and confirmed to contain the Vue group route, with no `transport-admin-group-edit.html` or old-admin group redirect;
-  - `npm run build:prod` passed.
-- Restored the transport group detail entry to the old admin workflow after operator review:
-  - Vue transport group list `查看详情` now opens `transport-admin-group-edit.html?id=...` instead of the simplified Vue group-detail screen;
-  - Group ID links from Vue transport request list and request detail now also open the old transport group detail page;
-  - direct visits to `/admin/transport/groups/:id` now redirect to `transport-admin-group-edit.html?id=...`;
-  - the Vue transport group list still keeps the restored row-level payment and delete actions.
-- Verification after restoring the group detail entry:
-  - `TransportGroupsView.vue`, `TransportRequestsView.vue`, `TransportRequestDetailView.vue`, and `TransportGroupDetailView.vue` parsed and template-compiled with `@vue/compiler-sfc`;
-  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` bundle;
-  - the active generated bundle was scanned and confirmed to contain `transport-admin-group-edit.html` and no old Vue group-link template;
-  - `npm run build:prod` passed.
-- Restored the Vue transport group row delete action:
-  - `/admin/transport/groups` now shows `删除` next to `查看详情` in the row action column;
-  - the Vue action follows the old-admin guard and refuses deletion when the group still has members, showing `请把当前拼车组成员移到其他组里。`;
-  - single-row delete uses the existing authenticated `DELETE /api/transport-groups/:id` endpoint; no batch delete was added;
-  - the delete endpoint now resolves the stored group first and uses the real `group_id` when loading members, so member/regroup logic is not skipped when the frontend passes the database id.
-- Verification after restoring the group delete action:
-  - `node --check api/transport-groups/[id].js` passed;
-  - `node --check api/transport-groups/index.js` passed;
-  - `TransportGroupsView.vue` parsed and template-compiled with `@vue/compiler-sfc`;
-  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` bundle;
-  - the active generated bundle was scanned and confirmed to contain the restored delete labels and member-guard message;
-  - `npm run build:prod` passed.
-- Made the Vue admin sidebar section headers collapsible:
-  - `后台`, `接送机拼车管理`, and `寄存管理` now render as accessible toggle buttons with `aria-expanded`;
-  - clicking a section header folds or expands that section's links, including the transport and storage groups shown in the operator screenshot;
-  - active sections are visually highlighted while still allowing the operator to collapse them;
-  - no route, API, database, public page, email, or deployment behavior changed.
-- Verification after the sidebar collapse update:
-  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` bundle;
-  - `npm run build:prod` passed;
-  - the active generated bundle was scanned and confirmed to contain the collapsible sidebar controls;
-  - local unauthenticated access to `/admin/transport/groups` still redirects to `admin-login.html?return_to=...`, so browser inspection stopped at the expected login gate.
-- Restored the Vue transport group payment action after operator review:
-  - `/admin/transport/groups` now shows a dedicated `付款操作` column again;
-  - groups with unpaid members show `标记付款` or `标记X人付款`;
-  - clicking the button updates the affected transport requests through the existing `PATCH /api/transport-requests/:id` path, preserving existing internal notes while adding the `[payment:paid]` marker;
-  - the existing payment-confirmation email trigger remains on the transport request PATCH path, so the Vue group list does not bypass the established payment flow;
-  - `/api/transport-groups` now includes each member's existing `admin_note` in the admin-only payment summary so the Vue action does not overwrite notes.
-- Verification after restoring the transport group payment action:
-  - `node --check api/transport-groups/index.js` passed;
-  - `TransportGroupsView.vue` parsed and template-compiled with `@vue/compiler-sfc`;
-  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` bundle;
-  - the active generated bundle was scanned and confirmed to contain `付款操作`, `标记付款`, `保存中...`, and `已付款`;
-  - `npm run build:prod` passed.
-- Unified the Vue admin offline-record and export operation model on storage all-orders and transport request lists:
-  - `/admin/storage/orders` and `/admin/transport/requests` now keep only `查询`, `重置`, and `导出当前筛选结果` in the filter action area;
-  - the high-risk transport list action `一键标记当前筛选为已线下记录` was removed from the page header;
-  - both pages now use a shared `AdminBulkActionBar` above the table with `选择当前页`, `批量标记已记录`, `批量取消已记录`, and `导出选中订单`;
-  - bulk mark/cancel and selected export are selected-row only; no frontend action marks all filtered transport rows;
-  - row actions on both pages are normalized to `查看详情` plus `标记已记录`/`取消已记录`;
-  - list labels now consistently show `线下记录` with `未记录` / `已记录`.
-- Added narrow backend support needed by the unified UI:
-  - `PATCH /api/transport-requests` now supports selected-id `set_offline_recorded` for marking or canceling selected transport requests;
-  - `/api/admin/storage-orders-export` now supports selected expanded storage all-order row ids, so exporting selected rows does not accidentally export every expanded row for the same base storage record;
-  - transport request export now uses `线下记录` with `未记录` / `已记录`.
-- Verification after the unified operation update:
-  - `node --check api/transport-requests/index.js` passed;
-  - `node --check api/transport-requests/export.js` passed;
-  - `node --check api/admin/[...action].js` passed;
-  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` bundle;
-  - `npm run build:prod` passed;
-  - Playwright opened the local Vue transport request route and confirmed unauthenticated access still redirects to the backend login page.
-- Cleaned mojibake text on the Vue transport request list header/filter area:
-  - `TransportRequestFilters.vue` now uses normal Chinese labels, options, and action text for the transport request filters and export button;
-  - `AppHeader.vue` now shows `退出登录` instead of garbled text in the top-right account area;
-  - `LoginRedirectView.vue` now shows normal Chinese fallback login copy;
-  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` bundle;
-  - the active generated bundle was scanned and confirmed to contain the expected Chinese labels with no matching old mojibake fragments for the fixed text.
-- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before implementing the storage all-orders page.
-- Added the Vue storage all-orders control route:
-  - new route `/admin/storage/orders`;
-  - sidebar order under 寄存管理 is now 全部订单, 买箱订单, 取寄存订单, 送寄存订单;
-  - the page summarizes ST-B buy-box, ST-P storage collection, and ST-S/ST-R-compatible storage return rows without creating a fourth business type;
-  - the page includes search, service type, order status, offline-recorded state, last operator, date range, sort, page-size filters, current-page selection, safe bulk mark/cancel offline-recorded, filtered export, and per-row detail routing;
-  - no archive/归档 concept or action is present on this new page.
-- Added storage offline tracking support:
-  - local migration `supabase/20260519_storage_order_offline_tracking.sql` adds `offline_recorded`, `last_operated_by`, and `last_operated_at` to `storage_orders` plus focused indexes;
-  - historical storage rows default to `offline_recorded=false`; no backfill from the generic `orders.archived` field was added;
-  - `/api/admin/storage-orders` now supports the all-orders view, offline-recorded and last-operator filters, dynamic operator options, and selected-id bulk mark/cancel offline-recorded;
-  - storage order PATCH updates now also refresh `last_operated_by` and `last_operated_at` for key admin edits such as status/date/address/note/offline changes.
-- Updated storage exports:
-  - `/api/admin/storage-orders-export?order_type=all` exports the current all-orders filter result with offline-recorded and last-operation columns;
-  - the storage export does not add archived/归档 fields.
-- Refreshed the Vue storage sub-list component because the existing source had malformed encoded template tags that blocked Vue compilation; the replacement preserves the three existing subpages, list filters, export, detail links, and single-row delete.
-- Follow-up after the storage all-orders page did not appear locally:
-  - repaired malformed Vue source files that were blocking the admin build output refresh: `TransportGroupsView.vue`, `TransportGroupDetailView.vue`, `TransportRequestDetailView.vue`, `TransportRequestsView.vue`, `OrderFilters.vue`, and `TransportGroupFilters.vue`;
-  - `npm run build:admin-vue` now passes and regenerated the root `admin-vue/` bundle, including the `/admin/storage/orders` route and the sidebar "全部订单" entry;
-  - `npm run build:prod` now passes.
-- Cleaned the Vue storage all-orders control page after operator review:
-  - removed the order-status filter, request parameter, table column, and all-orders export column from the control page because客服只需要按线下记录状态处理;
-  - kept line-recorded status as the single operational status on the all-orders page: 未记录 / 已记录;
-  - changed the address summary to split and deduplicate room/apartment, full address, and postcode segments so repeated values such as room number and postcode are not shown multiple times;
-  - regenerated the root `admin-vue/` bundle after the cleanup.
-- Refined the Vue storage all-orders operation column after operator review:
-  - added back a guarded single-row 删除 action using the existing `/api/admin/storage-orders?id=...` DELETE path;
-  - no batch delete action was added;
-  - address summary deduplication now also removes shorter room/building/postcode fragments when they are already contained inside a longer address segment, reducing repeated text such as building names appearing twice;
-  - regenerated the root `admin-vue/` bundle after this adjustment.
-- Added readiness handling for the storage all-orders offline-recorded buttons:
-  - `/api/admin/storage-orders` now reports whether the storage offline tracking columns are available;
-  - if `offline_recorded`, `last_operated_by`, or `last_operated_at` is missing, bulk and single-row mark/cancel recorded operations return a clear Chinese migration message instead of the raw Postgres "column does not exist" error;
-  - the Vue all-orders page disables mark/cancel recorded buttons and shows the migration message until `supabase/20260519_storage_order_offline_tracking.sql` is applied.
-- Applied the storage offline tracking migration to Supabase project `ngn-transport`:
-  - `offline_recorded`, `last_operated_by`, and `last_operated_at` now exist on `public.storage_orders`;
-  - the five related storage tracking/service-date indexes now exist;
-  - current historical storage rows remain initialized as `offline_recorded=false`, so they display as 未记录 until customer service marks them.
-- Verification after the storage all-orders implementation:
-  - `node --check api/admin/[...action].js` passed;
-  - `node --check api/_lib/storage-orders.js` passed;
-  - `StorageAllOrdersView.vue` was parsed and template-compiled directly with `@vue/compiler-sfc`;
-  - scan of the new all-orders page/API client/storage migration found no archive/归档 wording;
-  - generated Vue bundle scan confirms the storage all-orders route is present;
-  - `npm run build:admin-vue` passed after removing the all-orders status UI and refreshing address display;
-  - `npm run build:admin-vue` and `npm run build:prod` passed after adding single-row delete and stronger address deduplication;
-  - `node --check api/admin/[...action].js`, `npm run build:admin-vue`, and `npm run build:prod` passed after adding offline-recorded readiness handling.
-- Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before the checkpoint.
-- Updated transport request deletion to preserve carpool/group consistency:
-  - `DELETE /api/transport-requests/:id` now removes the request from any `transport_group_members` rows before deleting the request;
-  - affected transport groups are synced through the existing lifecycle logic, so remaining members are reclassified and empty groups are cleaned up;
-  - deleting a request does not create a replacement group for the request being deleted.
-- Restored the visible delete button in the currently served Vue transport request list:
-  - the Vue source already had the row-level delete action, but the generated `admin-vue` bundle still had the older two-button action column;
-  - patched the active generated bundle so `/admin/transport/requests` now shows `查看`, `删除`, then `标记/取消线下记录`;
-  - the generated delete action calls `DELETE /api/transport-requests/:id`, so it uses the server-side carpool cleanup added above;
-  - full `npm run build:admin-vue` is still blocked by unrelated existing Vue syntax issues, currently `MembershipDetailView.vue`; small syntax blockers in `BoxOrderDetailView.vue` and `NotFoundView.vue` were minimally corrected while trying to rebuild.
-- Removed prominent old-admin entry points from daily Vue admin business pages:
-  - storage list pages now keep the Excel export action but no longer show the old storage admin button in the page header;
-  - storage and buy-box detail pages no longer show old-detail fallback buttons in the header;
-  - other migrated list/detail page headers no longer show obvious old-admin buttons for users, orders, managers, memberships, community, transport requests, transport groups, or sync logs;
-  - the Vue sidebar no longer shows the bottom return-to-old-admin legacy entry;
-  - the transport request filter shortcut now routes to the Vue transport groups page instead of the old transport groups page.
-- Old admin HTML pages were not deleted and remain available by direct URL for rollback, but the Vue admin no longer actively steers operators back to them from routine business screens.
-- Restored the delete action in the Vue transport request list:
-  - `/admin/transport/requests` operation column now includes a per-row `鍒犻櫎` button;
-  - clicking it asks for confirmation before calling the existing authenticated `DELETE /api/transport-requests/:id` endpoint;
-  - after deletion the current list page reloads and selected-row state is cleaned.
-- Verification after restoring the list delete action:
-  - source scan confirmed `deleteTransportRequest`, `deleteRequest`, and the row-level `鍒犻櫎` button are present;
-  - `npm run build:admin-vue` is currently blocked by an unrelated dirty `CommunityPostDetailView.vue` syntax error at line 190 (`Invalid end tag`), so the Vue build output was not regenerated for this small list change.
-- Cleaned the service-type display on `/admin/transport/requests/:id`:
-  - changed the read-only service type from a disabled select to a read-only input so the dropdown arrow is no longer shown;
-  - no data, API, database, or behavior change was made.
-- Verification after the service-type display cleanup:
-  - scanned `TransportRequestDetailView.vue` to confirm the service type uses a read-only input;
-  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` build output;
-  - `npm run build:prod` passed.
-- Fixed Vue admin API error-message extraction:
-  - the shared Vue admin request helper now unwraps nested API errors such as `{ error: { message } }`;
-  - transport request group-change failures now show the real backend reason instead of `[object Object]`;
-  - the same fix also improves other Vue admin JSON error messages that use the shared request helper.
-- Verification after the error-message fix:
-  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` build output;
-  - `npm run build:prod` passed.
-- Adjusted the `/admin/transport/requests/:id` lower action label after operator feedback:
-  - the bottom action now says "鍒犻櫎璁㈠崟" and uses the danger button style;
-  - it still links to the existing advanced transport request management page for the actual delete flow, so no new Vue delete API call was added;
-  - the top header action remains "鏇村绠＄悊鎿嶄綔".
-- Verification after the delete-label adjustment:
-  - scanned `TransportRequestDetailView.vue` to confirm there is no "鏃у悗鍙? wording;
-  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` build output;
-  - `npm run build:prod` passed.
-- Cleaned confusing operator-facing wording on `/admin/transport/requests/:id`:
-  - replaced "鎵撳紑鏃ц鎯呴〉" and "鍒犻櫎璁㈠崟锛堟棫鍚庡彴锛? with the neutral label "鏇村绠＄悊鎿嶄綔";
-  - removed the red delete-styled button from the Vue detail page so it no longer looks like a direct Vue delete action;
-  - the link still opens the existing advanced transport request management page for operations that have not been migrated into Vue.
-- Verification after the wording cleanup:
-  - scanned `TransportRequestDetailView.vue` to confirm the old-backend wording is gone;
-  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` build output;
-  - `npm run build:prod` passed.
-- Updated `/admin/transport/requests/:id` after operator review to restore the old-detail lower workflow:
-  - the detail page now shows the current order's current Group ID with a link to the Vue group detail page;
-  - the detail page now shows a "鏇存崲鐜版湁鎷艰溅缁? section with force-by-Group-ID replacement and same-date/same-airport candidate group cards;
-  - saving the editable lower fields remains in Vue, while delete is still routed to the old detail page instead of adding a new Vue delete mutation;
-  - the detail page now shows an operation-record section listing who edited the order, when, and which fields changed.
-- Added transport request operation logging:
-  - `PATCH /api/transport-requests/:id` now compares changed fields and writes them into existing `admin_operation_logs` with `target_type='transport_request'`;
-  - `GET /api/transport-requests/:id` now returns the latest transport request operation logs for the Vue detail page;
-  - `POST /api/transport-groups/:id/members` now records affected request group membership changes in `admin_operation_logs` and updates the affected requests' last-operator summary fields;
-  - this reuses the existing admin audit table rather than adding a new audit table.
-- Applied Supabase migration `admin_operation_logs_transport_request_target_index` to project `ngn-transport`:
-  - local SQL file: `supabase/20260519_admin_operation_logs_transport_request_target_index.sql`;
-  - adds `idx_admin_operation_logs_target_type_target_id_created_at` for detail-page operation-log lookup;
-  - verified the index exists through Supabase SQL.
-- Updated `docs/PROJECT_MAP.md` for the transport request detail logs and group-member logging behavior.
-- Verification after the transport detail group/log update:
-  - `node --check api/transport-requests/[id].js` passed;
-  - `node --check api/transport-groups/[id]/members.js` passed;
-  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` build output;
-  - `npm run build:prod` passed.
-- Updated `/admin/transport/requests/:id` after operator review:
-  - the lower detail fields are now editable in Vue: airport code, airport name, terminal, flight number, flight/departure time, departure location, destination address, pickup/service time, notes, and internal notes;
-  - the upper customer identity/contact fields remain read-only for this step;
-  - saving uses the existing authenticated `PATCH /api/transport-requests/:id` endpoint, so `last_operated_by` and `last_operated_at` are updated by the server;
-  - no new API route, database schema change, public page change, old admin page change, email behavior change, or delete/payment/grouping operation was added.
-- Verification after the editable transport detail update:
-  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` build output;
-  - the first parallel `npm run build:prod` attempt failed because it read a stale generated Vue asset name while `build:admin-vue` was refreshing output;
-  - rerunning `npm run build:prod` sequentially passed.
-- Simplified `/admin/transport/requests/:id` for customer-service review:
-  - replaced the verbose migrated readonly detail sections with a single compact readonly form similar to the operator screenshot;
-  - the visible fields now focus on service type, name, email, phone, WeChat, passenger count, luggage, airport, terminal, flight number, trip times/locations, notes, and internal notes;
-  - removed the main-page display of transport group fields, membership/price fields, raw JSON previews, and placeholder operation buttons from this Vue detail page;
-  - kept the existing old-detail fallback link and the existing `GET /api/transport-requests/:id` data source;
-  - no API, database schema, public page, old admin page, email behavior, or real mutation behavior changed.
-- Verification after the transport detail simplification:
-  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` build output;
-  - `npm run build:prod` passed.
-- Cleaned remaining mojibake text in the Vue storage detail page:
-  - fixed the storage detail page title, loading text, back/old-detail links, order-number label, notes section title, and customer-service summary label;
-  - fixed storage detail money formatting to use `拢` and cleaned box/quantity fallback labels;
-  - scanned the Vue storage list/detail/box-detail source files for common mojibake fragments after the fix.
-- Refined `/admin/storage/storage-orders/:id` for operator clarity:
-  - removed duplicated readonly service-date fields so the display section now keeps only storage start date, storage end date, and storage days;
-  - removed room number and floor/upstairs-description readonly fields from the address display;
-  - changed the boxes/items/quantity section into a readonly operator summary with associated buy-box order number, a box-type detail table, weight/overweight display, and no storage-quantity or buy-box editing controls;
-  - related buy-box lookup now uses existing order relationship fields such as `box_order_no` and resolves to the Vue buy-box detail route when an id can be found, otherwise it opens the buy-box list with a search query instead of falling back to the dashboard;
-  - replaced the old fee card grid with one readable total-price formula showing storage fee, home-service fee, stairs fee, overweight fee, buy-box fee, optional extra fee, and membership discount;
-  - `npm run build:admin-vue` passed after the cleanup.
-- Refined the Vue transport request offline-recorded workflow after operator review:
-  - the last-operator filter now uses real historical `transport_requests.last_operated_by` values returned by the backend instead of a fixed hardcoded staff list;
-  - if another admin account such as Firo edits a request, the existing server-side PATCH audit logic records that account name and it becomes available in the filter after reload;
-  - the Vue list now supports selecting rows, exporting selected rows, exporting the current page, or exporting all current filtered results with explicit button labels;
-  - the list heading now has a guarded "mark current filtered results offline-recorded" action, which updates `offline_recorded`, `last_operated_by`, and `last_operated_at` server-side for matching rows;
-  - `/api/transport-requests/export` now accepts selected/current-page `ids` for scoped exports;
-  - `/api/transport-requests` now supports the narrow bulk `PATCH` action for marking filtered rows as offline-recorded;
-  - no manual order creation, customer-owner assignment, payment-status work, carpool-status refactor, public page change, database schema change, or email behavior change was added.
-- Verification after the transport list refinement:
-  - `node --check api/transport-requests/index.js` passed;
-  - `node --check api/transport-requests/export.js` passed;
-  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` build output;
-  - `npm run build:prod` passed after the API and Vue changes.
-- Completed full acceptance of the Vue admin read-only list version.
-- Migrated Vue admin pages now covered by the checkpoint:
-  - dashboard: `/admin/`;
-  - users: `/admin/users`;
-  - orders: `/admin/orders`;
-  - managers: `/admin/managers`;
-  - transport requests: `/admin/transport/requests`;
-  - transport groups: `/admin/transport/groups`;
-  - transport sync audit logs: `/admin/transport/sync-logs`;
-  - storage box orders: `/admin/storage/box-orders`;
-  - storage collections: `/admin/storage/collections`;
-  - storage returns: `/admin/storage/returns`;
-  - memberships readonly: `/admin/memberships`;
-  - community readonly: `/admin/community`.
-- All old admin pages remain available as rollback entries, including:
-  - `admin-dashboard.html`;
-  - `admin-orders.html`;
-  - `admin-users.html`;
-  - `admin-managers.html`;
-  - `transport-admin-requests.html`;
-  - `transport-admin-groups.html`;
-  - `transport-admin-sync-logs.html`;
-  - `admin-storage.html`;
-  - `admin-memberships.html`;
-  - `admin-community.html`.
-- No real `DELETE`, `POST`, `PATCH`, export, moderation, payment confirmation, deletion, membership mutation, or other dangerous requests were found in the Vue read-only acceptance pass.
-- Checkpoint pre-commit checks completed:
-  - `git status` reviewed;
-  - `npm run build:admin-vue` passed;
-  - `npm run build:prod` passed;
-  - intended Vue/admin build files were scanned for secret, token, and cookie patterns with no matches;
-  - Vue source scan confirmed no `innerHTML`, `document.querySelector`, or `addEventListener`;
-  - Vue source scan confirmed no references to old `admin-pages.js`, `transport-admin.js`, `admin-users.js`, or `admin-orders.js`.
-- This checkpoint does not deploy, push, merge, create a PR, add new pages, change APIs, change database schema, change public frontend pages, or implement dangerous operations.
-- Hardened the pending admin-manager root permission fix:
-  - `isRootManagerAccount()` no longer uses mutable display `name` or editable `username` as root authority;
-  - Wkevin/root is now identified by the fixed configured email only, pending a future fixed admin id migration;
-  - the old admin page's UI-only root helper was aligned to the same fixed-email rule so fake `name=Wkevin` does not expose root controls;
-  - local branch tests confirmed fake `name=Wkevin`, fake `username=superadmin`, normal `super_admin`, and `operations_admin` are not treated as root;
-  - local branch tests confirmed Wkevin/root can manage another `super_admin`, cannot delete/disable self, and nobody can delete/disable/downgrade the last active `super_admin`.
-- This root-permission hardening is still uncommitted and has not been pushed or deployed.
-- Repaired Vue admin list "view detail" behavior without migrating new pages or implementing dangerous operations:
-  - `/admin/orders` now routes storage orders to `admin-storage-detail.html?id=...` and transport orders to `transport-admin-request-edit.html?id=...` when a stable id is available;
-  - `/admin/transport/requests` now opens `transport-admin-request-edit.html?id=...` for view actions, while Group ID links continue to open `transport-admin-group-edit.html?id=...`;
-  - `/admin/transport/groups` now uses the shared legacy group link helper for `transport-admin-group-edit.html?id=...`;
-  - `/admin/storage/box-orders`, `/admin/storage/collections`, and `/admin/storage/returns` now use the shared storage detail helper with id fallbacks;
-  - `/admin/memberships` sends readonly benefit-detail and operation-record actions to `admin-memberships.html`, while mutation actions remain placeholders;
-  - `/admin/community` remains readonly-detail only and still performs no moderation mutations.
-- `npm run build:admin-vue` passed after the detail-link repair.
-- Migrated the first readonly Vue detail page:
-  - added `/admin/storage/:id` for storage order readonly details;
-  - the three storage Vue list pages now open the Vue detail route as the primary detail entry;
-  - the Vue detail page uses the existing `GET /api/admin/storage-orders?id=...` endpoint and does not change backend API shape;
-  - the detail page keeps the old storage detail structure as readonly sections: order basics, user/contact, service appointment, address, boxes/items/quantity, price/fees, notes, folded JSON previews, and a disabled/placeholder operations area;
-  - `admin-storage-detail.html` remains available through an "open old detail" fallback link.
-- `npm run build:admin-vue` passed after the storage detail migration.
-- Migrated the second readonly Vue detail page:
-  - added `/admin/transport/requests/:id` for transport request readonly details;
-  - the Vue transport request list now opens the Vue detail route as the primary detail entry;
-  - the Vue detail page uses the existing `GET /api/transport-requests/:id` endpoint and does not change backend API shape;
-  - the detail page keeps the old transport request edit structure as readonly sections: order basics, student/contact, flight and airport, trip, carpool, membership/price, notes, folded extra JSON, and a placeholder operations area;
-  - `transport-admin-request-edit.html` remains available through an "open old detail" fallback link.
-- `npm run build:admin-vue` passed after the transport request detail migration.
-- Migrated the third readonly Vue detail page:
-  - added `/admin/transport/groups/:id` for transport group readonly details;
-  - the Vue transport group list now opens the Vue detail route as the primary detail entry;
-  - Group ID links from the Vue transport request list and transport request detail now prefer the Vue group detail route;
-  - the Vue detail page uses the existing `GET /api/transport-groups/:id` endpoint and does not change backend API shape;
-  - the detail page keeps the old transport group edit structure as readonly sections: group basics, trip, seats, payment, members, driver/dispatch summary, notes, folded extra JSON, and a placeholder operations area;
-  - `transport-admin-group-edit.html` remains available through an "open old group detail" fallback link.
-- `npm run build:admin-vue` passed after the transport group detail migration.
-- Migrated the fourth readonly Vue detail page:
-  - added `/admin/orders/:id` for order center readonly summary details;
-  - the Vue order center list now opens the Vue order detail route as the primary detail entry;
-  - the Vue detail page uses the existing `GET /api/admin/orders/:id` endpoint and does not change backend API shape;
-  - the detail page keeps order center detail structure as readonly sections: order basics, customer info, service summary, notes/logs, professional detail entry, folded extra fields, and a placeholder operations area;
-  - professional detail entries route storage orders to `/admin/storage/:id` and transport orders to `/admin/transport/requests/:id` using the existing source id;
-  - `admin-orders.html` remains available through an "open old order center" fallback link.
-- `npm run build:admin-vue` passed after the order center detail migration.
-- Vue source scan still found no `innerHTML`, `document.querySelector`, `addEventListener`, `admin-orders.js`, or `admin-pages.js` usage.
-- Dangerous request scan found no new `PATCH`, `DELETE`, or export calls; only the existing shared fetch wrapper and existing logout `POST` remain.
-- Migrated the fifth readonly Vue detail page:
-  - added `/admin/memberships/:id` for membership entitlement readonly details;
-  - the Vue membership list now opens the Vue detail route for "benefit detail" and "operation record" actions;
-  - the route uses `membership_entitlements.id` as the stable detail id, with the clicked row cached for precise readonly display and the existing `GET /api/admin/memberships` list endpoint as a no-API-change fallback;
-  - the detail page keeps the old membership business structure as readonly sections: user basics, membership entitlement, activation-code summary, benefit/audit records, folded extra fields, and a placeholder operations area;
-  - `admin-memberships.html` remains available through an "open old membership admin" fallback link.
-- `npm run build:admin-vue` passed after the membership detail migration.
-- Vue source scan still found no `innerHTML`, `document.querySelector`, `addEventListener`, `admin-memberships.js`, or `admin-pages.js` usage.
-- Dangerous request scan found no new `PATCH`, `DELETE`, or export calls; only the existing shared fetch wrapper and existing logout `POST` remain.
-- Migrated the sixth readonly Vue detail page:
-  - added `/admin/community/posts/:id` for community post readonly details;
-  - the Vue community post list now opens the Vue detail route for post detail viewing;
-  - the detail page uses the existing `GET /api/admin/community-posts?id=...` endpoint and does not change backend API shape;
-  - the detail page keeps the old community management structure as readonly sections: post basics, publisher/risk info, images, reports, comments, folded extra fields, and a placeholder operations area;
-  - `admin-community.html` remains available through an "open old community admin" fallback link.
-- `npm run build:admin-vue` passed after the community post detail migration.
-- Vue source scan still found no `innerHTML`, `document.querySelector`, `addEventListener`, `admin-community.js`, or `admin-pages.js` usage.
-- Dangerous request scan found no new `PATCH`, `DELETE`, or export calls; only the existing shared fetch wrapper and existing logout `POST` remain.
-- Started Phase 5A real-operation migration with storage orders only:
-  - `/admin/storage/box-orders`, `/admin/storage/collections`, and `/admin/storage/returns` now use the existing `GET /api/admin/storage-orders-export` endpoint for Excel export with the current filters;
-  - the same three storage list pages now support single-row deletion through the existing `DELETE /api/admin/storage-orders?id=...` endpoint;
-  - deletion requires a reusable Vue `ConfirmDialog` and displays order number, service type, and customer name before the request;
-  - deletion refreshes the current list page after success and disables repeated delete clicks while the request is running;
-  - no batch deletion, edit save, status mutation, or non-storage module write operation was added.
-- `npm run build:admin-vue` passed after Phase 5A storage operation migration.
-- Vue source scan still found no `innerHTML`, `document.querySelector`, or `addEventListener` usage.
-- Dangerous request scan now shows the intended storage single-delete `DELETE` in the Vue API client and the existing logout `POST`; no `PATCH` or export mutation was added.
-- Refined Vue storage order list address display:
-  - `/admin/storage/box-orders`, `/admin/storage/collections`, and `/admin/storage/returns` now combine apartment/building, detailed address, and postcode into one "address" column;
-  - the full combined address is available in the cell title/hover text to avoid losing detail in compact table layouts;
-  - this uses existing `address_full`, `room_or_building`, and `postcode` fields already returned by the storage list API, so no API or database change was required.
-- `npm run build:admin-vue` passed after the storage address display refinement.
-- Refined the same Vue storage address cell again so the combined address wraps across lines instead of truncating with an ellipsis.
-- `npm run build:admin-vue` passed after the storage address wrapping refinement.
-- Refined the Vue storage address cell again so duplicate apartment/address/postcode fragments are filtered before display; shorter fragments are replaced when a more complete address segment contains them, and repeated secondary address text was removed from the cell.
-- Added a "妫板嫭婀℃禒閿嬬壐" column to the right of the Vue storage list address column for `/admin/storage/box-orders`, `/admin/storage/collections`, and `/admin/storage/returns`; it uses existing list fields such as `estimated_total_price` and does not require API or database changes.
-- Refined the Vue storage list expected-price display from `GBP 0.00` style to the pound-symbol format `鎷?.00`.
-
-- Refined the Vue storage order detail page:
-  - detail display now reads more fallback values from `customer_form_json.serviceDetails` and `userSnapshot`, reducing false `--` values when data exists in the original form payload;
-  - service appointment dates/times and address fields can now be edited from `/admin/storage/:id` using the existing `PATCH /api/admin/storage-orders?id=...` endpoint;
-  - raw JSON blocks were relabeled as troubleshooting data so operators understand they are original stored payloads rather than the main business view.
-- `npm run build:admin-vue` passed after the storage detail editable schedule/address refinement.
-- Removed the raw JSON/troubleshooting section from the Vue storage order detail page so customer service operators only see business-readable fields.
-- Refined the Vue storage order detail field fallback logic:
-  - `-` and `--` placeholders are treated as empty values;
-  - service, address, box type, quantity, purchase-box, and item-description fields now also fall back to structured purchase items and clearly labeled lines in `final_readable_message`;
-  - fields with no actual source data display `閺堫亜锝為崘妾?instead of ambiguous dashes.
-- Replaced the old stored `final_readable_message` display in the Vue storage detail page with a live customer-service-readable summary generated from parsed business fields, so historical `--` placeholders are no longer shown to operators.
-- Removed the customer-service note field from the Vue storage detail operator view and from the generated customer-service-readable summary. Existing note data remains untouched in the backend.
-- Removed the duplicated global Vue admin page title from the outer header:
-  - the top header now only shows the current admin account and logout action;
-  - each Vue page keeps its own local `view-heading` title and actions;
-  - this fixes the repeated title/eyebrow issue across all `/admin/*` pages without changing API behavior, database schema, old admin pages, or public pages.
-- Simplified the Vue transport group detail page (`/admin/transport/groups/:id`) for operator use:
-  - the page now follows a compact operations layout with group overview, fees/payment, member list, join-member placeholder, and driver dispatch summary sections;
-  - raw JSON, low-value internal field blocks, and duplicated readonly grids were removed from the main operator view;
-  - edit/payment/join/copy buttons remain placeholders and do not send real mutation requests in this step;
-  - the page still uses the existing `GET /api/transport-groups/:id` detail API and keeps the old group detail page as a fallback link.
-- `npm run build:admin-vue` passed after the transport group detail simplification.
-- Polished the Vue transport group detail layout again:
-  - the group overview is now a card grid instead of one crowded horizontal strip;
-  - max passenger/date placeholder controls were separated into a cleaner edit row;
-  - payment member rows, join-member controls, and responsive behavior were tightened;
-  - no API, database, old admin, public page, or real mutation behavior changed.
-- `npm run build:admin-vue` passed after the transport group detail layout polish.
-- Restored Vue storage module real operations for Phase 5A:
-  - the three Vue storage list routes continue using the existing `GET /api/admin/storage-orders-export` endpoint for Excel export with current filters;
-  - the three Vue storage list routes continue using the existing `DELETE /api/admin/storage-orders?id=...` endpoint for single-row deletion with a confirmation dialog;
-  - `/admin/storage/:id` now uses the existing `PATCH /api/admin/storage-orders?id=...` endpoint to save the editable service appointment and address fields, then reloads the detail;
-  - `/admin/storage/:id` now supports status changes through the same existing PATCH endpoint, guarded by a confirmation dialog;
-  - `/admin/storage/:id` now supports deleting the current order through the existing DELETE endpoint, guarded by a confirmation dialog and returning to the matching list after success;
-  - `/admin/storage/:id` exports the current order through the existing list export endpoint using the current order number as the search filter;
-  - no database schema, public page, old admin page, or non-storage module operation was changed.
-- `npm run build:admin-vue` passed after the Vue storage real-operation migration.
-- Fixed the Vue box-order list display for required buy-box operations fields:
-  - `/admin/storage/box-orders` now uses a box-order-specific table layout instead of the generic storage list columns;
-  - the table now shows box type, purchased box quantity, address/apartment/postcode, box fee, and status using existing lightweight list fields such as `purchased_boxes`, `estimate_summary_json`, `address_full`, `room_or_building`, and `postcode`;
-  - the buy-box list no longer shows the expected-total column, and the address column now sits immediately to the right of purchased quantity;
-  - `/admin/storage/collections` and `/admin/storage/returns` keep the existing generic storage columns;
-  - no storage API response structure, database schema, delete/export/edit behavior, old admin page, or public page was changed.
-- `npm run build:admin-vue` passed after the box-order list display fix and the follow-up column-order refinement.
-- Cleaned up duplicated editable schedule fields on `/admin/storage/:id`:
-  - removed the editable `service_date`, `storage_intake_date`, and `expected_storage_end_date` controls from the Vue detail form instead of hiding them;
-  - the schedule save payload now only sends the remaining editable fields, so removed duplicate fields are not submitted from the Vue detail page;
-  - operators now edit one storage start date and one storage end date in the schedule form;
-  - no API response shape, database schema, old admin page, public page, or non-storage module behavior changed.
-- Refined the Vue box-order list again:
-  - removed the separate `娑旀壆顔堥弫浼村櫤` column from `/admin/storage/box-orders`;
-  - box quantity remains visible inside the `缁犲崬鐎穈 summary, for example `1閸欓顔?鑴?5`;
-  - the address column was widened to use the freed space;
-  - no API, database, old admin page, public page, or storage operation behavior changed.
-
-- Fixed Vue storage list/detail date synchronization:
-  - `/admin/storage/collections` list service date now prefers `storage_start_date` before legacy `storage_intake_date`;
-  - saving the Vue storage detail schedule now also synchronizes the legacy date fields needed by the list, filters, sorting, and old admin compatibility;
-  - no API response structure, database schema, public page, or non-storage module behavior changed.
-- Added Phase 5A-2 storage pricing recalculation support:
-  - added `api/_lib/storage-pricing.js` to reuse the existing public storage estimate rules for admin-side recalculation;
-  - existing `PATCH /api/admin/storage-orders?id=...` now accepts `recalculate_pricing: true` and recalculates `estimated_total_price`, `estimated_box_count`, and `estimate_summary_json` from the current storage dates, quantity, access/lift conditions, purchase boxes, weights, and stored estimate details;
-  - `/admin/storage/:id` now lets operators edit storage quantity and save it with pricing recalculation;
-  - saving schedule or address/lift fields from the Vue storage detail page now requests pricing recalculation for storage collection orders with estimate details;
-  - no database schema, public page, new API route, old admin page, or non-storage module behavior changed.
-- Fixed the first Phase 5A-2 recalculation trigger issue:
-  - Vue storage detail now identifies legacy collection orders by stable order signals such as `ST-P` order numbers and storage collection labels before falling back to date fields;
-  - Vue storage detail now treats stored calculator snapshots and total box counts as valid recalculation inputs, not only `estimate_summary_json.items`;
-  - this fixes the case where saving storage quantity showed "fees not recalculated" even though the order had enough stored pricing inputs.
-- Fixed the second Phase 5A-2 recalculation trigger issue for buy-box orders:
-  - `/admin/storage/:id` now labels the quantity editor as buy-box quantity for `ST-B`/box orders;
-  - buy-box orders now request pricing recalculation too, instead of being treated as non-recalculable storage orders;
-  - backend recalculation now updates buy-box purchase quantities, `purchased_boxes`, `estimated_box_count`, `estimated_total_price`, and `estimate_summary_json` for box orders.
-- Verification after Phase 5A-2:
-  - `node --check api/_lib/storage-pricing.js` passed;
-  - `node --check api/admin/[...action].js` passed;
-  - direct helper smoke test returned recalculated count, days, and total for a sample storage collection order;
-  - direct helper smoke test returned recalculated buy-box count, purchased boxes, and total for a sample `ST-B` order;
-  - Vue storage source scan found no `innerHTML`, `document.querySelector`, or `addEventListener`;
-  - `npm run build:admin-vue` passed again after the buy-box recalculation fix.
-- Fixed Vue storage detail order-number display:
-  - `/admin/storage/:id` now chooses the displayed order number by resolved storage order type;
-  - box orders still prefer `box_order_no`, storage collection orders now prefer `storage_pickup_order_no`, and storage return orders prefer the return/main order number;
-  - this prevents a storage collection detail page from showing the associated buy-box `ST-B` order number as its primary order number;
-  - no API, database, public page, old admin page, or storage operation behavior changed.
-- Split Vue storage details into separate operator pages:
-  - added a dedicated buy-box detail route at `/admin/storage/box-orders/:id` with its own `BoxOrderDetailView.vue`;
-  - added a dedicated storage-service detail route at `/admin/storage/storage-orders/:id` for storage collection/return orders;
-  - the three storage list pages now route box orders and storage orders to different detail paths instead of forcing all records through one mixed detail page;
-  - buy-box detail now only shows box-order information such as user contact, purchased box lines, delivery information, fee summary, backend status, internal notes, and operation records;
-  - storage detail was cleaned so its visible business sections focus on storage period, box/item quantity, pickup/address information, storage-related fees, and storage operations;
-  - if an old generic storage detail route receives a box order, it redirects to the dedicated buy-box detail route;
-  - `npm run build:admin-vue` passed after the split;
-  - no API, database schema, public page, old admin page, or deployment behavior changed.
-- Added the urgent Vue transport request customer-service tracking fields:
-  - `supabase/20260519_transport_request_offline_tracking.sql` adds `offline_recorded`, `last_operated_by`, and `last_operated_at` to `transport_requests` plus focused indexes;
-  - `/api/transport-requests` now returns and filters by `offline_recorded` and `last_operated_by`;
-  - `/api/transport-requests/:id` now records the current admin display name and timestamp on every admin PATCH, including status changes, note changes, and offline-recorded toggles;
-  - `/api/transport-requests/export` now exports the current filtered result with offline-recorded and last-operation columns;
-  - `/admin/transport/requests` now shows status, offline-recorded state, last operator/time, fixed operator filters, offline-recorded filters, current-filter export, and per-row mark/cancel offline-recorded buttons;
-  - no manual order creation, owner assignment, payment-status work, carpool-status refactor, auto-archive behavior, public page change, or email behavior change was added.
-- Verification after the Vue transport tracking work:
-  - `node --check api/_lib/transport.js` passed;
-  - `node --check api/transport-requests/index.js` passed;
-  - `node --check api/transport-requests/[id].js` passed;
-  - `node --check api/transport-requests/export.js` passed;
-  - `npm run build:admin-vue` passed and regenerated the root `admin-vue/` build output;
-  - `npm run build:prod` passed after the API and Vue changes;
-  - Playwright opened `http://localhost:3000/admin/transport/requests` and confirmed unauthenticated access redirects to `admin-login.html?return_to=...`.
-- Applied the transport request tracking schema to Supabase project `ngn-transport`:
-  - migration `transport_request_offline_tracking` was applied successfully through the Supabase plugin;
-  - verified `transport_requests.offline_recorded`, `transport_requests.last_operated_by`, and `transport_requests.last_operated_at` exist with the expected types/defaults;
-  - verified `idx_transport_requests_offline_recorded` and `idx_transport_requests_last_operated_by` exist;
-  - Supabase advisors were run after the migration; findings were existing broad project advisories plus the newly created indexes being reported as unused before real traffic.
+- Restored target-group choice for route-breaking multi-member itinerary edits:
+  - `apps/admin-vue/src/components/TransportOrderChangeDrawer.vue` now keeps the final group-handling selector visible when a changed order cannot remain in its current multi-member group;
+  - in that case, `no_group_change` is disabled, while `move_out_new_single` and `transfer_existing_group` remain selectable;
+  - confirmation now includes the selected target group as `target_group_search` for transfer saves, so manually searched compatible groups are preserved through the confirm preview rerun;
+  - `api/transport-requests/[id]/change-confirm.js` now allows multi-member route-breaking edits to transfer into a preview/searched compatible group, while still blocking keeping the original incompatible group;
+  - `docs/PROJECT_MAP.md` documents the confirmed behavior.
+
+- Updated the admin transport request workbench amount column:
+  - `apps/admin-vue/src/views/TransportRequestsView.vue` now labels `wb_deposit_amount_gbp` as `已收全款/定金`;
+  - widened the column from `98px` to `128px` so the longer header fits more comfortably;
+  - rebuilt the generated admin bundle; `/admin/` now serves `admin/assets/index-Cl00qDbt.js` and `admin/assets/index-DJs6utB9.css`;
+  - restarted the local `3000` helper server after the frontend bundle change.
+
+- Verification for the received-amount header rename:
+  - `npm --prefix apps/admin-vue run build` passed with only the existing Vite chunk-size warning;
+  - `http://127.0.0.1:3000/admin/` returned the new generated bundle references;
+  - source/generated-admin search confirmed `已收全款/定金` is present.
+
+- Added a visible row-level `保存` button to `apps/admin-vue/src/views/TransportRequestsView.vue` in the `登记接送机订单` workbench action column:
+  - the button calls the existing `saveWorkbenchRow(row)` path used for customer-service workbench fields;
+  - it is enabled only when that row has unsaved changes and shows `保存中` while the row is saving;
+  - the existing `未保存修改` and row error messages remain in place;
+  - rebuilt the generated admin bundle; `/admin/` now serves `admin/assets/index-CjYfWIm_.js` and `admin/assets/index-DJs6utB9.css`;
+  - restarted the local `3000` helper server after the functional frontend change.
+
+- Verification for the explicit save-button change:
+  - `npm --prefix apps/admin-vue run build` passed with only the existing Vite chunk-size warning;
+  - `http://127.0.0.1:3000/admin/` returned the new generated bundle references;
+  - source/generated-admin search confirmed the row action now includes `保存`, `保存中`, and `saveWorkbenchRow(row)`.
+
+- Completed the controlled A-class transport fix set:
+  - `apps/admin-vue/src/components/TransportOrderChangeDrawer.vue` now reads and sends the received amount through `deposit_amount_gbp`, matching the amount field used by the transport request list.
+  - `api/transport-requests/[id]/change-preview.js` now recognizes `deposit_amount_gbp` in changed fields, so previews and operation logs can show the before/after amount.
+  - `api/transport-requests/[id]/change-confirm.js` now confirms and saves `deposit_amount_gbp`, and asserts that changed effective transport requests have exactly one group membership after confirmation.
+  - `api/transport-requests/[id]/group.js` now blocks the legacy `remove_group` path instead of allowing an effective order to become ungrouped.
+  - `api/_lib/transport-group-lifecycle.js` now supports a unique-constraint-safe move-out flow: create the replacement group without membership, delete the old membership, insert the new membership, restore the old membership on failure, and clean up the new empty group where possible.
+  - `api/_lib/transport-manual-import.js` now rolls back just-created requests when group/member creation fails, deletes just-created empty groups where possible, and fails the batch instead of reporting success when rollback cannot be completed.
+  - `npm --prefix apps/admin-vue run build` refreshed the generated admin bundle to `admin/assets/index-JBzejV_B.js`.
+
+- Verification for the controlled A-class fix set:
+  - `node --check api/_lib/transport-group-lifecycle.js`
+  - `node --check api/_lib/transport-manual-import.js`
+  - `node --check api/transport-requests/[id]/group.js`
+  - `node --check api/transport-requests/[id]/change-preview.js`
+  - `node --check api/transport-requests/[id]/change-confirm.js`
+  - `npm --prefix apps/admin-vue run build` passed with only the existing Vite chunk-size warning.
+
+- Restored route-breaking multi-member carpool edit choices in `apps/admin-vue/src/components/TransportOrderChangeDrawer.vue`:
+  - when preview says the order cannot stay in the current multi-member carpool group, the drawer disables keeping the original group but still allows a replacement single-member group or a compatible target group;
+  - for that required move-out case, the drawer keeps the final-handling selector visible instead of forcing only the single-member-group path;
+  - duplicate red/yellow risk sections were merged into one Chinese `风险提示` block, so operators still see the risk without repeated blocking copy.
+
+- Added target carpool-group number search to `apps/admin-vue/src/components/TransportOrderChangeDrawer.vue`:
+  - when final handling is joining a specified compatible carpool group, operators can enter a `GRP-...` group number and click the Chinese validation button;
+  - the drawer calls the existing order-change preview endpoint with the current draft itinerary and target group number;
+  - if the group can be joined, it is added to the dropdown and automatically selected;
+  - if it cannot be joined, the drawer shows the returned Chinese reason instead of only showing an empty dropdown.
+
+- Extended `api/transport-requests/[id]/change-preview.js` for target group number search:
+  - validates the searched group against the current draft request using the same server-side join rules as final confirmation;
+  - returns `group_context.searched_target_group` with `joinable`, `reason`, and group summary when applicable;
+  - Chinese reasons cover missing group number, current group, closed/cancelled/unjoinable group, service type mismatch, airport mismatch, date mismatch, no active members, capacity shortage, time window over 3 hours, invalid passenger count, and already-in-target cases.
+
+- Updated `docs/PROJECT_MAP.md` to document optional target-group number search in `change-preview`.
+
+- Made batch manual import CSV/template examples safer to open in Excel:
+  - changed template/example phone numbers from plain leading-zero values such as `071...` to spaced UK text values such as `+44 7100 010001`;
+  - regenerated `transport-bulk-import-group-test.csv` and `transport-bulk-import-group-test-utf8-bom.csv` with no plain `071...` values, so Excel should no longer show the default conversion warning about deleting leading zeros when opening the test CSV;
+  - created `transport-bulk-import-group-test-v3.xlsx` with the same updated validation rows;
+  - rebuilt the generated local admin bundle and restarted the local `3000` helper server.
+
+- Added target carpool-group number search to `apps/admin-vue/src/components/TransportOrderChangeDrawer.vue`:
+  - when final handling is `加入指定兼容拼车组`, operators can enter a `GRP-...` group number and click `校验拼车组`;
+  - the drawer calls the existing order-change preview endpoint with the current draft itinerary and target group number;
+  - if the group can be joined, it is added to the dropdown and automatically selected;
+  - if it cannot be joined, the drawer shows the returned Chinese reason instead of only showing an empty dropdown.
+
+- Extended `api/transport-requests/[id]/change-preview.js` for target group number search:
+  - validates the searched group against the current draft request using the same server-side join rules as final confirmation;
+  - returns `group_context.searched_target_group` with `joinable`, `reason`, and group summary when applicable;
+  - Chinese reasons cover missing group number, current group, closed/cancelled/unjoinable group, service type mismatch, airport mismatch, date mismatch, no active members, capacity shortage, time window over 3 hours, invalid passenger count, and already-in-target cases.
+
+- Updated `docs/PROJECT_MAP.md` to document optional target-group number search in `change-preview`.
+
+- Fixed batch manual import `.xlsx` upload crash:
+  - `apps/admin-vue/src/views/TransportRequestsView.vue` now reads XLSX uploads with `trim: false` so `read-excel-file` does not crash when template/example rows contain blank cells;
+  - the existing import normalization still converts blank/null cells to empty strings before preview validation;
+  - rebuilt the generated local admin bundle and restarted the local `3000` helper server.
+
+- Fixed the batch manual import preview treating filled temporary group identifiers as blank:
+  - `api/_lib/transport-manual-import.js` now recognizes the shared template label `拼车组标识（可选）` and related Chinese/English aliases when normalizing uploaded rows;
+  - UTF-8 BOM is stripped from frontend and backend import header normalization so BOM CSV headers do not miss alias matching;
+  - the batch import template no longer includes the unused `是否愿意拼车` column;
+  - the batch import preview table no longer displays the unused `是否愿意拼车` column;
+  - regenerated `transport-bulk-import-group-test.csv` and `transport-bulk-import-group-test-utf8-bom.csv` without the unused column and with three `测试组A` rows;
+  - created `transport-bulk-import-group-test-v2.xlsx` with the same updated test rows because the previous `.xlsx` was locked open by Excel;
+  - updated `docs/PROJECT_MAP.md` to record that preview recognizes the current Chinese group-identifier template header and aliases;
+  - rebuilt the generated local admin bundle and restarted the local `3000` helper server.
+
+- Removed the shareable selectable control from `apps/admin-vue/src/components/TransportOrderChangeDrawer.vue`:
+  - the itinerary edit drawer no longer lets operators switch a request to not-shareable;
+  - opening the drawer sets the draft `shareable` value to `true`;
+  - preview/confirm payloads always send `shareable: true`, so target carpool-group lookup is not blocked by an old stored not-shareable value;
+  - removed the temporary UI gating that disabled target-group transfer for not-shareable previews;
+  - cleaned the previous temporary `group_context.request_shareable` response field from `api/transport-requests/[id]/change-preview.js`;
+  - refreshed the generated local admin bundle and restarted the local `3000` helper server after the functional change.
+
+- Clarified batch manual import group identifier guidance:
+  - `shared/transport-manual-import-columns.json` now explains that a blank `拼车组标识（可选）` creates a separate single-member group for each blank row, not one group for the whole batch;
+  - the same field note explains that repeated temporary identifiers such as `新组A` create one shared new group for those rows;
+  - the same field note explains that existing `GRP-...` identifiers are joined only if found, and missing identifiers are red preview errors;
+  - the batch import modal now shows these three rules before the full template field list;
+  - the test-example section now labels which example row tests blank single-group creation, missing `GRP` blocking, and shared temporary-group creation;
+  - refreshed the generated local admin bundle with `npm --prefix apps/admin-vue run build`.
+
+- Removed the `是否愿意拼车` selectable control from `apps/admin-vue/src/components/TransportOrderChangeDrawer.vue`:
+  - the itinerary edit drawer no longer lets operators switch a request to not-shareable;
+  - opening the drawer sets the draft `shareable` value to `true`;
+  - preview/confirm payloads always send `shareable: true`, so target carpool-group lookup is not blocked by an old stored not-shareable value;
+  - removed the temporary UI gating that disabled `加入指定兼容拼车组` for not-shareable previews;
+  - cleaned the previous temporary `group_context.request_shareable` response field from `api/transport-requests/[id]/change-preview.js`;
+  - refreshed the generated local admin bundle and restarted the local `3000` helper server after the functional change.
+
+- Clarified admin transport order-change candidate behavior:
+  - `api/transport-requests/[id]/change-preview.js` now includes `group_context.request_shareable` so the UI can tell whether the previewed order is allowed to join a carpool group;
+  - `apps/admin-vue/src/components/TransportOrderChangeDrawer.vue` disables `加入指定兼容拼车组` when the previewed order has `是否愿意拼车 = 否`;
+  - the drawer now tells operators to change `是否愿意拼车` to `是` and re-preview before trying to join a target carpool group;
+  - confirmation also blocks a disabled group action instead of falling through to a generic missing-target error;
+  - refreshed the generated local admin bundle and restarted the local `3000` helper server after the functional change.
+
+- Regenerated batch manual import validation files for Excel-safe testing:
+  - replaced `transport-bulk-import-group-test.csv` with a UTF-8 BOM CSV so Excel can detect Chinese text correctly;
+  - added duplicate-named explicit BOM copy `transport-bulk-import-group-test-utf8-bom.csv`;
+  - added native Excel workbook `transport-bulk-import-group-test.xlsx` with the same four validation rows.
+
+- Added a testing rule to `AGENTS.md`: after any functional code change, restart the relevant local server before verification so frontend/API behavior is not tested against a stale running process.
+
+- Created `transport-bulk-import-group-test.csv` in the project root for manual admin validation of batch import group handling:
+  - one blank group identifier row to verify automatic single-member group creation;
+  - two rows with the same temporary identifier `测试组A` to verify one shared new group is created;
+  - one row with `GRP-DOES-NOT-EXIST` to verify preview blocks non-existent existing group identifiers.
+
+- Investigated the follow-up target-group dropdown case:
+  - cross-terminal mismatch is no longer the blocking condition in current source;
+  - candidate lookup still deliberately excludes target groups with blocked status (`full`, `closed`, `cancelled`) or insufficient `remaining_passenger_count`;
+  - the screenshot target `GRP-P6LOCAL-FULL` is consistent with the full/no-capacity test group path, so it would remain excluded even after cross-terminal joining is allowed;
+  - if this was tested against an already-running local API process or deployed site, that environment may also need a server restart/deploy before the previous source change is active.
+
+- Relaxed transport group transfer terminal compatibility in `api/_lib/transport-group-lifecycle.js`:
+  - same service type, airport, service date, joinable status, active members, remaining capacity, current-group exclusion, and 3-hour time window are still enforced;
+  - target groups with a different terminal are no longer rejected outright;
+  - cross-terminal candidates now return a `cross_terminal_surcharge` warning telling customer service to confirm the cross-terminal fee and group price;
+  - the same server-side validation is used again at confirmation time, so the dropdown preview and final save now agree on cross-terminal eligibility.
+
+- Updated `docs/PROJECT_MAP.md` to document that admin candidate-group lookup and order-change preview allow cross-terminal candidates with surcharge/price-confirmation warnings.
+
+- Investigated the transport itinerary edit drawer's target-group filtering:
+  - read the shared admin drawer in `apps/admin-vue/src/components/TransportOrderChangeDrawer.vue`;
+  - read the preview API in `api/transport-requests/[id]/change-preview.js`;
+  - read group candidate validation in `api/_lib/transport-group-lifecycle.js`;
+  - confirmed the target-group dropdown is populated only from preview-returned compatible groups;
+  - confirmed compatible groups currently require same service type, same airport, same service date, joinable group status, enough remaining passenger capacity, active members, service time within 3 hours, and matching terminal when both the order and group have terminals;
+  - no code behavior was changed.
+
+- Removed the WeChat column from the admin transport request list in `apps/admin-vue/src/views/TransportRequestsView.vue`:
+  - removed the current workbench table column `wb_wechat`;
+  - removed the legacy transport request table column `wechat`;
+  - removed the matching table cell templates, so the list no longer renders a standalone WeChat column;
+  - left search, manual supplement, batch import preview, and itinerary editing fields untouched;
+  - refreshed the generated local admin bundle with `npm --prefix apps/admin-vue run build`;
+  - verification: admin build passed with only the existing Vite chunk-size warning, and source search found no `wb_wechat` / `cell-wb_wechat` list column remnants.
+
+- Fixed batch manual transport import group assignment:
+  - added `拼车组标识（可选）` to the shared import template column definition used by CSV, Excel, copied headers, and paste parsing;
+  - preview now shows each row's group handling result: blank values auto-create a single-member group, `GRP-...` values join an existing group, and repeated non-`GRP` temporary keys create one shared new group for those rows;
+  - preview now blocks non-existent `GRP-...` group identifiers as red errors and surfaces compatibility/capacity concerns as yellow warnings requiring operator confirmation;
+  - commit now creates each `transport_requests` row and immediately creates or joins a `transport_group`, writing `transport_group_members` for every imported request;
+  - repeated temporary group identifiers in the same batch reuse the first newly created group instead of creating one group per row;
+  - failed group creation/join rolls back the just-created request so batch import does not intentionally leave imported requests without group membership;
+  - `docs/PROJECT_MAP.md` now documents the new preview/commit behavior.
+
+- Simplified the transport request operation-log drawer in `apps/admin-vue/src/views/TransportRequestsView.vue`:
+  - changed the row audit button back to concise Chinese `记录`;
+  - changed the drawer title, close/loading/empty/error copy back to concise Chinese;
+  - replaced the repeated audit table with compact cards showing action, operator, time, and up to five readable field changes;
+  - mapped technical actions and fields to short customer-service labels such as `行程更新`, `航班时间`, `服务时间`, `人数`, `行李`, and `已收`;
+  - compacted timestamps and long UUID-like values so audit rows fit without noisy wrapping;
+  - refreshed the generated local admin bundle with `npm --prefix apps/admin-vue run build`;
+  - verification: admin build passed with only the existing Vite chunk-size warning, and source/generated-admin searches found no leftover English Activity copy from the previous iteration.
+
+- Simplified the transport request list in `apps/admin-vue/src/views/TransportRequestsView.vue`:
+  - removed the list-row `详情` / `查看详情` entry for pickup/dropoff transport requests;
+  - row actions now expose `调整行程`, `操作记录`, and `关闭订单` in the transport list action column;
+  - `调整行程` now fetches the latest single-order detail before opening `TransportOrderChangeDrawer`, so the drawer remains the single place to view and modify itinerary/payment/note fields with preview and confirm;
+  - added a right-side operation-log drawer that fetches the latest request detail and displays operation type, changed field, before value, after value, operator, and operation time;
+  - empty audit state shows `暂无操作记录`;
+  - removed the Vue admin route for `/admin/transport/requests/:id`, so the standalone transport request detail page is no longer reachable from the router;
+  - updated general order-center transport links to return to `/admin/transport/requests` instead of the removed transport request detail route;
+  - refreshed the generated local admin bundle with `npm --prefix apps/admin-vue run build`;
+  - verification: admin build passed with only the existing Vite chunk-size warning, and source/generated-admin search found no active transport request detail route or list-row detail handler.
+
+- Simplified the shared transport itinerary edit drawer in `apps/admin-vue/src/components/TransportOrderChangeDrawer.vue`:
+  - removed the duplicate `保留当前拼车组` UI option and maps old keep aliases to `不调整拼车组`;
+  - keeps exactly three group-handling choices: `不调整拼车组`, `移出并创建新的单人拼车组`, and `加入指定兼容拼车组`;
+  - preview now defaults the final handling dropdown to `不调整拼车组`;
+  - selecting `加入指定兼容拼车组` shows a target-group dropdown with group id, airport, terminal, service time, and current/max passenger count;
+  - saving still blocks transfer when no target group is selected and only sends `target_group_id` for transfer;
+  - refreshed the generated local admin bundle with `npm --prefix apps/admin-vue run build`;
+  - verification: admin build passed with only the existing Vite chunk-size warning, and source/generated-admin search found no `保留当前拼车组` option text.
+
+- Simplified the single `补录接送机订单` modal in `apps/admin-vue/src/views/TransportRequestsView.vue`:
+  - removed optional manual-entry controls for `拼音/英文名`, `邮箱`, `行李数量`, `行李备注`, the `记录与收款` section, and `客服备注`;
+  - kept required fields for student/contact, trip details, passenger count, and carpool group handling;
+  - existing default values are still included in the manual submit payload, so API/database/payment/email behavior was not changed;
+  - refreshed the generated local admin bundle with `npm --prefix apps/admin-vue run build`;
+  - verification: source-template search found no removed optional controls in the single supplement modal, and the admin build passed with only the existing Vite chunk-size warning.
+
+## Previous Transport Work Kept As Context
+
+- The shared transport itinerary edit drawer no longer renders the redundant `预览结果` heading or the red-boxed price/group summary metrics after preview; it still keeps risk warnings, change summary, group-handling selection, consequence copy, and `确认保存`.
+
+- Single manual supplement orders now require an explicit carpool-group result:
+  - `apps/admin-vue/src/views/TransportRequestsView.vue` shows only `创建新的单人拼车组，并自动加入` and `加入已有拼车组` in `拼车组处理`;
+  - new/reset manual supplement forms default to `create_single`;
+  - `apps/admin-vue/src/api/admin-api.js` defaults missing manual group handling to `create_single`;
+  - `api/_lib/transport-manual-import.js` rejects the old manual no-group choice with a Chinese error instead of creating an order outside a carpool group.
+
+- Multi-member high-risk itinerary edits now keep the clear replacement-group path:
+  - `api/transport-requests/[id]/change-preview.js` resolves airport/date/service-type group-breaking changes to `move_out_new_single`;
+  - `api/transport-requests/[id]/change-confirm.js` requires `move_out_new_single`, removes the order from the old group, creates the replacement single-member group, preserves payment data, and logs `transport_request_removed_from_group`;
+  - the Vue change drawer and detail-page itinerary edit controls show the operator action as creating a new single-member carpool group, with no old no-group outcome copy.
+
+- Current admin transport source and the generated local admin bundle no longer contain the removed hidden-queue wording.
+- Existing orders that currently have no group are displayed with neutral carpool wording such as `无拼车组` / `暂无拼车组`, not the removed wording.
+- `docs/PROJECT_MAP.md` now documents that single manual supplement defaults to single-member group creation, can manually join a validated existing group, and rejects the old no-group manual handling.
+
+## Verification
+
+- `node --check api/transport-requests/[id]/change-confirm.js`
+- `node --check api/transport-requests/[id]/change-preview.js`
+- `npm --prefix apps/admin-vue run build` passed with only the existing Vite chunk-size warning; current generated bundle is `admin/assets/index-Cl00qDbt.js`.
+- Restarted the local `3000` helper server after the functional change.
+- `http://127.0.0.1:3000/admin/` returns `admin/assets/index-Cl00qDbt.js` and `admin/assets/index-DJs6utB9.css`.
+- `http://127.0.0.1:3000/api/admin/session` returned LOCAL TEST MODE with `is_production=false`.
+- Browser navigation to `/admin/` reached the admin login page; modal-level browser acceptance still requires a logged-in admin session.
+
+- Source search confirmed `TransportOrderChangeDrawer.vue` defaults `selectedGroupAction` from preview `required_group_action`, keeps risk warnings, and now keeps selectable group handling for required move-out cases.
+- `npm --prefix apps/admin-vue run build` passed with only the existing Vite chunk-size warning; current generated bundle is `admin/assets/index-BAVj2NC9.js`.
+- Restarted the local `3000` helper server after the functional change; `http://127.0.0.1:3000/admin/` now serves `admin/assets/index-BAVj2NC9.js` and `admin/assets/index-DJs6utB9.css`.
+
+- Source search confirmed the admin drawer now contains `搜索拼车组编号`, `校验拼车组`, `targetGroupSearch`, and merged selectable target-group handling.
+- Source search confirmed `change-preview` now accepts `target_group_search` and returns `group_context.searched_target_group`.
+- `node --check api/transport-requests/[id]/change-preview.js`
+- `npm --prefix apps/admin-vue run build` passed with only the existing Vite chunk-size warning; current generated bundle is `admin/assets/index-2GJNjjHH.js`.
+- Restarted the local `3000` helper server after the functional change; `http://127.0.0.1:3000/admin/` now serves `admin/assets/index-2GJNjjHH.js` and `admin/assets/index-DJs6utB9.css`.
+- `http://127.0.0.1:3000/api/admin/session` returned LOCAL TEST MODE with `is_production=false`.
+
+- Shared import template JSON parses successfully after the Excel-safe sample phone changes.
+- Regenerated `transport-bulk-import-group-test.csv` still starts with UTF-8 BOM bytes `EF BB BF`.
+- Verified the regenerated test CSV no longer contains plain comma-prefixed leading-zero phone values matching `,0[0-9]{8,}`.
+- `npm --prefix apps/admin-vue run build` passed with only the existing Vite chunk-size warning; current generated bundle is `admin/assets/index-2GJNjjHH.js`.
+- Restarted the local `3000` helper server after the template-example change.
+- Verified `read-excel-file` fails on `transport-bulk-import-group-test-v2.xlsx` with default trimming but succeeds with `{ trim: false }`.
+- Verified `transport-bulk-import-group-test-v2.xlsx` reads as 6 rows / 17 columns and preserves the group identifier values: blank, `测试组A`, `测试组A`, `测试组A`, `GRP-DOES-NOT-EXIST`.
+- `npm --prefix apps/admin-vue run build` passed with only the existing Vite chunk-size warning; current generated bundle is `admin/assets/index-BR-QHnT1.js`.
+- Restarted the local `3000` helper server after the XLSX upload fix.
+- Shared import template JSON parses successfully after removing the batch `是否愿意拼车` column.
+- `node --check api/_lib/transport-manual-import.js`
+- Backend normalization test confirmed a row keyed by `拼车组标识（可选）` reads `测试组A` into `clean.group_id`.
+- Backend preview test confirmed:
+  - blank group identifier -> `自动创建单人组`;
+  - three `测试组A` rows -> `创建新的多人拼车组：临时标识 测试组A`;
+  - `GRP-DOES-NOT-EXIST` -> red error `拼车组不存在`.
+- Regenerated CSV files start with UTF-8 BOM and no longer include `是否愿意拼车`.
+- `npm --prefix apps/admin-vue run build` passed with only the existing Vite chunk-size warning; current generated bundle is `admin/assets/index-BpHFgvGR.js`.
+- Restarted the local `3000` helper server after the functional change.
+- Browser navigation to `/admin/transport/requests` reached the admin login page; modal-level browser acceptance still requires a logged-in admin session.
+- Shared import template JSON parses successfully.
+- `npm --prefix apps/admin-vue run build` passed with only the existing Vite chunk-size warning after the batch import help-text clarification.
+- Source/generated-admin searches confirmed the clarified blank-row, repeated-temporary-key, and missing-`GRP` explanation text is present.
+- Source search confirms the visible `是否愿意拼车` select control, `request_shareable`, and temporary not-shareable warning copy are no longer present in `TransportOrderChangeDrawer.vue` / `change-preview.js`.
+- `node --check api/transport-requests/[id]/change-preview.js`
+- `npm --prefix apps/admin-vue run build` passed with only the existing Vite chunk-size warning.
+- Restarted the local `3000` helper server after the functional change; `http://127.0.0.1:3000/admin/` now serves `admin/assets/index-D3-3GNNw.js` and `admin/assets/index-DJs6utB9.css`.
+- `http://127.0.0.1:3000/api/admin/session` returned LOCAL TEST MODE with `is_production=false`.
+- `node --check api/transport-requests/[id]/change-preview.js`
+- `node --check api/transport-requests/[id]/change-confirm.js`
+- `npm --prefix apps/admin-vue run build` passed with only the existing Vite chunk-size warning.
+- Restarted the local `3000` helper server after the functional change; `http://127.0.0.1:3000/admin/` now serves `admin/assets/index-CcozX21F.js` and `admin/assets/index-DJs6utB9.css`.
+- `http://127.0.0.1:3000/api/admin/session` returned LOCAL TEST MODE with `is_production=false`.
+- Verified the regenerated CSV file starts with UTF-8 BOM bytes `EF BB BF`.
+- Verified PowerShell `Import-Csv` reads the regenerated CSV with correct Chinese headers and values.
+- Verified `transport-bulk-import-group-test.xlsx` exists.
+- Documentation/rule-only update; no functional files were edited for this task.
+- Verified `transport-bulk-import-group-test.csv` exists and contains the intended four test rows.
+- `node --check api/_lib/transport-group-lifecycle.js`
+- `node --check api/transport-requests/[id]/change-preview.js`
+- `node --check api/transport-requests/[id]/change-confirm.js`
+- `node --check api/transport-requests/[id]/time-adjust-candidate-groups.js`
+- Documentation/status-only update; verified the relevant compatibility logic by reading `api/transport-requests/[id]/change-preview.js`, `api/_lib/transport-group-lifecycle.js`, and `apps/admin-vue/src/components/TransportOrderChangeDrawer.vue`.
+- `npm --prefix apps/admin-vue run build` passed with only the existing Vite chunk-size warning after removing the transport request list WeChat column.
+- Source/generated-admin searches found no `wb_wechat` or `cell-wb_wechat` remnants for the transport request workbench table.
+- Shared import template JSON parses successfully.
+- `node --check api/_lib/transport-manual-import.js`
+- `node --check api/transport-manual-import/preview.js`
+- `node --check api/transport-manual-import/commit.js`
+- `npm --prefix apps/admin-vue run build` passed with only the existing Vite chunk-size warning after the batch import group-assignment fix.
+- Search confirmed the old "batch import remains request-only / ignores Group ID" implementation wording is no longer present in current code or docs.
+- `npm --prefix apps/admin-vue run build` passed with only the existing Vite chunk-size warning after changing the operation-log drawer back to concise Chinese.
+- Source/generated-admin searches found no leftover `Activity`, `No activity yet`, `No visible field changes`, `Activity failed`, `Order created`, `Trip updated`, `Flight time`, `Service time`, `Pax`, `Bags`, or `Payment` copy in the transport request operation-log source/bundle.
+- `npm --prefix apps/admin-vue run build` passed with only the existing Vite chunk-size warning after the transport list entry simplification.
+- Source/generated-admin searches found no active `transport/requests/:id`, `transport-request-detail`, `TransportRequestDetailView`, `openRequestDetail`, or `requestDetailHref` references in the routed admin list/bundle. The old `TransportRequestDetailView.vue` source file remains in the tree but is no longer imported by the router.
+- `npm --prefix apps/admin-vue run build` passed with only the existing Vite chunk-size warning after the itinerary edit drawer simplification.
+- Source/generated-admin search found no `保留当前拼车组` option text after rebuilding the local admin bundle.
+- `node --check api/_lib/transport-manual-import.js`
+- `node --check api/transport-requests/[id]/change-preview.js`
+- `node --check api/transport-requests/[id]/change-confirm.js`
+- `node --check api/transport-requests/[id]/group.js`
+- `npm --prefix apps/admin-vue run build` passed with only the existing Vite chunk-size warning.
+- Source-template search confirmed the removed optional fields no longer render in the single manual supplement modal; matching labels may still appear in batch-import preview/template code and workbench columns.
+- Local browser navigation to `/admin/transport/requests` reached the admin login redirect, so modal-level browser acceptance still requires a logged-in admin session.
+- Source/generated-admin searches found no removed hidden-queue wording in current transport admin/API files.
 
 ## Current Project State
 
-- Storage all-orders control page at `/admin/storage/orders` now presents an operator execution view rather than a system-field table; it includes inline `已收款` and editable remark controls, and export for `order_type=all` follows the same execution data columns without action buttons.
-- Vue admin dashboard today-todo rows now keep the status label as a compact pill and align the order-number/customer block in a consistent right-side column on desktop, while keeping a stacked layout on small screens.
-- `2.0 NGN管理后台` at `/admin/` is now the intended official backend entry after deployment.
-- Vue admin dashboard now uses the expanded `/api/admin/dashboard` aggregate to show operational KPIs, recent trends, real-status distribution, today/overdue work, clickable risk alerts, recent admin operations, quick links, and cache metadata in the main content area; dashboard risk counts align with `/admin/orders?risk=...`.
-- Vue admin sidebar groups are collapsible, and the whole sidebar can now be collapsed to a 64px icon-only desktop rail without resetting each group's own open/closed state.
-- Old admin HTML files remain in the repo only as emergency rollback assets; normal visits to old backend URLs redirect to the matching `/admin/` route.
-- Detailed edit workflows should stay inside 2.0 NGN admin going forward; do not add new normal-path links back to old admin pages.
-- Storage order details now have separate Vue routes: buy-box details live at `/admin/storage/box-orders/:id`, and storage collection/return details live at `/admin/storage/storage-orders/:id`.
-- Storage all-orders control page now lives at `/admin/storage/orders` and summarizes existing ST-B/ST-P/ST-S storage work without adding a fourth storage business type. It uses `offline_recorded` as the customer-service line between unrecorded and recorded orders; its filter actions and bulk actions now match the transport request list pattern.
-- Storage sub-list pages now also use `offline_recorded` for customer-service tracking, so `/admin/storage/box-orders`, `/admin/storage/collections`, and `/admin/storage/returns` no longer surface the legacy `待确认` order-status badge in the list UI.
-- Transport request details now live in Vue as the main route with a compact customer-service form display; the lower trip/airport/note fields are editable, current group details and group replacement tools are visible, and operation records show who changed which fields.
-- Vue transport request list now has selected-row-only customer-service operations: mark/cancel one row's `offline_recorded`, batch mark/cancel selected rows, export current filtered results from the filter panel, and export selected rows from the bulk action bar. The previous current-filter bulk mark action is no longer exposed in Vue.
-- Vue transport request and storage order lists now highlight membership-bound rows in yellow when the row has a membership benefit claim or membership discount amount.
-- Admin deletion of transport requests and storage orders now releases any linked reserved membership claim back to `selected`, and the Vue membership list exposes `解绑订单` for repairing stale linked-order claims.
-- Vue transport group list now shows `当前人均` using the backend-computed current average group price, placed between payment status and payment actions.
-- Transport group readonly details now live in Vue as the main route.
-- Order center readonly summary details now live in Vue as the main route and source-record links now open the corresponding 2.0 transport/storage detail pages.
-- Manager list operations now live in Vue for create, edit, direct password setting, reset password, and delete, reusing the existing `/api/admin/managers` endpoints and server-side super-admin protections.
-- Membership entitlement list operations now live in Vue for the common admin actions: opening membership by user search, generating single or batch activation codes, manual benefit registration, entitlement deletion, activation-code deletion, latest-operation scanning, and direct customer-service detail viewing. Membership entitlement detail remains mostly readonly and now focuses on user basics, membership status/source, latest operation, and reverse-time operation records.
-- Community post readonly details now live in Vue as the main route for post detail viewing.
-- Storage order export and single-row delete are now live in the three Vue storage list pages only. Delete is guarded by a confirmation dialog and reuses the existing admin storage delete endpoint.
-- Storage sub-list address display now shows apartment/building, detailed address, and postcode together in a single wrapping address column with duplicate fragments filtered across slash-separated address parts. A separate "妫板嫭婀℃禒閿嬬壐" column now displays each order's expected price when available.
-- Storage order detail now supports editing service appointment dates/times and address fields in Vue, while status changes, full editing, export, and deletion remain separate controlled actions.
-- Storage order detail now supports controlled status changes, current-order export, and single-order deletion in Vue using existing admin storage APIs and confirmation dialogs.
-- Storage order detail no longer shows raw JSON payloads in the operator-facing Vue page.
-- Storage order detail now surfaces more existing business data from structured purchase items and readable summaries, reducing false empty fields.
-- Storage order detail's expandable summary is now generated from current parsed fields instead of showing the raw stored readable-message text.
-- Storage order detail no longer shows the customer-service note field in the operator-facing Vue page.
-- Vue admin pages now use a single visible page heading: the global header no longer duplicates each route title.
-- Vue admin account controls now sit in the sidebar footer, and the removed global header no longer leaves blank vertical space above page content.
-- Vue transport group detail now uses a cleaner card-based operations layout instead of the earlier verbose readonly migration layout. Real group edits, payment confirmation, joining members, and summary saving remain unimplemented placeholders.
-- Vue box-order list now has dedicated buy-box columns for box type summary, address/apartment/postcode, box fee, and status. The expected-total and separate purchased-quantity columns are hidden on the box-order list only; quantity stays embedded in the box type summary. Storage collection and return lists keep their existing columns.
-- Vue storage detail schedule form now removes duplicate start/end date controls and keeps a single storage start date plus a single storage end date for editing.
-- Vue storage list service-date display is now aligned with the storage detail start/end date edits so operators do not see stale legacy date values after saving.
-- Vue storage detail now supports editing storage quantity or buy-box quantity and requesting backend price recalculation for storage collection and box orders with existing estimate details.
-- Vue storage detail now displays the primary order number according to order type, so storage collection details show `ST-P...` instead of an associated buy-box `ST-B...` number.
-- Vue storage list detail links now use separate routes for box orders and storage-service orders to avoid mixed fields in operator detail pages.
-- Storage admin pricing recalculation currently reuses stored estimate inputs; multi-box-type orders cannot safely change a single total quantity unless per-box quantities are migrated later.
-- No old admin HTML/JS files were removed or replaced.
-- The public community information plaza homepage now uses the short-term Flarum-inspired student-board layout, with service links demoted to the right sidebar, forum categories as primary filters, and no standalone Flarum/PHP/MySQL deployment added.
-- The public carpool request form was intentionally modified to remove the unused share-goal price option.
-- Transport request admin API responses now include `offline_recorded`, `last_operated_by`, and `last_operated_at`; public transport APIs were not intentionally expanded. No email behavior or secrets/env files were modified.
-- Transport manual supplement/import fields have been applied to Supabase project `ngn-transport`; public/ordinary-user transport APIs should continue using explicit safe field lists and must not expose `raw_import_payload` or admin import fields.
-- P5 order-change infrastructure is now live in production: `change-preview` is admin-only/read-only, `change-confirm` is admin-only/write-audited, and `order_change_logs` exists in production with forced RLS and no direct public/anon/authenticated table access.
-- P6A transport dispatch workbench is implemented in source but not built/deployed:
-  - the source Vue group list at `/admin/transport/groups` is now a dispatch workbench that emphasizes group readiness, member summary, people/luggage totals, public visibility, payment/offline-record status, and readonly risk flags;
-  - the source Vue group detail page is now a dispatch verification surface for members, flight/terminal/contact/payment/offline information, low-risk dispatch notes/visibility/contact/offline actions, and driver dispatch summary copy;
-  - P6A intentionally does not directly edit airport, terminal, flight number, service date/time, passenger count, luggage count, price, or group/member movement.
-- Future P5C/P6 work beyond P6A should keep the existing transport group detail page because its overview, fee/payment, member list, add-member area, and driver dispatch summary remain valuable, while continuing to evolve the transport group list from "detail-page management" into a customer-service dispatch workbench. This is not a simple visual polish task; it is an operational workflow change so operators can judge group/order readiness without repeatedly opening detail pages.
-  - Current group-list gaps to solve: member contact details, WeChat, flight number, terminal, luggage, passenger count, order-level payment state, chat-group state, driver-notification state, customer-service notes, last operator/time, and dispatch risks are not visible enough for day-to-day dispatch decisions. Group-level "mark paid" is too broad after P5 because payment belongs to member orders, not the group.
-  - The future main list should surface Group ID, order-number summary, member names, service type/date, airport, terminal summary, flight/service time range, route summary, passenger/seat counts, group status, dispatch risk flags, payment summary, current dynamic per-person price, chat-group status, driver-notified state, customer-service notes, last operator, and last operated time.
-  - Future expandable member rows are required. They should show member order number, name, phone, WeChat, flight number, airport, terminal, time, passenger/luggage counts, route/address, order payment status, confirmed order price, paid amount, balance/refund amount, and actions for viewing the order, starting P5 order change, payment handling, and controlled remove/transfer workflows.
-  - Low-risk fields may be edited directly in the list only with `admin_operation_logs`: chat-group status (`not_created`, `created`, `not_needed`, `pending_confirmation`), driver notification, customer-service notes, internal processing status, and offline-recorded/customer-service registration state.
-  - High-risk fields must not be spreadsheet-edited and must use the P5 order-change flow: airport, terminal, service date, flight time, pickup/dropoff time, passenger count, shareable/carpool intent, price, confirmed order price, paid amount, balance due, refund due, and any group/member move that affects matching or pricing.
-  - Terminal / airport terminal is a high-risk field. P6 may display terminal and may provide an "order change" entry point, but backend lists and the dispatch workbench must not directly save terminal through Excel-style inline editing.
-  - Customer service terminal changes must go through P5 `change-preview` and `change-confirm`, including `preview_token` / `source_snapshot_hash` validation, `group_action` judgment, price recalculation or risk warning, and group relationship reassessment.
-  - Same-airport terminal changes, such as `LHR T4 -> LHR T2`, must be recognized as `order_change`, show a `terminal_changed` risk, set `requires_reprice=true` or at least warn that price may be affected, judge whether the original group can still be kept, and not default to automatic `keep_group` unless cross-terminal grouping is allowed and the operator confirms. If cross-terminal surcharge changes, old/new price and `price_delta` must be shown.
-  - Airport plus terminal changes, such as `LHR T4 -> LGW North`, must reprice, move the order out of the original group, disallow `keep_group`, and allow only controlled outcomes such as `move_out_new_single` or `transfer_existing_group`.
-  - Flight-number-only changes may be `no_group_change` and do not require forced repricing when airport, terminal, service date, time, and passenger count are unchanged.
-  - The terminal rule applies to both pickup and dropoff: pickup terminal affects the driver pickup point; dropoff terminal affects the driver dropoff point; driver dispatch summaries must refresh after the P5 change result.
-  - P6 minimum viable release should be split into: P6-A readonly dispatch workbench with expandable members and allowed low-risk status toggles; P6-B low-risk group dispatch status edits with operation logs; P6-C transport group lifecycle cleanup mechanism using dry-run plus manual confirmation; P6-D member-order payment entry points replacing group-level bulk payment; P6-E filters and export for dispatch status, payment gaps, terminal/cross-terminal risk, last operator, and anomalies.
-  - Delete should not remain a normal red list action. Daily operators should see detail, close/cancel, or anomaly-review actions; true deletion should stay in a separate guarded empty/test-group cleanup flow with candidate validation, second confirmation, before snapshot, and `admin_operation_logs`.
-  - `full` / fully matched group state should remain system-derived from `seats_used >= max_passengers`; customer service may close or cancel a group but should not manually fake a full state.
-  - Detail-page follow-up risks: current per-person price is dynamic group pricing, not final confirmed order price; max passengers must never be set below current passenger count and must log operations; driver-dispatch time may be directly editable only if it is dispatch-only and must use P5 if it affects service time or matching; add-member must validate service type, airport, date, capacity, shareable intent, and existing group membership; remove-member must sync old group status, request status, and pricing, not just delete membership.
-- Personal center display now treats the membership benefit card as the single display location for the currently linked membership order, so the same order is not repeated in ordinary pickup/storage cards or recent records.
-- Personal center pickup membership reservations now show whether the member booking is a September free pickup or a non-September/other-time 100 GBP discount.
-- Personal center pickup cards and bound pickup membership cards now provide direct `查看详情` access, while pickup membership displays hide price/discount amounts.
-- Frontend session state in Vue remains UI-only; backend APIs still enforce authorization server-side.
-- The root `admin/` folder is generated build output from `npm run build:admin-vue`; the source app remains under `apps/admin-vue/`.
+- Admin Vue source is the canonical admin UI source; `npm --prefix apps/admin-vue run build` refreshes the served `admin/` bundle.
+- The transport request list no longer links to a standalone transport request detail page; operators should use list filters for scanning, `调整行程` for full order view/edit with preview-confirm, and `操作记录` for audit review.
+- Manual single-order supplement now creates a single-member group by default or joins a compatible existing group by entered group code/id.
+- Bulk manual import now requires an explicit group outcome for every imported row through `拼车组标识（可选）`: blank creates a single-member group, existing `GRP-...` joins that group, and repeated temporary identifiers create one shared new group.
+- One-click payment, email behavior, public pages, production deployment, and production database state were not changed.
 
-## Open Issues And Risks
+## Open Risks / Follow-Up
 
-- P2 before opening the storage admin page publicly:
-  - page: `admin-storage.html`;
-  - issue: `storageTypeLabels is not defined`;
-  - impact: storage admin page is not officially open, so this does not affect current live business;
-  - requirement: fix before opening storage admin, without re-adding heavy list fields such as `customer_form_json`, `final_readable_message`, or `service_flags_json` to the list API.
-- Membership detail page is still mostly readonly: customer-service detail and operation record viewing live in Vue, while mark-used/cancel/reset claim mutations are not yet exposed in the Vue detail page. The membership list now exposes opening membership, single/batch activation-code generation, activation-code deletion, manual benefit registration, and entitlement deletion through existing admin endpoints.
-- Community Vue page and community post detail page are intentionally readonly in this phase. Real moderation actions such as hide, restore, delete, pin, update expiry, image deletion, comment moderation, and user bans should be implemented in 2.0 admin before they become normal-path operations.
-- Phase 5A intentionally adds real storage-only operations in Vue: list export, list single-delete, detail service/address saves, detail status changes, detail current-order export, and detail single-delete. Batch delete and all non-storage dangerous operations remain unimplemented.
-- The transport request tracking fields have been applied to Supabase project `ngn-transport`; the 2.0 admin launch deployment has now followed the GitHub-first release order and is live on Vercel production.
-- The storage order tracking migration `supabase/20260519_storage_order_offline_tracking.sql` has been applied to Supabase project `ngn-transport`; refresh `/admin/storage/orders` before testing mark/cancel recorded operations.
-- The transport manual supplement migration `supabase/20260521_transport_manual_import.sql` has been applied to Supabase project `ngn-transport`; refresh `/admin/transport/requests` before retesting the supplement and batch import controls. The two new import/filter indexes may continue to appear as unused in Supabase Advisor until real traffic exercises those queries.
-- P5 production smoke retained synthetic audit rows in `order_change_logs` and `admin_operation_logs`; the synthetic transport requests, groups, and group memberships were deleted. Keep the audit rows unless a separate cleanup policy is approved.
-- Production transport group list returned a valid empty list during smoke testing, so there was no real production group sample. Group-detail/member preview was verified with a temporary synthetic group, then cleaned up.
-- The `POST /api/transport-groups` and group member add route were not part of P5 and were not relied on for release; the P5 group-detail member order-change entry was verified through the existing group detail and change-preview path.
-- A current approved production admin username/password is available and was used for the P5 smoke test; do not rely on local signed admin-session fallback for production validation.
-- Preview env pulled from Vercel differs from local `.env`: local has `ADMIN_BOOTSTRAP_*` and `STORAGE_ORDER_WEBHOOK_URL`; Preview has `ADMIN_ALLOWED_EMAILS`/`ADMIN_PASSWORD` and Vercel/Turbo runtime keys. Confirm this is intentional before release.
-- Source scan found hardcoded `https://ngn.best` fallbacks in email/audit helpers. Confirm `APP_BASE_URL` or equivalent site URL behavior for Preview and Production before relying on email links.
-- Existing unrelated dirty changes were present before this checkpoint and were not reverted:
-  - `admin-api.js`;
-  - `admin-managers.html`;
-  - `admin-pages.js`;
-  - `api/_lib/admin-managers.js`;
-  - `api/admin/[...action].js`.
-
-## Recommended Next Steps
-
-- P6B-B2 should be treated as the first formal dispatch-status schema phase: add structured group-level dispatch fields and any group-member passenger-confirmation fields through an explicit migration, API validation, operation logging, and separate acceptance plan.
-- P6B-B1 batch mark-paid is now detail-page-only in source and the served local admin bundle; before commit, do one final visual pass on the detail confirmation modal and operation-log wording.
-- Keep P6B-B1 readiness as derived/read-only until P6B-B2 exists; do not persist readiness badges into `transport_groups.status`, `visible_on_frontend`, or notes.
-- Monitor production P5 for the first real customer-service usage: check `order_change_logs`, `admin_operation_logs`, request updates, and group membership changes after the first confirmed real order change.
-- Observe production P5 after real customer-service usage for: operator feedback on the order-change drawer, `change-confirm` error logs, and whether transport group refresh remains stable after member move-out/new-single/transfer actions.
-- For future release/smoke runs, prefer an approved production test order or a documented synthetic-order cleanup routine; avoid using real student orders for destructive confirmation tests.
-- For P5B-Env, local Supabase is now available for continued fake-data testing through `LOCAL_SUPABASE_URL`, `LOCAL_SUPABASE_ANON_KEY`, and `LOCAL_SUPABASE_SERVICE_ROLE_KEY`; do not use real student data in this local environment.
-- For P5C/P6, design the "transport dispatch workbench" from the recorded customer-service requirement: keep group detail, expose only low-risk inline fields with operation logs, route all high-risk order/trip/price/terminal changes through P5 order-change APIs, and treat flight-number-only changes as `no_group_change` only when airport, terminal, service date, time, and passenger count are unchanged.
-- Next Vue phase should verify storage export/delete and storage detail price recalculation in the browser, then continue with the next explicitly approved low-risk operation only after server-side permission boundaries are reviewed.
-- Do not implement real dangerous operations until the corresponding detail/read-only flow is accepted and server-side permission boundaries are reviewed.
-- Keep following the fixed release order for future changes: commit and push intended changes to GitHub first, then deploy to Vercel.
+- Browser-level acceptance still needs a logged-in admin session to manually confirm the batch import modal, row-level `调整行程`, and `操作记录` drawers.
+- Historical database rows may still have old compatibility values; this task did not run cleanup SQL. If cleanup is needed, prepare a separate reviewable Supabase plan before any migration.
+- The repository had pre-existing unrelated modified files before this task; they were left intact.
