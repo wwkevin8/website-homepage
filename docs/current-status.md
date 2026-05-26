@@ -8,7 +8,7 @@
 ## Last Updated Task
 
 - Date: 2026-05-26
-- Scope: Public carpool board performance patch prepared for release. Homepage preview now shows up to 10 future public groups, `/api/public/transport-groups` uses lightweight preview and server-side page-size-plus-one pagination, and the additive Supabase index migration has been applied to production. No transport orders/groups were created, edited, deleted, imported, or cleared; no test data was uploaded.
+- Scope: Public carpool board performance patch released to production. Homepage preview shows up to 10 future public groups, `/api/public/transport-groups` uses lightweight preview and server-side page-size-plus-one pagination, and the additive Supabase index migration is applied in production. No transport orders/groups were created, edited, deleted, imported, or cleared; no test data was uploaded.
 
 ## Latest Completed Work
 
@@ -28,6 +28,12 @@
   - Confirmed indexes now exist on production: `idx_transport_groups_public_joinable_time`, `idx_transport_groups_public_service_airport_time`, `idx_transport_groups_group_id_trgm`, and `idx_transport_group_members_group_created_request`.
   - Verified production `transport_groups.status` values remained `single_member=46` and `closed=3`.
 - Updated `docs/PROJECT_MAP.md` for the public transport groups preview/pagination/index behavior.
+- Released the patch from clean worktree `E:\webside-public-release`:
+  - GitHub branch: `origin/codex/public-transport-groups-performance`
+  - GitHub commit: `94945d9 perf: speed up public transport groups preview and pagination`
+  - Vercel production URL: `https://webside-5k1wuayay-wwkevin8s-projects.vercel.app`
+  - Production alias: `https://ngn.best`
+  - Vercel inspect URL: `https://vercel.com/wwkevin8s-projects/webside/ANjXZPAJvRuM3cyQi1aKrWf5LxDo`
 
 ## Previous Completed Work
 
@@ -70,6 +76,18 @@
   - `GET /api/public/transport-groups?page=1&pageSize=20&group_id=GRP-260525-N`: HTTP 200, 51 ms, 1,182 bytes, 1 item.
   - `GET /api/public/transport-groups?page=1&pageSize=20&date_from=2026-06-01&date_to=2026-06-30`: HTTP 200, 108 ms, 6,341 bytes, 6 items.
 - Local browser verification at desktop 1440x1000 and mobile 390x844 confirmed homepage preview renders 10 rows, full board uses `pageSize=20`, and each page load made one public groups request.
+- Production API verification against `https://ngn.best` after release:
+  - `GET /api/public/transport-groups?mode=preview&limit=10`: HTTP 200, 562 ms direct API check, 8,939 bytes, 10 items, 0 past groups, `has_next=true`.
+  - `GET /api/public/transport-groups?page=1&pageSize=20`: HTTP 200, 389 ms direct API check, 21,089 bytes, 20 items, 0 past groups, `has_next=true`, `total=null`.
+  - `group_id=GRP-260526`: HTTP 200, 439 ms, 21,088 bytes, 20 matching items.
+  - `service_type=dropoff`: HTTP 200, 425 ms, 21,059 bytes, 20 matching items.
+  - `airport_code=LHR`: HTTP 200, 385 ms, 20,973 bytes, 20 matching items.
+  - `date_from=2026-05-27&date_to=2026-05-27`: HTTP 200, 401 ms, 4,294 bytes, 4 items, `has_next=false`.
+- Production browser Network verification:
+  - Desktop 1440x1000 homepage rendered 10 preview rows and badge `仅展示最近 10 组`; exactly one public groups request was observed for preview, 2,169 ms browser-measured, 8,939 bytes.
+  - Desktop full board rendered 20 rows; exactly one public groups request was observed for page 1, 842 ms browser-measured, 21,089 bytes.
+  - Mobile 390x844 homepage rendered 10 preview rows and badge `仅展示最近 10 组`; exactly one public groups request was observed for preview, 672 ms browser-measured, 8,939 bytes.
+  - Mobile full board rendered 20 rows; exactly one public groups request was observed for page 1, 544 ms browser-measured, 21,089 bytes.
 - `node --check public-api-handlers/transport-groups.js` passed.
 - `node --check transport-api.js` passed.
 - `node --check transport-public.js` passed.
@@ -103,10 +121,10 @@
 - The public carpool homepage preview now requests `/api/public/transport-groups?mode=preview&limit=10` and displays up to 10 future public groups.
 - The public full board now requests `/api/public/transport-groups?page=1&pageSize=20...`; `total` is intentionally `null` by default and `has_next` comes from page-size-plus-one fetches.
 - Supabase production already has migration `20260526135503 public_transport_groups_perf_indexes`.
-- Production `https://ngn.best` is still aliased to P6 performance deployment `dpl_7MjGbchq2YNWLvgRVjC775oYKiWE` until this release is deployed.
+- Production `https://ngn.best` is aliased to the public carpool board performance release at `https://webside-5k1wuayay-wwkevin8s-projects.vercel.app`.
 
 ## Open Risks / Follow-Up
 
 - Advanced carpool filters that depend on derived enriched data, such as risk/payment/offline/readiness, are still evaluated on the loaded page data. Moving those fully server-side would be a separate, broader patch.
 - `/api/transport-groups` still runs `cleanupEmptyTransportGroups` on GET as existing behavior; this patch did not change group lifecycle cleanup.
-- After Vercel deployment, verify production Network timings for the homepage preview, full board first page, and filters against `https://ngn.best`.
+- No current follow-up is required for the public carpool board performance release unless production traffic reports slower cold starts or additional filter needs.
