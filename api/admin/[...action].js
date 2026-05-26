@@ -162,6 +162,11 @@ function addDaysToDateInputValue(dateText, days) {
   ].join("-");
 }
 
+function normalizeStorageValidityScope(value) {
+  const normalized = String(value || "").trim();
+  return ["active", "history", "all"].includes(normalized) ? normalized : "all";
+}
+
 function isPerfLogEnabled() {
   return process.env.NODE_ENV !== "production";
 }
@@ -1079,6 +1084,8 @@ function expandStorageOrderForAdmin(item = {}) {
 
 function filterExpandedStorageRows(rows, queryParams = {}) {
   const serviceType = normalizeStorageOrderKind(queryParams.service_type || queryParams.order_type_filter || queryParams.storage_order_kind);
+  const validityScope = normalizeStorageValidityScope(queryParams.validity_scope || queryParams.validity || queryParams.active_scope);
+  const todayText = getUkTodayInputValue();
   const dateStart = String(queryParams.date_start || queryParams.start_date || "").trim();
   const dateEnd = String(queryParams.date_end || queryParams.end_date || "").trim();
   return rows.filter(row => {
@@ -1086,6 +1093,12 @@ function filterExpandedStorageRows(rows, queryParams = {}) {
       return false;
     }
     const serviceDate = String(row.service_date_unified || "").slice(0, 10);
+    if (validityScope === "active" && (!serviceDate || serviceDate < todayText)) {
+      return false;
+    }
+    if (validityScope === "history" && (!serviceDate || serviceDate >= todayText)) {
+      return false;
+    }
     if (dateStart && (!serviceDate || serviceDate < dateStart)) {
       return false;
     }

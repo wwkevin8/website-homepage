@@ -35,6 +35,7 @@ const columns = [
 const defaultFilters = {
   search: "",
   serviceType: "",
+  validityScope: "active",
   offlineRecorded: "",
   lastOperatedBy: "",
   dateStart: "",
@@ -323,6 +324,14 @@ function isPaymentReceived(order) {
   return rowPaymentStatus(order) === "paid";
 }
 
+function paymentButtonLabel(order) {
+  return isPaymentReceived(order) ? "已收款" : "未收款";
+}
+
+function paymentButtonTitle(order) {
+  return isPaymentReceived(order) ? "点击标记为未收款" : "点击标记为已收款";
+}
+
 function paymentStatusLabel(status) {
   return {
     unpaid: "未收款",
@@ -427,6 +436,7 @@ function buildFilterQuery() {
     order_type: "all",
     search: filters.search.trim(),
     service_type: filters.serviceType,
+    validity_scope: filters.validityScope,
     offline_recorded: filters.offlineRecorded,
     last_operated_by: filters.lastOperatedBy,
     date_start: filters.dateStart,
@@ -736,6 +746,14 @@ onMounted(() => {
         </select>
       </label>
       <label class="field">
+        <span>有效性</span>
+        <select v-model="filters.validityScope">
+          <option value="active">有效单</option>
+          <option value="history">历史单 / 无效单</option>
+          <option value="all">全部</option>
+        </select>
+      </label>
+      <label class="field">
         <span>线下记录状态</span>
         <select v-model="filters.offlineRecorded">
           <option value="">全部</option>
@@ -854,12 +872,13 @@ onMounted(() => {
         </template>
         <template #cell-payment_action="{ row }">
           <button
-            :class="['table-action-button', isPaymentReceived(row) ? 'table-action-button--unpaid' : 'table-action-button--paid']"
+            :class="['table-action-button', isPaymentReceived(row) ? 'table-action-button--paid' : 'table-action-button--unpaid']"
             type="button"
+            :title="paymentButtonTitle(row)"
             :disabled="paymentSavingId === rowActionId(row)"
-            @click="togglePaymentReceived(row)"
+            @click.stop="togglePaymentReceived(row)"
           >
-            {{ paymentSavingId === rowActionId(row) ? "保存中..." : (isPaymentReceived(row) ? "未收款" : "已收款") }}
+            {{ paymentSavingId === rowActionId(row) ? "保存中..." : paymentButtonLabel(row) }}
           </button>
         </template>
         <template #cell-remark="{ row }">
