@@ -8,9 +8,17 @@
 ## Last Updated Task
 
 - Date: 2026-05-26
-- Scope: P0 public carpool join/list hotfix and registration sync fix released to production. Source commit `f5f96d8`; Vercel production deployment `dpl_7vCcMQ7bNXdWVRrgcsgaEtNgNzFs` is Ready and aliased to `https://ngn.best`. The release was built from clean worktree `E:\webside-p0-deploy` and did not include local test data, P7/P8 storage/admin work, CSV test imports, or manual-import default-shareable changes.
+- Scope: P0 public carpool loading/performance/sorting fix released to production. Source commit `72f5b25`; Vercel production deployment `dpl_GY2wEYPMXdKvv3rs7MdvztkLt6gh` is Ready and aliased to `https://ngn.best`. The release was built from clean worktree `E:\webside-p0-deploy` and did not include local test data, destructive SQL, P7/P8 work, or any production data import/delete/overwrite.
 
 ## Latest Completed Work
+
+- P0 public carpool loading/performance/sorting release:
+  - Root cause: the production public groups endpoint returned HTTP 200 but fetched and enriched the full public group set before slicing for `limit=3`, making the homepage preview slow enough to show the frontend fallback `Load failed`. The full board also defaulted toward the legacy/latest ordering when no date filter was selected.
+  - Updated `public-api-handlers/transport-groups.js` so public reads no longer run empty-group cleanup, select only public display fields, default to future joinable groups, sort by service/group time from nearest to farthest, paginate on the server, and enrich only the current page with one batched member lookup.
+  - Updated `transport-public.js` so the homepage preview requests `mode=preview&limit=10`, the full board requests `limit=20&page=N`, default sorting is `upcoming`, and failure/empty copy is Chinese instead of raw `Load failed`.
+  - Updated `docs/PROJECT_MAP.md` for the public transport groups preview/pagination/default sorting behavior.
+  - Production deployment `dpl_GY2wEYPMXdKvv3rs7MdvztkLt6gh` is Ready at `https://webside-995229nwo-wwkevin8s-projects.vercel.app` and aliased to `https://ngn.best`.
+  - No production write SQL, test-data upload, order/group/member delete, visibility change, or status rewrite was run for this performance fix.
 
 - P0 production release:
   - Updated `public-api-handlers/transport-groups.js` so public group rows include a public-safe `target_request_id` for the first active member, without changing public visibility, group status, filters, member rows, or transport group rows.
@@ -47,6 +55,18 @@
   - Production state: `READY`
 
 ## Verification
+
+- P0 public carpool loading/performance/sorting verification:
+  - Read `E:\webside\AGENTS.md`, `E:\webside\docs\current-status.md`, Supabase task guidance, Vercel deployment guidance, Browser guidance, and Vercel deployment guidance before release/verification.
+  - `node --check public-api-handlers/transport-groups.js` passed.
+  - `node --check transport-public.js` passed.
+  - `git diff --check` passed with line-ending warnings only.
+  - `npm run build:prod` passed; Vite still reports the existing admin large-chunk warning, and root install still reports the existing moderate `ws` advisory. No dependency files were changed.
+  - Local API checks on port `3011` returned HTTP 200 in about 224 ms for preview and about 234 ms for full-board page 1.
+  - Production API checks after deployment returned HTTP 200: preview 10 rows in about 525 ms, full-board page 1 20 rows in about 677 ms, and page 2 19 rows in about 407 ms. Dates were ordered from `2026-05-27` forward.
+  - Production browser Network checks: mobile homepage preview request was HTTP 200 in about 766 ms with no `Load failed`; desktop full-board page 1 was HTTP 200 in about 730 ms; page 2 was HTTP 200 in about 477 ms.
+  - Unauthenticated production `加入拼车` redirected to login without showing the empty-board message.
+  - Vercel logs for deployment `dpl_GY2wEYPMXdKvv3rs7MdvztkLt6gh` showed no HTTP 500 logs in the checked window.
 
 - P0 production release verification:
   - Read `E:\webside\AGENTS.md`, `E:\webside\docs\current-status.md`, Supabase task guidance, Vercel deployment guidance, and `vercel.json`.
