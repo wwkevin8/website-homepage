@@ -21,7 +21,7 @@
     return ERROR_MESSAGE_MAP[text] || text || "请求失败";
   }
 
-  async function request(url, options) {
+  async function request(url, options = {}) {
     let response;
     try {
       response = await fetch(resolveUrl(url), {
@@ -171,8 +171,8 @@
         method: "DELETE"
       });
     },
-    listPublicGroups(filters) {
-      return request(`/api/public/transport-groups${buildQuery(filters)}`);
+    listPublicGroups(filters, options) {
+      return request(`/api/public/transport-groups${buildQuery(filters)}`, options);
     },
     listPublicBoard(filters) {
       return request(`/api/public/transport-board${buildQuery(filters)}`);

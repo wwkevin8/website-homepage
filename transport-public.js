@@ -6,8 +6,8 @@
     return;
   }
 
-  const DEFAULT_BOARD_PAGE_SIZE = 10;
-  const DEFAULT_PREVIEW_SIZE = 3;
+  const DEFAULT_BOARD_PAGE_SIZE = 20;
+  const DEFAULT_PREVIEW_SIZE = 10;
   const MODAL_ID = "pickupJoinModal";
   const CUSTOMER_SERVICE_QR_SRC = "./img/pickup-service-qr.jpg";
 
@@ -16,7 +16,7 @@
       items: Array.isArray(payload?.items) ? payload.items : [],
       total: Number(payload?.total) || 0,
       page: Number(payload?.page) || 1,
-      page_size: Number(payload?.page_size) || 0,
+      page_size: Number(payload?.pageSize || payload?.page_size) || 0,
       has_next: Boolean(payload?.has_next)
     };
   }
@@ -228,15 +228,38 @@
     `;
   }
 
-  function renderPagination(container, page, hasNext) {
+  function renderPagination(container, page, hasNext, total) {
     if (!container) {
       return;
     }
 
+    const totalText = Number(total) > 0 ? ` / 共 ${Number(total)} 条` : "";
     container.innerHTML = `
       <button class="button button-secondary" type="button" data-page-action="prev" ${page <= 1 ? "disabled" : ""}>上一页</button>
-      <span class="transport-pagination-current">第 ${page} 页</span>
+      <span class="transport-pagination-current">第 ${page} 页${totalText}</span>
       <button class="button button-secondary" type="button" data-page-action="next" ${hasNext ? "" : "disabled"}>下一页</button>
+    `;
+  }
+
+  function createAbortController() {
+    return typeof AbortController === "function" ? new AbortController() : null;
+  }
+
+  function renderLoading(container, message = "加载中...") {
+    if (container) {
+      container.innerHTML = `<div class="transport-loading">${Shared.escapeHtml(message)}</div>`;
+    }
+  }
+
+  function renderRetry(container, message, action) {
+    if (!container) {
+      return;
+    }
+    container.innerHTML = `
+      <div class="transport-empty transport-load-error">
+        <p>${Shared.escapeHtml(message || "加载失败，请稍后重试。")}</p>
+        <button class="button button-secondary" type="button" data-reload-${Shared.escapeHtml(action)}>重新加载</button>
+      </div>
     `;
   }
 
@@ -856,11 +879,23 @@
     let currentPage = 1;
     let hasNextPage = false;
     let currentItems = [];
+    let activeRequestId = 0;
+    let activeController = null;
     Shared.populateAirportCodeSelect(form.airport_code, true);
 
     async function render(page = 1) {
       currentPage = page;
-      list.innerHTML = '<div class="transport-loading">加载中...</div>';
+      const requestId = ++activeRequestId;
+      if (activeController) {
+        activeController.abort();
+      }
+      activeController = createAbortController();
+      renderLoading(list);
+      const slowTimer = window.setTimeout(() => {
+        if (requestId === activeRequestId) {
+          renderLoading(list, "加载较慢，请稍候...");
+        }
+      }, 1800);
       if (pagination) {
         pagination.innerHTML = "";
       }
@@ -871,15 +906,21 @@
         airport_code: form.airport_code.value,
         date_from: form.date_from.value,
         date_to: form.date_to.value,
-        sort: form.date_from.value ? "upcoming" : "latest",
-        limit: DEFAULT_BOARD_PAGE_SIZE,
+        sort: "upcoming",
+        pageSize: DEFAULT_BOARD_PAGE_SIZE,
         page
-      }).catch(error => {
-        list.innerHTML = `<div class="transport-empty">${Shared.escapeHtml(error.message)}</div>`;
+      }, activeController ? { signal: activeController.signal } : undefined).catch(error => {
+        if (error.name === "AbortError") {
+          return null;
+        }
+        if (requestId === activeRequestId) {
+          renderRetry(list, error.message, "board");
+        }
         return null;
       });
+      window.clearTimeout(slowTimer);
 
-      if (!response) {
+      if (!response || requestId !== activeRequestId) {
         return;
       }
 
@@ -908,7 +949,7 @@
           </div>
         </div>
       `;
-      renderPagination(pagination, payload.page, payload.has_next);
+      renderPagination(pagination, payload.page, payload.has_next, payload.total);
     }
 
     form.addEventListener("submit", event => {
@@ -917,6 +958,11 @@
     });
 
     list.addEventListener("click", event => {
+      if (event.target.closest("[data-reload-board]")) {
+        render(currentPage || 1);
+        return;
+      }
+
       const detailButton = event.target.closest("[data-view-pickup]");
       if (detailButton) {
         const item = currentItems.find(entry => getGroupKey(entry) === detailButton.getAttribute("data-view-pickup"));
@@ -1209,7 +1255,7 @@
   function renderPreviewNotice() {
     return `
       <div class="pickup-board-preview-note" role="note" aria-label="预览提示">
-        <span class="pickup-board-preview-badge">仅展示最近 3 组</span>
+        <span class="pickup-board-preview-badge">仅展示最近 10 组</span>
         <span class="pickup-board-preview-copy">这里只展示最新拼车预览，想看全部班次与完整信息，请点击上方 <strong>查看完整拼车表格</strong> 进入接机面板。</span>
       </div>
     `;
@@ -1235,39 +1281,75 @@
     }
 
     list.classList.add("pickup-board-list-preview");
-    list.innerHTML = '<div class="transport-loading">加载中...</div>';
 
-    const response = await Api.listPublicGroups({
-      sort: "upcoming",
-      limit: DEFAULT_PREVIEW_SIZE,
-      page: 1
-    }).catch(error => {
-      list.innerHTML = `<div class="pickup-board-empty">${Shared.escapeHtml(error.message)}</div>`;
-      return null;
+    let previewRequestId = 0;
+    let previewController = null;
+
+    async function renderPreview() {
+      const requestId = ++previewRequestId;
+      if (previewController) {
+        previewController.abort();
+      }
+      previewController = createAbortController();
+      renderLoading(list);
+      const slowTimer = window.setTimeout(() => {
+        if (requestId === previewRequestId) {
+          renderLoading(list, "加载较慢，请稍候...");
+        }
+      }, 1800);
+
+      const response = await Api.listPublicGroups({
+        mode: "preview",
+        sort: "upcoming",
+        limit: DEFAULT_PREVIEW_SIZE,
+        page: 1
+      }, previewController ? { signal: previewController.signal } : undefined).catch(error => {
+        if (error.name === "AbortError") {
+          return null;
+        }
+        if (requestId === previewRequestId) {
+          list.innerHTML = `
+            <div class="pickup-board-empty transport-load-error">
+              <p>${Shared.escapeHtml(error.message || "加载失败，请稍后重试。")}</p>
+              <button class="button button-secondary" type="button" data-reload-preview>重新加载</button>
+            </div>
+          `;
+        }
+        return null;
+      });
+      window.clearTimeout(slowTimer);
+
+      if (!response || requestId !== previewRequestId) {
+        return;
+      }
+
+      const payload = normalizeResponse(response);
+      const items = payload.items
+        .map(normalizePublicGroupItem)
+        .slice(0, DEFAULT_PREVIEW_SIZE);
+      if (!items.length) {
+        list.innerHTML = '<div class="pickup-board-empty">当前还没有已发布的接机拼车组。</div>';
+        return;
+      }
+
+      list.innerHTML = `
+        ${renderPreviewNotice()}
+        <div class="pickup-board-track-scroll">
+          <div class="pickup-board-track">
+            ${renderPreviewHeader()}
+            ${items.map((item, index) => renderPreviewCard(item, index)).join("")}
+          </div>
+        </div>
+      `;
+    }
+
+    list.addEventListener("click", event => {
+      if (event.target.closest("[data-reload-preview]")) {
+        renderPreview();
+      }
     });
 
-    if (!response) {
-      return;
-    }
-
-    const payload = normalizeResponse(response);
-    const items = payload.items
-      .map(normalizePublicGroupItem)
-      .slice(0, DEFAULT_PREVIEW_SIZE);
-    if (!items.length) {
-      list.innerHTML = '<div class="pickup-board-empty">当前还没有已发布的接机拼车组。</div>';
-      return;
-    }
-
-    list.innerHTML = `
-      ${renderPreviewNotice()}
-      <div class="pickup-board-track-scroll">
-        <div class="pickup-board-track">
-          ${renderPreviewHeader()}
-          ${items.map((item, index) => renderPreviewCard(item, index)).join("")}
-        </div>
-      </div>
-    `;
+    renderPreview();
   }
 
   document.addEventListener("DOMContentLoaded", () => {
