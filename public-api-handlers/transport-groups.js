@@ -1,7 +1,7 @@
 const { getSupabaseAdmin } = require("../api/_lib/supabase");
 const { applyEffectiveGroupCounts } = require("../api/_lib/transport");
 const { ok, methodNotAllowed, serverError } = require("../api/_lib/http");
-const { loadGroupStatsMap } = require("../api/_lib/transport-group-stats");
+const { buildGroupStats } = require("../api/_lib/transport-group-stats");
 
 const PUBLIC_GROUP_SELECT = [
   "id",
@@ -124,15 +124,13 @@ async function enrichPublicGroupsBatch(supabase, groups) {
     return [];
   }
 
-  const [groupStatsById, targetRequestIdsByGroup] = await Promise.all([
-    loadGroupStatsMap(supabase, groupIds, { groups }),
-    loadTargetRequestIdsByGroup(supabase, groupIds)
-  ]);
+  const memberSummariesByGroup = await loadPublicMemberSummaries(supabase, groupIds);
 
   return groups.map(group => {
     const { dispatch_status, ...publicGroup } = group || {};
     const groupKey = group.group_id || group.id;
-    const groupStats = groupStatsById.get(groupKey) || {};
+    const memberSummary = memberSummariesByGroup.get(groupKey) || {};
+    const groupStats = memberSummary.groupStats || {};
     const sourceOrderNos = Array.isArray(group.source_order_nos) ? group.source_order_nos : [];
     const sourceFlightNos = groupStats.flight_no_values || [];
     return {
@@ -140,7 +138,7 @@ async function enrichPublicGroupsBatch(supabase, groups) {
       ...groupStats,
       id: groupKey,
       group_id: groupKey,
-      target_request_id: targetRequestIdsByGroup.get(groupKey) || null,
+      target_request_id: memberSummary.targetRequestId || null,
       source_order_nos: sourceOrderNos,
       source_order_no_preview: sourceOrderNos.length > 1 ? `${sourceOrderNos[0]} +${sourceOrderNos.length - 1}` : (sourceOrderNos[0] || null),
       source_flight_nos: sourceFlightNos,
@@ -149,7 +147,7 @@ async function enrichPublicGroupsBatch(supabase, groups) {
   });
 }
 
-async function loadTargetRequestIdsByGroup(supabase, groupIds) {
+async function loadPublicMemberSummaries(supabase, groupIds) {
   const normalizedGroupIds = Array.from(new Set((groupIds || []).filter(Boolean)));
   if (!normalizedGroupIds.length) {
     return new Map();
@@ -157,26 +155,34 @@ async function loadTargetRequestIdsByGroup(supabase, groupIds) {
 
   const { data, error } = await supabase
     .from("transport_group_members")
-    .select("group_id, request_id, transport_requests(status)")
-    .in("group_id", normalizedGroupIds)
-    .order("created_at", { ascending: true });
+    .select("group_id, request_id, passenger_count_snapshot, transport_requests(passenger_count, status, terminal, flight_datetime, airport_code, flight_no, notes, luggage_count)")
+    .in("group_id", normalizedGroupIds);
 
   if (error) {
     throw error;
   }
 
-  const targetRequestIdsByGroup = new Map();
+  const membersByGroup = new Map();
   for (const member of data || []) {
-    if (!member?.group_id || !member?.request_id || targetRequestIdsByGroup.has(member.group_id)) {
+    if (!member?.group_id) {
       continue;
     }
-    if (member.transport_requests?.status === "closed") {
-      continue;
-    }
-    targetRequestIdsByGroup.set(member.group_id, member.request_id);
+    const current = membersByGroup.get(member.group_id) || [];
+    current.push(member);
+    membersByGroup.set(member.group_id, current);
   }
 
-  return targetRequestIdsByGroup;
+  const summaries = new Map();
+  for (const groupId of normalizedGroupIds) {
+    const members = membersByGroup.get(groupId) || [];
+    const firstActiveMember = members.find(member => member?.request_id && member.transport_requests?.status !== "closed");
+    summaries.set(groupId, {
+      targetRequestId: firstActiveMember?.request_id || null,
+      groupStats: buildGroupStats({ group_id: groupId }, members)
+    });
+  }
+
+  return summaries;
 }
 
 function filterRenderablePublicGroups(groups) {
