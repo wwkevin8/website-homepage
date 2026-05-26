@@ -130,7 +130,7 @@ async function enrichPublicGroupsBatch(supabase, groups) {
     const { dispatch_status, ...publicGroup } = group || {};
     const groupKey = group.group_id || group.id;
     const memberSummary = memberSummariesByGroup.get(groupKey) || {};
-    const groupStats = memberSummary.groupStats || {};
+    const groupStats = buildGroupStats(group, memberSummary.members || []);
     const sourceOrderNos = Array.isArray(group.source_order_nos) ? group.source_order_nos : [];
     const sourceFlightNos = groupStats.flight_no_values || [];
     return {
@@ -178,7 +178,7 @@ async function loadPublicMemberSummaries(supabase, groupIds) {
     const firstActiveMember = members.find(member => member?.request_id && member.transport_requests?.status !== "closed");
     summaries.set(groupId, {
       targetRequestId: firstActiveMember?.request_id || null,
-      groupStats: buildGroupStats({ group_id: groupId }, members)
+      members
     });
   }
 
