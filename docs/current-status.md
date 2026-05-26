@@ -8,9 +8,17 @@
 ## Last Updated Task
 
 - Date: 2026-05-26
-- Scope: P6 performance patch v1 for admin transport request and carpool group list first-screen loading. The patch narrows carpool group list loading to server-side pagination and avoids reloading transport request operator options on every page. Source commit `801a416`; production deployment `dpl_7MjGbchq2YNWLvgRVjC775oYKiWE` is Ready and aliased to `https://ngn.best`. No production data, database schema, SQL indexes, business rules, price logic, payment logic, email behavior, or deployment configuration was changed.
+- Scope: P0 public carpool join/list hotfix and registration sync fix released to production. Source commit `f5f96d8`; Vercel production deployment `dpl_7vCcMQ7bNXdWVRrgcsgaEtNgNzFs` is Ready and aliased to `https://ngn.best`. The release was built from clean worktree `E:\webside-p0-deploy` and did not include local test data, P7/P8 storage/admin work, CSV test imports, or manual-import default-shareable changes.
 
 ## Latest Completed Work
+
+- P0 production release:
+  - Updated `public-api-handlers/transport-groups.js` so public group rows include a public-safe `target_request_id` for the first active member, without changing public visibility, group status, filters, member rows, or transport group rows.
+  - Updated `transport-public.js` so `加入拼车` checks login before resolving fallback board data, uses `target_request_id` when available, shows join errors as a notice instead of replacing the board list, and avoids stale empty pagination pages.
+  - Added `supabase/migrations/20260526150111_users_source_user_composite_unique.sql` for the registration sync fix: `users(source_user_table, source_user_id)` uniqueness plus hardened `sync_user_from_site_users()`.
+  - Updated `docs/PROJECT_MAP.md` for the public groups target id and registration migration.
+  - Deployed production URL `https://webside-ksw4pn879-wwkevin8s-projects.vercel.app`; aliases include `https://ngn.best` and `https://www.ngn.best`.
+  - Production Supabase migration history already includes `20260526151604 users_source_user_composite_unique`; no destructive SQL was run during this deployment task.
 
 - Updated `apps/admin-vue/src/views/TransportGroupsView.vue`:
   - Initial carpool group page load now requests `/api/transport-groups?paginate=true&page=1&page_size=10&validity=active&sort=service_time_asc`.
@@ -40,6 +48,22 @@
 
 ## Verification
 
+- P0 production release verification:
+  - Read `E:\webside\AGENTS.md`, `E:\webside\docs\current-status.md`, Supabase task guidance, Vercel deployment guidance, and `vercel.json`.
+  - Clean release worktree `E:\webside-p0-deploy` contained only the P0 source/migration/docs changes before deployment.
+  - `node --check public-api-handlers/transport-groups.js` passed.
+  - `node --check transport-public.js` passed.
+  - `git diff --check` passed with line-ending warnings only.
+  - `npm run build:prod` passed; Vite reported the existing large-chunk warning and root `npm audit` still reports the existing moderate `ws` advisory. No dependency files were changed.
+  - Production deployment `dpl_7vCcMQ7bNXdWVRrgcsgaEtNgNzFs` completed with status Ready.
+  - Online API verification: `GET https://ngn.best/api/public/transport-groups?page=1&limit=20` returned HTTP 200, 20 public rows, and the first row had `target_request_id`.
+  - Online browser verification: `https://ngn.best/transport-board.html` rendered 10 visible cards; unauthenticated `加入拼车` redirected to login and returning to the board still rendered 10 cards.
+  - Online registration verification: requested signup code, verified code, completed registration, logged in, and confirmed one synced `users` row for the new `site_users` account.
+  - Online logged-in board verification: after login the board still rendered 10 cards; clicking `加入拼车` opened the join modal, left 10 cards visible, and showed 0 `.transport-empty` blocks.
+  - Online refresh verification: reloading the board still rendered 10 cards.
+  - Production read-only data counts after verification: `transport_groups=49`, `transport_group_members=49`, `transport_requests=50`, `site_users=35`. No transport orders, groups, or members were created, deleted, hidden, or overwritten by this deployment task.
+  - Vercel logs for the deployment had no HTTP 500 logs in the checked window. Two runtime entries were Node deprecation warnings on HTTP 200 requests.
+
 - `node --check api/transport-groups/index.js` passed.
 - `node --check api/transport-requests/index.js` passed.
 - `npm --prefix apps/admin-vue run build` passed with the existing Vite large-chunk warning.
@@ -65,11 +89,14 @@
 - Admin Vue source is the canonical admin UI source; `npm --prefix apps/admin-vue run build` refreshes the served `admin/` bundle.
 - The carpool group admin list no longer loads all active groups before first-screen pagination.
 - The transport request admin list remains server-paginated and keeps its default valid-order filter.
-- Production `https://ngn.best` is aliased to P6 performance deployment `dpl_7MjGbchq2YNWLvgRVjC775oYKiWE`.
-- No SQL index was added in this patch.
+- Production `https://ngn.best` is aliased to P0 deployment `dpl_7vCcMQ7bNXdWVRrgcsgaEtNgNzFs`.
+- The deployed P0 code commit is `f5f96d8` on branch `origin/codex/p0-join-register-prod`.
+- The registration sync migration file is now in the repo; production already has the idempotent migration applied and verified.
 
 ## Open Risks / Follow-Up
 
 - Advanced carpool filters that depend on derived enriched data, such as risk/payment/offline/readiness, are still evaluated on the loaded page data. Moving those fully server-side would be a separate, broader patch.
 - `/api/transport-groups` still runs `cleanupEmptyTransportGroups` on GET as existing behavior; this patch did not change group lifecycle cleanup.
 - If production is still slow after this patch, add production-safe sampled perf timing around group base query, cleanup, member query, duplicate lookup, and enrichment before considering SQL indexes or RPC/view changes.
+- One production verification account was created to complete the requested new-account registration check; no transport request/group/member test data was created.
+- Root `npm audit` still reports an existing moderate advisory in `ws`; dependency remediation was intentionally left out of this P0 hotfix.
