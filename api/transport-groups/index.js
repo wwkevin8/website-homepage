@@ -188,8 +188,9 @@ function buildListItem(group) {
 }
 
 async function findMatchedGroupIdsBySearchTerm(supabase, searchTerm) {
-  const normalizedTerm = String(searchTerm || "").trim().toUpperCase();
-  if (!normalizedTerm) {
+  const rawTerm = String(searchTerm || "").trim();
+  const normalizedTerm = rawTerm.toUpperCase();
+  if (!rawTerm) {
     return [];
   }
 
@@ -199,7 +200,7 @@ async function findMatchedGroupIdsBySearchTerm(supabase, searchTerm) {
   const { data: directGroupMatches, error: directGroupMatchesError } = await supabase
     .from("transport_groups_public_view")
     .select("group_id, id")
-    .ilike("group_id", `%${normalizedTerm}%`);
+    .ilike("group_id", `%${rawTerm}%`);
 
   if (directGroupMatchesError) {
     throw directGroupMatchesError;
@@ -230,21 +231,40 @@ async function findMatchedGroupIdsBySearchTerm(supabase, searchTerm) {
     });
   }
 
-  const { data: requestRows, error: requestRowsError } = await supabase
-    .from("transport_requests")
-    .select("id")
-    .ilike("order_no", `%${normalizedTerm}%`);
+  const requestSearchFields = [
+    "order_no",
+    "student_name",
+    "phone",
+    "wechat",
+    "flight_no",
+    "location_from",
+    "location_to",
+    "terminal"
+  ];
+  const requestIds = new Set();
+  for (const field of requestSearchFields) {
+    const { data: requestRows, error: requestRowsError } = await supabase
+      .from("transport_requests")
+      .select("id")
+      .ilike(field, `%${rawTerm}%`);
 
-  if (requestRowsError) {
-    throw requestRowsError;
+    if (requestRowsError) {
+      throw requestRowsError;
+    }
+
+    (requestRows || []).forEach(item => {
+      if (item.id) {
+        requestIds.add(item.id);
+      }
+    });
   }
 
-  const requestIds = (requestRows || []).map(item => item.id).filter(Boolean);
-  if (requestIds.length) {
+  const matchedRequestIds = Array.from(requestIds);
+  if (matchedRequestIds.length) {
     const { data: memberMatches, error: memberMatchesError } = await supabase
       .from("transport_group_members")
       .select("group_id")
-      .in("request_id", requestIds);
+      .in("request_id", matchedRequestIds);
 
     if (memberMatchesError) {
       throw memberMatchesError;
@@ -553,7 +573,7 @@ module.exports = async function handler(req, res) {
     if (req.method === "GET") {
       await cleanupEmptyTransportGroups(supabase);
       const queryParams = req.query || {};
-      const orderNo = String(queryParams.order_no || "").trim().toUpperCase();
+      const orderNo = String(queryParams.order_no || queryParams.keyword || "").trim().toUpperCase();
       const paginate = String(queryParams.paginate || "").toLowerCase() === "true";
       const page = Math.max(Number.parseInt(queryParams.page, 10) || 1, 1);
       const pageSize = Math.min(Math.max(Number.parseInt(queryParams.page_size, 10) || 10, 1), 100);
