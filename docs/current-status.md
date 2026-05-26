@@ -8,7 +8,7 @@
 ## Last Updated Task
 
 - Date: 2026-05-26
-- Scope: Merged the P6 v2.4 admin carpool group performance patch onto the current P0 public carpool Production baseline (`5941da3`) and deployed it to Vercel Preview only. The patch restores the admin group page lightweight server-paginated first load while preserving the P0 public carpool join/list fixes. No Production deployment, production data write, test-data upload, SQL/schema change, P7/P8 work, price logic change, payment logic change, or public carpool logic overwrite was performed.
+- Scope: Promoted the validated P6 v2.4 admin carpool group performance patch on top of the P0 public carpool baseline (`5941da3`) to Vercel Production. The release restores the admin group page lightweight server-paginated first load while preserving the P0 public carpool join/list fixes. No production database write, test-data upload, SQL/schema change, P7/P8 work, price logic change, payment logic change, or public carpool logic overwrite was performed.
 
 ## Latest Completed Work
 
@@ -19,7 +19,8 @@
   - Preserved P0 public carpool files without modification: `api/_lib/transport-join.js`, `public-api-handlers/transport-groups.js`, `transport-public.js`, and the existing Supabase migration files.
   - Pushed branch `origin/codex/p6-v24-on-p0` at commit `dc0bae6`.
   - Deployed Vercel Preview `dpl_Db8PQBr6p45gLKycFqzrzdNDmeUW`: `https://webside-6m8o80mjp-wwkevin8s-projects.vercel.app`.
-  - No Production alias was changed.
+  - Promoted the validated Preview to Production deployment `dpl_CoTmyhA6Gk35S6V5nRAo5YrCCy29`: `https://webside-9rys6jlut-wwkevin8s-projects.vercel.app`.
+  - Production aliases `https://ngn.best` and `https://www.ngn.best` now point to the promoted deployment.
 
 - P0 public carpool loading/performance/sorting release:
   - Root cause: the production public groups endpoint returned HTTP 200 but fetched and enriched the full public group set before slicing for `limit=3`, making the homepage preview slow enough to show the frontend fallback `Load failed`. The full board also defaulted toward the legacy/latest ordering when no date filter was selected.
@@ -78,7 +79,14 @@
   - `vercel curl /admin/transport/groups --deployment webside-6m8o80mjp-wwkevin8s-projects.vercel.app` confirmed the Preview admin page serves `/admin/assets/index-v-E3-1Zq.js`, not the old `/admin/assets/index-oXl2evCZ.js`.
   - `vercel curl /api/transport-groups --deployment webside-6m8o80mjp-wwkevin8s-projects.vercel.app` returned admin 401 JSON, confirming the route is protected and not source text.
   - `vercel curl /api/public/transport-groups?page=1&limit=3 --deployment webside-6m8o80mjp-wwkevin8s-projects.vercel.app` returned public group rows with `target_request_id`, confirming the public P0 list/join target behavior remains present.
-  - A logged-in Preview admin browser session is still needed to measure real `/api/transport-groups?paginate=true&mode=list...` timing and visually confirm admin page pagination/filters.
+  - User completed authenticated Preview admin validation and approved Production promotion.
+- P6 v2.4 on P0 Production promotion verification:
+  - Promoted `dpl_Db8PQBr6p45gLKycFqzrzdNDmeUW` to Production. Vercel created Production deployment `dpl_CoTmyhA6Gk35S6V5nRAo5YrCCy29`.
+  - `vercel inspect ngn.best` and `vercel inspect www.ngn.best` both report `dpl_CoTmyhA6Gk35S6V5nRAo5YrCCy29` with status `Ready`.
+  - Cache-busted checks of `https://ngn.best/admin/transport/groups` and `https://www.ngn.best/admin/transport/groups` both reference `/admin/assets/index-v-E3-1Zq.js`, not the old `/admin/assets/index-oXl2evCZ.js`.
+  - Unauthenticated `GET https://ngn.best/api/transport-groups` returned HTTP 401 in about 842 ms, confirming the admin route is protected and not source text.
+  - `GET https://ngn.best/api/public/transport-groups?page=1&limit=3` returned HTTP 200 with 3 public group rows, first group `GRP-260526-MLJ4`, and `target_request_id=12cd6120-fa57-42eb-a4d4-26e73a002767`.
+  - Logged-in Production admin timing/default-filter validation still requires an authenticated browser session; the user had already completed equivalent Preview validation before promotion.
 
 - P0 public carpool loading/performance/sorting verification:
   - Read `E:\webside\AGENTS.md`, `E:\webside\docs\current-status.md`, Supabase task guidance, Vercel deployment guidance, Browser guidance, and Vercel deployment guidance before release/verification.
@@ -131,15 +139,15 @@
 ## Current Project State
 
 - Admin Vue source is the canonical admin UI source; `npm --prefix apps/admin-vue run build` refreshes the served `admin/` bundle.
-- Branch `codex/p6-v24-on-p0` now contains the intended combined candidate: current P0 public carpool baseline plus P6 v2.4 admin group first-load optimization.
+- Branch `codex/p6-v24-on-p0` contains the deployed combined release: current P0 public carpool baseline plus P6 v2.4 admin group first-load optimization.
 - The transport request admin list remains server-paginated and keeps its default valid-order filter.
-- Production `https://ngn.best` remains aliased to P0 deployment `dpl_H4hfFbx1BdFmqjLHKAoj6R3iHGvX`; it has not been changed by the P6-on-P0 merge task.
-- The deployed P0 code commit is `5941da3` on branch `origin/codex/p0-join-register-prod`.
+- Production `https://ngn.best` and `https://www.ngn.best` are aliased to `dpl_CoTmyhA6Gk35S6V5nRAo5YrCCy29`.
+- The deployed source branch is `origin/codex/p6-v24-on-p0` with code commit `dc0bae6` plus status-record commit `0cd6245`.
 - The registration sync migration file is now in the repo; production already has the idempotent migration applied and verified.
 
 ## Open Risks / Follow-Up
 
 - Advanced carpool filters that depend on derived enriched data, such as risk/payment/offline/readiness, are still evaluated on the loaded page data. Moving those fully server-side would be a separate, broader patch.
-- The P6-on-P0 Preview needs authenticated admin validation for first-screen speed, default active/upcoming filters, page 1/page 4 pagination, and full group view behavior before any Production promotion.
+- After Production promotion, an operator should hard-refresh `https://ngn.best/admin/transport/groups` and confirm browser Network uses `/admin/assets/index-v-E3-1Zq.js` and the authenticated `/api/transport-groups?paginate=true&mode=list...` timing remains close to the approved Preview result.
 - One production verification account was created to complete the requested new-account registration check; no transport request/group/member test data was created.
 - Root `npm audit` still reports an existing moderate advisory in `ws`; dependency remediation was intentionally left out of this P0 hotfix.
