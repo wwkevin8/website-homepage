@@ -8,9 +8,16 @@
 ## Last Updated Task
 
 - Date: 2026-05-26
-- Scope: P0 public carpool loading/performance/sorting fix released to production. Source commit `72f5b25`; Vercel production deployment `dpl_GY2wEYPMXdKvv3rs7MdvztkLt6gh` is Ready and aliased to `https://ngn.best`. The release was built from clean worktree `E:\webside-p0-deploy` and did not include local test data, destructive SQL, P7/P8 work, or any production data import/delete/overwrite.
+- Scope: P0 public carpool joinability fix released to production for public groups whose source order has `shareable=false`. Source commit `5941da3`; Vercel production deployment `dpl_H4hfFbx1BdFmqjLHKAoj6R3iHGvX` is Ready and aliased to `https://ngn.best`. The release was built from clean worktree `E:\webside-p0-deploy` and did not include data edits, test-data upload, destructive SQL, or P7/P8 work.
 
 ## Latest Completed Work
+
+- P0 public carpool joinability fix:
+  - Diagnosed `GRP-260526-MLJ4`: the group is public, visible, `single_member`, future-dated, and has 3 remaining seats, but its source request `PU260526-0027` has `shareable=false`.
+  - Public board listing is controlled by group-level public visibility/status/remaining seats, so the row correctly appeared with `加入拼车`; join preview/submit was incorrectly reusing the source request `shareable` flag to block joining.
+  - Updated `api/_lib/transport-join.js` so public open groups (`visible_on_frontend=true` and status `single_member`/`active`) are not blocked by the source request `shareable=false`. Other join checks remain in place: service type, airport, date, time window, request status, expiry, active-order limit, and capacity.
+  - Deployed production `dpl_H4hfFbx1BdFmqjLHKAoj6R3iHGvX` to `https://ngn.best`.
+  - No production order, group, member, user, visibility, or status data was changed.
 
 - P0 public carpool loading/performance/sorting release:
   - Root cause: the production public groups endpoint returned HTTP 200 but fetched and enriched the full public group set before slicing for `limit=3`, making the homepage preview slow enough to show the frontend fallback `Load failed`. The full board also defaulted toward the legacy/latest ordering when no date filter was selected.
@@ -55,6 +62,16 @@
   - Production state: `READY`
 
 ## Verification
+
+- P0 public carpool joinability verification:
+  - Read `E:\webside\AGENTS.md` and `E:\webside\docs\current-status.md` before analysis.
+  - Production read-only query confirmed `GRP-260526-MLJ4` has `visible_on_frontend=true`, status `single_member`, `remaining_passenger_count=3`, and member request `PU260526-0027` has `shareable=false`.
+  - `node --check api/_lib/transport-join.js` passed.
+  - Function-level verification for a matching LGW/North dropoff join against `GRP-260526-MLJ4` now returns `joinable: true` and `nextPassengerCount: 3`.
+  - `npm run build:prod` passed with the existing admin large-chunk warning and existing root moderate `ws` advisory; no dependency files changed.
+  - Production public groups API still returns `GRP-260526-MLJ4` with HTTP 200, `target_request_id=12cd6120-fa57-42eb-a4d4-26e73a002767`, and 3 remaining seats.
+  - Vercel deployment `dpl_H4hfFbx1BdFmqjLHKAoj6R3iHGvX` is Ready; checked logs showed no HTTP 500 entries.
+  - Did not press the final production `确认加入拼车` button during verification, to avoid creating a real order.
 
 - P0 public carpool loading/performance/sorting verification:
   - Read `E:\webside\AGENTS.md`, `E:\webside\docs\current-status.md`, Supabase task guidance, Vercel deployment guidance, Browser guidance, and Vercel deployment guidance before release/verification.
