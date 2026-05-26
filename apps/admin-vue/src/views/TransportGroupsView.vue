@@ -44,24 +44,41 @@ const defaultFilters = {
 let filters = reactive({ ...defaultFilters });
 const allGroups = ref([]);
 const page = ref(1);
-const serverPagination = ref({ page: 1, page_size: defaultFilters.pageSize, total: 0, total_pages: 0 });
+const serverPagination = ref({
+  page: 1,
+  page_size: defaultFilters.pageSize,
+  total: 0,
+  total_pages: 0
+});
 const loading = ref(false);
 const error = ref("");
 const notice = ref("");
+const enrichmentLoading = ref(false);
+let filterReloadTimer = null;
+let loadSequence = 0;
 
-const filteredGroups = computed(() => allGroups.value.filter(group => matchesClientFilters(group)).sort(compareGroupsByServiceTime));
+const filteredGroups = computed(() => allGroups.value.filter(group => matchesClientFilters(group)));
 const pagedGroups = computed(() => filteredGroups.value);
 const pagination = computed(() => {
-  const size = Number(filters.pageSize || defaultFilters.pageSize);
-  const total = Number(serverPagination.value.total || filteredGroups.value.length || 0);
+  const size = Number(serverPagination.value.page_size || filters.pageSize || defaultFilters.pageSize);
+  const rawTotal = serverPagination.value.total;
+  const hasServerTotal = rawTotal !== undefined && rawTotal !== null && rawTotal !== "";
+  const total = hasServerTotal ? Number(rawTotal || 0) : 0;
+  const rawTotalPages = serverPagination.value.total_pages;
+  const hasServerTotalPages = rawTotalPages !== undefined && rawTotalPages !== null && rawTotalPages !== "";
   return {
-    page: Number(serverPagination.value.page || page.value || 1),
+    page: page.value,
     page_size: size,
     total,
-    total_pages: Number(serverPagination.value.total_pages || (total ? Math.ceil(total / size) : 0))
+    total_pages: hasServerTotalPages ? Number(rawTotalPages || 0) : 0,
+    has_next: Boolean(serverPagination.value.has_next),
+    has_prev: Boolean(serverPagination.value.has_prev)
   };
 });
 const hasGroups = computed(() => pagedGroups.value.length > 0);
+const listSummaryText = computed(() => {
+  return `当前筛选 ${pagination.value.total} 组，当前页已加载 ${filteredGroups.value.length} 组`;
+});
 
 function displayValue(value) {
   return value === null || value === undefined || value === "" ? "--" : String(value);
@@ -237,6 +254,7 @@ function paymentSummary(group) {
 }
 
 function paymentLabel(group) {
+  if (group?._enriched === false) return "加载中";
   const payment = paymentSummary(group);
   if (payment.total <= 0) return "无成员";
   if (payment.paid >= payment.total) return "全部已付款";
@@ -245,6 +263,7 @@ function paymentLabel(group) {
 }
 
 function paymentTone(group) {
+  if (group?._enriched === false) return "neutral";
   const payment = paymentSummary(group);
   if (payment.total > 0 && payment.paid >= payment.total) return "success";
   if (payment.paid > 0) return "warning";
@@ -278,6 +297,7 @@ function visibleTone(value) {
 }
 
 function riskItems(group) {
+  if (group?._enriched === false) return [];
   return Array.isArray(group.dispatch_risks) ? group.dispatch_risks : [];
 }
 
@@ -335,6 +355,7 @@ function readinessState(group) {
 }
 
 function readinessItems(group) {
+  if (group?._enriched === false) return [{ key: "enrichment_loading", label: "加载中", tone: "neutral" }];
   const state = readinessState(group);
   const items = [];
   if (state.contact_pending) items.push({ key: "contact_pending", label: "待联系", tone: "warning" });
@@ -351,6 +372,7 @@ function readinessText(group) {
 }
 
 function offlineSummary(group) {
+  if (group?._enriched === false) return "加载中";
   const rows = memberRows(group);
   if (!rows.length) return "0/0 已记录";
   const recorded = rows.filter(row => row.offlineRecorded).length;
@@ -482,9 +504,6 @@ function matchesValidityFilter(group) {
 }
 
 function matchesClientFilters(group) {
-  const keyword = normalizeText(filters.keyword);
-  if (keyword && !searchHaystack(group).includes(keyword)) return false;
-  if (!matchesValidityFilter(group)) return false;
   if (filters.terminal) {
     const terminalNeedle = normalizeText(filters.terminal);
     const terminals = [group.terminal, group.terminal_summary, ...memberRows(group).map(row => row.terminal)].map(normalizeText).join(" ");
@@ -499,44 +518,93 @@ function matchesClientFilters(group) {
   return true;
 }
 
-function buildQuery(nextPage = page.value || 1) {
+function cleanQueryParams(params) {
+  return Object.fromEntries(Object.entries(params).filter(([, value]) => value !== undefined && value !== null && value !== ""));
+}
+
+function buildQuery(nextPage = page.value) {
   return {
-    paginate: true,
+    paginate: "true",
+    mode: "list",
     page: nextPage,
-    page_size: filters.pageSize,
-    order_no: filters.keyword.trim(),
+    page_size: Number(filters.pageSize || defaultFilters.pageSize),
     service_type: filters.serviceType,
     airport_code: filters.airportCode,
     status: filters.status,
     validity: filters.validity,
     sort: filters.sort,
-    visible_on_frontend: filters.visibleOnFrontend,
+    order_no: filters.keyword,
     date_from: filters.dateFrom,
-    date_to: filters.dateTo
+    date_to: filters.dateTo,
+    visible_on_frontend: filters.visibleOnFrontend
   };
 }
 
+function groupMergeKey(group) {
+  return String(group?.group_id || group?.id || group?.group_ref || "");
+}
+
+function mergeEnrichedGroups(items = []) {
+  const enrichedByKey = new Map(items.map(item => [groupMergeKey(item), item]).filter(([key]) => Boolean(key)));
+  if (!enrichedByKey.size) return;
+  allGroups.value = allGroups.value.map(group => {
+    const enriched = enrichedByKey.get(groupMergeKey(group));
+    return enriched ? { ...group, ...enriched, _enriched: true } : group;
+  });
+}
+
+async function loadGroupEnrichment(groups, sequence) {
+  const ids = groups.map(groupMergeKey).filter(Boolean);
+  if (!ids.length) return;
+  enrichmentLoading.value = true;
+  try {
+    const payload = await fetchTransportGroups({
+      enrich_only: "true",
+      ids: ids.join(",")
+    });
+    if (sequence !== loadSequence) return;
+    mergeEnrichedGroups(Array.isArray(payload?.items) ? payload.items : []);
+  } catch (err) {
+    if (sequence === loadSequence) {
+      console.warn("transport group enrichment failed", err);
+    }
+  } finally {
+    if (sequence === loadSequence) {
+      enrichmentLoading.value = false;
+    }
+  }
+}
+
 async function loadGroups(nextPage = 1) {
+  const sequence = ++loadSequence;
   loading.value = true;
+  enrichmentLoading.value = false;
   error.value = "";
   notice.value = "";
   try {
-    const payload = await fetchTransportGroups(buildQuery(nextPage));
+    const payload = await fetchTransportGroups(cleanQueryParams(buildQuery(nextPage)));
+    if (sequence !== loadSequence) return;
     allGroups.value = Array.isArray(payload?.items) ? payload.items : Array.isArray(payload) ? payload : [];
-    page.value = nextPage;
     serverPagination.value = payload?.pagination || {
       page: nextPage,
-      page_size: filters.pageSize,
-      total: allGroups.value.length,
-      total_pages: allGroups.value.length ? 1 : 0
+      page_size: Number(filters.pageSize || defaultFilters.pageSize),
+      total: 0,
+      total_pages: 0,
+      has_next: false,
+      has_prev: false
     };
+    page.value = nextPage;
+    loadGroupEnrichment(allGroups.value, sequence);
   } catch (err) {
+    if (sequence !== loadSequence) return;
     allGroups.value = [];
     serverPagination.value = {
       page: nextPage,
-      page_size: filters.pageSize,
+      page_size: Number(filters.pageSize || defaultFilters.pageSize),
       total: 0,
-      total_pages: 0
+      total_pages: 0,
+      has_next: false,
+      has_prev: false
     };
     error.value = err.message || "拼车组列表加载失败。";
   } finally {
@@ -545,17 +613,20 @@ async function loadGroups(nextPage = 1) {
 }
 
 function submitFilters() {
+  window.clearTimeout(filterReloadTimer);
   page.value = 1;
   loadGroups(1);
 }
 
 function resetFilters() {
+  window.clearTimeout(filterReloadTimer);
   Object.assign(filters, defaultFilters);
   page.value = 1;
   loadGroups(1);
 }
 
 function handlePageChange(nextPage) {
+  if (nextPage === page.value || loading.value) return;
   loadGroups(nextPage);
 }
 
@@ -701,6 +772,7 @@ onMounted(() => {
 
 watch(
   () => [
+    filters.keyword,
     filters.serviceType,
     filters.airportCode,
     filters.status,
@@ -712,8 +784,11 @@ watch(
     filters.pageSize
   ],
   () => {
-    page.value = 1;
-    loadGroups(1);
+    window.clearTimeout(filterReloadTimer);
+    filterReloadTimer = window.setTimeout(() => {
+      page.value = 1;
+      loadGroups(1);
+    }, 300);
   }
 );
 </script>
@@ -736,7 +811,7 @@ watch(
 
     <div class="transport-list-toolbar">
       <span class="transport-list-toolbar__summary">
-        当前筛选 {{ filteredGroups.length }} 组，已加载 {{ allGroups.length }} 组
+        {{ listSummaryText }}<template v-if="enrichmentLoading">，状态补充加载中</template>
       </span>
     </div>
 

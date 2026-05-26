@@ -8,6 +8,24 @@ const props = defineProps({
 
 const emit = defineEmits(["change"]);
 
+function currentPage() {
+  return Number(props.pagination.page || 1);
+}
+
+function totalPages() {
+  return Math.max(Number(props.pagination.total_pages || 0), 0);
+}
+
+function canGoPrev() {
+  return Boolean(props.pagination.has_prev) || currentPage() > 1;
+}
+
+function canGoNext() {
+  const pages = totalPages();
+  if (!pages) return false;
+  return Boolean(props.pagination.has_next) || currentPage() < pages;
+}
+
 function changePage(page) {
   emit("change", page);
 }
@@ -18,20 +36,20 @@ function changePage(page) {
     <button
       type="button"
       class="secondary-button"
-      :disabled="Number(props.pagination.page || 1) <= 1"
-      @click="changePage(Number(props.pagination.page || 1) - 1)"
+      :disabled="!canGoPrev()"
+      @click="changePage(currentPage() - 1)"
     >
       上一页
     </button>
     <span>
-      第 {{ Number(props.pagination.page || 1) }} / {{ Math.max(Number(props.pagination.total_pages || 1), 1) }} 页，共
+      第 {{ currentPage() }} / {{ Math.max(totalPages(), 1) }} 页，共
       {{ Number(props.pagination.total || 0) }} 条
     </span>
     <button
       type="button"
       class="secondary-button"
-      :disabled="Number(props.pagination.page || 1) >= Math.max(Number(props.pagination.total_pages || 1), 1)"
-      @click="changePage(Number(props.pagination.page || 1) + 1)"
+      :disabled="!canGoNext()"
+      @click="changePage(currentPage() + 1)"
     >
       下一页
     </button>
