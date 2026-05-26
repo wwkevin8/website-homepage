@@ -20,19 +20,17 @@ const FIXED_PAGE_SIZE = 10;
 
 const columns = [
   { key: "row_index", label: "序号", width: "70px" },
-  { key: "service_date", label: "服务日期", width: "8%" },
+  { key: "service_date", label: "服务日期", width: "9%" },
   { key: "service_time_slot", label: "时间段", width: "8%" },
-  { key: "customer_name", label: "姓名", width: "8%" },
-  { key: "customer_pinyin", label: "拼音", width: "7%" },
+  { key: "customer_name", label: "名字", width: "8%" },
   { key: "service_content", label: "服务内容", width: "13%", className: "is-wrap" },
-  { key: "address_summary", label: "公寓 / 详细地址", width: "18%", className: "is-wrap" },
-  { key: "charge_status", label: "是否收费", width: "7%" },
-  { key: "phone", label: "电话", width: "9%" },
+  { key: "address_summary", label: "公寓（详细地址）", width: "20%", className: "is-wrap" },
+  { key: "phone", label: "电话", width: "8%" },
   { key: "total_fee", label: "价格", width: "7%", className: "is-number" },
-  { key: "payment_status", label: "收款状态", width: "8%" },
-  { key: "offline_status", label: "线下记录", width: "8%" },
-  { key: "remark", label: "内部备注", width: "12%", className: "is-wrap" },
-  { key: "actions", label: "操作", width: "178px", className: "is-actions", sticky: "end" }
+  { key: "fee_payment_note", label: "费用/支付备注", width: "11%", className: "is-wrap" },
+  { key: "payment_status", label: "收款", width: "7%" },
+  { key: "customer_service_note", label: "客服备注", width: "12%", className: "is-wrap" },
+  { key: "actions", label: "操作", width: "150px", className: "is-actions", sticky: "end" }
 ];
 
 const defaultFilters = {
@@ -284,6 +282,19 @@ function paymentLabel(order) {
 
 function paymentTone(order) {
   return isPaymentReceived(order) ? "success" : "danger";
+}
+
+function rowPaymentNote(order) {
+  const billing = billingInfo(order);
+  return firstText(
+    billing.payment_note,
+    billing.payment_remark,
+    billing.fee_note,
+    billing.note,
+    billing.remark,
+    billing.status_note,
+    isPaymentReceived(order) ? "已收款" : "未收款"
+  );
 }
 
 function offlineRecordedLabel(order) {
@@ -831,9 +842,6 @@ onMounted(() => {
         <template #cell-customer_name="{ row }">
           <strong class="cell-truncate" :title="displayValue(row.customer_name)">{{ displayValue(row.customer_name) }}</strong>
         </template>
-        <template #cell-customer_pinyin="{ row }">
-          <span class="cell-truncate" :title="displayValue(customerPinyin(row))">{{ displayValue(customerPinyin(row)) }}</span>
-        </template>
         <template #cell-service_content="{ row }">
           <span class="cell-stack cell-stack--wrap execution-text-cell" :title="rowServiceContentLines(row).join('\n')">
             <strong v-for="line in rowServiceContentLines(row)" :key="line">{{ line }}</strong>
@@ -844,50 +852,49 @@ onMounted(() => {
             <strong>{{ rowAddress(row) }}</strong>
           </span>
         </template>
-        <template #cell-charge_status="{ row }">
-          <StatusBadge :tone="chargeTone(row)">{{ chargeLabel(row) }}</StatusBadge>
-        </template>
         <template #cell-phone="{ row }">
           <span class="cell-truncate" :title="displayValue(row.phone)">{{ displayValue(row.phone) }}</span>
         </template>
         <template #cell-total_fee="{ row }">
           <span class="cell-truncate price-cell" :title="formatMoney(rowTotalAmount(row))">{{ formatMoney(rowTotalAmount(row)) }}</span>
         </template>
-        <template #cell-payment_status="{ row }">
-          <button
-            :class="['table-action-button', 'table-action-button--status', isPaymentReceived(row) ? 'table-action-button--paid' : 'table-action-button--unpaid']"
-            type="button"
-            :disabled="paymentSavingId === rowActionId(row)"
-            @click="togglePaymentReceived(row)"
+        <template #cell-fee_payment_note="{ row }">
+          <span
+            :class="['cell-stack cell-stack--wrap storage-payment-note', isPaymentReceived(row) ? 'is-paid' : 'is-unpaid']"
+            :title="rowPaymentNote(row)"
           >
-            {{ paymentSavingId === rowActionId(row) ? "保存中..." : paymentLabel(row) }}
-          </button>
+            <strong>{{ rowPaymentNote(row) }}</strong>
+          </span>
         </template>
-        <template #cell-offline_status="{ row }">
-          <StatusBadge :tone="offlineRecordedTone(row)">{{ offlineRecordedLabel(row) }}</StatusBadge>
+        <template #cell-payment_status="{ row }">
+          <StatusBadge :tone="paymentTone(row)">{{ paymentLabel(row) }}</StatusBadge>
         </template>
-        <template #cell-remark="{ row }">
-          <div v-if="editingRemarkId === rowDraftKey(row)" class="remark-editor remark-editor--inline">
+        <template #cell-customer_service_note="{ row }">
+          <div class="remark-editor remark-editor--inline remark-editor--always">
             <textarea
               v-model="remarkDrafts[rowDraftKey(row)]"
               :disabled="remarkSavingId === rowDraftKey(row)"
-              :aria-label="`内部备注 ${displayValue(rowOrderNo(row))}`"
+              :aria-label="`客服备注 ${displayValue(rowOrderNo(row))}`"
               rows="2"
-              placeholder="填写内部备注"
+              placeholder="填写客服备注"
             />
             <div class="remark-editor__actions">
               <button class="table-action-button table-action-button--mini" type="button" :disabled="remarkSavingId === rowDraftKey(row)" @click="saveRemark(row)">
                 {{ remarkSavingId === rowDraftKey(row) ? "保存中..." : "保存" }}
               </button>
-              <button class="table-action-button table-action-button--mini table-action-button--muted" type="button" @click="cancelEditRemark">取消</button>
             </div>
           </div>
-          <button v-else class="storage-remark-summary" type="button" :title="rowRemarkText(row) || '添加备注'" @click="startEditRemark(row)">
-            {{ rowInternalRemarkSummary(row) }}
-          </button>
         </template>
         <template #cell-actions="{ row }">
           <div class="table-action-group table-action-group--compact">
+            <button
+              class="table-action-button table-action-button--danger table-action-button--subtle-danger"
+              type="button"
+              :disabled="deletingId === rowActionId(row)"
+              @click="openDeleteDialog(row)"
+            >
+              {{ deletingId === rowActionId(row) ? "删除中..." : "删除" }}
+            </button>
             <button class="table-action-button" type="button" @click="openDetail(row)">查看详情</button>
             <button
               class="table-action-button"
@@ -896,14 +903,6 @@ onMounted(() => {
               @click="toggleOfflineRecorded(row)"
             >
               {{ row.offline_recorded ? "取消标记" : "标记已记录" }}
-            </button>
-            <button
-              class="table-action-button table-action-button--danger table-action-button--subtle-danger"
-              type="button"
-              :disabled="deletingId === rowActionId(row)"
-              @click="openDeleteDialog(row)"
-            >
-              {{ deletingId === rowActionId(row) ? "删除中..." : "删除" }}
             </button>
           </div>
         </template>

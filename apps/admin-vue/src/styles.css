@@ -4342,6 +4342,20 @@ textarea {
   color: #9f1239;
 }
 
+.storage-payment-note {
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.storage-payment-note.is-unpaid {
+  color: #dc2626;
+}
+
+.storage-payment-note.is-paid {
+  color: #15803d;
+}
+
 .table-action-button--muted,
 .table-action-button--subtle-danger {
   border-color: #dbe3ef;
@@ -4386,6 +4400,10 @@ textarea {
   min-height: 52px;
   padding: 6px 7px;
   font-size: 12px;
+}
+
+.remark-editor--always textarea {
+  width: 100%;
 }
 
 .remark-editor__actions {
