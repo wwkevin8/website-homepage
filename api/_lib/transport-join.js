@@ -364,6 +364,11 @@ function getStrictJoinWindowMinutes(serviceType) {
   return serviceType === "dropoff" ? 360 : 240;
 }
 
+function isPublicGroupOpenForJoin(group) {
+  const status = String(group?.status || "").trim().toLowerCase();
+  return group?.visible_on_frontend === true && ["single_member", "active"].includes(status);
+}
+
 function evaluateJoinWindowAware({ targetRequest, group, activeMembers, joinPayload, activeFutureRequests = [] }) {
   const currentPassengerCount = activeMembers.reduce((sum, item) => sum + Number(item.transport_requests?.passenger_count || 0), 0);
   const nextPassengerCount = currentPassengerCount + Number(joinPayload.passenger_count || 0);
@@ -398,7 +403,7 @@ function evaluateJoinWindowAware({ targetRequest, group, activeMembers, joinPayl
   } else if (!["published", "matched"].includes(targetRequest.status)) {
     joinable = false;
     reason = "当前拼车组状态不可加入。";
-  } else if (!targetRequest.shareable) {
+  } else if (!isPublicGroupOpenForJoin(group) && !targetRequest.shareable) {
     joinable = false;
     reason = "当前拼车组不接受拼车。";
   } else if (new Date(targetRequest.flight_datetime).getTime() <= Date.now()) {
