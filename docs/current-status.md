@@ -8,7 +8,7 @@
 ## Last Updated Task
 
 - Date: 2026-05-26
-- Scope: P6 admin transport read-only GET and performance follow-up deployed to Preview only. Source commit `e3ee8a5` on branch `codex/p6-readonly-perf-fix`; Preview deployment `dpl_CP6JbVUpXN1SxKng4hXuvTzFMymm` is Ready at `https://webside-oipeaq2vk-wwkevin8s-projects.vercel.app`. Do not promote until the user confirms.
+- Scope: P6 admin transport read-only GET and performance follow-up promoted to Production after Preview approval. Promoted Preview `dpl_CP6JbVUpXN1SxKng4hXuvTzFMymm` to Production deployment `dpl_F8J9STpjLnmcqy9dcZkMz91YxSN3`, live at `https://ngn.best`. Source code commit for the promoted artifact is `e3ee8a5` on branch `codex/p6-readonly-perf-fix`; post-verification status commit is `8be0f32`. No P7/P8/P9 code was changed.
 
 ## Latest Completed Work
 
@@ -48,6 +48,7 @@
   - Changed `/api/cron/close-expired-transport-requests` from GET to POST so this standalone transport maintenance route is not a writing GET.
   - Added temporary server perf logs for admin transport request detail, transport group list, and transport group detail.
   - Deployed Preview `dpl_CP6JbVUpXN1SxKng4hXuvTzFMymm` from clean branch `codex/p6-readonly-perf-fix`.
+  - Promoted the validated Preview to Production deployment `dpl_F8J9STpjLnmcqy9dcZkMz91YxSN3`; aliases include `https://ngn.best` and `https://www.ngn.best`.
   - The accidental Preview-created group `GRP-260526-7L55` remains in production. It is a closed, non-public pickup group linked only to closed request `PU260526-0071`; rollback should be confirmed before any delete is run.
 
 ## Verification
@@ -81,13 +82,24 @@
   - Pagination totals remained consistent: transport requests `total=41`, `total_pages=5`; transport groups `total=40`, `total_pages=4`.
   - Production counts before and after Preview GET checks stayed unchanged: `transport_requests=52`, `transport_groups=50`, `transport_group_members=50`, `admin_operation_logs=394`.
   - `GET /api/transport-maintenance` returns 405 and `GET /api/cron/close-expired-transport-requests` returns 405.
+- P6 follow-up Production verification on `https://ngn.best` after promote to `dpl_F8J9STpjLnmcqy9dcZkMz91YxSN3`:
+  - Production table counts stayed unchanged before/after each checked GET: `transport_requests=52`, `transport_groups=50`, `transport_group_members=50`, `admin_operation_logs=394`.
+  - Admin transport request list returned HTTP 200 in about 1.8s with `total=41`, `total_pages=5`, active-order filtering, and nearest-time sorting.
+  - Admin transport request detail returned HTTP 200 in about 1.5s and did not change production counts.
+  - Admin transport group list returned HTTP 200 in about 2.4s with `total=40`, `total_pages=4`, active validity filtering, and nearest service-time sorting.
+  - Admin transport group detail returned HTTP 200 in about 2.0s and did not change production counts.
+  - Full request table returned HTTP 200 in about 0.8s with 41 rows; full group table returned HTTP 200 in about 1.9s with 40 rows.
+  - Public transport groups endpoint returned HTTP 200 in about 1.2s with 20 rows and upcoming sorting.
+  - No maintenance POST, data cleanup, test-data upload, order/group/member deletion, price rewrite, or P7 change was run.
 
 ## Current Project State
 
 - Admin Vue source is the canonical admin UI source; `npm --prefix apps/admin-vue run build` refreshes the served `admin/` bundle.
 - The carpool group admin list no longer loads all active groups before first-screen pagination.
 - The transport request admin list remains server-paginated and keeps its default valid-order filter.
-- Production `https://ngn.best` is still aliased to P6 performance deployment `dpl_7MjGbchq2YNWLvgRVjC775oYKiWE`; the P6 read-only/performance follow-up is Preview-only.
+- P6 transport list/detail GET routes are now read-only for the checked admin/public transport surfaces.
+- Production `https://ngn.best` is aliased to P6 follow-up deployment `dpl_F8J9STpjLnmcqy9dcZkMz91YxSN3`.
+- The promoted P6 source code commit is `e3ee8a5` on branch `codex/p6-readonly-perf-fix`; `8be0f32` records the Preview verification status.
 - No SQL index was added in this patch.
 
 ## Open Risks / Follow-Up
