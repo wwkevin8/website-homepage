@@ -7,37 +7,44 @@
 
 ## Last Updated Task
 
-- Date: 2026-05-26
-- Scope: P7 storage workbench Preview list UI correction after manual review. P6 has already been promoted separately and was used only as the clean baseline; no transport/P6/P0 dirty files were restored into the P7 Preview branch.
+- Date: 2026-05-27
+- Scope: P7 storage workbench Preview repair using the current Production list as the mother version, with only minimal P7 enhancements re-applied. P6 remains completed/promoted separately and was not changed in this task.
 
 ## Latest Completed Work
 
 - P6 transport performance/read-only GET patch was completed separately and promoted to Production before returning to P7. It should stay out of the P7 Preview branch/worktree.
-- P7 storage workbench local work exists for:
-  - `StorageAllOrdersView.vue` now keeps the Production-style operator list structure: service date, time slot, name, service content, apartment/address, phone, price, fee/payment note, payment status, customer-service note, and actions. P7 stats, filters, export, pagination, and offline-recorded actions remain.
-  - `StorageOrderDetailView.vue` storage order detail migration/cleanup, customer-readable summary, internal notes, offline-recorded state, fee breakdown display, and operation logs.
-  - `api/admin/[...action].js` and `api/_lib/storage-orders.js` support for storage workbench filtering, current stats, detail operation logs, internal notes, and offline-recorded operation log labels.
+- P7 storage workbench Preview was repaired after manual review rejected the earlier simplified list:
+  - `StorageAllOrdersView.vue` was restored to the Production-style operator list structure: service date, time slot, name, service content, apartment/address, phone, price, fee/payment note, actionable payment button, customer-service note textarea/save behavior, and actions.
+  - Minimal P7 list enhancements remain layered on top: current-result stats, search placeholder including apartment/address, existing filters, pagination total/total pages, default service-date sort, and export current filtered result.
+  - `StorageOrderDetailView.vue` remains the P7 detail migration/cleanup with customer-readable summary, internal notes, fee breakdown display, offline-recorded state, and operation logs. It no longer sends pricing recalculation flags from schedule/address saves.
+  - `api/admin/[...action].js` adds current stats and detail operation logs as additive fields while keeping the old detail GET top-level order response shape.
   - `scripts/seed-storage-test-data.js` and `scripts/clear-storage-test-data.js` are local-only helpers guarded by `LOCAL_SUPABASE_URL`; they must not be run against production.
 
 ## Verification
 
-- P7 Preview source commit: `c84fa5d` (`codex/p7-storage-preview`).
-- P7 Preview deployment: `dpl_GATcJm1Z77ByqiK5CaPvuJDKcxBd`, URL `https://webside-lbetxmf0g-wwkevin8s-projects.vercel.app`.
-- Manual review found the first P7 Preview list UI was too simplified and should not be promoted.
-- Corrected P7 Preview source commit: `1e7c1cd`.
-- Corrected P7 Preview deployment: `dpl_6Hwa4CqcnViakvXySi5aw18cnKrt`, URL `https://webside-hwoh9snus-wwkevin8s-projects.vercel.app`.
-- Corrected Preview changed only:
+- Obsolete P7 Preview deployments that must not be promoted:
+  - `dpl_GATcJm1Z77ByqiK5CaPvuJDKcxBd`, URL `https://webside-lbetxmf0g-wwkevin8s-projects.vercel.app`, source `c84fa5d`.
+  - `dpl_6Hwa4CqcnViakvXySi5aw18cnKrt`, URL `https://webside-hwoh9snus-wwkevin8s-projects.vercel.app`, source `1e7c1cd`.
+- Current repaired P7 Preview source commit: `4e8d8ed`.
+- Current repaired P7 Preview deployment: `dpl_HW72E55Xc4EKvm9DtLzTxhnKdnKe`, URL `https://webside-h3yvwcbkz-wwkevin8s-projects.vercel.app`.
+- Current repaired Preview changed:
+  - `api/admin/[...action].js`
   - `apps/admin-vue/src/views/StorageAllOrdersView.vue`
+  - `apps/admin-vue/src/views/StorageOrderDetailView.vue`
   - `apps/admin-vue/src/styles.css`
-- Corrected Preview read-only validation:
+- Current repaired Preview read-only validation:
   - Storage workbench route returns 200.
   - Storage list returned 15 rows total, page size 10, total pages 2.
   - Current-result stats returned total 15, offline recorded 1, offline unrecorded 14, unpaid 13, today/next 7 days 3.
-  - Default service-date ordering is correct.
+  - Default service-date sort is active.
   - Search by sample order number returned 1 matching row.
+  - Service-type filter returned 5 matching rows for the sampled storage collection type.
+  - Offline-recorded filters returned 1 recorded row and 14 unrecorded rows.
+  - Date filter for 2026-05-15 returned 3 rows and 1 page.
   - Detail GET works for sample order `ST260410-0001` and returned one operation log.
   - Export current filtered results returned an Excel payload.
-- Corrected Preview remote build completed successfully; admin Vue build produced `admin/index.html`, `admin/assets/index-ColA0E3k.css`, and `admin/assets/index-BmrtX8AB.js` in the remote build output only.
+- Current repaired Preview remote build completed successfully; generated admin build output was not committed.
+- Local build verification passed with `npm run build:preview`. Root dependency audit still reports one existing moderate vulnerability; no dependency files were changed in this task.
 - A full dirty-worktree backup stash still exists in the original worktree: `stash@{0}: backup-before-p7-preview-isolation`.
 - No Production promote was run.
 - No maintenance POST was run.
@@ -62,4 +69,5 @@
 
 - P7 Preview write-class features were intentionally not exercised against real production data: bulk offline-recorded toggles, single-row offline-recorded toggles, internal-note saves, status changes, and delete.
 - Before any P7 Production promote, perform a full regression with an explicitly approved safe test order if write validation is required.
+- The current repaired Preview is ready for manual UI review, but it should not be promoted until the user explicitly approves it.
 - P7 must still not include transport API changes, close-expired automation, maintenance POST calls, production data cleanup, or test-data uploads.
