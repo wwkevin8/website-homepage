@@ -8,7 +8,7 @@
 ## Last Updated Task
 
 - Date: 2026-05-26
-- Scope: P6 performance patch v1 for admin transport request and carpool group list first-screen loading. The patch narrows carpool group list loading to server-side pagination and avoids reloading transport request operator options on every page. Source commit `801a416`; production deployment `dpl_7MjGbchq2YNWLvgRVjC775oYKiWE` is Ready and aliased to `https://ngn.best`. No production data, database schema, SQL indexes, business rules, price logic, payment logic, email behavior, or deployment configuration was changed.
+- Scope: P6 admin transport read-only GET and performance follow-up deployed to Preview only. Source commit `e3ee8a5` on branch `codex/p6-readonly-perf-fix`; Preview deployment `dpl_CP6JbVUpXN1SxKng4hXuvTzFMymm` is Ready at `https://webside-oipeaq2vk-wwkevin8s-projects.vercel.app`. Do not promote until the user confirms.
 
 ## Latest Completed Work
 
@@ -38,6 +38,18 @@
   - Alias: `https://ngn.best`
   - Production state: `READY`
 
+- P6 read-only GET and performance follow-up:
+  - Removed automatic maintenance writes from transport page/list/detail GET routes:
+    - `GET /api/transport-requests/:id` no longer runs `backfillMissingPickupGroups` or `closeExpiredRequests`.
+    - `GET /api/transport-groups` no longer runs `cleanupEmptyTransportGroups`.
+    - `GET /api/transport-groups/:id` no longer runs `cleanupEmptyTransportGroups` or `deleteEmptyGroupIfEligible`.
+    - Public transport board/my-transport/groups GET handlers no longer run transport lifecycle cleanup/backfill/expiry writes.
+  - Added explicit admin-only `POST /api/transport-maintenance` for `backfill_missing_pickup_groups`, `close_expired_requests`, `cleanup_empty_groups`, and `run_all`.
+  - Changed `/api/cron/close-expired-transport-requests` from GET to POST so this standalone transport maintenance route is not a writing GET.
+  - Added temporary server perf logs for admin transport request detail, transport group list, and transport group detail.
+  - Deployed Preview `dpl_CP6JbVUpXN1SxKng4hXuvTzFMymm` from clean branch `codex/p6-readonly-perf-fix`.
+  - The accidental Preview-created group `GRP-260526-7L55` remains in production. It is a closed, non-public pickup group linked only to closed request `PU260526-0071`; rollback should be confirmed before any delete is run.
+
 ## Verification
 
 - `node --check api/transport-groups/index.js` passed.
@@ -59,17 +71,27 @@
   - Sort switch request: `/api/transport-groups?paginate=true&page=1&page_size=10&validity=invalid&sort=service_time_desc`
   - Transport request initial request remains `/api/transport-requests?paginate=true&page=1&page_size=10&status=active&sort=flight_nearest`
 - No production API was called with an authenticated session, and no production data was created, edited, deleted, cleared, or overwritten.
+- P6 follow-up Preview verification on `https://webside-oipeaq2vk-wwkevin8s-projects.vercel.app`:
+  - `node --check` passed for changed API/public handler files.
+  - `npm run build:preview` passed with the existing admin large-chunk warning and existing root moderate `ws` advisory.
+  - `git diff --check` passed with line-ending warnings only.
+  - Preview deployment inspect shows `dpl_CP6JbVUpXN1SxKng4hXuvTzFMymm` is Ready.
+  - Authenticated Preview API timings through Vercel protected access: transport request list about 1.5s, transport request detail about 1.8s, transport group list about 1.7s, transport group detail about 1.8s.
+  - Default filters remained active/valid orders; default sorting remained nearest service/flight time first.
+  - Pagination totals remained consistent: transport requests `total=41`, `total_pages=5`; transport groups `total=40`, `total_pages=4`.
+  - Production counts before and after Preview GET checks stayed unchanged: `transport_requests=52`, `transport_groups=50`, `transport_group_members=50`, `admin_operation_logs=394`.
+  - `GET /api/transport-maintenance` returns 405 and `GET /api/cron/close-expired-transport-requests` returns 405.
 
 ## Current Project State
 
 - Admin Vue source is the canonical admin UI source; `npm --prefix apps/admin-vue run build` refreshes the served `admin/` bundle.
 - The carpool group admin list no longer loads all active groups before first-screen pagination.
 - The transport request admin list remains server-paginated and keeps its default valid-order filter.
-- Production `https://ngn.best` is aliased to P6 performance deployment `dpl_7MjGbchq2YNWLvgRVjC775oYKiWE`.
+- Production `https://ngn.best` is still aliased to P6 performance deployment `dpl_7MjGbchq2YNWLvgRVjC775oYKiWE`; the P6 read-only/performance follow-up is Preview-only.
 - No SQL index was added in this patch.
 
 ## Open Risks / Follow-Up
 
 - Advanced carpool filters that depend on derived enriched data, such as risk/payment/offline/readiness, are still evaluated on the loaded page data. Moving those fully server-side would be a separate, broader patch.
-- `/api/transport-groups` still runs `cleanupEmptyTransportGroups` on GET as existing behavior; this patch did not change group lifecycle cleanup.
-- If production is still slow after this patch, add production-safe sampled perf timing around group base query, cleanup, member query, duplicate lookup, and enrichment before considering SQL indexes or RPC/view changes.
+- Full-project scan still shows some non-P6 scheduled or auth/profile GET-shaped routes that can write by design, such as storage sync cron and auth/session cookie clearing. This P6 follow-up only changed transport page/list/detail GETs and the standalone transport close-expired cron route.
+- If production is still slow after this patch, use the temporary `[perf][transport-groups]`, `[perf][transport-group-detail]`, and `[perf][transport-request-detail]` logs to identify whether base query, member query, logs query, or enrichment is dominant before considering SQL indexes or RPC/view changes.
