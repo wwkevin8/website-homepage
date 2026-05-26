@@ -80,7 +80,10 @@ async function enrichPublicGroupsBatch(supabase, groups) {
     return [];
   }
 
-  const groupStatsById = await loadGroupStatsMap(supabase, groupIds, { groups });
+  const [groupStatsById, targetRequestIdsByGroup] = await Promise.all([
+    loadGroupStatsMap(supabase, groupIds, { groups }),
+    loadTargetRequestIdsByGroup(supabase, groupIds)
+  ]);
 
   return groups.map(group => {
     const { dispatch_status, ...publicGroup } = group || {};
@@ -93,12 +96,43 @@ async function enrichPublicGroupsBatch(supabase, groups) {
       ...groupStats,
       id: groupKey,
       group_id: groupKey,
+      target_request_id: targetRequestIdsByGroup.get(groupKey) || null,
       source_order_nos: sourceOrderNos,
       source_order_no_preview: sourceOrderNos.length > 1 ? `${sourceOrderNos[0]} +${sourceOrderNos.length - 1}` : (sourceOrderNos[0] || null),
       source_flight_nos: sourceFlightNos,
       source_flight_no_preview: sourceFlightNos.length > 1 ? `${sourceFlightNos[0]} +${sourceFlightNos.length - 1}` : (sourceFlightNos[0] || null)
     };
   });
+}
+
+async function loadTargetRequestIdsByGroup(supabase, groupIds) {
+  const normalizedGroupIds = Array.from(new Set((groupIds || []).filter(Boolean)));
+  if (!normalizedGroupIds.length) {
+    return new Map();
+  }
+
+  const { data, error } = await supabase
+    .from("transport_group_members")
+    .select("group_id, request_id, transport_requests(status)")
+    .in("group_id", normalizedGroupIds)
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    throw error;
+  }
+
+  const targetRequestIdsByGroup = new Map();
+  for (const member of data || []) {
+    if (!member?.group_id || !member?.request_id || targetRequestIdsByGroup.has(member.group_id)) {
+      continue;
+    }
+    if (member.transport_requests?.status === "closed") {
+      continue;
+    }
+    targetRequestIdsByGroup.set(member.group_id, member.request_id);
+  }
+
+  return targetRequestIdsByGroup;
 }
 
 function filterRenderablePublicGroups(groups) {

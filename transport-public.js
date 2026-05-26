@@ -240,6 +240,10 @@
     `;
   }
 
+  function showBoardNotice(message) {
+    window.alert(String(message || "").trim() || "操作失败，请稍后重试。");
+  }
+
   function ensureModal() {
     let modal = document.getElementById(MODAL_ID);
     if (modal) {
@@ -276,7 +280,7 @@
     const routeValue = isDropoff ? (item.location_from || "--") : (item.location_to || "--");
     return `
       <form id="pickupJoinForm" class="pickup-join-form">
-        <input type="hidden" name="target_request_id" value="${Shared.escapeHtml(item.id)}">
+        <input type="hidden" name="target_request_id" value="${Shared.escapeHtml(item.target_request_id || item.request_id || item.id)}">
         <input type="hidden" name="service_type" value="${Shared.escapeHtml(item.service_type || "pickup")}">
         <input type="hidden" name="location_from" value="${Shared.escapeHtml(item.location_from || "")}">
         <section class="pickup-join-section">
@@ -475,7 +479,7 @@
     const passengerCount = Number(item.passenger_count || 1) || 1;
     return `
       <form id="pickupJoinForm" class="pickup-join-form">
-        <input type="hidden" name="target_request_id" value="${Shared.escapeHtml(item.id)}">
+        <input type="hidden" name="target_request_id" value="${Shared.escapeHtml(item.target_request_id || item.request_id || item.id)}">
         <input type="hidden" name="service_type" value="${Shared.escapeHtml(item.service_type || "pickup")}">
         ${isDropoff ? "" : `<input type="hidden" name="location_from" value="${Shared.escapeHtml(item.location_from || "")}">`}
         <input type="hidden" name="airport_code" value="${Shared.escapeHtml(item.airport_code || "")}">
@@ -751,11 +755,22 @@
   }
 
   async function openJoinModal(item) {
-    const targetItem = await resolveJoinTargetItem(getGroupKey(item));
+    const profile = await getJoinProfile();
+    if (!profile.authenticated && window.SiteAuth && typeof window.SiteAuth.requireLogin === "function") {
+      await window.SiteAuth.requireLogin({
+        returnTo: `${window.location.pathname}${window.location.search}${window.location.hash}`
+      });
+      return;
+    }
+
+    const targetItem = item.target_request_id || item.request_id
+      ? item
+      : await resolveJoinTargetItem(getGroupKey(item));
     const modalItem = {
       ...item,
       ...targetItem,
       group_id: getGroupKey(item),
+      target_request_id: targetItem.target_request_id || targetItem.request_id || targetItem.id,
       current_passenger_count: item.current_passenger_count ?? targetItem.current_passenger_count,
       remaining_passenger_count: item.remaining_passenger_count ?? targetItem.remaining_passenger_count,
       member_details: item.member_details || targetItem.member_details,
@@ -767,13 +782,6 @@
     const content = modal.querySelector("#pickupJoinModalContent");
     if (title) {
       title.textContent = "加入拼车";
-    }
-    const profile = await getJoinProfile();
-    if (!profile.authenticated && window.SiteAuth && typeof window.SiteAuth.requireLogin === "function") {
-      await window.SiteAuth.requireLogin({
-        returnTo: `${window.location.pathname}${window.location.search}${window.location.hash}`
-      });
-      return;
     }
     const airportLabel = getAirportLabel(modalItem);
     const terminalLabel = getTerminalLabel(modalItem);
@@ -858,7 +866,7 @@
     let currentItems = [];
     Shared.populateAirportCodeSelect(form.airport_code, true);
 
-    async function render(page = 1) {
+    async function render(page = 1, options = {}) {
       currentPage = page;
       list.innerHTML = '<div class="transport-loading">加载中...</div>';
       if (pagination) {
@@ -888,6 +896,15 @@
       hasNextPage = payload.has_next;
 
       if (!currentItems.length) {
+        const emptyHopCount = Number(options.emptyHopCount || 0);
+        if (payload.has_next && emptyHopCount < 3) {
+          render(payload.page + 1, { emptyHopCount: emptyHopCount + 1 });
+          return;
+        }
+        if (payload.page > 1 && emptyHopCount < 3) {
+          render(payload.page - 1, { emptyHopCount: emptyHopCount + 1 });
+          return;
+        }
         list.innerHTML = '<div class="transport-empty">当前还没有可公开查看的接机拼车组。</div>';
         renderPagination(pagination, 1, false);
         return;
@@ -933,7 +950,7 @@
       const item = currentItems.find(entry => getGroupKey(entry) === joinButton.getAttribute("data-join-pickup"));
       if (item && isGroupJoinable(item)) {
         openJoinModal(item).catch(error => {
-          list.innerHTML = `<div class="transport-empty">${Shared.escapeHtml(error.message)}</div>`;
+          showBoardNotice(error.message);
         });
       }
     });
