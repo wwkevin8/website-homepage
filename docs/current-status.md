@@ -8,7 +8,7 @@
 ## Last Updated Task
 
 - Date: 2026-05-26
-- Scope: P6 performance patch v2.4 for the admin carpool group management pagination metadata bug introduced by lightweight list mode. The patch keeps the restored group list, validity filter, service-time sort filter, service type, airport, group status, keyword, advanced filters, UI actions, price display, payment display, member enrichment, and risk display, while making `total`, `total_pages`, `has_next`, and `has_prev` stable across pages. The branch was pushed to GitHub and deployed to Vercel Preview only. No production database writes, test data, SQL, price logic, payment logic, email behavior, or production deployment were performed.
+- Scope: Promoted the already validated P6 performance patch v2.4 Preview to Vercel Production. The promoted version keeps the restored admin carpool group list, validity filter, service-time sort filter, service type, airport, group status, keyword, advanced filters, UI actions, price display, payment display, member enrichment, risk display, and stable pagination metadata. No production database writes, test data, SQL, price logic, payment logic, email behavior, or additional feature changes were performed.
 
 ## Latest Completed Work
 
@@ -45,6 +45,10 @@
   - Vercel Preview deployment: `dpl_HoTpHt3pcPZqitK8Dvp5aTX67cFe`
   - Preview URL: `https://webside-873hcdq0u-wwkevin8s-projects.vercel.app`
   - Preview state: `READY`
+  - Vercel Production deployment: `dpl_B5jweX9oB93vJeavj21vJ2vGW9vf`
+  - Production URL: `https://webside-i4qy69v4i-wwkevin8s-projects.vercel.app`
+  - Production aliases: `https://ngn.best`, `https://www.ngn.best`
+  - Production state: `READY`
 
 ## Verification
 
@@ -85,16 +89,22 @@
   - Vercel Preview deployment `dpl_HoTpHt3pcPZqitK8Dvp5aTX67cFe` completed successfully and reported `READY`.
   - `vercel curl /api/transport-groups --deployment webside-873hcdq0u-wwkevin8s-projects.vercel.app` returned admin 401 JSON, confirming the route is still a serverless API and not source text.
   - `vercel curl /admin/transport/groups --deployment webside-873hcdq0u-wwkevin8s-projects.vercel.app` confirmed the preview admin page serves `/admin/assets/index-BcOYHrXF.js`.
+- P6 v2.4 production promotion verification:
+  - Promoted Preview `webside-873hcdq0u-wwkevin8s-projects.vercel.app` to Production deployment `dpl_B5jweX9oB93vJeavj21vJ2vGW9vf`.
+  - `vercel inspect ngn.best` and `vercel inspect www.ngn.best` both reported Production deployment `dpl_B5jweX9oB93vJeavj21vJ2vGW9vf` with state `READY`.
+  - Cache-busted HTML checks for `https://ngn.best/admin/transport/groups?cache_bust=p6v24` and `https://www.ngn.best/admin/transport/groups?cache_bust=p6v24` both referenced `/admin/assets/index-BcOYHrXF.js`, confirming the aliases serve the v2.4 admin bundle.
+  - Unauthenticated `GET https://ngn.best/api/transport-groups` returned HTTP 401, confirming the route is protected and did not return source text.
+  - A logged-in Production browser session is still required to measure the real `/api/transport-groups` first-screen timing and visually confirm page 1/page 4 pagination after promotion.
 
 ## Current Project State
 
-- Production `https://ngn.best` remains on the rollback-restored usable deployment before P6 v2; production has not been changed by this task.
+- Production `https://ngn.best` and `https://www.ngn.best` now point to P6 v2.4 deployment `dpl_B5jweX9oB93vJeavj21vJ2vGW9vf`.
 - Admin Vue source is the canonical admin UI source; `npm --prefix apps/admin-vue run build` refreshes the served `admin/` bundle.
 - The intended v2 branch is `codex/p6-performance-v2` from baseline `a88b1f1`.
-- P6 v2.4 is deployed to Preview for operator pagination and timing validation before any production promotion.
+- P6 v2.4 remains available on Preview `https://webside-873hcdq0u-wwkevin8s-projects.vercel.app` and has been promoted to Production.
 
 ## Open Risks / Follow-Up
 
 - The Preview URL is protected by Vercel Deployment Protection, so direct browser access without Vercel authentication shows the Vercel auth interstitial. Use Vercel-authenticated access or `vercel curl` for agent verification.
-- A logged-in production-like operator should test the v2.4 Preview group page and confirm page 1 and the last page show the same total/page count, while the blocking list request (`mode=list`) remains acceptably fast.
+- A logged-in Production operator should hard-refresh the carpool group admin page, confirm it serves the v2.4 bundle, verify page 1 and the last page show the same total/page count, and capture the real `/api/transport-groups` first-screen timing from browser Network.
 - Advanced filters based on derived enriched data, such as risk/payment/offline/readiness, remain evaluated on the loaded page data. Moving those fully server-side would be a separate, broader patch.
