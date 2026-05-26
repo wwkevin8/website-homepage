@@ -53,7 +53,9 @@ const serverPagination = ref({
 const loading = ref(false);
 const error = ref("");
 const notice = ref("");
+const enrichmentLoading = ref(false);
 let filterReloadTimer = null;
+let loadSequence = 0;
 
 const filteredGroups = computed(() => allGroups.value.filter(group => matchesClientFilters(group)));
 const pagedGroups = computed(() => filteredGroups.value);
@@ -68,6 +70,12 @@ const pagination = computed(() => {
   };
 });
 const hasGroups = computed(() => pagedGroups.value.length > 0);
+const listSummaryText = computed(() => {
+  if (serverPagination.value.total_exact === false) {
+    return `当前页已加载 ${filteredGroups.value.length} 组`;
+  }
+  return `当前筛选 ${pagination.value.total} 组，当前页已加载 ${filteredGroups.value.length} 组`;
+});
 
 function displayValue(value) {
   return value === null || value === undefined || value === "" ? "--" : String(value);
@@ -243,6 +251,7 @@ function paymentSummary(group) {
 }
 
 function paymentLabel(group) {
+  if (group?._enriched === false) return "加载中";
   const payment = paymentSummary(group);
   if (payment.total <= 0) return "无成员";
   if (payment.paid >= payment.total) return "全部已付款";
@@ -251,6 +260,7 @@ function paymentLabel(group) {
 }
 
 function paymentTone(group) {
+  if (group?._enriched === false) return "neutral";
   const payment = paymentSummary(group);
   if (payment.total > 0 && payment.paid >= payment.total) return "success";
   if (payment.paid > 0) return "warning";
@@ -284,6 +294,7 @@ function visibleTone(value) {
 }
 
 function riskItems(group) {
+  if (group?._enriched === false) return [];
   return Array.isArray(group.dispatch_risks) ? group.dispatch_risks : [];
 }
 
@@ -341,6 +352,7 @@ function readinessState(group) {
 }
 
 function readinessItems(group) {
+  if (group?._enriched === false) return [{ key: "enrichment_loading", label: "加载中", tone: "neutral" }];
   const state = readinessState(group);
   const items = [];
   if (state.contact_pending) items.push({ key: "contact_pending", label: "待联系", tone: "warning" });
@@ -357,6 +369,7 @@ function readinessText(group) {
 }
 
 function offlineSummary(group) {
+  if (group?._enriched === false) return "加载中";
   const rows = memberRows(group);
   if (!rows.length) return "0/0 已记录";
   const recorded = rows.filter(row => row.offlineRecorded).length;
@@ -509,6 +522,7 @@ function cleanQueryParams(params) {
 function buildQuery(nextPage = page.value) {
   return {
     paginate: "true",
+    mode: "list",
     page: nextPage,
     page_size: Number(filters.pageSize || defaultFilters.pageSize),
     service_type: filters.serviceType,
@@ -523,12 +537,50 @@ function buildQuery(nextPage = page.value) {
   };
 }
 
+function groupMergeKey(group) {
+  return String(group?.group_id || group?.id || group?.group_ref || "");
+}
+
+function mergeEnrichedGroups(items = []) {
+  const enrichedByKey = new Map(items.map(item => [groupMergeKey(item), item]).filter(([key]) => Boolean(key)));
+  if (!enrichedByKey.size) return;
+  allGroups.value = allGroups.value.map(group => {
+    const enriched = enrichedByKey.get(groupMergeKey(group));
+    return enriched ? { ...group, ...enriched, _enriched: true } : group;
+  });
+}
+
+async function loadGroupEnrichment(groups, sequence) {
+  const ids = groups.map(groupMergeKey).filter(Boolean);
+  if (!ids.length) return;
+  enrichmentLoading.value = true;
+  try {
+    const payload = await fetchTransportGroups({
+      enrich_only: "true",
+      ids: ids.join(",")
+    });
+    if (sequence !== loadSequence) return;
+    mergeEnrichedGroups(Array.isArray(payload?.items) ? payload.items : []);
+  } catch (err) {
+    if (sequence === loadSequence) {
+      console.warn("transport group enrichment failed", err);
+    }
+  } finally {
+    if (sequence === loadSequence) {
+      enrichmentLoading.value = false;
+    }
+  }
+}
+
 async function loadGroups(nextPage = 1) {
+  const sequence = ++loadSequence;
   loading.value = true;
+  enrichmentLoading.value = false;
   error.value = "";
   notice.value = "";
   try {
     const payload = await fetchTransportGroups(cleanQueryParams(buildQuery(nextPage)));
+    if (sequence !== loadSequence) return;
     allGroups.value = Array.isArray(payload?.items) ? payload.items : Array.isArray(payload) ? payload : [];
     serverPagination.value = payload?.pagination || {
       page: nextPage,
@@ -537,7 +589,9 @@ async function loadGroups(nextPage = 1) {
       total_pages: allGroups.value.length ? 1 : 0
     };
     page.value = nextPage;
+    loadGroupEnrichment(allGroups.value, sequence);
   } catch (err) {
+    if (sequence !== loadSequence) return;
     allGroups.value = [];
     serverPagination.value = {
       page: nextPage,
@@ -750,7 +804,7 @@ watch(
 
     <div class="transport-list-toolbar">
       <span class="transport-list-toolbar__summary">
-        当前筛选 {{ pagination.total }} 组，当前页已加载 {{ filteredGroups.length }} 组
+        {{ listSummaryText }}<template v-if="enrichmentLoading">，状态补充加载中</template>
       </span>
     </div>
 

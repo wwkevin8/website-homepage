@@ -187,6 +187,27 @@ function buildListItem(group) {
   };
 }
 
+function buildLightListItem(group) {
+  return {
+    ...buildListItem(group),
+    _enriched: false,
+    member_details: [],
+    dispatch_risks: [],
+    payment_summary: null,
+    future_duplicate_order_nos: [],
+    same_service_future_order_nos: [],
+    cross_service_future_order_nos: []
+  };
+}
+
+function parseIdsParam(value) {
+  return Array.from(new Set(String(value || "")
+    .split(",")
+    .map(item => item.trim())
+    .filter(Boolean)))
+    .slice(0, 50);
+}
+
 async function findMatchedGroupIdsBySearchTerm(supabase, searchTerm) {
   const rawTerm = String(searchTerm || "").trim();
   const normalizedTerm = rawTerm.toUpperCase();
@@ -605,6 +626,103 @@ async function listPaginatedGroups(supabase, queryParams, page, pageSize, perfCo
   };
 }
 
+async function listLightPaginatedGroups(supabase, queryParams, page, pageSize, perfContext = {}) {
+  const startedAt = nowMs();
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize;
+  const queryStartedAt = nowMs();
+  const { data, error } = await buildGroupsBaseQuery(supabase, queryParams).range(from, to);
+  const queryMs = nowMs() - queryStartedAt;
+  if (error) {
+    throw error;
+  }
+
+  const rows = data || [];
+  const hasMore = rows.length > pageSize;
+  const pageRows = rows.slice(0, pageSize);
+  const items = pageRows.map(group => buildLightListItem(applyEffectiveGroupCounts(group)));
+  const visibleTotal = (page - 1) * pageSize + items.length + (hasMore ? 1 : 0);
+
+  logPerf("listLightPaginatedGroups", {
+    authMs: perfContext.authMs,
+    queryParseMs: perfContext.queryParseMs,
+    cleanupMs: perfContext.cleanupMs,
+    cleanupSkipped: perfContext.cleanupSkipped,
+    searchMs: perfContext.searchMs,
+    page,
+    pageSize,
+    returned: items.length,
+    rows: items.length,
+    hasMore,
+    baseQueryMs: queryMs,
+    queryMs,
+    countMs: 0,
+    enrichGroupsMs: 0,
+    enrichmentMs: 0,
+    totalMs: nowMs() - startedAt,
+    handlerTotalMs: perfContext.startedAt ? nowMs() - perfContext.startedAt : undefined,
+    countMode: "none_light",
+    cacheHit: null
+  });
+
+  return {
+    items,
+    pagination: {
+      page,
+      page_size: pageSize,
+      total: visibleTotal,
+      total_pages: hasMore ? page + 1 : page,
+      has_more: hasMore,
+      total_exact: false
+    }
+  };
+}
+
+async function enrichOnlyGroups(supabase, ids, perfContext = {}) {
+  const startedAt = nowMs();
+  if (!ids.length) {
+    return { items: [] };
+  }
+
+  const queryStartedAt = nowMs();
+  const { data, error } = await supabase
+    .from("transport_groups_public_view")
+    .select("*")
+    .in("group_id", ids);
+  const queryMs = nowMs() - queryStartedAt;
+  if (error) {
+    throw error;
+  }
+
+  const enrichmentStartedAt = nowMs();
+  const enrichMetrics = {};
+  const items = await enrichGroupsBatch(supabase, (data || []).map(applyEffectiveGroupCounts), enrichMetrics);
+  const enrichmentMs = nowMs() - enrichmentStartedAt;
+
+  logPerf("enrichOnlyGroups", {
+    authMs: perfContext.authMs,
+    ids: ids.length,
+    returned: items.length,
+    baseQueryMs: queryMs,
+    queryMs,
+    enrichGroupsMs: enrichmentMs,
+    enrichmentMs,
+    dispatchStatusMs: enrichMetrics.dispatchStatusMs || 0,
+    statsMs: enrichMetrics.statsMs || 0,
+    statsTotalMs: enrichMetrics.statsTotalMs || 0,
+    duplicateFutureMs: enrichMetrics.duplicateFutureMs || 0,
+    memberQueryMs: enrichMetrics.memberQueryMs || 0,
+    paymentRecordMs: enrichMetrics.paymentRecordMs || 0,
+    riskStatusBuildMs: enrichMetrics.riskStatusBuildMs || 0,
+    totalMs: nowMs() - startedAt,
+    handlerTotalMs: perfContext.startedAt ? nowMs() - perfContext.startedAt : undefined
+  });
+
+  return {
+    items: items.map(item => ({ ...item, _enriched: true }))
+  };
+}
+
 module.exports = async function handler(req, res) {
   const handlerStartedAt = nowMs();
   const supabase = getSupabaseAdmin();
@@ -621,10 +739,21 @@ module.exports = async function handler(req, res) {
       const queryParams = req.query || {};
       const orderNo = String(queryParams.order_no || queryParams.keyword || "").trim().toUpperCase();
       const paginate = String(queryParams.paginate || "").toLowerCase() === "true";
+      const lightMode = String(queryParams.mode || "").trim().toLowerCase() === "list" || String(queryParams.light || "").toLowerCase() === "true";
+      const enrichOnly = String(queryParams.enrich_only || "").toLowerCase() === "true";
       const page = Math.max(Number.parseInt(queryParams.page, 10) || 1, 1);
       const pageSize = Math.min(Math.max(Number.parseInt(queryParams.page_size, 10) || 10, 1), 100);
       const effectiveQueryParams = { ...queryParams };
       const queryParseMs = nowMs() - queryParseStartedAt;
+
+      if (enrichOnly) {
+        const response = await enrichOnlyGroups(supabase, parseIdsParam(queryParams.ids), {
+          authMs,
+          startedAt: handlerStartedAt
+        });
+        ok(res, response);
+        return;
+      }
 
       let cleanupMs = 0;
       let cleanupSkipped = false;
@@ -685,6 +814,19 @@ module.exports = async function handler(req, res) {
       }
 
       if (paginate) {
+        if (lightMode) {
+          const response = await listLightPaginatedGroups(supabase, effectiveQueryParams, page, pageSize, {
+            authMs,
+            queryParseMs,
+            cleanupMs,
+            cleanupSkipped,
+            searchMs: effectiveQueryParams._search_ms || 0,
+            startedAt: handlerStartedAt
+          });
+          ok(res, response);
+          return;
+        }
+
         const response = await listPaginatedGroups(supabase, effectiveQueryParams, page, pageSize, {
           authMs,
           queryParseMs,
