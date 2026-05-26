@@ -167,6 +167,11 @@ function normalizeStorageValidityScope(value) {
   return ["active", "history", "all"].includes(normalized) ? normalized : "all";
 }
 
+function normalizeStoragePaymentScope(value) {
+  const normalized = String(value || "").trim();
+  return normalized === "unpaid" ? normalized : "";
+}
+
 function isPerfLogEnabled() {
   return process.env.NODE_ENV !== "production";
 }
@@ -1085,6 +1090,7 @@ function expandStorageOrderForAdmin(item = {}) {
 function filterExpandedStorageRows(rows, queryParams = {}) {
   const serviceType = normalizeStorageOrderKind(queryParams.service_type || queryParams.order_type_filter || queryParams.storage_order_kind);
   const validityScope = normalizeStorageValidityScope(queryParams.validity_scope || queryParams.validity || queryParams.active_scope);
+  const paymentScope = normalizeStoragePaymentScope(queryParams.payment_scope || queryParams.payment_filter);
   const todayText = getUkTodayInputValue();
   const dateStart = String(queryParams.date_start || queryParams.start_date || "").trim();
   const dateEnd = String(queryParams.date_end || queryParams.end_date || "").trim();
@@ -1097,6 +1103,9 @@ function filterExpandedStorageRows(rows, queryParams = {}) {
       return false;
     }
     if (validityScope === "history" && (!serviceDate || serviceDate >= todayText)) {
+      return false;
+    }
+    if (paymentScope === "unpaid" && storageWorkbenchIsPaymentReceived(row)) {
       return false;
     }
     if (dateStart && (!serviceDate || serviceDate < dateStart)) {

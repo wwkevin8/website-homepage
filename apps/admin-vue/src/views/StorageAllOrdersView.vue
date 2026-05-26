@@ -28,6 +28,7 @@ const columns = [
   { key: "total_fee", label: "价格", width: "8%", className: "is-number" },
   { key: "payment_note", label: "费用/支付备注", width: "16%", className: "is-wrap" },
   { key: "payment_action", label: "收款", width: "8%" },
+  { key: "offline_status", label: "线下记录", width: "8%" },
   { key: "remark", label: "客服备注", width: "14%", className: "is-wrap" },
   { key: "actions", label: "操作", width: "190px", className: "is-actions", sticky: "end" }
 ];
@@ -60,6 +61,12 @@ const deletingId = ref("");
 const deleteCandidate = ref(null);
 const storageTrackingReady = ref(true);
 const storageTrackingMessage = ref("");
+const activeStatsFilter = ref("");
+const statsShortcutFields = reactive({
+  offlineRecorded: false,
+  dateRange: false,
+  payment: false
+});
 const error = ref("");
 const notice = ref("");
 
@@ -80,11 +87,11 @@ const operatorSelectOptions = computed(() => {
 const statsCards = computed(() => {
   const stats = currentStats.value || buildPageStats(orders.value);
   return [
-    { label: "当前筛选结果", value: stats.total || Number(pagination.value.total || 0), tone: "blue" },
-    { label: "未线下记录", value: stats.offline_unrecorded || 0, tone: "amber" },
-    { label: "已线下记录", value: stats.offline_recorded || 0, tone: "green" },
-    { label: "未收款", value: stats.unpaid || 0, tone: "rose" },
-    { label: "今日 / 未来 7 天", value: stats.next_7_days || 0, tone: "cyan" }
+    { key: "total", label: "当前筛选结果", value: stats.total || Number(pagination.value.total || 0), tone: "blue" },
+    { key: "unrecorded", label: "未线下记录", value: stats.offline_unrecorded || 0, tone: "amber" },
+    { key: "recorded", label: "已线下记录", value: stats.offline_recorded || 0, tone: "green" },
+    { key: "unpaid", label: "未收款", value: stats.unpaid || 0, tone: "rose" },
+    { key: "upcoming", label: "今日 / 未来 7 天", value: stats.next_7_days || 0, tone: "cyan" }
   ];
 });
 
@@ -332,6 +339,10 @@ function paymentButtonTitle(order) {
   return isPaymentReceived(order) ? "点击标记为未收款" : "点击标记为已收款";
 }
 
+function offlineRecordedLabel(order) {
+  return order.offline_recorded ? "已记录" : "未记录";
+}
+
 function paymentStatusLabel(status) {
   return {
     unpaid: "未收款",
@@ -437,6 +448,7 @@ function buildFilterQuery() {
     search: filters.search.trim(),
     service_type: filters.serviceType,
     validity_scope: filters.validityScope,
+    payment_scope: activeStatsFilter.value === "unpaid" ? "unpaid" : "",
     offline_recorded: filters.offlineRecorded,
     last_operated_by: filters.lastOperatedBy,
     date_start: filters.dateStart,
@@ -482,12 +494,63 @@ async function loadOrders(page = pagination.value.page || 1) {
 }
 
 function submitFilters() {
+  clearStatsShortcutState();
   selectedIds.value = [];
   loadOrders(1);
 }
 
 function resetFilters() {
   Object.assign(filters, defaultFilters);
+  clearStatsShortcutFields();
+  selectedIds.value = [];
+  loadOrders(1);
+}
+
+function clearStatsShortcutFields() {
+  if (statsShortcutFields.offlineRecorded) {
+    filters.offlineRecorded = "";
+  }
+  if (statsShortcutFields.dateRange) {
+    filters.dateStart = "";
+    filters.dateEnd = "";
+  }
+  statsShortcutFields.offlineRecorded = false;
+  statsShortcutFields.dateRange = false;
+  statsShortcutFields.payment = false;
+  activeStatsFilter.value = "";
+}
+
+function clearStatsShortcutState() {
+  statsShortcutFields.offlineRecorded = false;
+  statsShortcutFields.dateRange = false;
+  statsShortcutFields.payment = false;
+  activeStatsFilter.value = "";
+}
+
+function applyStatsShortcut(key) {
+  clearStatsShortcutFields();
+  if (key === "total") {
+    selectedIds.value = [];
+    loadOrders(1);
+    return;
+  }
+
+  activeStatsFilter.value = key;
+  if (key === "unrecorded") {
+    filters.offlineRecorded = "false";
+    statsShortcutFields.offlineRecorded = true;
+  } else if (key === "recorded") {
+    filters.offlineRecorded = "true";
+    statsShortcutFields.offlineRecorded = true;
+  } else if (key === "unpaid") {
+    statsShortcutFields.payment = true;
+  } else if (key === "upcoming") {
+    const today = getUkTodayInputValue();
+    filters.validityScope = "active";
+    filters.dateStart = today;
+    filters.dateEnd = addDaysToDateInputValue(today, 7);
+    statsShortcutFields.dateRange = true;
+  }
   selectedIds.value = [];
   loadOrders(1);
 }
@@ -795,10 +858,20 @@ onMounted(() => {
     </form>
 
     <div class="storage-workbench-stats" aria-label="当前筛选统计">
-      <article v-for="card in statsCards" :key="card.label" :class="['storage-stat-card', `storage-stat-card--${card.tone}`]">
+      <button
+        v-for="card in statsCards"
+        :key="card.key"
+        type="button"
+        :class="[
+          'storage-stat-card',
+          `storage-stat-card--${card.tone}`,
+          { 'is-active': activeStatsFilter === card.key || (card.key === 'total' && !activeStatsFilter) }
+        ]"
+        @click="applyStatsShortcut(card.key)"
+      >
         <span>{{ card.label }}</span>
         <strong>{{ card.value }}</strong>
-      </article>
+      </button>
     </div>
 
     <p v-if="notice" class="inline-notice">{{ notice }}</p>
@@ -880,6 +953,11 @@ onMounted(() => {
           >
             {{ paymentSavingId === rowActionId(row) ? "保存中..." : paymentButtonLabel(row) }}
           </button>
+        </template>
+        <template #cell-offline_status="{ row }">
+          <span :class="['storage-offline-status', row.offline_recorded ? 'is-recorded' : 'is-unrecorded']">
+            {{ offlineRecordedLabel(row) }}
+          </span>
         </template>
         <template #cell-remark="{ row }">
           <div class="remark-editor">

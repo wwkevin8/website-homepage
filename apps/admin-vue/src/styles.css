@@ -1537,7 +1537,7 @@ textarea {
 }
 
 .storage-all-orders-view .admin-table {
-  min-width: 1720px;
+  min-width: 1820px;
   font-size: 13px;
 }
 
@@ -1669,6 +1669,7 @@ textarea {
 
 .storage-stat-card {
   display: grid;
+  text-align: left;
   gap: 4px;
   min-height: 58px;
   padding: 9px 12px;
@@ -1676,6 +1677,20 @@ textarea {
   border-left: 4px solid #2563eb;
   border-radius: 6px;
   background: #ffffff;
+  cursor: pointer;
+  font: inherit;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease, background 0.16s ease, transform 0.16s ease;
+}
+
+.storage-stat-card:hover {
+  border-color: #93c5fd;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+}
+
+.storage-stat-card.is-active {
+  background: #eff6ff;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
 }
 
 .storage-stat-card span {
@@ -1695,6 +1710,29 @@ textarea {
 .storage-stat-card--green { border-left-color: #10b981; }
 .storage-stat-card--rose { border-left-color: #e11d48; }
 .storage-stat-card--cyan { border-left-color: #0891b2; }
+
+.storage-offline-status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  border-radius: 999px;
+  padding: 3px 8px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.storage-offline-status.is-recorded {
+  border: 1px solid #bbf7d0;
+  background: #f0fdf4;
+  color: #166534;
+}
+
+.storage-offline-status.is-unrecorded {
+  border: 1px solid #fed7aa;
+  background: #fff7ed;
+  color: #c2410c;
+}
 
 .charge-status-text.is-free {
   color: #047857;
