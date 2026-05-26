@@ -8,9 +8,18 @@
 ## Last Updated Task
 
 - Date: 2026-05-26
-- Scope: P0 public carpool loading/performance/sorting fix released to production. Source commit `72f5b25`; Vercel production deployment `dpl_GY2wEYPMXdKvv3rs7MdvztkLt6gh` is Ready and aliased to `https://ngn.best`. The release was built from clean worktree `E:\webside-p0-deploy` and did not include local test data, destructive SQL, P7/P8 work, or any production data import/delete/overwrite.
+- Scope: Merged the P6 v2.4 admin carpool group performance patch onto the current P0 public carpool Production baseline (`5941da3`) and deployed it to Vercel Preview only. The patch restores the admin group page lightweight server-paginated first load while preserving the P0 public carpool join/list fixes. No Production deployment, production data write, test-data upload, SQL/schema change, P7/P8 work, price logic change, payment logic change, or public carpool logic overwrite was performed.
 
 ## Latest Completed Work
+
+- P6 v2.4 on P0 Preview merge:
+  - Created clean worktree `E:\webside-p6v24-on-p0` from current Production P0 commit `5941da3`.
+  - Merged only the admin performance files from `origin/codex/p6-performance-v2`: `api/transport-groups/index.js`, `apps/admin-vue/src/views/TransportGroupsView.vue`, `apps/admin-vue/src/components/Pagination.vue`, and `docs/PROJECT_MAP.md`.
+  - Rebuilt the admin bundle; `admin/index.html` now references `admin/assets/index-v-E3-1Zq.js` and keeps `admin/assets/index-DfE4uMCS.css`.
+  - Preserved P0 public carpool files without modification: `api/_lib/transport-join.js`, `public-api-handlers/transport-groups.js`, `transport-public.js`, and the existing Supabase migration files.
+  - Pushed branch `origin/codex/p6-v24-on-p0` at commit `dc0bae6`.
+  - Deployed Vercel Preview `dpl_Db8PQBr6p45gLKycFqzrzdNDmeUW`: `https://webside-6m8o80mjp-wwkevin8s-projects.vercel.app`.
+  - No Production alias was changed.
 
 - P0 public carpool loading/performance/sorting release:
   - Root cause: the production public groups endpoint returned HTTP 200 but fetched and enriched the full public group set before slicing for `limit=3`, making the homepage preview slow enough to show the frontend fallback `Load failed`. The full board also defaulted toward the legacy/latest ordering when no date filter was selected.
@@ -55,6 +64,21 @@
   - Production state: `READY`
 
 ## Verification
+
+- P6 v2.4 on P0 Preview verification:
+  - Read `E:\webside\AGENTS.md`, `E:\webside\docs\current-status.md`, and Vercel deployment guidance before merging/deploying.
+  - Confirmed `5941da3` contains P0 public joinability fix and has `f5f96d8` as an ancestor.
+  - Confirmed the dirty main worktree `E:\webside` was not used as the deployment baseline.
+  - `node --check api/transport-groups/index.js` passed.
+  - `node --check public-api-handlers/transport-groups.js`, `node --check transport-public.js`, and `node --check api/_lib/transport-join.js` passed, confirming preserved P0 public files remain syntactically valid.
+  - `npm --prefix apps/admin-vue ci` completed with `0 vulnerabilities`.
+  - `npm --prefix apps/admin-vue run build` passed with the existing large admin bundle warning.
+  - `git diff --check` passed after cleaning the generated admin entry file.
+  - Vercel Preview deployment `dpl_Db8PQBr6p45gLKycFqzrzdNDmeUW` reported `READY` with target `preview`.
+  - `vercel curl /admin/transport/groups --deployment webside-6m8o80mjp-wwkevin8s-projects.vercel.app` confirmed the Preview admin page serves `/admin/assets/index-v-E3-1Zq.js`, not the old `/admin/assets/index-oXl2evCZ.js`.
+  - `vercel curl /api/transport-groups --deployment webside-6m8o80mjp-wwkevin8s-projects.vercel.app` returned admin 401 JSON, confirming the route is protected and not source text.
+  - `vercel curl /api/public/transport-groups?page=1&limit=3 --deployment webside-6m8o80mjp-wwkevin8s-projects.vercel.app` returned public group rows with `target_request_id`, confirming the public P0 list/join target behavior remains present.
+  - A logged-in Preview admin browser session is still needed to measure real `/api/transport-groups?paginate=true&mode=list...` timing and visually confirm admin page pagination/filters.
 
 - P0 public carpool loading/performance/sorting verification:
   - Read `E:\webside\AGENTS.md`, `E:\webside\docs\current-status.md`, Supabase task guidance, Vercel deployment guidance, Browser guidance, and Vercel deployment guidance before release/verification.
@@ -107,16 +131,15 @@
 ## Current Project State
 
 - Admin Vue source is the canonical admin UI source; `npm --prefix apps/admin-vue run build` refreshes the served `admin/` bundle.
-- The carpool group admin list no longer loads all active groups before first-screen pagination.
+- Branch `codex/p6-v24-on-p0` now contains the intended combined candidate: current P0 public carpool baseline plus P6 v2.4 admin group first-load optimization.
 - The transport request admin list remains server-paginated and keeps its default valid-order filter.
-- Production `https://ngn.best` is aliased to P0 deployment `dpl_7vCcMQ7bNXdWVRrgcsgaEtNgNzFs`.
-- The deployed P0 code commit is `f5f96d8` on branch `origin/codex/p0-join-register-prod`.
+- Production `https://ngn.best` remains aliased to P0 deployment `dpl_H4hfFbx1BdFmqjLHKAoj6R3iHGvX`; it has not been changed by the P6-on-P0 merge task.
+- The deployed P0 code commit is `5941da3` on branch `origin/codex/p0-join-register-prod`.
 - The registration sync migration file is now in the repo; production already has the idempotent migration applied and verified.
 
 ## Open Risks / Follow-Up
 
 - Advanced carpool filters that depend on derived enriched data, such as risk/payment/offline/readiness, are still evaluated on the loaded page data. Moving those fully server-side would be a separate, broader patch.
-- `/api/transport-groups` still runs `cleanupEmptyTransportGroups` on GET as existing behavior; this patch did not change group lifecycle cleanup.
-- If production is still slow after this patch, add production-safe sampled perf timing around group base query, cleanup, member query, duplicate lookup, and enrichment before considering SQL indexes or RPC/view changes.
+- The P6-on-P0 Preview needs authenticated admin validation for first-screen speed, default active/upcoming filters, page 1/page 4 pagination, and full group view behavior before any Production promotion.
 - One production verification account was created to complete the requested new-account registration check; no transport request/group/member test data was created.
 - Root `npm audit` still reports an existing moderate advisory in `ws`; dependency remediation was intentionally left out of this P0 hotfix.
