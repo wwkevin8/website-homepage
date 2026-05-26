@@ -8,7 +8,7 @@
 ## Last Updated Task
 
 - Date: 2026-05-26
-- Scope: P6 performance patch v2.3 for the admin carpool group management first screen after Preview acceptance found first-screen `/api/transport-groups` still around 9-12 seconds. The patch keeps the restored group list, validity filter, service-time sort filter, service type, airport, group status, keyword, advanced filters, UI actions, price display, payment display, member enrichment, and risk display, but splits heavy badge enrichment out of the blocking list request. The branch was pushed to GitHub and deployed to Vercel Preview only. No production database writes, test data, SQL, price logic, payment logic, email behavior, or production deployment were performed.
+- Scope: P6 performance patch v2.4 for the admin carpool group management pagination metadata bug introduced by lightweight list mode. The patch keeps the restored group list, validity filter, service-time sort filter, service type, airport, group status, keyword, advanced filters, UI actions, price display, payment display, member enrichment, and risk display, while making `total`, `total_pages`, `has_next`, and `has_prev` stable across pages. The branch was pushed to GitHub and deployed to Vercel Preview only. No production database writes, test data, SQL, price logic, payment logic, email behavior, or production deployment were performed.
 
 ## Latest Completed Work
 
@@ -28,19 +28,22 @@
   - P6 v2.1 separates data and count queries and runs them in parallel, and runs dispatch-status and member enrichment queries in parallel for the current page group ids only.
   - P6 v2.3 adds lightweight list mode via `mode=list`; the first-screen list no longer waits for exact count, payment/offline enrichment, duplicate-future checks, risk construction, stats enrichment, or dispatch-readiness construction.
   - P6 v2.3 adds async current-page enrichment via `enrich_only=true&ids=...`; the admin page first renders the lightweight rows and then merges badge/risk/payment/readiness details when the enrichment response returns.
+  - P6 v2.4 fixes light-mode pagination metadata: the API now returns stable `total`, `total_pages`, `has_next`, and `has_prev` from a count query using the same filters as the data query, without applying pagination range to count.
+  - P6 v2.4 updates the admin pagination UI to use backend pagination metadata only, instead of falling back to current page row counts.
 
 - Updated `docs/PROJECT_MAP.md` for the `/api/transport-groups` paginated admin-list behavior.
 - Rebuilt the generated admin bundle:
-  - `/admin/` now references `admin/assets/index-3VEMiO2e.js`.
+  - `/admin/` now references `admin/assets/index-BcOYHrXF.js`.
   - Stylesheet remains `admin/assets/index-DfE4uMCS.css`.
 
 - Release state:
   - Git commit: `bf2a7c1` (`Improve transport group admin first load`)
   - P6 v2.1 commit: `e441e36` (`Instrument transport group pagination performance`)
   - P6 v2.3 commit: `c6b7c4c` (`Split transport group list enrichment`)
+  - P6 v2.4 commit: `e3dc578` (`Fix transport group pagination metadata`)
   - GitHub branch pushed: `origin/codex/p6-performance-v2`
-  - Vercel Preview deployment: `dpl_tQt1F9rwNQkSwFW39KPVUpSQVGiL`
-  - Preview URL: `https://webside-gzk7mpo85-wwkevin8s-projects.vercel.app`
+  - Vercel Preview deployment: `dpl_HoTpHt3pcPZqitK8Dvp5aTX67cFe`
+  - Preview URL: `https://webside-873hcdq0u-wwkevin8s-projects.vercel.app`
   - Preview state: `READY`
 
 ## Verification
@@ -74,16 +77,24 @@
   - `vercel curl /api/transport-groups --deployment webside-gzk7mpo85-wwkevin8s-projects.vercel.app` returned admin 401 JSON, confirming the route is still a serverless API and not source text.
   - `vercel curl /admin/transport/groups --deployment webside-gzk7mpo85-wwkevin8s-projects.vercel.app` confirmed the preview admin page serves `/admin/assets/index-3VEMiO2e.js`.
   - Local browser verification with mocked admin session/API confirmed the first request is `/api/transport-groups?paginate=true&mode=list&page=1&page_size=10&validity=active&sort=service_time_asc`, followed by async `/api/transport-groups?enrich_only=true&ids=...`, and the lightweight group row renders before enrichment.
+- P6 v2.4 verification:
+  - `node --check api/transport-groups/index.js` passed.
+  - `npm --prefix apps/admin-vue run build` passed with only the existing Vite chunk-size warning.
+  - `git diff --check` passed with line-ending warnings only.
+  - Local browser verification with mocked pagination metadata confirmed first page shows `第 1 / 4 页，共 35 条`, after three next-page clicks the last page shows `第 4 / 4 页，共 35 条`, and page 1-4 requests keep identical filters except `page`.
+  - Vercel Preview deployment `dpl_HoTpHt3pcPZqitK8Dvp5aTX67cFe` completed successfully and reported `READY`.
+  - `vercel curl /api/transport-groups --deployment webside-873hcdq0u-wwkevin8s-projects.vercel.app` returned admin 401 JSON, confirming the route is still a serverless API and not source text.
+  - `vercel curl /admin/transport/groups --deployment webside-873hcdq0u-wwkevin8s-projects.vercel.app` confirmed the preview admin page serves `/admin/assets/index-BcOYHrXF.js`.
 
 ## Current Project State
 
 - Production `https://ngn.best` remains on the rollback-restored usable deployment before P6 v2; production has not been changed by this task.
 - Admin Vue source is the canonical admin UI source; `npm --prefix apps/admin-vue run build` refreshes the served `admin/` bundle.
 - The intended v2 branch is `codex/p6-performance-v2` from baseline `a88b1f1`.
-- P6 v2.3 is deployed to Preview for operator timing validation before any production promotion.
+- P6 v2.4 is deployed to Preview for operator pagination and timing validation before any production promotion.
 
 ## Open Risks / Follow-Up
 
 - The Preview URL is protected by Vercel Deployment Protection, so direct browser access without Vercel authentication shows the Vercel auth interstitial. Use Vercel-authenticated access or `vercel curl` for agent verification.
-- A logged-in production-like operator should test the v2.3 Preview group page and compare the blocking list request (`mode=list`) separately from the non-blocking enrichment request (`enrich_only=true`). Production promotion should wait until the blocking list request is consistently below the 2 second target.
+- A logged-in production-like operator should test the v2.4 Preview group page and confirm page 1 and the last page show the same total/page count, while the blocking list request (`mode=list`) remains acceptably fast.
 - Advanced filters based on derived enriched data, such as risk/payment/offline/readiness, remain evaluated on the loaded page data. Moving those fully server-side would be a separate, broader patch.
