@@ -8,7 +8,7 @@
 ## Last Updated Task
 
 - Date: 2026-05-26
-- Scope: P7 storage workbench Preview preparation is in isolation cleanup. P6 has already been promoted separately and must not be mixed into this P7 Preview. This P7 pass is limited to storage admin list/detail, filters, internal notes, offline-recorded status, export, operation logs, and local-only test-data scripts.
+- Scope: P7 storage workbench Preview deployment and read-only validation. P6 has already been promoted separately and was used only as the clean baseline; no transport/P6/P0 dirty files were restored into the P7 Preview branch.
 
 ## Latest Completed Work
 
@@ -21,16 +21,27 @@
 
 ## Verification
 
-- Current task performed workspace isolation only.
-- A full dirty-worktree backup stash was created before cleanup: `stash@{0}: backup-before-p7-preview-isolation`.
-- No Preview deployment was run.
+- P7 Preview source commit: `c84fa5d` (`codex/p7-storage-preview`).
+- P7 Preview deployment: `dpl_GATcJm1Z77ByqiK5CaPvuJDKcxBd`, URL `https://webside-lbetxmf0g-wwkevin8s-projects.vercel.app`.
+- Vercel remote build completed successfully; admin Vue build produced `admin/index.html`, `admin/assets/index-BPBprzA8.css`, and `admin/assets/index-O6-bXhk_.js` in the remote build output only.
+- Read-only Preview validation used GET requests and export only:
+  - Storage workbench route returns 200.
+  - Storage list returned 15 rows total, page size 10, total pages 2.
+  - Current-result stats returned total 15, offline recorded 1, offline unrecorded 14, unpaid 15, today/next 7 days 3.
+  - Default service-date ordering is correct when checked against `service_date_unified`, the same expanded-row date used by the workbench.
+  - Search by order number, name, phone, and address returned matching rows.
+  - Service type, charge status, payment status, offline-recorded status, date range, and last-operator filters returned valid paginated results.
+  - Export current filtered results returned an Excel payload.
+  - Detail GET works with the base storage order UUID used by the actual list detail link; sample order `ST260410-0001` returned full order data and one operation log.
+- A full dirty-worktree backup stash still exists in the original worktree: `stash@{0}: backup-before-p7-preview-isolation`.
+- No Production promote was run.
 - No maintenance POST was run.
-- No production data was read or modified by this isolation cleanup.
+- No production data was modified.
 - No test data was uploaded.
 
 ## Current Project State
 
-- P7 Preview candidate files should be limited to storage workbench files and docs:
+- P7 Preview branch files are limited to storage workbench files and docs:
   - `api/_lib/storage-orders.js`
   - `api/admin/[...action].js`
   - `apps/admin-vue/src/views/StorageAllOrdersView.vue`
@@ -40,10 +51,10 @@
   - `docs/current-status.md`
   - `scripts/seed-storage-test-data.js`
   - `scripts/clear-storage-test-data.js`
-- Build output, transport/P6/P0 files, SQL files, CSV files, and package changes are excluded from the current P7 Preview candidate.
+- Build output, transport/P6/P0 files, SQL files, CSV files, and package changes are excluded from the P7 Preview branch.
 
 ## Open Risks / Follow-Up
 
-- Before deploying P7 Preview, run a local/admin build and confirm generated `admin/` bundle changes are fresh and limited to the P7 build output.
-- P7 Preview must not include transport API changes, close-expired automation, maintenance POST calls, production data cleanup, or test-data uploads.
-- If Preview lacks enough storage orders for manual verification, use only local seed data in a local Supabase environment; do not seed Preview or Production.
+- P7 Preview write-class features were intentionally not exercised against real production data: bulk offline-recorded toggles, single-row offline-recorded toggles, internal-note saves, status changes, and delete.
+- Before any P7 Production promote, perform a full regression with an explicitly approved safe test order if write validation is required.
+- P7 must still not include transport API changes, close-expired automation, maintenance POST calls, production data cleanup, or test-data uploads.
