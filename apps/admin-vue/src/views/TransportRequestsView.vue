@@ -74,7 +74,6 @@ const defaultFilters = {
   status: "active",
   contactStatus: "",
   paymentCollectionStatus: "",
-  groupStatus: "",
   offlineRecorded: "",
   lastOperatedBy: "",
   importBatchId: "",
@@ -813,7 +812,6 @@ function buildFilterQuery() {
     status: filters.status,
     contact_status: filters.contactStatus,
     payment_collection_status: filters.paymentCollectionStatus,
-    grouped: filters.groupStatus,
     offline_recorded: filters.offlineRecorded,
     last_operated_by: filters.lastOperatedBy,
     import_batch_id: filters.importBatchId.trim(),
@@ -841,7 +839,9 @@ async function loadRequests(page = pagination.value.page || 1) {
     const payload = await fetchTransportRequests(buildQuery(page));
     requests.value = Array.isArray(payload?.items) ? payload.items : [];
     requests.value.forEach(row => resetWorkbenchDraft(row));
-    operatorOptions.value = Array.isArray(payload?.operator_options) ? payload.operator_options : [];
+    if (Array.isArray(payload?.operator_options)) {
+      operatorOptions.value = payload.operator_options;
+    }
     selectedIds.value = selectedIds.value.filter(id => requests.value.some(row => String(row.id) === id));
     pagination.value = payload?.pagination || {
       page,

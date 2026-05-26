@@ -353,11 +353,12 @@ module.exports = async function handler(req, res) {
       const compact = String(queryParams.compact || "").toLowerCase() === "true";
       const page = Math.max(Number.parseInt(queryParams.page, 10) || 1, 1);
       const pageSize = Math.min(Math.max(Number.parseInt(queryParams.page_size, 10) || 10, 1), 100);
+      const shouldLoadOperatorOptions = !compact && (!paginate || page === 1);
 
       const queryStartedAt = nowMs();
       let [listResult, operatorOptions] = await Promise.all([
         runListQuery(supabase, queryParams, { compact, paginate, page, pageSize, includeManualImportColumns: true }),
-        compact ? Promise.resolve([]) : listOperatorOptions(supabase)
+        shouldLoadOperatorOptions ? listOperatorOptions(supabase) : Promise.resolve(null)
       ]);
       let manualImportColumnsAvailable = true;
       if (listResult.error && isMissingManualImportColumnError(listResult.error)) {
@@ -406,7 +407,7 @@ module.exports = async function handler(req, res) {
 
       ok(res, {
         items,
-        operator_options: operatorOptions,
+        ...(Array.isArray(operatorOptions) ? { operator_options: operatorOptions } : {}),
         pagination: {
           page,
           page_size: pageSize,
