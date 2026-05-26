@@ -621,7 +621,9 @@ async function listPaginatedGroups(supabase, queryParams, page, pageSize, perfCo
       page,
       page_size: pageSize,
       total,
-      total_pages: total ? Math.ceil(total / pageSize) : 0
+      total_pages: total ? Math.ceil(total / pageSize) : 0,
+      has_next: total ? page < Math.ceil(total / pageSize) : false,
+      has_prev: page > 1 && total > 0
     }
   };
 }
@@ -629,19 +631,38 @@ async function listPaginatedGroups(supabase, queryParams, page, pageSize, perfCo
 async function listLightPaginatedGroups(supabase, queryParams, page, pageSize, perfContext = {}) {
   const startedAt = nowMs();
   const from = (page - 1) * pageSize;
-  const to = from + pageSize;
-  const queryStartedAt = nowMs();
-  const { data, error } = await buildGroupsBaseQuery(supabase, queryParams).range(from, to);
-  const queryMs = nowMs() - queryStartedAt;
-  if (error) {
-    throw error;
+  const to = from + pageSize - 1;
+  const dataQueryStartedAt = nowMs();
+  const dataPromise = buildGroupsBaseQuery(supabase, queryParams).range(from, to)
+    .then(result => ({
+      ...result,
+      elapsedMs: nowMs() - dataQueryStartedAt
+    }));
+
+  const countQueryStartedAt = nowMs();
+  const countPromise = buildGroupsBaseQuery(supabase, queryParams, {
+    columns: "group_id",
+    count: "exact",
+    head: true
+  }).then(result => ({
+    ...result,
+    elapsedMs: nowMs() - countQueryStartedAt
+  }));
+
+  const [dataResult, countResult] = await Promise.all([dataPromise, countPromise]);
+  if (dataResult.error) {
+    throw dataResult.error;
+  }
+  if (countResult.error) {
+    throw countResult.error;
   }
 
-  const rows = data || [];
-  const hasMore = rows.length > pageSize;
-  const pageRows = rows.slice(0, pageSize);
-  const items = pageRows.map(group => buildLightListItem(applyEffectiveGroupCounts(group)));
-  const visibleTotal = (page - 1) * pageSize + items.length + (hasMore ? 1 : 0);
+  const rows = dataResult.data || [];
+  const items = rows.map(group => buildLightListItem(applyEffectiveGroupCounts(group)));
+  const total = Number(countResult.count || 0);
+  const totalPages = total ? Math.ceil(total / pageSize) : 0;
+  const hasNext = totalPages > 0 && page < totalPages;
+  const hasPrev = page > 1 && totalPages > 0;
 
   logPerf("listLightPaginatedGroups", {
     authMs: perfContext.authMs,
@@ -653,10 +674,13 @@ async function listLightPaginatedGroups(supabase, queryParams, page, pageSize, p
     pageSize,
     returned: items.length,
     rows: items.length,
-    hasMore,
-    baseQueryMs: queryMs,
-    queryMs,
-    countMs: 0,
+    total,
+    totalPages,
+    hasNext,
+    hasPrev,
+    baseQueryMs: dataResult.elapsedMs,
+    queryMs: dataResult.elapsedMs,
+    countMs: countResult.elapsedMs,
     enrichGroupsMs: 0,
     enrichmentMs: 0,
     totalMs: nowMs() - startedAt,
@@ -670,10 +694,11 @@ async function listLightPaginatedGroups(supabase, queryParams, page, pageSize, p
     pagination: {
       page,
       page_size: pageSize,
-      total: visibleTotal,
-      total_pages: hasMore ? page + 1 : page,
-      has_more: hasMore,
-      total_exact: false
+      total,
+      total_pages: totalPages,
+      has_next: hasNext,
+      has_prev: hasPrev,
+      total_exact: true
     }
   };
 }
@@ -781,7 +806,9 @@ module.exports = async function handler(req, res) {
               page,
               page_size: pageSize,
               total: 0,
-              total_pages: 0
+              total_pages: 0,
+              has_next: false,
+              has_prev: false
             }
           });
           logPerf("listPaginatedGroups", {

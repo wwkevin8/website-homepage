@@ -61,19 +61,22 @@ const filteredGroups = computed(() => allGroups.value.filter(group => matchesCli
 const pagedGroups = computed(() => filteredGroups.value);
 const pagination = computed(() => {
   const size = Number(serverPagination.value.page_size || filters.pageSize || defaultFilters.pageSize);
-  const total = Number(serverPagination.value.total || filteredGroups.value.length);
+  const rawTotal = serverPagination.value.total;
+  const hasServerTotal = rawTotal !== undefined && rawTotal !== null && rawTotal !== "";
+  const total = hasServerTotal ? Number(rawTotal || 0) : 0;
+  const rawTotalPages = serverPagination.value.total_pages;
+  const hasServerTotalPages = rawTotalPages !== undefined && rawTotalPages !== null && rawTotalPages !== "";
   return {
     page: page.value,
     page_size: size,
     total,
-    total_pages: Number(serverPagination.value.total_pages || (total ? Math.ceil(total / size) : 0))
+    total_pages: hasServerTotalPages ? Number(rawTotalPages || 0) : 0,
+    has_next: Boolean(serverPagination.value.has_next),
+    has_prev: Boolean(serverPagination.value.has_prev)
   };
 });
 const hasGroups = computed(() => pagedGroups.value.length > 0);
 const listSummaryText = computed(() => {
-  if (serverPagination.value.total_exact === false) {
-    return `当前页已加载 ${filteredGroups.value.length} 组`;
-  }
   return `当前筛选 ${pagination.value.total} 组，当前页已加载 ${filteredGroups.value.length} 组`;
 });
 
@@ -585,8 +588,10 @@ async function loadGroups(nextPage = 1) {
     serverPagination.value = payload?.pagination || {
       page: nextPage,
       page_size: Number(filters.pageSize || defaultFilters.pageSize),
-      total: allGroups.value.length,
-      total_pages: allGroups.value.length ? 1 : 0
+      total: 0,
+      total_pages: 0,
+      has_next: false,
+      has_prev: false
     };
     page.value = nextPage;
     loadGroupEnrichment(allGroups.value, sequence);
@@ -597,7 +602,9 @@ async function loadGroups(nextPage = 1) {
       page: nextPage,
       page_size: Number(filters.pageSize || defaultFilters.pageSize),
       total: 0,
-      total_pages: 0
+      total_pages: 0,
+      has_next: false,
+      has_prev: false
     };
     error.value = err.message || "拼车组列表加载失败。";
   } finally {
