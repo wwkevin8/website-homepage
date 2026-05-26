@@ -3,8 +3,8 @@ const { ok, methodNotAllowed, forbidden, serverError, getCronSuppliedSecret } = 
 const { closeExpiredRequests } = require("../_lib/transport");
 
 module.exports = async function handler(req, res) {
-  if (req.method !== "GET") {
-    methodNotAllowed(res, ["GET"]);
+  if (req.method !== "POST") {
+    methodNotAllowed(res, ["POST"]);
     return;
   }
 

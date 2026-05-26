@@ -1,7 +1,6 @@
 const { getSupabaseAdmin } = require("../api/_lib/supabase");
 const { ok, methodNotAllowed, serverError } = require("../api/_lib/http");
-const { PUBLIC_REQUEST_STATUSES, closeExpiredRequests, deriveDisplayGroupId, DEFAULT_GROUP_MAX_PASSENGERS } = require("../api/_lib/transport");
-const { backfillMissingPickupGroups } = require("../api/_lib/transport-group-lifecycle");
+const { PUBLIC_REQUEST_STATUSES, deriveDisplayGroupId, DEFAULT_GROUP_MAX_PASSENGERS } = require("../api/_lib/transport");
 const { loadGroupStatsMap, parseLuggageDisplay, uniqueNonEmpty, getPricingSeason, roundCurrency, formatArrivalRange, PICKUP_PRICING } = require("../api/_lib/transport-group-stats");
 
 function isMissingColumnError(error, marker) {
@@ -112,9 +111,6 @@ module.exports = async function handler(req, res) {
   const supabase = getSupabaseAdmin();
 
   try {
-    await backfillMissingPickupGroups(supabase, { excludeSources: ["admin_manual"] });
-    await closeExpiredRequests(supabase);
-
     const queryParams = req.query || {};
     const limit = parsePositiveInteger(queryParams.limit);
     const page = parsePositiveInteger(queryParams.page) || 1;

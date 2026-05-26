@@ -1,8 +1,8 @@
 const { getSupabaseAdmin } = require("../_lib/supabase");
 const { requireAdminUser } = require("../_lib/admin-auth");
 const { ok, badRequest, parseJsonBody, methodNotAllowed, serverError, sendJson } = require("../_lib/http");
-const { mapRequestPayload, deriveRequestDisplayFlags, closeExpiredRequests, syncGroupStatus } = require("../_lib/transport");
-const { removeRequestFromGroup, backfillMissingPickupGroups, transferRequestToExistingGroup, findTimeAdjustCandidateGroups } = require("../_lib/transport-group-lifecycle");
+const { mapRequestPayload, deriveRequestDisplayFlags, syncGroupStatus } = require("../_lib/transport");
+const { removeRequestFromGroup, transferRequestToExistingGroup, findTimeAdjustCandidateGroups } = require("../_lib/transport-group-lifecycle");
 const { logAdminOperation } = require("../_lib/orders");
 const { releaseClaimOrderBinding } = require("../_lib/membership");
 
@@ -78,6 +78,14 @@ const TIME_ADJUSTMENT_ALLOWED_FIELDS = new Set([
   "handling_method",
   "target_group_id"
 ]);
+
+function nowMs() {
+  return Number(process.hrtime.bigint() / 1000000n);
+}
+
+function logPerf(label, details) {
+  console.info(`[perf][transport-request-detail] ${label}`, details);
+}
 
 function parsePaymentStatus(adminNote, structuredStatus) {
   const normalized = String(structuredStatus || "").trim().toLowerCase();
@@ -352,8 +360,19 @@ async function getRequestWithContext(supabase, id) {
 }
 
 async function getRequestDetailWithLogs(supabase, id) {
+  const startedAt = nowMs();
+  const requestStartedAt = nowMs();
   const request = await getRequestWithContext(supabase, id);
+  const requestMs = nowMs() - requestStartedAt;
+  const logsStartedAt = nowMs();
   const operationLogs = await fetchRequestOperationLogs(supabase, request.id);
+  const logsMs = nowMs() - logsStartedAt;
+  logPerf("get", {
+    requestMs,
+    logsMs,
+    totalMs: nowMs() - startedAt,
+    hasGroupMembers: Array.isArray(request.transport_group_members) && request.transport_group_members.length > 0
+  });
   return {
     ...request,
     operation_logs: operationLogs
@@ -455,8 +474,6 @@ module.exports = async function handler(req, res) {
         });
         return;
       }
-      await backfillMissingPickupGroups(supabase);
-      await closeExpiredRequests(supabase);
       ok(res, await getRequestDetailWithLogs(supabase, id));
       return;
     }
@@ -703,8 +720,6 @@ module.exports = async function handler(req, res) {
         return;
       }
 
-      await backfillMissingPickupGroups(supabase);
-      await closeExpiredRequests(supabase);
       const existing = await getExistingRequestRow(supabase, id);
 
       let payload;
@@ -826,8 +841,6 @@ module.exports = async function handler(req, res) {
     }
 
     if (req.method === "DELETE") {
-      await backfillMissingPickupGroups(supabase);
-      await closeExpiredRequests(supabase);
       const existing = await getExistingRequestRow(supabase, id);
       const groupLifecycle = await removeRequestFromGroup(supabase, existing.id, {
         regroup: false

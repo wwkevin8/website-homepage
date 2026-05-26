@@ -1,8 +1,7 @@
 const { getSupabaseAdmin } = require("../api/_lib/supabase");
 const { ok, methodNotAllowed, serverError, unauthorized } = require("../api/_lib/http");
 const { getAuthenticatedUser } = require("../api/_lib/user-auth");
-const { closeExpiredRequests, deriveRequestDisplayFlags } = require("../api/_lib/transport");
-const { backfillMissingPickupGroups } = require("../api/_lib/transport-group-lifecycle");
+const { deriveRequestDisplayFlags } = require("../api/_lib/transport");
 const { loadGroupStatsMap } = require("../api/_lib/transport-group-stats");
 
 const MY_TRANSPORT_REQUEST_SELECT = [
@@ -45,9 +44,6 @@ module.exports = async function handler(req, res) {
       unauthorized(res, "请先登录后再查看个人预约。");
       return;
     }
-
-    await backfillMissingPickupGroups(supabase);
-    await closeExpiredRequests(supabase);
 
     const { data, error } = await supabase
       .from("transport_requests")

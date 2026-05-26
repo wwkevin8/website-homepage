@@ -2,13 +2,21 @@ const { getSupabaseAdmin } = require("../_lib/supabase");
 const { requireAdminUser } = require("../_lib/admin-auth");
 const { ok, badRequest, parseJsonBody, methodNotAllowed, serverError } = require("../_lib/http");
 const { applyEffectiveGroupCounts, mapGroupPayload, getGroupPassengerCount, deriveDisplayGroupId } = require("../_lib/transport");
-const { createGroupForRequest, cleanupEmptyTransportGroups, deleteEmptyGroupIfEligible } = require("../_lib/transport-group-lifecycle");
+const { createGroupForRequest } = require("../_lib/transport-group-lifecycle");
 const { computeTransportGroupPricingSnapshot } = require("../_lib/transport-group-stats");
 const { logAdminOperation } = require("../_lib/orders");
 
 const GROUP_DETAIL_MEMBER_SELECT = "id,group_id,request_id,passenger_count_snapshot,luggage_count_snapshot,created_at,transport_requests(id,order_no,student_name,site_user_id,phone,wechat,email,service_type,status,passenger_count,luggage_count,terminal,flight_datetime,preferred_time_start,airport_code,airport_name,flight_no,location_from,location_to,admin_note,manual_payment_status,payment_collection_status,deposit_amount_gbp,manual_price_gbp,offline_recorded,contact_status,notes)";
 
 const GROUP_DELETE_MEMBER_SELECT = "request_id,transport_requests(id,site_user_id,student_name,email,phone,wechat,service_type,passenger_count,luggage_count,airport_code,airport_name,terminal,flight_no,flight_datetime,location_from,location_to,preferred_time_start,preferred_time_end,shareable,status,notes,admin_note,manual_payment_status,closed_at,closed_reason,created_at)";
+
+function nowMs() {
+  return Number(process.hrtime.bigint() / 1000000n);
+}
+
+function logPerf(label, details) {
+  console.info(`[perf][transport-group-detail] ${label}`, details);
+}
 
 function isMissingColumnError(error, marker) {
   return Boolean(error?.message && error.message.includes(marker));
@@ -347,18 +355,17 @@ module.exports = async function handler(req, res) {
 
   try {
     if (req.method === "GET") {
-      await cleanupEmptyTransportGroups(supabase);
+      const startedAt = nowMs();
+      const groupStartedAt = nowMs();
       const group = await fetchSingleGroupRow(supabase, "transport_groups_public_view", id);
+      const groupMs = nowMs() - groupStartedAt;
       if (!group) {
         badRequest(res, "group not found");
         return;
       }
+      const rawGroupStartedAt = nowMs();
       const rawGroup = await fetchSingleGroupRow(supabase, "transport_groups", group.group_id || id);
-      const emptyCleanup = await deleteEmptyGroupIfEligible(supabase, rawGroup || group);
-      if (emptyCleanup.deleted) {
-        badRequest(res, "group not found");
-        return;
-      }
+      const rawGroupMs = nowMs() - rawGroupStartedAt;
       const groupWithDispatchStatus = {
         ...group,
         dispatch_status: rawGroup?.dispatch_status || "pending_dispatch",
@@ -367,18 +374,34 @@ module.exports = async function handler(req, res) {
         driver_note: rawGroup?.driver_note || ""
       };
 
+      const membersStartedAt = nowMs();
       const { data: members, error: membersError } = await supabase
         .from("transport_group_members")
         .select(GROUP_DETAIL_MEMBER_SELECT)
         .eq("group_id", groupWithDispatchStatus.group_id || groupWithDispatchStatus.id)
         .order("created_at", { ascending: true });
+      const membersMs = nowMs() - membersStartedAt;
 
       if (membersError) {
         throw membersError;
       }
 
+      const modelStartedAt = nowMs();
       const viewModel = computeGroupViewModel(groupWithDispatchStatus, members || []);
+      const modelMs = nowMs() - modelStartedAt;
+      const logsStartedAt = nowMs();
       const operationLogs = await fetchGroupOperationLogs(supabase, groupWithDispatchStatus, members || []);
+      const logsMs = nowMs() - logsStartedAt;
+      logPerf("get", {
+        groupMs,
+        rawGroupMs,
+        membersMs,
+        modelMs,
+        logsMs,
+        memberRows: Array.isArray(members) ? members.length : 0,
+        operationLogRows: Array.isArray(operationLogs) ? operationLogs.length : 0,
+        totalMs: nowMs() - startedAt
+      });
 
       ok(res, {
         ...viewModel.group,

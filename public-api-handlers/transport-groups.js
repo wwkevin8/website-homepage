@@ -2,7 +2,6 @@ const { getSupabaseAdmin } = require("../api/_lib/supabase");
 const { applyEffectiveGroupCounts } = require("../api/_lib/transport");
 const { ok, methodNotAllowed, serverError } = require("../api/_lib/http");
 const { loadGroupStatsMap } = require("../api/_lib/transport-group-stats");
-const { cleanupEmptyTransportGroups } = require("../api/_lib/transport-group-lifecycle");
 
 const PUBLIC_JOINABLE_GROUP_STATUSES = ["single_member", "active"];
 
@@ -154,7 +153,6 @@ module.exports = async function handler(req, res) {
   const supabase = getSupabaseAdmin();
 
   try {
-    await cleanupEmptyTransportGroups(supabase);
     const queryParams = req.query || {};
     const limit = parsePositiveInteger(queryParams.limit);
     const page = parsePositiveInteger(queryParams.page) || 1;
