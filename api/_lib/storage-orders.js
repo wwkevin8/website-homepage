@@ -561,6 +561,9 @@ function buildStorageOrderAdminFilters(query, queryParams = {}, options = {}) {
       hasColumn("wechat_id") ? `wechat_id.ilike.%${safe}%` : "",
       hasColumn("phone") ? `phone.ilike.%${safe}%` : "",
       hasColumn("student_email") ? `student_email.ilike.%${safe}%` : "",
+      hasColumn("address_full") ? `address_full.ilike.%${safe}%` : "",
+      hasColumn("room_or_building") ? `room_or_building.ilike.%${safe}%` : "",
+      hasColumn("postcode") ? `postcode.ilike.%${safe}%` : "",
       hasColumn("related_order_no") ? `related_order_no.ilike.%${safe}%` : ""
     ].filter(Boolean);
     const matchingSiteUserIds = Array.isArray(options.matchingSiteUserIds) ? options.matchingSiteUserIds : [];

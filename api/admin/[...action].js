@@ -140,6 +140,28 @@ const STORAGE_ORDER_DETAIL_COLUMNS = [
   "calculator_snapshot_json"
 ];
 
+function getUkTodayInputValue(now = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/London",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).formatToParts(now);
+  const values = Object.fromEntries(parts.map(part => [part.type, part.value]));
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
+function addDaysToDateInputValue(dateText, days) {
+  const [year, month, day] = String(dateText || "").split("-").map(Number);
+  if (!year || !month || !day) return "";
+  const date = new Date(Date.UTC(year, month - 1, day + Number(days || 0)));
+  return [
+    date.getUTCFullYear(),
+    String(date.getUTCMonth() + 1).padStart(2, "0"),
+    String(date.getUTCDate()).padStart(2, "0")
+  ].join("-");
+}
+
 function isPerfLogEnabled() {
   return process.env.NODE_ENV !== "production";
 }
@@ -795,6 +817,53 @@ function buildStorageExecutionPaymentNote(item = {}) {
   return storageExportTotalAmount(item) > 0 ? "寄存费用待付" : "免费";
 }
 
+function storagePaymentStatusValue(item = {}) {
+  const billing = storageExportBillingInfo(item);
+  return String(billing.payment_status || billing.status || "").trim();
+}
+
+function storageIsPaid(item = {}) {
+  const status = storagePaymentStatusValue(item);
+  if (status === "paid") return true;
+  return storageExportTotalAmount(item) <= 0 && status === "waived";
+}
+
+function storageChargeStatusValue(item = {}) {
+  return storageExportTotalAmount(item) > 0 ? "charged" : "free";
+}
+
+function applyStorageWorkbenchFilters(rows, queryParams = {}) {
+  const chargeStatus = String(queryParams.charge_status || queryParams.chargeStatus || "").trim();
+  const paymentStatus = String(queryParams.payment_status || queryParams.paymentStatus || "").trim();
+  return rows.filter(row => {
+    if (chargeStatus === "charged" && storageChargeStatusValue(row) !== "charged") return false;
+    if ((chargeStatus === "free" || chargeStatus === "free_or_pending") && storageChargeStatusValue(row) !== "free") return false;
+    if (paymentStatus === "paid" && !storageIsPaid(row)) return false;
+    if (paymentStatus === "unpaid" && storageIsPaid(row)) return false;
+    return true;
+  });
+}
+
+function buildStorageWorkbenchStats(rows = []) {
+  const today = getUkTodayInputValue();
+  const nextSeven = addDaysToDateInputValue(today, 7);
+  return rows.reduce((stats, item) => {
+    const serviceDate = String(item.service_date_unified || item.service_date || "").slice(0, 10);
+    stats.total += 1;
+    if (item.offline_recorded) stats.offline_recorded += 1;
+    else stats.offline_unrecorded += 1;
+    if (!storageIsPaid(item)) stats.unpaid += 1;
+    if (serviceDate && serviceDate >= today && serviceDate <= nextSeven) stats.next_7_days += 1;
+    return stats;
+  }, {
+    total: 0,
+    offline_recorded: 0,
+    offline_unrecorded: 0,
+    unpaid: 0,
+    next_7_days: 0
+  });
+}
+
 function buildStorageExecutionRemark(item = {}) {
   const formJson = isPlainObject(item.customer_form_json) ? item.customer_form_json : {};
   const admin = isPlainObject(formJson.admin) ? formJson.admin : {};
@@ -1110,6 +1179,22 @@ async function listStorageOperatorOptions(supabase) {
   return Array.from(new Set((data || [])
     .map(item => String(item.last_operated_by || "").trim())
     .filter(Boolean)));
+}
+
+async function fetchStorageOperationLogs(supabase, storageOrderId) {
+  if (!storageOrderId) return [];
+  const { data, error } = await supabase
+    .from("admin_operation_logs")
+    .select("id, action, before_data, after_data, metadata, created_at, admin_user_id, admin_user:admin_users(id, name, username, email)")
+    .eq("target_type", "storage_order")
+    .eq("target_id", storageOrderId)
+    .order("created_at", { ascending: false })
+    .limit(50);
+  if (error) {
+    console.warn("[admin-storage] failed to fetch operation logs", error);
+    return [];
+  }
+  return data || [];
 }
 
 async function querySiteUsersWithFallback(supabase, { search = "", ids = [] } = {}) {
@@ -2299,6 +2384,7 @@ async function handleStorageOrders(req, res, supabase) {
     if (req.method === "GET") {
       const enrichmentStartedAt = nowMs();
       const [enrichedExisting] = await enrichStorageOrdersWithPublicUserIds(supabase, [existing]);
+      const operationLogs = await fetchStorageOperationLogs(supabase, storageOrderId);
       logPerf("storage.detail", {
         authMs,
         queryMs: detailQueryMs,
@@ -2308,7 +2394,10 @@ async function handleStorageOrders(req, res, supabase) {
         rows: enrichedExisting ? 1 : 0,
         cacheHit: null
       });
-      ok(res, enrichedExisting || existing);
+      ok(res, {
+        order: enrichedExisting || existing,
+        operation_logs: operationLogs
+      });
       return;
     }
 
@@ -2488,16 +2577,26 @@ async function handleStorageOrders(req, res, supabase) {
         throw updatedError;
       }
 
+      const changedFields = Object.keys(patch);
+      const offlineRecordOnlyChanged = changedFields.every(fieldName => [
+        "offline_recorded",
+        "last_operated_by",
+        "last_operated_at"
+      ].includes(fieldName));
+      const operationAction = offlineRecordOnlyChanged && Object.prototype.hasOwnProperty.call(patch, "offline_recorded")
+        ? (patch.offline_recorded ? "storage_orders_marked_offline_recorded" : "storage_orders_unmarked_offline_recorded")
+        : "storage_order_updated";
+
       await logAdminOperation(supabase, {
         admin_user_id: adminUser.id,
         target_type: "storage_order",
         target_id: storageOrderId,
-        action: "storage_order_updated",
+        action: operationAction,
         before_data: existing,
         after_data: updated,
         metadata: {
           order_no: existing.order_no || null,
-          changed_fields: Object.keys(patch)
+          changed_fields: changedFields
         }
       }).catch(error => {
         console.warn("[admin-storage] failed to write update operation log", error);
@@ -2730,11 +2829,16 @@ async function handleStorageOrders(req, res, supabase) {
     .map(normalizeStorageAdminListItem);
   const operatorOptions = await listStorageOperatorOptions(supabase);
   let responseItems = enrichedItems;
+  let currentStats = buildStorageWorkbenchStats(enrichedItems);
   if (allOrdersMode) {
     const expandedRows = enrichedItems.flatMap(expandStorageOrderForAdmin);
-    const filteredRows = filterExpandedStorageRows(expandedRows, queryParams);
+    const filteredRows = applyStorageWorkbenchFilters(
+      filterExpandedStorageRows(expandedRows, queryParams),
+      queryParams
+    );
     const sortedRows = sortStorageAdminRows(filteredRows, sort);
     count = sortedRows.length;
+    currentStats = buildStorageWorkbenchStats(sortedRows);
     responseItems = sortedRows.slice(from, to + 1);
   }
   const enrichmentMs = nowMs() - enrichmentStartedAt;
@@ -2758,6 +2862,7 @@ async function handleStorageOrders(req, res, supabase) {
   ok(res, {
     items: responseItems,
     operator_options: operatorOptions,
+    current_stats: currentStats,
     storage_tracking_ready: storageTrackingReady,
     storage_tracking_message: storageTrackingReady ? "" : storageOfflineTrackingMigrationMessage(),
     pagination: {
@@ -2844,7 +2949,10 @@ async function handleStorageOrdersExport(req, res, supabase) {
     .map(normalizeStorageAdminListItem);
   if (allOrdersMode) {
     items = sortStorageAdminRows(
-      filterExpandedStorageRows(items.flatMap(expandStorageOrderForAdmin), queryParams),
+      applyStorageWorkbenchFilters(
+        filterExpandedStorageRows(items.flatMap(expandStorageOrderForAdmin), queryParams),
+        queryParams
+      ),
       sort
     );
     if (selectedRowIds.size) {
