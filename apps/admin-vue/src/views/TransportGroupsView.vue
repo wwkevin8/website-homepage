@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, reactive, ref } from "vue";
+import { computed, onMounted, reactive, ref, watch } from "vue";
 import { fetchTransportGroups } from "@/api/admin-api";
 import AdminTable from "@/components/AdminTable.vue";
 import EmptyState from "@/components/EmptyState.vue";
@@ -28,6 +28,8 @@ const defaultFilters = {
   airportCode: "",
   terminal: "",
   status: "",
+  validity: "active",
+  sort: "service_time_asc",
   visibleOnFrontend: "",
   risk: "",
   dateFrom: "",
@@ -42,24 +44,21 @@ const defaultFilters = {
 let filters = reactive({ ...defaultFilters });
 const allGroups = ref([]);
 const page = ref(1);
+const serverPagination = ref({ page: 1, page_size: defaultFilters.pageSize, total: 0, total_pages: 0 });
 const loading = ref(false);
 const error = ref("");
 const notice = ref("");
 
-const filteredGroups = computed(() => allGroups.value.filter(group => matchesClientFilters(group)));
-const pagedGroups = computed(() => {
-  const size = Number(filters.pageSize || defaultFilters.pageSize);
-  const start = (page.value - 1) * size;
-  return filteredGroups.value.slice(start, start + size);
-});
+const filteredGroups = computed(() => allGroups.value.filter(group => matchesClientFilters(group)).sort(compareGroupsByServiceTime));
+const pagedGroups = computed(() => filteredGroups.value);
 const pagination = computed(() => {
   const size = Number(filters.pageSize || defaultFilters.pageSize);
-  const total = filteredGroups.value.length;
+  const total = Number(serverPagination.value.total || filteredGroups.value.length || 0);
   return {
-    page: page.value,
+    page: Number(serverPagination.value.page || page.value || 1),
     page_size: size,
     total,
-    total_pages: total ? Math.ceil(total / size) : 0
+    total_pages: Number(serverPagination.value.total_pages || (total ? Math.ceil(total / size) : 0))
   };
 });
 const hasGroups = computed(() => pagedGroups.value.length > 0);
@@ -435,9 +434,57 @@ function matchesDispatchStatusFilter(group) {
   return String(group.dispatch_status || "pending_dispatch") === selected;
 }
 
+function londonTodayDate() {
+  try {
+    const parts = new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Europe/London",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit"
+    }).formatToParts(new Date());
+    const values = Object.fromEntries(parts.filter(part => part.type !== "literal").map(part => [part.type, part.value]));
+    return `${values.year}-${values.month}-${values.day}`;
+  } catch (err) {
+    return new Date().toISOString().slice(0, 10);
+  }
+}
+
+function groupServiceDate(group) {
+  return String(group.group_date || group.preferred_time_start || group.flight_time_reference || "").slice(0, 10);
+}
+
+function groupServiceTimeValue(group) {
+  const source = group.preferred_time_start || group.flight_time_reference || group.arrival_range?.earliest || group.group_date || "";
+  const parsed = source ? new Date(source).getTime() : Number.NaN;
+  if (Number.isFinite(parsed)) return parsed;
+  return Number.NaN;
+}
+
+function compareGroupsByServiceTime(left, right) {
+  const leftTime = groupServiceTimeValue(left);
+  const rightTime = groupServiceTimeValue(right);
+  const leftMissing = !Number.isFinite(leftTime);
+  const rightMissing = !Number.isFinite(rightTime);
+  if (leftMissing && rightMissing) return 0;
+  if (leftMissing) return 1;
+  if (rightMissing) return -1;
+  const direction = filters.sort === "service_time_desc" ? -1 : 1;
+  return (leftTime - rightTime) * direction;
+}
+
+function matchesValidityFilter(group) {
+  const selected = filters.validity || "active";
+  if (selected === "all") return true;
+  const serviceDate = groupServiceDate(group);
+  if (!serviceDate) return selected === "invalid";
+  const today = londonTodayDate();
+  return selected === "invalid" ? serviceDate < today : serviceDate >= today;
+}
+
 function matchesClientFilters(group) {
   const keyword = normalizeText(filters.keyword);
   if (keyword && !searchHaystack(group).includes(keyword)) return false;
+  if (!matchesValidityFilter(group)) return false;
   if (filters.terminal) {
     const terminalNeedle = normalizeText(filters.terminal);
     const terminals = [group.terminal, group.terminal_summary, ...memberRows(group).map(row => row.terminal)].map(normalizeText).join(" ");
@@ -452,11 +499,18 @@ function matchesClientFilters(group) {
   return true;
 }
 
-function buildQuery() {
+function buildQuery(nextPage = page.value || 1) {
   return {
+    paginate: true,
+    page: nextPage,
+    page_size: filters.pageSize,
+    order_no: filters.keyword.trim(),
     service_type: filters.serviceType,
     airport_code: filters.airportCode,
     status: filters.status,
+    validity: filters.validity,
+    sort: filters.sort,
+    visible_on_frontend: filters.visibleOnFrontend,
     date_from: filters.dateFrom,
     date_to: filters.dateTo
   };
@@ -467,11 +521,23 @@ async function loadGroups(nextPage = 1) {
   error.value = "";
   notice.value = "";
   try {
-    const payload = await fetchTransportGroups(buildQuery());
+    const payload = await fetchTransportGroups(buildQuery(nextPage));
     allGroups.value = Array.isArray(payload?.items) ? payload.items : Array.isArray(payload) ? payload : [];
     page.value = nextPage;
+    serverPagination.value = payload?.pagination || {
+      page: nextPage,
+      page_size: filters.pageSize,
+      total: allGroups.value.length,
+      total_pages: allGroups.value.length ? 1 : 0
+    };
   } catch (err) {
     allGroups.value = [];
+    serverPagination.value = {
+      page: nextPage,
+      page_size: filters.pageSize,
+      total: 0,
+      total_pages: 0
+    };
     error.value = err.message || "拼车组列表加载失败。";
   } finally {
     loading.value = false;
@@ -490,7 +556,7 @@ function resetFilters() {
 }
 
 function handlePageChange(nextPage) {
-  page.value = nextPage;
+  loadGroups(nextPage);
 }
 
 function csvEscape(value) {
@@ -632,6 +698,24 @@ function exportFilteredGroups() {
 onMounted(() => {
   loadGroups(1);
 });
+
+watch(
+  () => [
+    filters.serviceType,
+    filters.airportCode,
+    filters.status,
+    filters.validity,
+    filters.sort,
+    filters.visibleOnFrontend,
+    filters.dateFrom,
+    filters.dateTo,
+    filters.pageSize
+  ],
+  () => {
+    page.value = 1;
+    loadGroups(1);
+  }
+);
 </script>
 
 <template>
