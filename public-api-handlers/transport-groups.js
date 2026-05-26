@@ -2,8 +2,32 @@ const { getSupabaseAdmin } = require("../api/_lib/supabase");
 const { applyEffectiveGroupCounts } = require("../api/_lib/transport");
 const { ok, methodNotAllowed, serverError } = require("../api/_lib/http");
 const { loadGroupStatsMap } = require("../api/_lib/transport-group-stats");
-const { cleanupEmptyTransportGroups } = require("../api/_lib/transport-group-lifecycle");
 
+const PUBLIC_GROUP_SELECT = [
+  "id",
+  "group_id",
+  "service_type",
+  "group_date",
+  "airport_code",
+  "airport_name",
+  "terminal",
+  "location_from",
+  "location_to",
+  "flight_time_reference",
+  "preferred_time_start",
+  "preferred_time_end",
+  "max_passengers",
+  "visible_on_frontend",
+  "status",
+  "created_at",
+  "member_request_count",
+  "current_passenger_count",
+  "remaining_passenger_count"
+].join(", ");
+
+const DEFAULT_PAGE_SIZE = 20;
+const DEFAULT_PREVIEW_LIMIT = 10;
+const MAX_PAGE_SIZE = 50;
 const PUBLIC_JOINABLE_GROUP_STATUSES = ["single_member", "active"];
 
 function getPublicGroupStatuses(queryParams = {}) {
@@ -27,9 +51,16 @@ function getLondonTodayIsoDate() {
   return `${year}-${month}-${day}`;
 }
 
-function parsePositiveInteger(value) {
+function parsePositiveInteger(value, fallback = null, maxValue = MAX_PAGE_SIZE) {
   const parsed = Number.parseInt(value, 10);
-  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    return fallback;
+  }
+  return Math.min(parsed, maxValue);
+}
+
+function cleanText(value) {
+  return String(value || "").trim();
 }
 
 function applySort(query, sort) {
@@ -50,24 +81,37 @@ function applySort(query, sort) {
 function buildPublicGroupsBaseQuery(supabase, queryParams, dateFrom, sort) {
   const query = supabase
     .from("transport_groups_public_view")
-    .select("*", { count: "exact" })
+    .select(PUBLIC_GROUP_SELECT)
     .eq("visible_on_frontend", true)
     .in("status", getPublicGroupStatuses(queryParams))
-    .gt("current_passenger_count", 0);
+    .gt("current_passenger_count", 0)
+    .gt("remaining_passenger_count", 0);
 
-  if (queryParams.service_type) {
-    query.eq("service_type", queryParams.service_type);
+  const serviceType = cleanText(queryParams.service_type);
+  if (serviceType) {
+    query.eq("service_type", serviceType);
   }
-  if (queryParams.airport_code) {
-    query.eq("airport_code", queryParams.airport_code);
-  } else if (queryParams.airport_name) {
-    query.eq("airport_name", queryParams.airport_name);
+
+  const airportCode = cleanText(queryParams.airport_code).toUpperCase();
+  const airportName = cleanText(queryParams.airport_name);
+  if (airportCode) {
+    query.eq("airport_code", airportCode);
+  } else if (airportName) {
+    query.eq("airport_name", airportName);
   }
+
+  const groupIdKeyword = cleanText(queryParams.group_id).toUpperCase();
+  if (groupIdKeyword) {
+    query.ilike("group_id", `%${groupIdKeyword}%`);
+  }
+
   if (dateFrom) {
     query.gte("group_date", dateFrom);
   }
-  if (queryParams.date_to) {
-    query.lte("group_date", queryParams.date_to);
+
+  const dateTo = cleanText(queryParams.date_to);
+  if (dateTo) {
+    query.lte("group_date", dateTo);
   }
 
   applySort(query, sort);
@@ -152,27 +196,27 @@ function filterPublicGroupsByGroupId(groups, groupIdKeyword) {
 }
 
 async function listPublicGroupsPaginated(supabase, queryParams, limit, page, dateFrom, sort) {
-  const query = buildPublicGroupsBaseQuery(supabase, queryParams, dateFrom, sort);
+  const offset = (page - 1) * limit;
+  const query = buildPublicGroupsBaseQuery(supabase, queryParams, dateFrom, sort)
+    .range(offset, offset + limit);
   const { data, error } = await query;
   if (error) {
     throw error;
   }
 
-  const rawBatch = (data || []).map(applyEffectiveGroupCounts);
-  const enrichedGroups = filterPublicGroupsByGroupId(
-    filterRenderablePublicGroups(await enrichPublicGroupsBatch(supabase, rawBatch)),
-    queryParams.group_id
-  );
-  const total = enrichedGroups.length;
-  const from = (page - 1) * limit;
-  const items = enrichedGroups.slice(from, from + limit);
+  const rows = data || [];
+  const pageRows = rows.slice(0, limit);
+  const items = filterRenderablePublicGroups(await enrichPublicGroupsBatch(
+    supabase,
+    pageRows.map(applyEffectiveGroupCounts)
+  ));
 
   return {
     items,
-    total,
+    total: null,
     page,
     page_size: limit,
-    has_next: (page * limit) < total,
+    has_next: rows.length > limit,
     date_from: dateFrom || null,
     include_past: queryParams.include_past === "true",
     sort
@@ -188,42 +232,19 @@ module.exports = async function handler(req, res) {
   const supabase = getSupabaseAdmin();
 
   try {
-    await cleanupEmptyTransportGroups(supabase);
     const queryParams = req.query || {};
-    const limit = parsePositiveInteger(queryParams.limit);
-    const page = parsePositiveInteger(queryParams.page) || 1;
+    const mode = cleanText(queryParams.mode).toLowerCase();
+    const limit = parsePositiveInteger(
+      queryParams.pageSize || queryParams.page_size || queryParams.limit,
+      mode === "preview" ? DEFAULT_PREVIEW_LIMIT : DEFAULT_PAGE_SIZE,
+      mode === "preview" ? DEFAULT_PREVIEW_LIMIT : MAX_PAGE_SIZE
+    );
+    const page = parsePositiveInteger(queryParams.page, 1, 100000);
     const includePast = queryParams.include_past === "true";
-    const dateFrom = includePast ? (queryParams.date_from || "") : (queryParams.date_from || getLondonTodayIsoDate());
+    const dateFrom = includePast ? cleanText(queryParams.date_from) : (cleanText(queryParams.date_from) || getLondonTodayIsoDate());
     const sort = queryParams.sort === "latest" ? "latest" : "upcoming";
 
-    if (limit) {
-      ok(res, await listPublicGroupsPaginated(supabase, queryParams, limit, page, dateFrom, sort));
-      return;
-    }
-
-    const query = buildPublicGroupsBaseQuery(supabase, queryParams, dateFrom, sort);
-    const { data, error } = await query;
-    if (error) {
-      throw error;
-    }
-
-    const items = filterPublicGroupsByGroupId(
-      filterRenderablePublicGroups(
-        await enrichPublicGroupsBatch(supabase, (data || []).map(applyEffectiveGroupCounts))
-      ),
-      queryParams.group_id
-    );
-
-    ok(res, {
-      items,
-      total: items.length,
-      page,
-      page_size: items.length,
-      has_next: false,
-      date_from: dateFrom || null,
-      include_past: includePast,
-      sort
-    });
+    ok(res, await listPublicGroupsPaginated(supabase, queryParams, limit, page, dateFrom, sort));
   } catch (error) {
     serverError(res, error);
   }

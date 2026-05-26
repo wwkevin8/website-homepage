@@ -6,8 +6,8 @@
     return;
   }
 
-  const DEFAULT_BOARD_PAGE_SIZE = 10;
-  const DEFAULT_PREVIEW_SIZE = 3;
+  const DEFAULT_BOARD_PAGE_SIZE = 20;
+  const DEFAULT_PREVIEW_SIZE = 10;
   const MODAL_ID = "pickupJoinModal";
   const CUSTOMER_SERVICE_QR_SRC = "./img/pickup-service-qr.jpg";
 
@@ -879,11 +879,11 @@
         airport_code: form.airport_code.value,
         date_from: form.date_from.value,
         date_to: form.date_to.value,
-        sort: form.date_from.value ? "upcoming" : "latest",
+        sort: "upcoming",
         limit: DEFAULT_BOARD_PAGE_SIZE,
         page
       }).catch(error => {
-        list.innerHTML = `<div class="transport-empty">${Shared.escapeHtml(error.message)}</div>`;
+        list.innerHTML = '<div class="transport-empty">拼车信息暂时加载失败，请稍后重试或联系客服。</div>';
         return null;
       });
 
@@ -905,7 +905,7 @@
           render(payload.page - 1, { emptyHopCount: emptyHopCount + 1 });
           return;
         }
-        list.innerHTML = '<div class="transport-empty">当前还没有可公开查看的接机拼车组。</div>';
+        list.innerHTML = '<div class="transport-empty">暂无合适拼车信息，可发起新的拼车需求。</div>';
         renderPagination(pagination, 1, false);
         return;
       }
@@ -1226,7 +1226,7 @@
   function renderPreviewNotice() {
     return `
       <div class="pickup-board-preview-note" role="note" aria-label="预览提示">
-        <span class="pickup-board-preview-badge">仅展示最近 3 组</span>
+        <span class="pickup-board-preview-badge">仅展示最近 10 组</span>
         <span class="pickup-board-preview-copy">这里只展示最新拼车预览，想看全部班次与完整信息，请点击上方 <strong>查看完整拼车表格</strong> 进入接机面板。</span>
       </div>
     `;
@@ -1255,11 +1255,12 @@
     list.innerHTML = '<div class="transport-loading">加载中...</div>';
 
     const response = await Api.listPublicGroups({
+      mode: "preview",
       sort: "upcoming",
       limit: DEFAULT_PREVIEW_SIZE,
       page: 1
     }).catch(error => {
-      list.innerHTML = `<div class="pickup-board-empty">${Shared.escapeHtml(error.message)}</div>`;
+      list.innerHTML = '<div class="pickup-board-empty">拼车信息暂时加载失败，请稍后重试或联系客服。</div>';
       return null;
     });
 
@@ -1272,7 +1273,7 @@
       .map(normalizePublicGroupItem)
       .slice(0, DEFAULT_PREVIEW_SIZE);
     if (!items.length) {
-      list.innerHTML = '<div class="pickup-board-empty">当前还没有已发布的接机拼车组。</div>';
+      list.innerHTML = '<div class="pickup-board-empty">暂无合适拼车信息，可发起新的拼车需求。</div>';
       return;
     }
 
