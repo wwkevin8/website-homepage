@@ -8,14 +8,15 @@
 ## Last Updated Task
 
 - Date: 2026-05-27
-- Scope: P7 storage workbench Preview repair using the current Production list as the mother version, with only minimal P7 enhancements re-applied. P6 remains completed/promoted separately and was not changed in this task.
+- Scope: P7 storage workbench Preview blocking fixes after manual review: restore the payment column as a clickable button and add active/history/all validity filtering with active orders as the default. P6 remains completed/promoted separately and was not changed in this task.
 
 ## Latest Completed Work
 
 - P6 transport performance/read-only GET patch was completed separately and promoted to Production before returning to P7. It should stay out of the P7 Preview branch/worktree.
 - P7 storage workbench Preview was repaired after manual review rejected the earlier simplified list:
   - `StorageAllOrdersView.vue` was restored to the Production-style operator list structure: service date, time slot, name, service content, apartment/address, phone, price, fee/payment note, actionable payment button, customer-service note textarea/save behavior, and actions.
-  - Minimal P7 list enhancements remain layered on top: current-result stats, search placeholder including apartment/address, existing filters, pagination total/total pages, default service-date sort, and export current filtered result.
+  - Payment now renders as the current payment state button (`已收款` / `未收款`) while keeping the existing click handler that toggles the same Production billing fields. No waived/zero-price shortcut was added.
+  - Minimal P7 list enhancements remain layered on top: current-result stats, search placeholder including apartment/address, existing filters, validity filter (`有效单` / `历史单 / 无效单` / `全部`), pagination total/total pages, default service-date sort, and export current filtered result.
   - `StorageOrderDetailView.vue` remains the P7 detail migration/cleanup with customer-readable summary, internal notes, fee breakdown display, offline-recorded state, and operation logs. It no longer sends pricing recalculation flags from schedule/address saves.
   - `api/admin/[...action].js` adds current stats and detail operation logs as additive fields while keeping the old detail GET top-level order response shape.
   - `scripts/seed-storage-test-data.js` and `scripts/clear-storage-test-data.js` are local-only helpers guarded by `LOCAL_SUPABASE_URL`; they must not be run against production.
@@ -27,6 +28,11 @@
   - `dpl_6Hwa4CqcnViakvXySi5aw18cnKrt`, URL `https://webside-hwoh9snus-wwkevin8s-projects.vercel.app`, source `1e7c1cd`.
 - Current repaired P7 Preview source commit: `4e8d8ed`.
 - Current repaired P7 Preview deployment: `dpl_HW72E55Xc4EKvm9DtLzTxhnKdnKe`, URL `https://webside-h3yvwcbkz-wwkevin8s-projects.vercel.app`.
+- Latest P7 blocking-fix source commit: `64ac74b`.
+- Latest P7 blocking-fix Preview deployment: `dpl_E2fhw9Qi7vf4BCyhDPTWvZ2ovgh4`, URL `https://webside-mu1kuew33-wwkevin8s-projects.vercel.app`.
+- Latest P7 blocking-fix changed:
+  - `api/admin/[...action].js`
+  - `apps/admin-vue/src/views/StorageAllOrdersView.vue`
 - Current repaired Preview changed:
   - `api/admin/[...action].js`
   - `apps/admin-vue/src/views/StorageAllOrdersView.vue`
@@ -43,6 +49,14 @@
   - Date filter for 2026-05-15 returned 3 rows and 1 page.
   - Detail GET works for sample order `ST260410-0001` and returned one operation log.
   - Export current filtered results returned an Excel payload.
+- Latest blocking-fix Preview read-only validation:
+  - Storage workbench route returns 200.
+  - Active-order query (`validity_scope=active`) returned 7 rows total, 1 page, with service dates `2026-05-30` through `2026-06-14`; no past service dates were returned.
+  - Active-order stats returned total 7, offline recorded 0, offline unrecorded 7, unpaid 4, today/next 7 days 3.
+  - All-order query (`validity_scope=all`) returned 15 rows total, 2 pages, including past service dates such as `2026-04-13` and `2026-05-05`.
+  - History query (`validity_scope=history`) returned 8 rows total, 1 page.
+  - Active-order export returned an Excel payload.
+  - Payment button behavior was code-verified only; no payment toggle write was executed against real data.
 - Current repaired Preview remote build completed successfully; generated admin build output was not committed.
 - Local build verification passed with `npm run build:preview`. Root dependency audit still reports one existing moderate vulnerability; no dependency files were changed in this task.
 - A full dirty-worktree backup stash still exists in the original worktree: `stash@{0}: backup-before-p7-preview-isolation`.
