@@ -8,7 +8,7 @@
 ## Last Updated Task
 
 - Date: 2026-05-26
-- Scope: P6 performance patch v1 for admin transport request and carpool group list first-screen loading. The patch narrows carpool group list loading to server-side pagination and avoids reloading transport request operator options on every page. No production data, database schema, SQL indexes, business rules, price logic, payment logic, email behavior, or deployment configuration was changed.
+- Scope: P6 performance patch v1 for admin transport request and carpool group list first-screen loading. The patch narrows carpool group list loading to server-side pagination and avoids reloading transport request operator options on every page. Source commit `801a416`; production deployment `dpl_7MjGbchq2YNWLvgRVjC775oYKiWE` is Ready and aliased to `https://ngn.best`. No production data, database schema, SQL indexes, business rules, price logic, payment logic, email behavior, or deployment configuration was changed.
 
 ## Latest Completed Work
 
@@ -31,6 +31,13 @@
 
 - Updated `docs/PROJECT_MAP.md` for the changed list behavior of `/api/transport-groups` and `/api/transport-requests`.
 
+- Released to production from a clean detached worktree at commit `801a416` so unrelated local uncommitted files were not included:
+  - GitHub branch: `origin/codex/p6-performance-v1`
+  - Vercel deployment: `dpl_7MjGbchq2YNWLvgRVjC775oYKiWE`
+  - Production URL: `https://webside-ljtf7973r-wwkevin8s-projects.vercel.app`
+  - Alias: `https://ngn.best`
+  - Production state: `READY`
+
 ## Verification
 
 - `node --check api/transport-groups/index.js` passed.
@@ -40,6 +47,9 @@
   - `admin/index.html`
   - `admin/assets/index-CJ4JLX1e.js`
   - `admin/assets/index-Cn3hgMJD.css`
+- Vercel production build for deployment `dpl_7MjGbchq2YNWLvgRVjC775oYKiWE` passed and output:
+  - `/admin/assets/index-oXl2evCZ.js`
+  - `/admin/assets/index-DfE4uMCS.css`
 - `git diff --check` passed, with line-ending warnings only.
 - Local helper server was started at `http://localhost:3000` and then stopped.
 - Browser verification with mocked admin session confirmed:
@@ -55,11 +65,11 @@
 - Admin Vue source is the canonical admin UI source; `npm --prefix apps/admin-vue run build` refreshes the served `admin/` bundle.
 - The carpool group admin list no longer loads all active groups before first-screen pagination.
 - The transport request admin list remains server-paginated and keeps its default valid-order filter.
+- Production `https://ngn.best` is aliased to P6 performance deployment `dpl_7MjGbchq2YNWLvgRVjC775oYKiWE`.
 - No SQL index was added in this patch.
 
 ## Open Risks / Follow-Up
 
 - Advanced carpool filters that depend on derived enriched data, such as risk/payment/offline/readiness, are still evaluated on the loaded page data. Moving those fully server-side would be a separate, broader patch.
 - `/api/transport-groups` still runs `cleanupEmptyTransportGroups` on GET as existing behavior; this patch did not change group lifecycle cleanup.
-- Production deployment has not been performed. Per `AGENTS.md`, commit and push to GitHub before any Vercel deployment.
 - If production is still slow after this patch, add production-safe sampled perf timing around group base query, cleanup, member query, duplicate lookup, and enrichment before considering SQL indexes or RPC/view changes.
