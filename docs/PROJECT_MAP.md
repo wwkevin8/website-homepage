@@ -80,6 +80,8 @@ Last structure scan: 2026-05-08. Scope: documentation-only scan of current files
 
 ## API Route Inventory
 
+P6 transport read-only rule: transport page/list/detail GET routes are read-only surfaces. They may SELECT and enrich response data, but must not trigger `insert`, `update`, `delete`, `upsert`, transport group backfill, expired-request closing, or empty-group cleanup. Transport lifecycle maintenance now belongs behind explicit POST flows such as `/api/transport-maintenance` or narrowly scoped business write operations; ordinary admin/public page opens must not mutate production data. The standalone close-expired route is POST-only and is not triggered by regular transport GET pages.
+
 | Route Path | File/Handler | Methods | Purpose | Login Required | Admin Required | Related Tables |
 | --- | --- | --- | --- | --- | --- | --- |
 | `/api/public/auth-config` | `api/public/[...action].js` -> `public-api-handlers/auth-config.js` | GET | Exposes safe auth config | No | No | None |
