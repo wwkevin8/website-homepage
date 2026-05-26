@@ -353,9 +353,7 @@ function paymentStatusValue(record = order.value || {}) {
   return String(billing.payment_status || billing.status || "").trim();
 }
 function isPaymentReceived(record = order.value || {}) {
-  const status = paymentStatusValue(record);
-  if (status === "paid") return true;
-  return priceFormula.value.total <= 0 && status === "waived";
+  return paymentStatusValue(record) === "paid";
 }
 function paymentLabel(record = order.value || {}) {
   return isPaymentReceived(record) ? "已收款" : "未收款";
@@ -663,8 +661,7 @@ async function saveSchedule() {
       storage_intake_date: scheduleForm.storage_start_date,
       storage_start_date: scheduleForm.storage_start_date,
       storage_end_date: scheduleForm.storage_end_date,
-      expected_storage_end_date: scheduleForm.storage_end_date,
-      ...(shouldRecalculatePricing() ? { recalculate_pricing: true } : {})
+      expected_storage_end_date: scheduleForm.storage_end_date
     });
     await loadOrder({ silent: true });
     notice.value = "寄存预约信息已保存。";
@@ -685,8 +682,7 @@ async function saveAddress() {
       address_full: addressForm.address_full,
       postcode: addressForm.postcode,
       has_lift: addressForm.has_lift === "" ? null : addressForm.has_lift === "true",
-      needs_upstairs: addressForm.needs_upstairs === "" ? null : addressForm.needs_upstairs === "true",
-      ...(shouldRecalculatePricing() ? { recalculate_pricing: true } : {})
+      needs_upstairs: addressForm.needs_upstairs === "" ? null : addressForm.needs_upstairs === "true"
     });
     await loadOrder({ silent: true });
     notice.value = "地址信息已保存。";

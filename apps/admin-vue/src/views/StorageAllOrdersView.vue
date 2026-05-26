@@ -14,30 +14,27 @@ import EmptyState from "@/components/EmptyState.vue";
 import ErrorState from "@/components/ErrorState.vue";
 import LoadingState from "@/components/LoadingState.vue";
 import Pagination from "@/components/Pagination.vue";
-import StatusBadge from "@/components/StatusBadge.vue";
 
 const FIXED_PAGE_SIZE = 10;
 
 const columns = [
-  { key: "row_index", label: "序号", width: "70px" },
+  { key: "row_index", label: "序号", width: "74px" },
   { key: "service_date", label: "服务日期", width: "9%" },
-  { key: "service_time_slot", label: "时间段", width: "8%" },
+  { key: "service_time_slot", label: "时间段", width: "9%" },
   { key: "customer_name", label: "名字", width: "8%" },
-  { key: "service_content", label: "服务内容", width: "13%", className: "is-wrap" },
-  { key: "address_summary", label: "公寓（详细地址）", width: "20%", className: "is-wrap" },
-  { key: "phone", label: "电话", width: "8%" },
-  { key: "total_fee", label: "价格", width: "7%", className: "is-number" },
-  { key: "fee_payment_note", label: "费用/支付备注", width: "11%", className: "is-wrap" },
-  { key: "payment_status", label: "收款", width: "7%" },
-  { key: "customer_service_note", label: "客服备注", width: "12%", className: "is-wrap" },
-  { key: "actions", label: "操作", width: "150px", className: "is-actions", sticky: "end" }
+  { key: "service_content", label: "服务内容", width: "17%", className: "is-wrap" },
+  { key: "address_summary", label: "公寓（详细地址）", width: "21%", className: "is-wrap" },
+  { key: "phone", label: "电话", width: "9%" },
+  { key: "total_fee", label: "价格", width: "8%", className: "is-number" },
+  { key: "payment_note", label: "费用/支付备注", width: "16%", className: "is-wrap" },
+  { key: "payment_action", label: "收款", width: "8%" },
+  { key: "remark", label: "客服备注", width: "14%", className: "is-wrap" },
+  { key: "actions", label: "操作", width: "190px", className: "is-actions", sticky: "end" }
 ];
 
 const defaultFilters = {
   search: "",
   serviceType: "",
-  chargeStatus: "",
-  paymentStatus: "",
   offlineRecorded: "",
   lastOperatedBy: "",
   dateStart: "",
@@ -52,7 +49,6 @@ const currentStats = ref(null);
 const operatorOptions = ref([]);
 const selectedIds = ref([]);
 const remarkDrafts = reactive({});
-const editingRemarkId = ref("");
 const loading = ref(false);
 const exporting = ref(false);
 const bulkSaving = ref(false);
@@ -72,12 +68,14 @@ const allCurrentPageSelected = computed(() => {
   const ids = orders.value.map(row => String(row.id)).filter(Boolean);
   return ids.length > 0 && ids.every(id => selectedIds.value.includes(id));
 });
+
 const operatorSelectOptions = computed(() => {
   const values = [filters.lastOperatedBy, ...operatorOptions.value]
     .map(value => String(value || "").trim())
     .filter(Boolean);
   return Array.from(new Set(values));
 });
+
 const statsCards = computed(() => {
   const stats = currentStats.value || buildPageStats(orders.value);
   return [
@@ -97,7 +95,9 @@ function firstText(...values) {
   for (const value of values) {
     if (value === null || value === undefined) continue;
     const text = String(value).replace(/\s+/g, " ").trim();
-    if (text && text !== "--" && text !== "null" && text !== "undefined") return text;
+    if (text && text !== "--" && text !== "null" && text !== "undefined") {
+      return text;
+    }
   }
   return "";
 }
@@ -147,29 +147,38 @@ function formatMoney(value) {
   return Number.isFinite(amount) ? `£${amount.toFixed(2)}` : displayValue(value);
 }
 
-function asObject(value) {
-  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
-}
-
-function estimateSummary(order) {
-  return asObject(order.estimate_summary_json);
-}
-
-function positiveQuantity(value) {
-  const number = Number(value);
-  return Number.isFinite(number) && number > 0 ? number : 0;
-}
-
 function serviceTypeLabel(order) {
   return order.service_type_label || {
-    box_order: "买箱 / 送箱",
+    box_order: "买箱",
     storage_collection: "取寄存",
-    storage_return: "送回"
-  }[order.storage_order_kind] || "寄存服务";
+    storage_return: "送寄存"
+  }[order.storage_order_kind] || "--";
 }
 
 function rowOrderNo(order) {
   return order.display_order_no || order.order_no || order.storage_pickup_order_no || order.box_order_no || order.parent_order_no;
+}
+
+function isMembershipOrder(order) {
+  return Boolean(order?.membership_benefit_claim_id) || Number(order?.membership_discount_amount || 0) > 0;
+}
+
+function storageRowClass(order) {
+  return isMembershipOrder(order) ? "is-member-order" : "";
+}
+
+function buildPageStats(items) {
+  const todayText = getUkTodayInputValue();
+  const sevenText = addDaysToDateInputValue(todayText, 7);
+  return items.reduce((stats, order) => {
+    const serviceDate = formatDateInput(rowServiceDate(order));
+    stats.total += 1;
+    if (order.offline_recorded) stats.offline_recorded += 1;
+    else stats.offline_unrecorded += 1;
+    if (!isPaymentReceived(order)) stats.unpaid += 1;
+    if (serviceDate && serviceDate >= todayText && serviceDate <= sevenText) stats.next_7_days += 1;
+    return stats;
+  }, { total: 0, offline_recorded: 0, offline_unrecorded: 0, unpaid: 0, next_7_days: 0 });
 }
 
 function rowServiceDate(order) {
@@ -195,15 +204,19 @@ function splitAddressText(value) {
     .filter(part => part && part !== "--");
 }
 
-function pushAddressPart(parts, value) {
-  const text = String(value || "").replace(/\s+/g, " ").trim();
-  const key = normalizeAddressKey(text);
-  if (!key) return;
-  const duplicate = parts.some(part => {
+function isDuplicateAddressPart(existingParts, value) {
+  const key = normalizeAddressKey(value);
+  if (!key) return true;
+  return existingParts.some(part => {
     const partKey = normalizeAddressKey(part);
     return partKey === key || partKey.includes(key) || key.includes(partKey);
   });
-  if (!duplicate) parts.push(text);
+}
+
+function pushAddressPart(parts, value) {
+  const text = String(value || "").replace(/\s+/g, " ").trim();
+  if (!text || text === "--" || isDuplicateAddressPart(parts, text)) return;
+  parts.push(text);
 }
 
 function rowAddress(order) {
@@ -214,10 +227,23 @@ function rowAddress(order) {
   return parts.join(" / ") || "--";
 }
 
+function asObject(value) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+
+function estimateSummary(order) {
+  return asObject(order.estimate_summary_json);
+}
+
+function positiveQuantity(value) {
+  const number = Number(value);
+  return Number.isFinite(number) && number > 0 ? number : 0;
+}
+
 function normalizeBoxLabel(entry) {
   const raw = entry?.label || entry?.boxLabel || entry?.box_label || entry?.boxType || entry?.box_type || entry?.type;
   const text = String(raw || "").trim();
-  if (!text) return "箱子";
+  if (!text) return "箱型";
   return /^\d+$/.test(text) ? `${text}号箱` : text;
 }
 
@@ -236,8 +262,10 @@ function purchasedBoxItems(order) {
 
 function rowBoxSummaryLines(order) {
   const items = purchasedBoxItems(order);
-  if (!items.length && positiveQuantity(order.estimated_box_count)) return [`箱子 x ${order.estimated_box_count}`];
-  return items.map(entry => `${normalizeBoxLabel(entry)} x ${entry.quantity}`);
+  if (!items.length && order.estimated_box_count) {
+    return [`箱子 × ${order.estimated_box_count}`];
+  }
+  return items.map(entry => `${normalizeBoxLabel(entry)} × ${entry.quantity}`);
 }
 
 function rowTotalFee(order) {
@@ -249,12 +277,32 @@ function rowTotalAmount(order) {
   return Number.isFinite(amount) ? Math.max(0, amount) : 0;
 }
 
-function chargeLabel(order) {
-  return rowTotalAmount(order) > 0 ? "收费" : "免费 / 待确认";
+function rowDisplayIndex(order) {
+  const localIndex = orders.value.findIndex(row => String(row.id) === String(order?.id));
+  const page = Number(pagination.value.page || 1);
+  const pageSize = Number(pagination.value.page_size || FIXED_PAGE_SIZE);
+  return (page - 1) * pageSize + Math.max(localIndex, 0) + 1;
 }
 
-function chargeTone(order) {
-  return rowTotalAmount(order) > 0 ? "warning" : "neutral";
+function rowDraftKey(order) {
+  return rowActionId(order);
+}
+
+function rowServiceContentLines(order) {
+  const boxLines = rowBoxSummaryLines(order);
+  const label = serviceTypeLabel(order);
+  const lines = [];
+  if (boxLines.length) {
+    lines.push(`${label}｜${boxLines.join("，")}`);
+  } else if (order.storage_order_kind === "storage_return" && positiveQuantity(order.estimated_box_count)) {
+    lines.push(`送${positiveQuantity(order.estimated_box_count)}个箱子`);
+  } else if (order.storage_order_kind === "storage_collection") {
+    lines.push("取件寄存");
+  } else {
+    lines.push(label);
+  }
+
+  return lines.filter(Boolean);
 }
 
 function billingInfo(order) {
@@ -272,37 +320,40 @@ function rowPaymentStatus(order) {
 }
 
 function isPaymentReceived(order) {
-  const status = rowPaymentStatus(order);
-  return status === "paid" || (rowTotalAmount(order) <= 0 && status === "waived");
+  return rowPaymentStatus(order) === "paid";
 }
 
-function paymentLabel(order) {
-  return isPaymentReceived(order) ? "已收款" : "未收款";
+function paymentStatusLabel(status) {
+  return {
+    unpaid: "未收款",
+    pending: "待确认",
+    paid: "已收款",
+    refunded: "已退款",
+    waived: "免费"
+  }[String(status || "").trim()] || "";
 }
 
-function paymentTone(order) {
-  return isPaymentReceived(order) ? "success" : "danger";
+function membershipPaymentNote(order) {
+  return (Number(order.membership_discount_amount || 0) > 0 || order.membership_benefit_claim_id)
+    ? "会员服务"
+    : "";
 }
 
 function rowPaymentNote(order) {
   const billing = billingInfo(order);
-  return firstText(
-    billing.payment_note,
-    billing.payment_remark,
-    billing.fee_note,
-    billing.note,
-    billing.remark,
-    billing.status_note,
-    isPaymentReceived(order) ? "已收款" : "未收款"
-  );
+  const note = firstText(billing.payment_note, billing.note, billing.remark, billing.paymentRemark);
+  const status = paymentStatusLabel(billing.payment_status || billing.status);
+  const membershipNote = membershipPaymentNote(order);
+  const lines = [];
+  if (membershipNote) lines.push(membershipNote);
+  if (status) lines.push(status);
+  if (note && note !== status) lines.push(note);
+  if (lines.length) return lines.join("｜");
+  return rowTotalAmount(order) > 0 ? "未收款" : "免费";
 }
 
-function offlineRecordedLabel(order) {
-  return order?.offline_recorded ? "已记录" : "未记录";
-}
-
-function offlineRecordedTone(order) {
-  return order?.offline_recorded ? "success" : "neutral";
+function isPaymentAttention(order) {
+  return /未收款|待付|待确认|未付|unpaid|pending/i.test(rowPaymentNote(order));
 }
 
 function rowCustomerServiceRemarkText(order) {
@@ -316,39 +367,39 @@ function rowStudentRemarkText(order) {
 }
 
 function rowRemarkText(order) {
-  const internalRemark = rowCustomerServiceRemarkText(order);
+  const customerServiceRemark = rowCustomerServiceRemarkText(order);
   const studentRemark = rowStudentRemarkText(order);
   const lines = [];
-  if (internalRemark) lines.push(internalRemark);
-  if (studentRemark && !internalRemark.includes(studentRemark)) lines.push(`用户备注：${studentRemark}`);
+  if (customerServiceRemark) {
+    lines.push(customerServiceRemark);
+  }
+  if (
+    studentRemark
+    && !customerServiceRemark.includes(studentRemark)
+    && !customerServiceRemark.includes(`同学备注：${studentRemark}`)
+  ) {
+    lines.push(`同学备注：${studentRemark}`);
+  }
   return lines.join("\n");
 }
 
-function rowInternalRemarkSummary(order) {
-  return rowCustomerServiceRemarkText(order) || "添加备注";
+function rowRemark(order) {
+  return rowRemarkText(order) || "--";
 }
 
-function customerPinyin(order) {
-  const formJson = asObject(order.customer_form_json);
-  return firstText(order.customer_pinyin, order.name_pinyin, formJson.customerPinyin, formJson.customer_pinyin);
-}
-
-function rowServiceContentLines(order) {
-  const label = serviceTypeLabel(order);
-  const boxLines = rowBoxSummaryLines(order);
-  if (boxLines.length) return [`${label}: ${boxLines.join(" / ")}`];
-  if (order.storage_order_kind === "storage_return" && positiveQuantity(order.estimated_box_count)) {
-    return [`送回: ${positiveQuantity(order.estimated_box_count)}个箱子`];
-  }
-  if (order.storage_order_kind === "storage_collection") return ["取寄存"];
-  return [label];
-}
-
-function rowDisplayIndex(order) {
-  const localIndex = orders.value.findIndex(row => String(row.id) === String(order?.id));
-  const page = Number(pagination.value.page || 1);
-  const pageSize = Number(pagination.value.page_size || FIXED_PAGE_SIZE);
-  return (page - 1) * pageSize + Math.max(localIndex, 0) + 1;
+function syncRemarkDrafts(items = orders.value) {
+  const activeKeys = new Set();
+  items.forEach(order => {
+    const key = rowDraftKey(order);
+    if (!key) return;
+    activeKeys.add(key);
+    remarkDrafts[key] = rowRemarkText(order);
+  });
+  Object.keys(remarkDrafts).forEach(key => {
+    if (!activeKeys.has(key)) {
+      delete remarkDrafts[key];
+    }
+  });
 }
 
 function baseStorageOrderId(order) {
@@ -359,36 +410,11 @@ function rowActionId(order) {
   return String(order?.id || baseStorageOrderId(order) || "");
 }
 
-function rowDraftKey(order) {
-  return rowActionId(order);
-}
-
-function isMembershipOrder(order) {
-  return Boolean(order?.membership_benefit_claim_id) || Number(order?.membership_discount_amount || 0) > 0;
-}
-
-function storageRowClass(order) {
-  return isMembershipOrder(order) ? "is-member-order" : "";
-}
-
-function buildPageStats(items) {
-  const todayText = getUkTodayInputValue();
-  const sevenText = addDaysToDateInputValue(todayText, 7);
-  return items.reduce((stats, order) => {
-    const serviceDate = formatDateInput(rowServiceDate(order));
-    stats.total += 1;
-    if (order.offline_recorded) stats.offline_recorded += 1;
-    else stats.offline_unrecorded += 1;
-    if (!isPaymentReceived(order)) stats.unpaid += 1;
-    if (serviceDate && serviceDate >= todayText && serviceDate <= sevenText) stats.next_7_days += 1;
-    return stats;
-  }, { total: 0, offline_recorded: 0, offline_unrecorded: 0, unpaid: 0, next_7_days: 0 });
-}
-
 function detailHref(order) {
   const id = baseStorageOrderId(order);
   if (!id) return "";
-  const query = new URLSearchParams({ return_to: "/admin/storage/orders", order_type: order.storage_order_kind || "" });
+  const returnTo = "/admin/storage/orders";
+  const query = new URLSearchParams({ return_to: returnTo, order_type: order.storage_order_kind || "" });
   const orderNo = String(rowOrderNo(order) || "").toUpperCase();
   if (order.storage_order_kind === "box_order" || orderNo.startsWith("ST-B")) {
     return `/admin/storage/box-orders/${encodeURIComponent(id)}?${query.toString()}`;
@@ -401,8 +427,6 @@ function buildFilterQuery() {
     order_type: "all",
     search: filters.search.trim(),
     service_type: filters.serviceType,
-    charge_status: filters.chargeStatus,
-    payment_status: filters.paymentStatus,
     offline_recorded: filters.offlineRecorded,
     last_operated_by: filters.lastOperatedBy,
     date_start: filters.dateStart,
@@ -417,19 +441,6 @@ function buildQuery(page) {
     page_size: FIXED_PAGE_SIZE,
     ...buildFilterQuery()
   };
-}
-
-function syncRemarkDrafts(items = orders.value) {
-  const activeKeys = new Set();
-  items.forEach(order => {
-    const key = rowDraftKey(order);
-    if (!key) return;
-    activeKeys.add(key);
-    remarkDrafts[key] = rowCustomerServiceRemarkText(order);
-  });
-  Object.keys(remarkDrafts).forEach(key => {
-    if (!activeKeys.has(key)) delete remarkDrafts[key];
-  });
 }
 
 async function loadOrders(page = pagination.value.page || 1) {
@@ -522,7 +533,7 @@ async function handleExportFiltered() {
 
 async function handleExportSelected() {
   if (!selectedIds.value.length) {
-    notice.value = "请先选择订单。";
+    notice.value = "请先选择订单";
     return;
   }
   if (exporting.value) return;
@@ -550,7 +561,7 @@ async function setSelectedOfflineRecorded(value) {
   }
   const ids = selectedBaseIds();
   if (!ids.length) {
-    notice.value = "请先选择订单。";
+    notice.value = "请先选择订单";
     return;
   }
   if (bulkSaving.value) return;
@@ -581,12 +592,13 @@ async function toggleOfflineRecorded(order) {
     notice.value = "未找到可更新的寄存订单 ID。";
     return;
   }
-  togglingId.value = rowActionId(order);
+  togglingId.value = String(order.id || id);
   notice.value = "";
   error.value = "";
   try {
     const updated = await updateStorageOrder(id, { offline_recorded: !Boolean(order.offline_recorded) });
-    notice.value = Boolean(updated?.offline_recorded) ? "已标记为已记录。" : "已取消已记录状态。";
+    const nextValue = Boolean(updated?.offline_recorded);
+    notice.value = nextValue ? "已标记为已记录。" : "已取消已记录状态。";
     await loadOrders(pagination.value.page || 1);
   } catch (err) {
     notice.value = err.message || "线下记录状态保存失败。";
@@ -614,7 +626,7 @@ async function togglePaymentReceived(order) {
         }
       }
     });
-    notice.value = `已将 ${displayValue(rowOrderNo(order))} 标记为${nextReceived ? "已收款" : "未收款"}。`;
+    notice.value = `已标记 ${displayValue(rowOrderNo(order))} 为${nextReceived ? "已收款" : "未收款"}。`;
     await loadOrders(pagination.value.page || 1);
   } catch (err) {
     notice.value = err.message || "收款状态保存失败。";
@@ -623,25 +635,14 @@ async function togglePaymentReceived(order) {
   }
 }
 
-function startEditRemark(order) {
-  const key = rowDraftKey(order);
-  if (!key) return;
-  remarkDrafts[key] = rowCustomerServiceRemarkText(order);
-  editingRemarkId.value = key;
-}
-
-function cancelEditRemark() {
-  editingRemarkId.value = "";
-  syncRemarkDrafts();
-}
-
 async function saveRemark(order) {
   const id = baseStorageOrderId(order);
   const key = rowDraftKey(order);
-  if (!id || !key || remarkSavingId.value) return;
+  if (!id || !key || remarkSavingId.value) {
+    return;
+  }
   const nextRemark = String(remarkDrafts[key] || "").trim();
-  if (nextRemark === rowCustomerServiceRemarkText(order)) {
-    editingRemarkId.value = "";
+  if (nextRemark === rowRemarkText(order)) {
     return;
   }
   remarkSavingId.value = key;
@@ -653,11 +654,10 @@ async function saveRemark(order) {
         service_notes: nextRemark
       }
     });
-    notice.value = `已保存 ${displayValue(rowOrderNo(order))} 的内部备注。`;
-    editingRemarkId.value = "";
+    notice.value = `已保存 ${displayValue(rowOrderNo(order))} 的备注。`;
     await loadOrders(pagination.value.page || 1);
   } catch (err) {
-    notice.value = err.message || "内部备注保存失败。";
+    notice.value = err.message || "备注保存失败。";
   } finally {
     remarkSavingId.value = "";
   }
@@ -673,7 +673,9 @@ function openDeleteDialog(order) {
 }
 
 function closeDeleteDialog() {
-  if (!deletingId.value) deleteCandidate.value = null;
+  if (!deletingId.value) {
+    deleteCandidate.value = null;
+  }
 }
 
 async function confirmDelete() {
@@ -714,43 +716,27 @@ onMounted(() => {
   <section class="storage-orders-view storage-all-orders-view">
     <div class="view-heading">
       <div>
-        <p class="view-heading__eyebrow">Storage workbench</p>
+        <p class="view-heading__eyebrow">Storage control center</p>
         <h2>全部订单</h2>
       </div>
     </div>
 
-    <form class="admin-filter-panel storage-order-filter-panel storage-order-filter-panel--workbench" @submit.prevent="submitFilters" @reset.prevent="resetFilters">
+    <form class="admin-filter-panel storage-order-filter-panel" @submit.prevent="submitFilters" @reset.prevent="resetFilters">
       <label class="field storage-order-filter-panel__search">
         <span>搜索</span>
-        <input v-model="filters.search" type="search" placeholder="订单编号 / User ID / 姓名 / 电话 / 公寓 / 地址" />
+        <input v-model="filters.search" type="search" placeholder="User ID / 订单编号 / 姓名 / 微信 / 电话 / 邮箱 / 公寓 / 地址" />
       </label>
       <label class="field">
-        <span>服务内容</span>
+        <span>服务类型</span>
         <select v-model="filters.serviceType">
           <option value="">全部</option>
-          <option value="box_order">买箱 / 送箱</option>
+          <option value="box_order">买箱</option>
           <option value="storage_collection">取寄存</option>
-          <option value="storage_return">送回</option>
+          <option value="storage_return">送寄存</option>
         </select>
       </label>
       <label class="field">
-        <span>是否收费</span>
-        <select v-model="filters.chargeStatus">
-          <option value="">全部</option>
-          <option value="charged">收费</option>
-          <option value="free">免费 / 待确认</option>
-        </select>
-      </label>
-      <label class="field">
-        <span>收款状态</span>
-        <select v-model="filters.paymentStatus">
-          <option value="">全部</option>
-          <option value="paid">已收款</option>
-          <option value="unpaid">未收款</option>
-        </select>
-      </label>
-      <label class="field">
-        <span>线下记录</span>
+        <span>线下记录状态</span>
         <select v-model="filters.offlineRecorded">
           <option value="">全部</option>
           <option value="false">未记录</option>
@@ -773,22 +759,20 @@ onMounted(() => {
         <input v-model="filters.dateEnd" type="date" />
       </label>
       <label class="field">
-        <span>排序</span>
+        <span>排序方式</span>
         <select v-model="filters.sort">
-          <option value="service_date_nearest">服务日期：从近到远</option>
-          <option value="service_date_latest">服务日期：从远到近</option>
-          <option value="submitted_latest">提交时间：最新优先</option>
-          <option value="submitted_oldest">提交时间：最早优先</option>
-          <option value="total_high">价格：高到低</option>
-          <option value="total_low">价格：低到高</option>
+          <option value="submitted_latest">提交时间：最近到最远</option>
+          <option value="submitted_oldest">提交时间：最远到最近</option>
+          <option value="service_date_nearest">服务日期：最近到最远</option>
+          <option value="service_date_latest">服务日期：最远到最近</option>
+          <option value="total_high">总费用：高到低</option>
+          <option value="total_low">总费用：低到高</option>
         </select>
       </label>
       <div class="filter-actions storage-order-filter-panel__actions">
         <button class="primary-button" type="submit">查询</button>
         <button class="secondary-button" type="reset">重置</button>
-        <button class="secondary-button" type="button" :disabled="exporting" @click="handleExportFiltered">
-          {{ exporting ? "导出中..." : "导出当前筛选结果" }}
-        </button>
+        <button class="secondary-button" type="button" :disabled="exporting" @click="handleExportFiltered">导出当前筛选结果</button>
       </div>
     </form>
 
@@ -800,11 +784,13 @@ onMounted(() => {
     </div>
 
     <p v-if="notice" class="inline-notice">{{ notice }}</p>
-    <p v-if="!storageTrackingReady && storageTrackingMessage" class="inline-notice">{{ storageTrackingMessage }}</p>
+    <p v-if="!storageTrackingReady && storageTrackingMessage" class="inline-notice">
+      {{ storageTrackingMessage }}
+    </p>
 
     <LoadingState v-if="loading">正在加载寄存全部订单...</LoadingState>
     <ErrorState v-else-if="error" :message="error" />
-    <EmptyState v-else-if="!hasOrders" title="暂无符合条件的寄存订单" description="请调整服务内容、日期、收款或线下记录筛选后重试。" />
+    <EmptyState v-else-if="!hasOrders" title="暂无符合条件的寄存订单" description="请调整服务类型、日期或线下记录状态后重试。" />
     <template v-else>
       <AdminBulkActionBar
         :selected-count="selectedRows.length"
@@ -818,7 +804,7 @@ onMounted(() => {
         @export-selected="handleExportSelected"
       />
 
-      <AdminTable :columns="columns" :rows="orders" :row-class="storageRowClass" class="storage-workbench-table">
+      <AdminTable :columns="columns" :rows="orders" :row-class="storageRowClass">
         <template #cell-row_index="{ row }">
           <label class="execution-index-cell">
             <input
@@ -858,37 +844,48 @@ onMounted(() => {
         <template #cell-total_fee="{ row }">
           <span class="cell-truncate price-cell" :title="formatMoney(rowTotalAmount(row))">{{ formatMoney(rowTotalAmount(row)) }}</span>
         </template>
-        <template #cell-fee_payment_note="{ row }">
+        <template #cell-payment_note="{ row }">
           <span
-            :class="['cell-stack cell-stack--wrap storage-payment-note', isPaymentReceived(row) ? 'is-paid' : 'is-unpaid']"
+            :class="['cell-stack', 'cell-stack--wrap', 'execution-text-cell', { 'payment-note-attention': isPaymentAttention(row) }]"
             :title="rowPaymentNote(row)"
           >
             <strong>{{ rowPaymentNote(row) }}</strong>
           </span>
         </template>
-        <template #cell-payment_status="{ row }">
-          <StatusBadge :tone="paymentTone(row)">{{ paymentLabel(row) }}</StatusBadge>
+        <template #cell-payment_action="{ row }">
+          <button
+            :class="['table-action-button', isPaymentReceived(row) ? 'table-action-button--unpaid' : 'table-action-button--paid']"
+            type="button"
+            :disabled="paymentSavingId === rowActionId(row)"
+            @click="togglePaymentReceived(row)"
+          >
+            {{ paymentSavingId === rowActionId(row) ? "保存中..." : (isPaymentReceived(row) ? "未收款" : "已收款") }}
+          </button>
         </template>
-        <template #cell-customer_service_note="{ row }">
-          <div class="remark-editor remark-editor--inline remark-editor--always">
+        <template #cell-remark="{ row }">
+          <div class="remark-editor">
             <textarea
               v-model="remarkDrafts[rowDraftKey(row)]"
               :disabled="remarkSavingId === rowDraftKey(row)"
               :aria-label="`客服备注 ${displayValue(rowOrderNo(row))}`"
               rows="2"
               placeholder="填写客服备注"
+              @blur="saveRemark(row)"
             />
-            <div class="remark-editor__actions">
-              <button class="table-action-button table-action-button--mini" type="button" :disabled="remarkSavingId === rowDraftKey(row)" @click="saveRemark(row)">
-                {{ remarkSavingId === rowDraftKey(row) ? "保存中..." : "保存" }}
-              </button>
-            </div>
+            <button
+              class="table-action-button table-action-button--mini"
+              type="button"
+              :disabled="remarkSavingId === rowDraftKey(row)"
+              @click="saveRemark(row)"
+            >
+              {{ remarkSavingId === rowDraftKey(row) ? "保存中..." : "保存" }}
+            </button>
           </div>
         </template>
         <template #cell-actions="{ row }">
           <div class="table-action-group table-action-group--compact">
             <button
-              class="table-action-button table-action-button--danger table-action-button--subtle-danger"
+              class="table-action-button table-action-button--danger"
               type="button"
               :disabled="deletingId === rowActionId(row)"
               @click="openDeleteDialog(row)"
@@ -899,10 +896,10 @@ onMounted(() => {
             <button
               class="table-action-button"
               type="button"
-              :disabled="!storageTrackingReady || togglingId === rowActionId(row)"
+              :disabled="!storageTrackingReady || togglingId === String(row.id)"
               @click="toggleOfflineRecorded(row)"
             >
-              {{ row.offline_recorded ? "取消标记" : "标记已记录" }}
+              {{ row.offline_recorded ? "取消已记录" : "标记已记录" }}
             </button>
           </div>
         </template>
@@ -925,7 +922,7 @@ onMounted(() => {
           <strong>{{ displayValue(rowOrderNo(deleteCandidate || {})) }}</strong>
         </article>
         <article class="readonly-field">
-          <span>服务内容</span>
+          <span>服务类型</span>
           <strong>{{ deleteCandidate ? serviceTypeLabel(deleteCandidate) : "--" }}</strong>
         </article>
         <article class="readonly-field">

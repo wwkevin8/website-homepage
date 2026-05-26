@@ -817,31 +817,9 @@ function buildStorageExecutionPaymentNote(item = {}) {
   return storageExportTotalAmount(item) > 0 ? "寄存费用待付" : "免费";
 }
 
-function storagePaymentStatusValue(item = {}) {
+function storageWorkbenchIsPaymentReceived(item = {}) {
   const billing = storageExportBillingInfo(item);
-  return String(billing.payment_status || billing.status || "").trim();
-}
-
-function storageIsPaid(item = {}) {
-  const status = storagePaymentStatusValue(item);
-  if (status === "paid") return true;
-  return storageExportTotalAmount(item) <= 0 && status === "waived";
-}
-
-function storageChargeStatusValue(item = {}) {
-  return storageExportTotalAmount(item) > 0 ? "charged" : "free";
-}
-
-function applyStorageWorkbenchFilters(rows, queryParams = {}) {
-  const chargeStatus = String(queryParams.charge_status || queryParams.chargeStatus || "").trim();
-  const paymentStatus = String(queryParams.payment_status || queryParams.paymentStatus || "").trim();
-  return rows.filter(row => {
-    if (chargeStatus === "charged" && storageChargeStatusValue(row) !== "charged") return false;
-    if ((chargeStatus === "free" || chargeStatus === "free_or_pending") && storageChargeStatusValue(row) !== "free") return false;
-    if (paymentStatus === "paid" && !storageIsPaid(row)) return false;
-    if (paymentStatus === "unpaid" && storageIsPaid(row)) return false;
-    return true;
-  });
+  return String(billing.payment_status || billing.status || "").trim() === "paid";
 }
 
 function buildStorageWorkbenchStats(rows = []) {
@@ -852,7 +830,7 @@ function buildStorageWorkbenchStats(rows = []) {
     stats.total += 1;
     if (item.offline_recorded) stats.offline_recorded += 1;
     else stats.offline_unrecorded += 1;
-    if (!storageIsPaid(item)) stats.unpaid += 1;
+    if (!storageWorkbenchIsPaymentReceived(item)) stats.unpaid += 1;
     if (serviceDate && serviceDate >= today && serviceDate <= nextSeven) stats.next_7_days += 1;
     return stats;
   }, {
@@ -2395,7 +2373,7 @@ async function handleStorageOrders(req, res, supabase) {
         cacheHit: null
       });
       ok(res, {
-        order: enrichedExisting || existing,
+        ...(enrichedExisting || existing),
         operation_logs: operationLogs
       });
       return;
@@ -2577,26 +2555,16 @@ async function handleStorageOrders(req, res, supabase) {
         throw updatedError;
       }
 
-      const changedFields = Object.keys(patch);
-      const offlineRecordOnlyChanged = changedFields.every(fieldName => [
-        "offline_recorded",
-        "last_operated_by",
-        "last_operated_at"
-      ].includes(fieldName));
-      const operationAction = offlineRecordOnlyChanged && Object.prototype.hasOwnProperty.call(patch, "offline_recorded")
-        ? (patch.offline_recorded ? "storage_orders_marked_offline_recorded" : "storage_orders_unmarked_offline_recorded")
-        : "storage_order_updated";
-
       await logAdminOperation(supabase, {
         admin_user_id: adminUser.id,
         target_type: "storage_order",
         target_id: storageOrderId,
-        action: operationAction,
+        action: "storage_order_updated",
         before_data: existing,
         after_data: updated,
         metadata: {
           order_no: existing.order_no || null,
-          changed_fields: changedFields
+          changed_fields: Object.keys(patch)
         }
       }).catch(error => {
         console.warn("[admin-storage] failed to write update operation log", error);
@@ -2832,10 +2800,7 @@ async function handleStorageOrders(req, res, supabase) {
   let currentStats = buildStorageWorkbenchStats(enrichedItems);
   if (allOrdersMode) {
     const expandedRows = enrichedItems.flatMap(expandStorageOrderForAdmin);
-    const filteredRows = applyStorageWorkbenchFilters(
-      filterExpandedStorageRows(expandedRows, queryParams),
-      queryParams
-    );
+    const filteredRows = filterExpandedStorageRows(expandedRows, queryParams);
     const sortedRows = sortStorageAdminRows(filteredRows, sort);
     count = sortedRows.length;
     currentStats = buildStorageWorkbenchStats(sortedRows);
@@ -2949,10 +2914,7 @@ async function handleStorageOrdersExport(req, res, supabase) {
     .map(normalizeStorageAdminListItem);
   if (allOrdersMode) {
     items = sortStorageAdminRows(
-      applyStorageWorkbenchFilters(
-        filterExpandedStorageRows(items.flatMap(expandStorageOrderForAdmin), queryParams),
-        queryParams
-      ),
+      filterExpandedStorageRows(items.flatMap(expandStorageOrderForAdmin), queryParams),
       sort
     );
     if (selectedRowIds.size) {
