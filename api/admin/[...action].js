@@ -1088,7 +1088,8 @@ function expandStorageOrderForAdmin(item = {}) {
 }
 
 function filterExpandedStorageRows(rows, queryParams = {}) {
-  const serviceType = normalizeStorageOrderKind(queryParams.service_type || queryParams.order_type_filter || queryParams.storage_order_kind);
+  const orderTypeFilter = String(queryParams.order_type || "").trim() === "all" ? "" : queryParams.order_type;
+  const serviceType = normalizeStorageOrderKind(queryParams.service_type || queryParams.order_type_filter || queryParams.storage_order_kind || orderTypeFilter);
   const validityScope = normalizeStorageValidityScope(queryParams.validity_scope || queryParams.validity || queryParams.active_scope);
   const paymentScope = normalizeStoragePaymentScope(queryParams.payment_scope || queryParams.payment_filter);
   const todayText = getUkTodayInputValue();
