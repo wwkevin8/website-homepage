@@ -8,7 +8,7 @@
 ## Last Updated Task
 
 - Date: 2026-05-27
-- Scope: P7 storage workbench Preview detail-page layout pass after manual review: keep the existing detail logic, editable fields, save actions, and price formula intact while arranging the detail page into the requested sequence and adding a concise operation-log row. P6 remains completed/promoted separately and was not changed in this task.
+- Scope: P7 storage workbench Preview detail-page layout follow-up: keep the approved local detail layout but remove the visible operation-area card before deploying Preview. P6 remains completed/promoted separately and was not changed in this task.
 
 ## Latest Completed Work
 
@@ -21,8 +21,8 @@
   - Top stat cards are clickable shortcuts: current result clears shortcut filters, unrecorded sets `offline_recorded=false`, recorded sets `offline_recorded=true`, unpaid sends `payment_scope=unpaid`, and today/next-7-days sets the visible date range while keeping active orders.
   - `StorageOrdersView.vue` subpages (`买箱订单`, `取寄存订单`, `送寄存订单`) now have the same active/history/all validity filter, default to active orders, and send `validity_scope` through list and export requests.
   - `api/admin/[...action].js` now applies expanded-row `service_date_unified` filtering for the all-orders page and the three storage subpages, so service type plus validity filters share the same pagination/export basis.
-  - `StorageOrderDetailView.vue` now follows the requested detail-page sequence: order base info, contact info, editable storage schedule, editable address info, combined box/item plus fee detail, notes, operation area, and a concise operation-log row.
-  - The detail layout pass does not change the existing save functions, editable fields, price formula, export/status/delete actions, or API field meanings. Existing `operation_logs` are used as an additive read-only display.
+  - `StorageOrderDetailView.vue` now follows the requested detail-page sequence: order base info, contact info, editable storage schedule, editable address info, combined box/item plus fee detail, notes, and a concise operation-log row.
+  - The visible operation-area card was removed from the detail page per manual review. The detail layout pass does not change existing save functions, editable fields, price formula, or API field meanings. Existing `operation_logs` are used as an additive read-only display.
   - `scripts/seed-storage-test-data.js` and `scripts/clear-storage-test-data.js` are local-only helpers guarded by `LOCAL_SUPABASE_URL`; they must not be run against production.
 
 ## Verification
@@ -47,6 +47,7 @@
 - Latest P7 detail-page ordered-layout source commit: `4886175`.
 - Latest P7 detail-page ordered-layout Preview deployment: `dpl_wCY4GRDTAQ517VLiYTn4zT3R2wn8`, URL `https://webside-nxjrij2xl-wwkevin8s-projects.vercel.app`.
 - It keeps the original edit/save/price logic and only rearranges the Vue detail template plus local styles.
+- Latest P7 detail-page no-operation-area source is pending commit/deploy from this working tree. It removes only the visible operation-area card from `StorageOrderDetailView.vue`.
 - Latest P7 subpage-validity changed:
   - `api/admin/[...action].js`
   - `apps/admin-vue/src/views/StorageAllOrdersView.vue`
@@ -74,6 +75,9 @@
   - `git diff --check` passed for `StorageOrderDetailView.vue` and `styles.css`.
   - `npm run build:preview` passed. Root dependency audit still reports one existing moderate vulnerability; no dependency files were changed in this task.
   - Preview detail route `/admin/storage/storage-orders/58c63b90-b5d3-4698-8ff8-727cfa861a27` returned HTTP 200 on `dpl_wCY4GRDTAQ517VLiYTn4zT3R2wn8`.
+- Latest local detail no-operation-area verification:
+  - `git diff --check` passed for `StorageOrderDetailView.vue`.
+  - `npm run build:preview` passed. Root dependency audit still reports one existing moderate vulnerability; no dependency files were changed in this task.
 - A full dirty-worktree backup stash still exists in the original worktree: `stash@{0}: backup-before-p7-preview-isolation`.
 - No Production promote was run.
 - No maintenance POST was run.

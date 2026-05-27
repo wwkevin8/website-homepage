@@ -957,18 +957,6 @@ onMounted(loadOrder);
         </details>
       </DetailSection>
 
-      <DetailSection title="操作区" description="寄存模块必要操作；删除和状态修改都会先确认。">
-        <div class="detail-action-row">
-          <button class="table-action-button" type="button" :disabled="exporting" @click="exportCurrentOrder">
-            {{ exporting ? "导出中..." : "导出当前订单 Excel" }}
-          </button>
-          <button class="table-action-button" type="button" :disabled="savingStatus" @click="openStatusDialog">状态修改</button>
-          <button class="table-action-button table-action-button--danger" type="button" :disabled="deleting" @click="openDeleteDialog">
-            {{ deleting ? "删除中..." : "删除订单" }}
-          </button>
-        </div>
-      </DetailSection>
-
       <DetailSection title="操作记录" description="最近与该寄存订单相关的后台操作。">
         <div v-if="operationLogs.length" class="storage-operation-log-list">
           <article v-for="log in operationLogs.slice(0, 5)" :key="log.id" class="storage-operation-log-item">
