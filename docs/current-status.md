@@ -44,7 +44,9 @@
 - Latest P7 detail-page full rollback source commit: `fd4bae8`.
 - Latest P7 detail-page full rollback Preview deployment: `dpl_6wQy9JbofANiWYvzToxaKzzZRjwi`, URL `https://webside-qxes7f8b4-wwkevin8s-projects.vercel.app`.
 - It removes detail-page operation-log UI and keeps no detail-page UI additions beyond the current Production mother page.
-- Latest P7 detail-page ordered-layout source is pending commit/deploy from this working tree. It keeps the original edit/save/price logic and only rearranges the Vue detail template plus local styles.
+- Latest P7 detail-page ordered-layout source commit: `4886175`.
+- Latest P7 detail-page ordered-layout Preview deployment: `dpl_wCY4GRDTAQ517VLiYTn4zT3R2wn8`, URL `https://webside-nxjrij2xl-wwkevin8s-projects.vercel.app`.
+- It keeps the original edit/save/price logic and only rearranges the Vue detail template plus local styles.
 - Latest P7 subpage-validity changed:
   - `api/admin/[...action].js`
   - `apps/admin-vue/src/views/StorageAllOrdersView.vue`
@@ -71,6 +73,7 @@
 - Latest local detail ordered-layout verification:
   - `git diff --check` passed for `StorageOrderDetailView.vue` and `styles.css`.
   - `npm run build:preview` passed. Root dependency audit still reports one existing moderate vulnerability; no dependency files were changed in this task.
+  - Preview detail route `/admin/storage/storage-orders/58c63b90-b5d3-4698-8ff8-727cfa861a27` returned HTTP 200 on `dpl_wCY4GRDTAQ517VLiYTn4zT3R2wn8`.
 - A full dirty-worktree backup stash still exists in the original worktree: `stash@{0}: backup-before-p7-preview-isolation`.
 - No Production promote was run.
 - No maintenance POST was run.
