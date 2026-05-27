@@ -458,17 +458,6 @@ onMounted(loadOrder);
         </div>
       </DetailSection>
 
-      <DetailSection title="操作区" description="买箱订单操作只作用于当前订单，删除和状态修改会先确认。">
-        <div class="detail-action-row">
-          <button class="table-action-button" type="button" :disabled="exporting" @click="exportCurrentOrder">
-            {{ exporting ? "导出中..." : "导出当前订单 Excel" }}
-          </button>
-          <button class="table-action-button" type="button" :disabled="savingStatus" @click="openStatusDialog">状态修改</button>
-          <button class="table-action-button table-action-button--danger" type="button" :disabled="deleting" @click="openDeleteDialog">
-            {{ deleting ? "删除中..." : "删除订单" }}
-          </button>
-        </div>
-      </DetailSection>
     </template>
 
     <ConfirmDialog

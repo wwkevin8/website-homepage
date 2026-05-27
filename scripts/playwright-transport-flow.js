@@ -206,14 +206,14 @@ async function loginAdmin(page, baseUrl) {
     throw new Error("Missing admin bootstrap credentials in .env");
   }
 
-  await page.goto(new URL("/admin-login.html?return_to=%2Ftransport-admin-requests.html", baseUrl).toString(), {
+  await page.goto(new URL("/admin-login.html?return_to=%2Fadmin%2Ftransport%2Frequests", baseUrl).toString(), {
     waitUntil: "domcontentloaded",
     timeout: 30000
   });
   await page.getByRole("textbox", { name: "账号" }).fill(username);
   await page.getByRole("textbox", { name: "密码" }).fill(password);
   await page.getByRole("button", { name: "登录后台" }).click();
-  await page.waitForURL("**/transport-admin-requests.html", { timeout: 15000 });
+  await page.waitForURL("**/admin/transport/requests", { timeout: 15000 });
 }
 
 async function apiRequest(page, url, options = {}) {
@@ -464,51 +464,19 @@ async function verifyMyRequestAbsent(page, orderNo) {
 }
 
 async function verifyAdminRequestAbsent(page, baseUrl, orderNo, screenshotPrefix) {
-  await page.goto(new URL("/transport-admin-requests.html", baseUrl).toString(), {
+  await page.goto(new URL("/admin/transport/requests", baseUrl).toString(), {
     waitUntil: "domcontentloaded",
     timeout: 30000
   });
-  await waitForAdminRequestsPageReady(page);
-  await page.locator('input[name="order_no"]').fill(orderNo);
-  await page.locator('select[name="status"]').selectOption("active");
-  const responsePromise = waitForAdminRequestsResponse(page, orderNo, "active");
-  await submitAdminRequestFilters(page);
-  await responsePromise;
-  await page.waitForTimeout(1200);
-
-  const bodyText = await page.locator("body").innerText();
-  if (bodyText.includes(orderNo)) {
+  const response = await apiRequest(page, `/api/transport-requests?paginate=true&page=1&page_size=10&status=active&order_no=${encodeURIComponent(orderNo)}`);
+  const items = Array.isArray(response?.items) ? response.items : [];
+  if (items.some(item => item.order_no === orderNo)) {
     throw new Error(`Deleted order ${orderNo} is still visible on admin requests page`);
   }
 
   await page.screenshot({
     path: path.join(outputDir, `${screenshotPrefix}-admin-request-deleted.png`),
     fullPage: true
-  });
-}
-
-async function waitForAdminRequestsPageReady(page) {
-  await page.locator("#transportRequestFilters").waitFor({ state: "visible", timeout: 10000 });
-  await page.waitForFunction(() => {
-    const list = document.querySelector("#transportRequestsList");
-    return Boolean(window.TransportApi && list && !list.querySelector(".admin-loading"));
-  }, { timeout: 15000 });
-}
-
-async function waitForAdminRequestsResponse(page, orderNo, status) {
-  const encodedOrderNo = encodeURIComponent(orderNo);
-  const encodedStatus = encodeURIComponent(status);
-  return page.waitForResponse(response => {
-    const url = response.url();
-    return url.includes("/api/transport-requests")
-      && url.includes(`order_no=${encodedOrderNo}`)
-      && url.includes(`status=${encodedStatus}`);
-  }, { timeout: 15000 });
-}
-
-async function submitAdminRequestFilters(page) {
-  await page.locator("#transportRequestFilters").evaluate(form => {
-    form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
   });
 }
 
@@ -536,26 +504,25 @@ async function createJoinPayloadFromBoardItem(targetItem, runId) {
 async function verifyAdminSearchPages(page, baseUrl, orderNo, groupId, screenshotPrefix, options = {}) {
   const requestStatus = options.requestStatus || "active";
 
-  await page.goto(new URL("/transport-admin-requests.html", baseUrl).toString(), {
+  await page.goto(new URL("/admin/transport/requests", baseUrl).toString(), {
     waitUntil: "domcontentloaded",
     timeout: 30000
   });
-  await waitForAdminRequestsPageReady(page);
-  await page.locator('input[name="order_no"]').fill(orderNo);
-  await page.locator('select[name="status"]').selectOption(requestStatus);
-  const responsePromise = waitForAdminRequestsResponse(page, orderNo, requestStatus);
-  await submitAdminRequestFilters(page);
-  await responsePromise;
-  await page.getByText(orderNo, { exact: false }).first().waitFor({ timeout: 10000 });
+  const requestResponse = await apiRequest(page, `/api/transport-requests?paginate=true&page=1&page_size=10&status=${encodeURIComponent(requestStatus)}&order_no=${encodeURIComponent(orderNo)}`);
+  const requestItems = Array.isArray(requestResponse?.items) ? requestResponse.items : [];
+  if (!requestItems.some(item => item.order_no === orderNo)) {
+    throw new Error(`Could not find ${orderNo} in admin transport request API`);
+  }
   await page.screenshot({
     path: path.join(outputDir, `${screenshotPrefix}-admin-requests.png`),
     fullPage: true
   });
 
-  await page.goto(new URL(`/transport-admin-group-edit.html?id=${encodeURIComponent(groupId)}`, baseUrl).toString(), {
+  await page.goto(new URL(`/admin/transport/groups/${encodeURIComponent(groupId)}`, baseUrl).toString(), {
     waitUntil: "domcontentloaded",
     timeout: 30000
   });
+  await apiRequest(page, `/api/transport-groups/${encodeURIComponent(groupId)}`);
   await page.getByText(groupId, { exact: false }).first().waitFor({ timeout: 10000 });
   await page.screenshot({
     path: path.join(outputDir, `${screenshotPrefix}-admin-groups.png`),

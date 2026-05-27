@@ -991,7 +991,7 @@ class Qa300Runner {
         [8, new URL("/transport-board.html", this.baseUrl).toString(), desktop.page, ["最新接送机拼车信息", "查看完整拼车表格"], "wave0-board"],
         [9, new URL("/service-center.html", this.baseUrl).toString(), desktop.page, ["登录", "账号"], "wave0-service-center"],
         [10, new URL("/admin-login.html", this.baseUrl).toString(), desktop.page, ["登录后台", "密码"], "wave0-admin-login"],
-        [11, new URL("/transport-admin-groups.html", this.baseUrl).toString(), adminPage.page, ["拼车组管理", "运营后台"], "wave0-admin-dashboard"],
+        [11, new URL("/admin/transport/groups", this.baseUrl).toString(), adminPage.page, ["拼车组管理", "运营后台"], "wave0-admin-dashboard"],
         [12, new URL("/transport-admin-sync-logs.html", this.baseUrl).toString(), adminPage.page, ["同步巡检日志", "日志范围"], "wave0-sync-audit"]
       ];
 
@@ -1567,7 +1567,7 @@ class Qa300Runner {
 
         const unauthChecks = [
           [60, "/service-center.html"],
-          [61, "/transport-admin-groups.html"]
+          [61, "/admin/transport/groups"]
         ];
         for (const [caseId, pathname] of unauthChecks) {
           await this.execute(caseId, async () => {
@@ -1614,7 +1614,7 @@ class Qa300Runner {
           const bootstrapAdmin = await this.fetchBootstrapAdmin();
           const pageRef = await this.createAdminPage(bootstrapAdmin, { width: 1440, height: 960 }, createExpiredAdminSessionToken(bootstrapAdmin.id));
           try {
-            await pageRef.page.goto(new URL("/transport-admin-groups.html", this.baseUrl).toString(), {
+            await pageRef.page.goto(new URL("/admin/transport/groups", this.baseUrl).toString(), {
               waitUntil: "domcontentloaded",
               timeout: 30000
             });
@@ -1623,7 +1623,7 @@ class Qa300Runner {
             assert(currentUrl.includes("admin-login") || currentUrl.includes("transport-admin-groups"), `Unexpected expired admin URL ${currentUrl}`);
             return {
               actual: "expired admin session did not keep privileged access",
-              page: "/transport-admin-groups.html"
+              page: "/admin/transport/groups"
             };
           } finally {
             await pageRef.context.close();
@@ -2590,9 +2590,9 @@ class Qa300Runner {
     });
     try {
       const pageChecks = [
-        [271, "/transport-admin-groups.html", ["拼车组管理", "运营后台"], "wave10-admin-groups"],
-        [274, "/transport-admin-groups.html", ["拼车组管理"], "wave10-admin-shell"],
-        [275, "/transport-admin-groups.html", ["拼车组管理", "运营后台"], "wave10-dashboard"],
+        [271, "/admin/transport/groups", ["拼车组管理", "运营后台"], "wave10-admin-groups"],
+        [274, "/admin/transport/groups", ["拼车组管理"], "wave10-admin-shell"],
+        [275, "/admin/transport/groups", ["拼车组管理", "运营后台"], "wave10-dashboard"],
         [277, "/admin-users.html", ["用户管理", "provider"], "wave10-users"],
         [281, "/admin-managers.html", ["管理员管理", "新增管理员"], "wave10-managers"],
         [291, "/orders.html", ["订单中心", "归档"], "wave10-orders"],
