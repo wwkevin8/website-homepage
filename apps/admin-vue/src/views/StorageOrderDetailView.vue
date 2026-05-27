@@ -26,7 +26,6 @@ const deleteDialogOpen = ref(false);
 const statusDialogOpen = ref(false);
 const statusDraft = ref("");
 const relatedBoxOrder = ref(null);
-const operationLogs = ref([]);
 
 const scheduleForm = reactive({
   service_time_slot: "",
@@ -328,47 +327,6 @@ function statusTone(status) {
   if (status === "confirmed" || status === "completed") return "success";
   if (status === "cancelled" || status === "canceled") return "neutral";
   return "warning";
-}
-
-function operationActor(log) {
-  const admin = log?.admin_user || {};
-  return admin.name || admin.username || admin.email || "未知管理员";
-}
-
-function operationActionLabel(action) {
-  return {
-    storage_order_updated: "更新寄存订单",
-    storage_order_deleted: "删除寄存订单",
-    storage_orders_marked_offline_recorded: "标记已线下记录",
-    storage_orders_unmarked_offline_recorded: "取消线下记录",
-    order_status_updated: "修改订单状态"
-  }[String(action || "")] || displayValue(action);
-}
-
-function operationChangedFields(log) {
-  const fields = Array.isArray(log?.metadata?.changed_fields) ? log.metadata.changed_fields : [];
-  const labels = {
-    service_date: "服务日期",
-    service_time_slot: "时间段",
-    storage_intake_date: "寄存开始日期",
-    storage_start_date: "寄存开始日期",
-    storage_end_date: "寄存结束日期",
-    expected_storage_end_date: "寄存结束日期",
-    address_full: "详细地址",
-    room_or_building: "公寓 / 房间",
-    postcode: "邮编",
-    has_lift: "是否有电梯",
-    needs_upstairs: "是否需要上楼",
-    customer_form_json: "备注 / 收款信息",
-    offline_recorded: "线下记录",
-    status: "订单状态",
-    last_operated_by: "上次操作人",
-    last_operated_at: "最近操作时间"
-  };
-  return fields
-    .filter(fieldName => !["last_operated_by", "last_operated_at"].includes(fieldName))
-    .map(fieldName => labels[fieldName] || fieldName)
-    .join("、");
 }
 
 function rowOrderNo(record = order.value || {}) {
@@ -772,7 +730,6 @@ async function loadOrder(options = {}) {
   try {
     const payload = await fetchStorageOrder(orderId.value);
     order.value = payload?.order || payload?.item || payload;
-    operationLogs.value = Array.isArray(payload?.operation_logs) ? payload.operation_logs : [];
     syncEditableForms(order.value);
     if (resolvedOrderType(order.value) === "box_order") {
       router.replace({
@@ -969,19 +926,6 @@ onMounted(loadOrder);
           <button class="table-action-button table-action-button--danger" type="button" :disabled="deleting" @click="openDeleteDialog">
             {{ deleting ? "删除中..." : "删除订单" }}
           </button>
-        </div>
-        <div class="operation-log-block">
-          <h4>操作记录</h4>
-          <div v-if="operationLogs.length" class="operation-log-list">
-            <article v-for="log in operationLogs" :key="log.id" class="operation-log-item">
-              <div>
-                <strong>{{ operationActionLabel(log.action) }}</strong>
-                <span>{{ operationActor(log) }} · {{ formatDateTime(log.created_at) }}</span>
-              </div>
-              <p v-if="operationChangedFields(log)">字段：{{ operationChangedFields(log) }}</p>
-            </article>
-          </div>
-          <p v-else class="muted-line">暂无操作记录。</p>
         </div>
       </DetailSection>
     </template>

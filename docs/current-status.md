@@ -8,7 +8,7 @@
 ## Last Updated Task
 
 - Date: 2026-05-27
-- Scope: P7 storage workbench Preview detail-page correction after manual review: restore `StorageOrderDetailView.vue` body to the Production mother version and keep operation logs only as an operation-area additive enhancement. P6 remains completed/promoted separately and was not changed in this task.
+- Scope: P7 storage workbench Preview detail-page rollback after manual review: restore `StorageOrderDetailView.vue` exactly to the current Production mother version and remove the extra operation-log detail UI. P6 remains completed/promoted separately and was not changed in this task.
 
 ## Latest Completed Work
 
@@ -21,8 +21,8 @@
   - Top stat cards are clickable shortcuts: current result clears shortcut filters, unrecorded sets `offline_recorded=false`, recorded sets `offline_recorded=true`, unpaid sends `payment_scope=unpaid`, and today/next-7-days sets the visible date range while keeping active orders.
   - `StorageOrdersView.vue` subpages (`买箱订单`, `取寄存订单`, `送寄存订单`) now have the same active/history/all validity filter, default to active orders, and send `validity_scope` through list and export requests.
   - `api/admin/[...action].js` now applies expanded-row `service_date_unified` filtering for the all-orders page and the three storage subpages, so service type plus validity filters share the same pagination/export basis.
-  - `StorageOrderDetailView.vue` detail body has been restored to the Production mother version. Order base info, contact info, storage schedule, address info, box/quantity info, fee breakdown, notes, and customer-readable summary keep the Production structure, field order, and display logic.
-  - Detail-page `operation_logs` are additive only: the API still exposes the old order payload shape, and the Vue detail page reads `payload.order || payload.item || payload` as before while rendering logs inside the existing operation area.
+  - `StorageOrderDetailView.vue` has been restored exactly to the current Production mother version from commit `42bf796`. Order base info, contact info, storage schedule, address info, box/quantity info, fee breakdown, notes, customer-readable summary, and operation area keep the original structure, field order, and display logic.
+  - The extra detail-page operation-log UI from the previous Preview has been removed from the detail page. Existing API compatibility is untouched.
   - `scripts/seed-storage-test-data.js` and `scripts/clear-storage-test-data.js` are local-only helpers guarded by `LOCAL_SUPABASE_URL`; they must not be run against production.
 
 ## Verification
@@ -40,7 +40,8 @@
 - Latest P7 subpage-validity Preview deployment: `dpl_8RTUsM3bzDG4DLR6Q4WAtwy4Bki6`, URL `https://webside-3r0obcfuu-wwkevin8s-projects.vercel.app`.
 - Latest P7 detail-page correction source commit: `b8d8934`.
 - Latest P7 detail-page correction Preview deployment: `dpl_81GVoLSXqrK2C5gs6AJAqAxvpZmQ`, URL `https://webside-3f9zq5miu-wwkevin8s-projects.vercel.app`.
-- The detail correction restores the detail body against Production commit `42bf796` and leaves only operation-area log display as the extra detail-page UI.
+- That detail correction Preview is now obsolete because it still added operation-log UI to the detail page.
+- Latest P7 detail-page full rollback to Production mother is pending commit/deploy from this working tree. It removes detail-page operation-log UI and keeps no detail-page UI additions.
 - Latest P7 subpage-validity changed:
   - `api/admin/[...action].js`
   - `apps/admin-vue/src/views/StorageAllOrdersView.vue`
@@ -60,6 +61,9 @@
   - Detail route `/admin/storage/storage-orders/58c63b90-b5d3-4698-8ff8-727cfa861a27` returned HTTP 200.
   - Detail API GET `/api/admin/storage-orders?id=58c63b90-b5d3-4698-8ff8-727cfa861a27` returned old top-level order fields plus additive `operation_logs`.
   - The check used only GET/HEAD requests; no save, status change, offline-recorded toggle, delete, maintenance POST, cleanup, or production data mutation was executed.
+- Latest local detail rollback verification:
+  - `git diff 42bf796 -- apps/admin-vue/src/views/StorageOrderDetailView.vue` returned no diff.
+  - `npm run build:preview` passed after the exact detail-page rollback. Root dependency audit still reports one existing moderate vulnerability; no dependency files were changed in this task.
 - A full dirty-worktree backup stash still exists in the original worktree: `stash@{0}: backup-before-p7-preview-isolation`.
 - No Production promote was run.
 - No maintenance POST was run.
