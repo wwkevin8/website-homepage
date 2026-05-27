@@ -24,6 +24,7 @@
   - `StorageOrderDetailView.vue` now follows the requested detail-page sequence: order base info, contact info, editable storage schedule, editable address info, combined box/item plus fee detail, notes, and a concise operation-log row.
   - The visible operation-area card was removed from the detail page per manual review. The detail layout pass does not change existing save functions, editable fields, price formula, or API field meanings. Existing `operation_logs` are used as an additive read-only display.
   - `BoxOrderDetailView.vue` now keeps the buy-box detail page focused on the same business fields while adding an editable delivery/address form, a clearer box-count plus fee summary, a read-only related storage-order entry, formatted operation logs, and no visible bottom operation-area card. The save payload is limited to delivery/address fields and does not request price recalculation.
+  - Box quantity remains read-only in the current P7 scope. P7 must not edit `purchased_boxes`, `estimated_box_count`, box totals, total fees, membership discounts, delivery/upstairs/additional fees, related storage orders, paid state, or financial records.
   - `api/admin/[...action].js` keeps the existing storage order PATCH behavior and adds an optional `operation_action=update_box_delivery_info` marker so buy-box delivery saves write a Chinese operation action (`更新配送信息`).
   - `scripts/seed-storage-test-data.js` and `scripts/clear-storage-test-data.js` are local-only helpers guarded by `LOCAL_SUPABASE_URL`; they must not be run against production.
 
@@ -91,6 +92,7 @@
   - `git diff --check` passed for `api/admin/[...action].js`, `BoxOrderDetailView.vue`, and `styles.css`.
   - `npm run build:preview` passed. Root dependency audit still reports one existing moderate vulnerability; no dependency files were changed in this task.
   - Preview buy-box detail route `/admin/storage/box-orders/c4f8c01a-f3e8-46fd-9698-1b9406503824` returned HTTP 200 on `dpl_DHayQwbSfuPq63j8XfhQFHWk45Ps`.
+  - Buy-box quantity UI was rechecked: `BoxOrderDetailView.vue` displays box quantity through read-only table/text only; editable `v-model` fields are limited to delivery/address form fields.
   - No write-class action was executed during local verification.
 - A full dirty-worktree backup stash still exists in the original worktree: `stash@{0}: backup-before-p7-preview-isolation`.
 - No Production promote was run.
@@ -118,5 +120,6 @@
 
 - P7 Preview write-class features were intentionally not exercised against real production data: payment toggles, bulk offline-recorded toggles, single-row offline-recorded toggles, internal-note saves, status changes, and delete.
 - Before any P7 Production promote, perform a full regression with an explicitly approved safe test order if write validation is required.
+- Box quantity editing is explicitly deferred out of current P7. If needed later, it requires a separate task with a dedicated edit dialog, before/after quantity display, fee-change preview, related-storage-order sync decision, paid-state impact decision, second confirmation, and operation logs.
 - The latest Preview is ready for manual UI review, but it should not be promoted until the user explicitly approves it.
 - P7 must still not include transport API changes, close-expired automation, maintenance POST calls, production data cleanup, or test-data uploads.
