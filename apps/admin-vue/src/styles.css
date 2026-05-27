@@ -3471,6 +3471,10 @@ textarea {
   align-items: start;
 }
 
+.storage-detail-combined-grid__wide {
+  grid-column: 1 / -1;
+}
+
 .storage-price-detail-panel {
   display: grid;
   gap: 8px;

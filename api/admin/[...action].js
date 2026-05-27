@@ -2578,16 +2578,21 @@ async function handleStorageOrders(req, res, supabase) {
         throw updatedError;
       }
 
+      const operationAction = body.operation_action === "update_box_delivery_info"
+        ? "更新配送信息"
+        : "storage_order_updated";
+
       await logAdminOperation(supabase, {
         admin_user_id: adminUser.id,
         target_type: "storage_order",
         target_id: storageOrderId,
-        action: "storage_order_updated",
+        action: operationAction,
         before_data: existing,
         after_data: updated,
         metadata: {
           order_no: existing.order_no || null,
-          changed_fields: Object.keys(patch)
+          changed_fields: Object.keys(patch),
+          summary: operationAction === "更新配送信息" ? "更新买箱订单配送信息" : undefined
         }
       }).catch(error => {
         console.warn("[admin-storage] failed to write update operation log", error);

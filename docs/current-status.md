@@ -8,7 +8,7 @@
 ## Last Updated Task
 
 - Date: 2026-05-27
-- Scope: P7 storage workbench Preview detail-page layout follow-up: keep the approved local detail layout but remove the visible operation-area card before deploying Preview. P6 remains completed/promoted separately and was not changed in this task.
+- Scope: P7 storage workbench Preview buy-box detail follow-up: make buy-box delivery/address fields editable, improve box-count/fee display, add related storage-order read-only link, format operation logs, and hide the buy-box detail operation-area card. P6 remains completed/promoted separately and was not changed in this task.
 
 ## Latest Completed Work
 
@@ -23,6 +23,8 @@
   - `api/admin/[...action].js` now applies expanded-row `service_date_unified` filtering for the all-orders page and the three storage subpages, so service type plus validity filters share the same pagination/export basis.
   - `StorageOrderDetailView.vue` now follows the requested detail-page sequence: order base info, contact info, editable storage schedule, editable address info, combined box/item plus fee detail, notes, and a concise operation-log row.
   - The visible operation-area card was removed from the detail page per manual review. The detail layout pass does not change existing save functions, editable fields, price formula, or API field meanings. Existing `operation_logs` are used as an additive read-only display.
+  - `BoxOrderDetailView.vue` now keeps the buy-box detail page focused on the same business fields while adding an editable delivery/address form, a clearer box-count plus fee summary, a read-only related storage-order entry, formatted operation logs, and no visible bottom operation-area card. The save payload is limited to delivery/address fields and does not request price recalculation.
+  - `api/admin/[...action].js` keeps the existing storage order PATCH behavior and adds an optional `operation_action=update_box_delivery_info` marker so buy-box delivery saves write a Chinese operation action (`更新配送信息`).
   - `scripts/seed-storage-test-data.js` and `scripts/clear-storage-test-data.js` are local-only helpers guarded by `LOCAL_SUPABASE_URL`; they must not be run against production.
 
 ## Verification
@@ -50,6 +52,8 @@
 - Latest P7 detail-page no-operation-area source commit: `44f13d4`.
 - Latest P7 detail-page no-operation-area Preview deployment: `dpl_EHDtv8k6y132zg5RLnYwvNdJK1tS`, URL `https://webside-ent3i3krl-wwkevin8s-projects.vercel.app`.
 - It removes only the visible operation-area card from `StorageOrderDetailView.vue`.
+- Latest P7 buy-box detail follow-up source is pending commit/deploy from this working tree.
+- It changes only buy-box detail UI/API logging support and docs: delivery/address edit form, box-count-oriented fee display, related storage-order link, formatted operation logs, and removal of the buy-box detail operation-area card.
 - Latest P7 subpage-validity changed:
   - `api/admin/[...action].js`
   - `apps/admin-vue/src/views/StorageAllOrdersView.vue`
@@ -81,6 +85,11 @@
   - `git diff --check` passed for `StorageOrderDetailView.vue`.
   - `npm run build:preview` passed. Root dependency audit still reports one existing moderate vulnerability; no dependency files were changed in this task.
   - Preview detail route `/admin/storage/storage-orders/58c63b90-b5d3-4698-8ff8-727cfa861a27` returned HTTP 200 on `dpl_EHDtv8k6y132zg5RLnYwvNdJK1tS`.
+- Latest local buy-box detail follow-up verification:
+  - `node --check api/admin/[...action].js` passed.
+  - `git diff --check` passed for `api/admin/[...action].js`, `BoxOrderDetailView.vue`, and `styles.css`.
+  - `npm run build:preview` passed. Root dependency audit still reports one existing moderate vulnerability; no dependency files were changed in this task.
+  - No write-class action was executed during local verification.
 - A full dirty-worktree backup stash still exists in the original worktree: `stash@{0}: backup-before-p7-preview-isolation`.
 - No Production promote was run.
 - No maintenance POST was run.
@@ -93,6 +102,7 @@
   - `api/_lib/storage-orders.js`
   - `api/admin/[...action].js`
   - `apps/admin-vue/src/views/StorageAllOrdersView.vue`
+  - `apps/admin-vue/src/views/BoxOrderDetailView.vue`
   - `apps/admin-vue/src/views/StorageOrderDetailView.vue`
   - `apps/admin-vue/src/views/StorageOrdersView.vue`
   - `apps/admin-vue/src/styles.css`
