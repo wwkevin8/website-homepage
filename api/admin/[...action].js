@@ -2721,12 +2721,13 @@ async function handleStorageOrders(req, res, supabase) {
   const pageSize = parsePageSize(queryParams.page_size, 10);
   const sort = String(queryParams.sort || "service_date_nearest").trim();
   const allOrdersMode = String(queryParams.order_type || "").trim() === "all";
+  const expandedRowsMode = allOrdersMode || Boolean(normalizeStorageOrderKind(queryParams.order_type));
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
   const searchStartedAt = nowMs();
   const matchingSiteUserIds = await findStorageSearchSiteUserIds(supabase, queryParams.search);
   const searchMs = nowMs() - searchStartedAt;
-  const storageOrderColumns = allOrdersMode
+  const storageOrderColumns = expandedRowsMode
     ? [...STORAGE_ORDER_LIST_COLUMNS, "estimated_box_count", "item_description", "notes", "customer_form_json"]
     : STORAGE_ORDER_LIST_COLUMNS;
   const nullableStorageOrderColumns = new Set(storageOrderColumns);
@@ -2746,7 +2747,7 @@ async function handleStorageOrders(req, res, supabase) {
       .from("storage_orders")
       .select(selectedColumns.join(", "), { count: "exact" });
 
-    if (allOrdersMode) {
+    if (expandedRowsMode) {
       query = query
         .order("created_at", { ascending: false })
         .limit(10000);
@@ -2772,7 +2773,7 @@ async function handleStorageOrders(req, res, supabase) {
         .order("created_at", { ascending: false });
     }
 
-    const filterParams = allOrdersMode
+    const filterParams = expandedRowsMode
       ? { ...queryParams, order_type: "all", date_scope: "all", date_start: "", date_end: "" }
       : queryParams;
 
@@ -2781,7 +2782,7 @@ async function handleStorageOrders(req, res, supabase) {
       supportedColumns: new Set(selectedColumns)
     });
 
-    const result = allOrdersMode ? await query : await query.range(from, to);
+    const result = expandedRowsMode ? await query : await query.range(from, to);
     data = result.data;
     error = result.error;
     count = result.count || 0;
@@ -2820,7 +2821,7 @@ async function handleStorageOrders(req, res, supabase) {
   const operatorOptions = await listStorageOperatorOptions(supabase);
   let responseItems = enrichedItems;
   let currentStats = buildStorageWorkbenchStats(enrichedItems);
-  if (allOrdersMode) {
+  if (expandedRowsMode) {
     const expandedRows = enrichedItems.flatMap(expandStorageOrderForAdmin);
     const filteredRows = filterExpandedStorageRows(expandedRows, queryParams);
     const sortedRows = sortStorageAdminRows(filteredRows, sort);
@@ -2875,6 +2876,7 @@ async function handleStorageOrdersExport(req, res, supabase) {
   const queryParams = req.query || {};
   const sort = String(queryParams.sort || "service_date_nearest").trim();
   const allOrdersMode = String(queryParams.order_type || "").trim() === "all";
+  const expandedRowsMode = allOrdersMode || Boolean(normalizeStorageOrderKind(queryParams.order_type));
   const selectedRowIds = parseStorageExpandedRowIds(queryParams.row_ids || queryParams.selected_row_ids);
   const selectedBaseIds = parseStorageBaseIds(queryParams.ids || queryParams.storage_order_ids || Array.from(selectedRowIds));
   const searchStartedAt = nowMs();
@@ -2893,7 +2895,7 @@ async function handleStorageOrdersExport(req, res, supabase) {
     query = query.in("id", selectedBaseIds);
   }
 
-  if (allOrdersMode || sort === "created_at_desc" || sort === "submitted_latest") {
+  if (expandedRowsMode || sort === "created_at_desc" || sort === "submitted_latest") {
     query = query.order("created_at", { ascending: false });
   } else if (sort === "submitted_oldest") {
     query = query.order("created_at", { ascending: true });
@@ -2915,7 +2917,7 @@ async function handleStorageOrdersExport(req, res, supabase) {
       .order("created_at", { ascending: false });
   }
 
-  const filterParams = allOrdersMode
+  const filterParams = expandedRowsMode
     ? { ...queryParams, order_type: "all", date_scope: "all", date_start: "", date_end: "" }
     : queryParams;
 
@@ -2934,7 +2936,7 @@ async function handleStorageOrdersExport(req, res, supabase) {
 
   let items = (await enrichStorageOrdersWithPublicUserIds(supabase, data || []))
     .map(normalizeStorageAdminListItem);
-  if (allOrdersMode) {
+  if (expandedRowsMode) {
     items = sortStorageAdminRows(
       filterExpandedStorageRows(items.flatMap(expandStorageOrderForAdmin), queryParams),
       sort

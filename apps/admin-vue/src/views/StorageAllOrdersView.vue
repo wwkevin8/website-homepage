@@ -955,9 +955,14 @@ onMounted(() => {
           </button>
         </template>
         <template #cell-offline_status="{ row }">
-          <span :class="['storage-offline-status', row.offline_recorded ? 'is-recorded' : 'is-unrecorded']">
+          <button
+            type="button"
+            :class="['storage-offline-status', row.offline_recorded ? 'is-recorded' : 'is-unrecorded']"
+            :disabled="!storageTrackingReady || togglingId === String(row.id)"
+            @click.stop="toggleOfflineRecorded(row)"
+          >
             {{ offlineRecordedLabel(row) }}
-          </span>
+          </button>
         </template>
         <template #cell-remark="{ row }">
           <div class="remark-editor">

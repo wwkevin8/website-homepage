@@ -1720,6 +1720,12 @@ textarea {
   font-size: 12px;
   font-weight: 700;
   white-space: nowrap;
+  cursor: pointer;
+}
+
+.storage-offline-status:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
 }
 
 .storage-offline-status.is-recorded {

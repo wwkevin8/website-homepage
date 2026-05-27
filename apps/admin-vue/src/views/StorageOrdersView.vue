@@ -59,10 +59,10 @@ const boxOrderColumns = [
 const defaultFilters = {
   search: "",
   offlineRecorded: "",
-  dateScope: "active",
+  validityScope: "active",
   dateStart: "",
   dateEnd: "",
-  sort: "service_date_asc",
+  sort: "service_date_nearest",
   pageSize: 10
 };
 
@@ -81,6 +81,7 @@ const deletingId = ref("");
 const deleteCandidate = ref(null);
 const storageTrackingReady = ref(true);
 const storageTrackingMessage = ref("");
+const currentStats = ref(null);
 
 const orderType = computed(() => String(route.meta.orderType || "storage_collection"));
 const pageConfig = computed(() => routeConfigs[orderType.value] || routeConfigs.storage_collection);
@@ -147,6 +148,51 @@ function offlineRecordedTone(order) {
   return order?.offline_recorded ? "success" : "neutral";
 }
 
+function getUkTodayInputValue(now = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/London",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).formatToParts(now);
+  const values = Object.fromEntries(parts.map(part => [part.type, part.value]));
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
+function addDaysToDateInputValue(dateText, days) {
+  const [year, month, day] = String(dateText || "").split("-").map(Number);
+  if (!year || !month || !day) return "";
+  const date = new Date(Date.UTC(year, month - 1, day + days));
+  return [
+    date.getUTCFullYear(),
+    String(date.getUTCMonth() + 1).padStart(2, "0"),
+    String(date.getUTCDate()).padStart(2, "0")
+  ].join("-");
+}
+
+function buildPageStats(items = orders.value) {
+  const today = getUkTodayInputValue();
+  const nextSeven = addDaysToDateInputValue(today, 7);
+  return items.reduce((stats, order) => {
+    const serviceDate = String(rowServiceDate(order) || "").slice(0, 10);
+    stats.total += 1;
+    if (order.offline_recorded) stats.offline_recorded += 1;
+    else stats.offline_unrecorded += 1;
+    if (serviceDate && serviceDate >= today && serviceDate <= nextSeven) stats.next_7_days += 1;
+    return stats;
+  }, { total: 0, offline_recorded: 0, offline_unrecorded: 0, next_7_days: 0 });
+}
+
+const statsCards = computed(() => {
+  const stats = currentStats.value || buildPageStats();
+  return [
+    { label: "当前筛选结果", value: stats.total || Number(pagination.value.total || 0), tone: "blue" },
+    { label: "未线下记录", value: stats.offline_unrecorded || 0, tone: "amber" },
+    { label: "已线下记录", value: stats.offline_recorded || 0, tone: "green" },
+    { label: "今日 / 未来 7 天", value: stats.next_7_days || 0, tone: "cyan" }
+  ];
+});
+
 function isMembershipOrder(order) {
   return Boolean(order?.membership_benefit_claim_id) || Number(order?.membership_discount_amount || 0) > 0;
 }
@@ -161,7 +207,12 @@ function rowOrderNo(order) {
   return order.order_no || order.storage_return_order_no || order.related_order_no || order.parent_order_no;
 }
 
+function baseStorageOrderId(order) {
+  return order?.storage_order_id || String(order?.id || "").split(":")[0];
+}
+
 function rowServiceDate(order) {
+  if (order.service_date_unified) return order.service_date_unified;
   if (orderType.value === "box_order") return order.box_delivery_date || order.service_date;
   if (orderType.value === "storage_return") return order.storage_end_date || order.expected_storage_end_date || order.service_date;
   return order.storage_start_date || order.storage_intake_date || order.service_date;
@@ -298,7 +349,7 @@ function rowBoxFee(order) {
 }
 
 function detailHref(order) {
-  const id = order.id || order.storage_order_id || order.legacy_id || order.order_id;
+  const id = baseStorageOrderId(order) || order.legacy_id || order.order_id;
   if (!id) return "";
   const returnTo = `/admin/storage/${route.path.split("/").pop() || ""}`;
   const searchParams = new URLSearchParams({ return_to: returnTo, order_type: orderType.value });
@@ -310,16 +361,15 @@ function detailHref(order) {
 
 function buildQuery(page) {
   const search = filters.search.trim();
-  const searchAcrossAllDates = Boolean(search);
   return {
     page,
     page_size: filters.pageSize,
     search,
     order_type: orderType.value,
     offline_recorded: filters.offlineRecorded,
-    date_scope: searchAcrossAllDates ? "all" : filters.dateScope,
-    date_start: searchAcrossAllDates ? "" : filters.dateStart,
-    date_end: searchAcrossAllDates ? "" : filters.dateEnd,
+    validity_scope: filters.validityScope,
+    date_start: filters.dateStart,
+    date_end: filters.dateEnd,
     sort: filters.sort
   };
 }
@@ -331,6 +381,7 @@ async function loadOrders(page = pagination.value.page || 1) {
   try {
     const payload = await fetchStorageOrders(buildQuery(page));
     orders.value = Array.isArray(payload?.items) ? payload.items : [];
+    currentStats.value = payload?.current_stats || null;
     storageTrackingReady.value = payload?.storage_tracking_ready !== false;
     storageTrackingMessage.value = payload?.storage_tracking_message || "";
     pagination.value = payload?.pagination || {
@@ -341,6 +392,7 @@ async function loadOrders(page = pagination.value.page || 1) {
     };
   } catch (err) {
     orders.value = [];
+    currentStats.value = null;
     error.value = err.message || "寄存订单加载失败。";
   } finally {
     loading.value = false;
@@ -392,16 +444,16 @@ async function toggleOfflineRecorded(order) {
     notice.value = storageTrackingMessage.value || "线下记录字段还没有在数据库上线，请先执行 Supabase 迁移后再操作。";
     return;
   }
-  const id = order?.id || order?.storage_order_id || order?.legacy_id || order?.order_id;
-  if (!id || togglingId.value) {
+  const baseId = baseStorageOrderId(order) || order?.legacy_id || order?.order_id;
+  if (!baseId || togglingId.value) {
     notice.value = "未找到可更新的寄存订单 ID。";
     return;
   }
-  togglingId.value = String(id);
+  togglingId.value = String(order?.id || baseId);
   notice.value = "";
   error.value = "";
   try {
-    const updated = await updateStorageOrder(id, { offline_recorded: !Boolean(order.offline_recorded) });
+    const updated = await updateStorageOrder(baseId, { offline_recorded: !Boolean(order.offline_recorded) });
     notice.value = Boolean(updated?.offline_recorded) ? "已标记为已记录。" : "已取消已记录状态。";
     await loadOrders(pagination.value.page || 1);
   } catch (err) {
@@ -412,7 +464,7 @@ async function toggleOfflineRecorded(order) {
 }
 
 function openDeleteDialog(order) {
-  if (!order?.id) {
+  if (!baseStorageOrderId(order)) {
     notice.value = `未找到可删除的订单 ID：${displayValue(rowOrderNo(order))}`;
     return;
   }
@@ -426,12 +478,13 @@ function closeDeleteDialog() {
 
 async function confirmDelete() {
   const target = deleteCandidate.value;
-  if (!target?.id || deletingId.value) return;
-  deletingId.value = String(target.id);
+  const id = baseStorageOrderId(target);
+  if (!id || deletingId.value) return;
+  deletingId.value = String(target?.id || id);
   notice.value = "";
   error.value = "";
   try {
-    await deleteStorageOrder(target.id);
+    await deleteStorageOrder(id);
     notice.value = `已删除订单 ${displayValue(rowOrderNo(target))}`;
     deleteCandidate.value = null;
     await loadOrders(pagination.value.page || 1);
@@ -495,9 +548,9 @@ onMounted(() => {
       </label>
       <label class="field">
         <span>日期范围</span>
-        <select v-model="filters.dateScope">
-          <option value="active">当前及未来</option>
-          <option value="expired">已过期</option>
+        <select v-model="filters.validityScope">
+          <option value="active">有效单</option>
+          <option value="history">历史单 / 无效单</option>
           <option value="all">全部</option>
         </select>
       </label>
@@ -512,7 +565,7 @@ onMounted(() => {
       <label class="field">
         <span>排序方式</span>
         <select v-model="filters.sort">
-          <option value="service_date_asc">服务日期：最近到最远</option>
+          <option value="service_date_nearest">服务日期：最近到最远</option>
           <option value="created_at_desc">提交时间：最近到最远</option>
         </select>
       </label>
@@ -534,6 +587,13 @@ onMounted(() => {
     <p v-if="!storageTrackingReady && storageTrackingMessage" class="inline-notice">
       {{ storageTrackingMessage }}
     </p>
+
+    <div class="storage-workbench-stats" aria-label="当前筛选统计">
+      <article v-for="card in statsCards" :key="card.label" :class="['storage-stat-card', `storage-stat-card--${card.tone}`]">
+        <span>{{ card.label }}</span>
+        <strong>{{ card.value }}</strong>
+      </article>
+    </div>
 
     <LoadingState v-if="loading">正在加载 {{ pageConfig.title }}...</LoadingState>
     <ErrorState v-else-if="error" :message="error" />
@@ -587,7 +647,14 @@ onMounted(() => {
           <span class="cell-truncate price-cell" :title="formatMoney(rowBoxFee(row))">{{ formatMoney(rowBoxFee(row)) }}</span>
         </template>
         <template #cell-status="{ row }">
-          <StatusBadge :tone="offlineRecordedTone(row)">{{ offlineRecordedLabel(row) }}</StatusBadge>
+          <button
+            type="button"
+            :class="['storage-offline-status', row.offline_recorded ? 'is-recorded' : 'is-unrecorded']"
+            :disabled="!storageTrackingReady || togglingId === String(row.id)"
+            @click.stop="toggleOfflineRecorded(row)"
+          >
+            {{ offlineRecordedLabel(row) }}
+          </button>
         </template>
         <template #cell-actions="{ row }">
           <div class="table-action-group table-action-group--compact">
