@@ -38,7 +38,9 @@
   - `0017a19` for offline status buttons and subpage validity UI/API.
   - `18e8668` for the subpage service-type filter correction.
 - Latest P7 subpage-validity Preview deployment: `dpl_8RTUsM3bzDG4DLR6Q4WAtwy4Bki6`, URL `https://webside-3r0obcfuu-wwkevin8s-projects.vercel.app`.
-- Latest P7 detail-page correction is pending commit/deploy from this working tree. It restores the detail body against Production commit `42bf796` and leaves only operation-area log display as the extra detail-page UI.
+- Latest P7 detail-page correction source commit: `b8d8934`.
+- Latest P7 detail-page correction Preview deployment: `dpl_81GVoLSXqrK2C5gs6AJAqAxvpZmQ`, URL `https://webside-3f9zq5miu-wwkevin8s-projects.vercel.app`.
+- The detail correction restores the detail body against Production commit `42bf796` and leaves only operation-area log display as the extra detail-page UI.
 - Latest P7 subpage-validity changed:
   - `api/admin/[...action].js`
   - `apps/admin-vue/src/views/StorageAllOrdersView.vue`
@@ -54,6 +56,10 @@
   - `送寄存订单`: active/history/all all returned 0 rows/0 pages, matching current data; no unrelated service type leaked into the result.
   - Active exports for all three subpages returned Excel payloads.
   - The offline-recorded status column button was code/build verified only; no offline toggle write was executed against real data.
+- Latest detail-page correction Preview read-only validation:
+  - Detail route `/admin/storage/storage-orders/58c63b90-b5d3-4698-8ff8-727cfa861a27` returned HTTP 200.
+  - Detail API GET `/api/admin/storage-orders?id=58c63b90-b5d3-4698-8ff8-727cfa861a27` returned old top-level order fields plus additive `operation_logs`.
+  - The check used only GET/HEAD requests; no save, status change, offline-recorded toggle, delete, maintenance POST, cleanup, or production data mutation was executed.
 - A full dirty-worktree backup stash still exists in the original worktree: `stash@{0}: backup-before-p7-preview-isolation`.
 - No Production promote was run.
 - No maintenance POST was run.
