@@ -26,6 +26,7 @@ const deleteDialogOpen = ref(false);
 const statusDialogOpen = ref(false);
 const statusDraft = ref("");
 const relatedBoxOrder = ref(null);
+const operationLogs = ref([]);
 
 const scheduleForm = reactive({
   service_time_slot: "",
@@ -327,6 +328,47 @@ function statusTone(status) {
   if (status === "confirmed" || status === "completed") return "success";
   if (status === "cancelled" || status === "canceled") return "neutral";
   return "warning";
+}
+
+function operationActor(log) {
+  const admin = log?.admin_user || {};
+  return admin.name || admin.username || admin.email || "未知管理员";
+}
+
+function operationActionLabel(action) {
+  return {
+    storage_order_updated: "更新寄存订单",
+    storage_order_deleted: "删除寄存订单",
+    storage_orders_marked_offline_recorded: "标记已线下记录",
+    storage_orders_unmarked_offline_recorded: "取消线下记录",
+    order_status_updated: "修改订单状态"
+  }[String(action || "")] || displayValue(action);
+}
+
+function operationChangedFields(log) {
+  const fields = Array.isArray(log?.metadata?.changed_fields) ? log.metadata.changed_fields : [];
+  const labels = {
+    service_date: "服务日期",
+    service_time_slot: "时间段",
+    storage_intake_date: "寄存开始日期",
+    storage_start_date: "寄存开始日期",
+    storage_end_date: "寄存结束日期",
+    expected_storage_end_date: "寄存结束日期",
+    address_full: "详细地址",
+    room_or_building: "公寓 / 房间",
+    postcode: "邮编",
+    has_lift: "是否有电梯",
+    needs_upstairs: "是否需要上楼",
+    customer_form_json: "备注 / 收款信息",
+    offline_recorded: "线下记录",
+    status: "订单状态",
+    last_operated_by: "上次操作人",
+    last_operated_at: "最近操作时间"
+  };
+  return fields
+    .filter(fieldName => !["last_operated_by", "last_operated_at"].includes(fieldName))
+    .map(fieldName => labels[fieldName] || fieldName)
+    .join("、");
 }
 
 function rowOrderNo(record = order.value || {}) {
@@ -730,6 +772,7 @@ async function loadOrder(options = {}) {
   try {
     const payload = await fetchStorageOrder(orderId.value);
     order.value = payload?.order || payload?.item || payload;
+    operationLogs.value = Array.isArray(payload?.operation_logs) ? payload.operation_logs : [];
     syncEditableForms(order.value);
     if (resolvedOrderType(order.value) === "box_order") {
       router.replace({
@@ -771,14 +814,6 @@ onMounted(loadOrder);
     <EmptyState v-else-if="!order" title="未找到寄存订单" description="请从寄存订单列表重新进入详情页。" />
 
     <template v-else>
-      <div class="detail-summary-bar">
-        <div>
-          <span>订单编号</span>
-          <strong>{{ rowOrderNo() }}</strong>
-        </div>
-        <StatusBadge :tone="statusTone(order.status)">{{ statusLabel(order.status) }}</StatusBadge>
-      </div>
-
       <DetailSection title="订单基础信息" description="订单编号和服务类型用于核对，不在详情页修改。">
         <div class="readonly-field-grid">
           <ReadonlyField v-for="item in baseFields" :key="item.label" v-bind="item" />
@@ -856,54 +891,59 @@ onMounted(loadOrder);
         </form>
       </DetailSection>
 
-      <DetailSection title="箱子 / 物品 / 数量信息">
-        <div class="storage-related-order-panel">
+      <DetailSection title="箱子 / 物品 / 费用详细信息" description="箱子数量和费用拆分集中展示，价格口径沿用当前详情接口。">
+        <div class="storage-detail-combined-grid">
           <div>
-            <span>关联买箱订单</span>
-            <strong>{{ displayValue(relatedBoxOrderNo) }}</strong>
+            <div class="storage-related-order-panel">
+              <div>
+                <span>关联买箱订单</span>
+                <strong>{{ displayValue(relatedBoxOrderNo) }}</strong>
+              </div>
+              <RouterLink v-if="relatedBoxOrderRoute" class="secondary-button" :to="relatedBoxOrderRoute">
+                查看买箱订单
+              </RouterLink>
+              <span v-else class="storage-related-action__empty">暂无关联买箱订单</span>
+            </div>
+            <div class="storage-box-table-wrap">
+              <table class="storage-box-table">
+                <thead>
+                  <tr>
+                    <th>箱型</th>
+                    <th>寄存数量</th>
+                    <th>购买数量</th>
+                    <th>购买费用</th>
+                    <th>重量信息</th>
+                    <th>超重费用</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="item in boxDetailRows" :key="item.key">
+                    <td>{{ item.boxType }}</td>
+                    <td>{{ item.storageQty }}</td>
+                    <td>{{ item.purchaseQty }}</td>
+                    <td>{{ formatFormulaMoney(item.purchaseFee) }}</td>
+                    <td>{{ item.weight }}</td>
+                    <td>{{ item.overweightFee > 0 ? formatFormulaMoney(item.overweightFee) : "无超重" }}</td>
+                  </tr>
+                  <tr v-if="!boxDetailRows.length">
+                    <td class="storage-box-table__empty" colspan="6">暂无箱型明细</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
-          <RouterLink v-if="relatedBoxOrderRoute" class="secondary-button" :to="relatedBoxOrderRoute">
-            查看买箱订单
-          </RouterLink>
-          <span v-else class="storage-related-action__empty">暂无关联买箱订单</span>
-        </div>
-        <div class="storage-box-table-wrap">
-          <table class="storage-box-table">
-            <thead>
-              <tr>
-                <th>箱型</th>
-                <th>寄存数量</th>
-                <th>购买数量</th>
-                <th>购买费用</th>
-                <th>重量信息</th>
-                <th>超重费用</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="item in boxDetailRows" :key="item.key">
-                <td>{{ item.boxType }}</td>
-                <td>{{ item.storageQty }}</td>
-                <td>{{ item.purchaseQty }}</td>
-                <td>{{ formatFormulaMoney(item.purchaseFee) }}</td>
-                <td>{{ item.weight }}</td>
-                <td>{{ item.overweightFee > 0 ? formatFormulaMoney(item.overweightFee) : "无超重" }}</td>
-              </tr>
-              <tr v-if="!boxDetailRows.length">
-                <td class="storage-box-table__empty" colspan="6">暂无箱型明细</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </DetailSection>
-
-      <DetailSection title="费用 / 价格信息" description="按当前详情接口已有费用字段展示，实际重算仍走后端估价逻辑。">
-        <div class="storage-price-formula">
-          <strong>总费用 {{ formatFormulaMoney(priceFormula.total) }}</strong>
-          <span>=</span>
-          <template v-for="(part, index) in priceFormula.parts" :key="part.label">
-            <span v-if="index > 0">{{ part.operator }}</span>
-            <span>{{ formatFormulaMoney(part.amount) }}（{{ part.label }}）</span>
-          </template>
+          <div class="storage-price-detail-panel">
+            <h3>费用 / 价格信息</h3>
+            <p>按当前详情接口已有费用字段展示，实际重算仍走后端估价逻辑。</p>
+            <div class="storage-price-formula">
+              <strong>总费用 {{ formatFormulaMoney(priceFormula.total) }}</strong>
+              <span>=</span>
+              <template v-for="(part, index) in priceFormula.parts" :key="part.label">
+                <span v-if="index > 0">{{ part.operator }}</span>
+                <span>{{ formatFormulaMoney(part.amount) }}（{{ part.label }}）</span>
+              </template>
+            </div>
+          </div>
         </div>
       </DetailSection>
 
@@ -927,6 +967,17 @@ onMounted(loadOrder);
             {{ deleting ? "删除中..." : "删除订单" }}
           </button>
         </div>
+      </DetailSection>
+
+      <DetailSection title="操作记录" description="最近与该寄存订单相关的后台操作。">
+        <div v-if="operationLogs.length" class="storage-operation-log-list">
+          <article v-for="log in operationLogs.slice(0, 5)" :key="log.id" class="storage-operation-log-item">
+            <strong>{{ operationActionLabel(log.action) }}</strong>
+            <span>{{ operationActor(log) }} · {{ formatDateTime(log.created_at) }}</span>
+            <span v-if="operationChangedFields(log)">字段：{{ operationChangedFields(log) }}</span>
+          </article>
+        </div>
+        <p v-else class="muted-line">暂无操作记录。</p>
       </DetailSection>
     </template>
 
