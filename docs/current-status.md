@@ -8,7 +8,7 @@
 ## Last Updated Task
 
 - Date: 2026-05-27
-- Scope: P7 storage workbench Preview minimal follow-up fixes after manual review: make the offline-recorded status column clickable and add active/history/all validity filtering to the storage subpages. P6 remains completed/promoted separately and was not changed in this task.
+- Scope: P7 storage workbench Preview detail-page correction after manual review: restore `StorageOrderDetailView.vue` body to the Production mother version and keep operation logs only as an operation-area additive enhancement. P6 remains completed/promoted separately and was not changed in this task.
 
 ## Latest Completed Work
 
@@ -21,7 +21,8 @@
   - Top stat cards are clickable shortcuts: current result clears shortcut filters, unrecorded sets `offline_recorded=false`, recorded sets `offline_recorded=true`, unpaid sends `payment_scope=unpaid`, and today/next-7-days sets the visible date range while keeping active orders.
   - `StorageOrdersView.vue` subpages (`买箱订单`, `取寄存订单`, `送寄存订单`) now have the same active/history/all validity filter, default to active orders, and send `validity_scope` through list and export requests.
   - `api/admin/[...action].js` now applies expanded-row `service_date_unified` filtering for the all-orders page and the three storage subpages, so service type plus validity filters share the same pagination/export basis.
-  - `StorageOrderDetailView.vue` remains the P7 detail migration/cleanup with customer-readable summary, internal notes, fee breakdown display, offline-recorded state, and operation logs. It no longer sends pricing recalculation flags from schedule/address saves.
+  - `StorageOrderDetailView.vue` detail body has been restored to the Production mother version. Order base info, contact info, storage schedule, address info, box/quantity info, fee breakdown, notes, and customer-readable summary keep the Production structure, field order, and display logic.
+  - Detail-page `operation_logs` are additive only: the API still exposes the old order payload shape, and the Vue detail page reads `payload.order || payload.item || payload` as before while rendering logs inside the existing operation area.
   - `scripts/seed-storage-test-data.js` and `scripts/clear-storage-test-data.js` are local-only helpers guarded by `LOCAL_SUPABASE_URL`; they must not be run against production.
 
 ## Verification
@@ -37,6 +38,7 @@
   - `0017a19` for offline status buttons and subpage validity UI/API.
   - `18e8668` for the subpage service-type filter correction.
 - Latest P7 subpage-validity Preview deployment: `dpl_8RTUsM3bzDG4DLR6Q4WAtwy4Bki6`, URL `https://webside-3r0obcfuu-wwkevin8s-projects.vercel.app`.
+- Latest P7 detail-page correction is pending commit/deploy from this working tree. It restores the detail body against Production commit `42bf796` and leaves only operation-area log display as the extra detail-page UI.
 - Latest P7 subpage-validity changed:
   - `api/admin/[...action].js`
   - `apps/admin-vue/src/views/StorageAllOrdersView.vue`
@@ -45,7 +47,7 @@
 - Local verification:
   - `node --check api/admin/[...action].js` passed.
   - `git diff --check` passed for modified P7 files.
-  - `npm run build:preview` passed. Root dependency audit still reports one existing moderate vulnerability; no dependency files were changed in this task.
+  - `npm run build:preview` passed after the detail-page Production-body restore. Root dependency audit still reports one existing moderate vulnerability; no dependency files were changed in this task.
 - Latest subpage-validity Preview read-only validation:
   - `买箱订单`: active 2 rows/1 page, history 4 rows/1 page, all 6 rows/1 page; all returned rows have `storage_order_kind=box_order`.
   - `取寄存订单`: active 5 rows/1 page, history 4 rows/1 page, all 9 rows/1 page; all returned rows have `storage_order_kind=storage_collection`.

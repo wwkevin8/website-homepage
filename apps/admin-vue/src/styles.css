@@ -3482,6 +3482,20 @@ textarea {
   font-size: 16px;
 }
 
+.operation-log-block {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.operation-log-block h4 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 15px;
+}
+
 .operation-log-list {
   display: grid;
   gap: 8px;
