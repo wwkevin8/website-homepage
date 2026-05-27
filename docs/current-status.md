@@ -52,7 +52,8 @@
 - Latest P7 detail-page no-operation-area source commit: `44f13d4`.
 - Latest P7 detail-page no-operation-area Preview deployment: `dpl_EHDtv8k6y132zg5RLnYwvNdJK1tS`, URL `https://webside-ent3i3krl-wwkevin8s-projects.vercel.app`.
 - It removes only the visible operation-area card from `StorageOrderDetailView.vue`.
-- Latest P7 buy-box detail follow-up source is pending commit/deploy from this working tree.
+- Latest P7 buy-box detail follow-up source commit: `951f09b`.
+- Latest P7 buy-box detail follow-up Preview deployment: `dpl_DHayQwbSfuPq63j8XfhQFHWk45Ps`, URL `https://webside-hb6utq3yb-wwkevin8s-projects.vercel.app`.
 - It changes only buy-box detail UI/API logging support and docs: delivery/address edit form, box-count-oriented fee display, related storage-order link, formatted operation logs, and removal of the buy-box detail operation-area card.
 - Latest P7 subpage-validity changed:
   - `api/admin/[...action].js`
@@ -89,6 +90,7 @@
   - `node --check api/admin/[...action].js` passed.
   - `git diff --check` passed for `api/admin/[...action].js`, `BoxOrderDetailView.vue`, and `styles.css`.
   - `npm run build:preview` passed. Root dependency audit still reports one existing moderate vulnerability; no dependency files were changed in this task.
+  - Preview buy-box detail route `/admin/storage/box-orders/c4f8c01a-f3e8-46fd-9698-1b9406503824` returned HTTP 200 on `dpl_DHayQwbSfuPq63j8XfhQFHWk45Ps`.
   - No write-class action was executed during local verification.
 - A full dirty-worktree backup stash still exists in the original worktree: `stash@{0}: backup-before-p7-preview-isolation`.
 - No Production promote was run.
