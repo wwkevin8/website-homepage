@@ -3,7 +3,6 @@ const { requireAdminUser } = require("../_lib/admin-auth");
 const { ok, created, badRequest, parseJsonBody, methodNotAllowed, serverError } = require("../_lib/http");
 const { applyGroupFilters, applyEffectiveGroupCounts, mapGroupPayload, deriveDisplayGroupId } = require("../_lib/transport");
 const { loadGroupStatsMap } = require("../_lib/transport-group-stats");
-const { cleanupEmptyTransportGroups } = require("../_lib/transport-group-lifecycle");
 const { allocateGroupId } = require("../_lib/order-numbers");
 
 function isPerfLogEnabled() {
@@ -563,7 +562,6 @@ module.exports = async function handler(req, res) {
 
   try {
     if (req.method === "GET") {
-      await cleanupEmptyTransportGroups(supabase);
       const queryParams = req.query || {};
       const orderNo = String(queryParams.order_no || "").trim().toUpperCase();
       const paginate = String(queryParams.paginate || "").toLowerCase() === "true";
