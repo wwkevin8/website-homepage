@@ -3,6 +3,12 @@
 ## Latest Task Update
 
 - Date: 2026-05-28
+- Scope: P0 carpool page performance optimization. No commit, no deployment, no production data write, no data clearing, and no test-data upload.
+- Summary: Public carpool preview and full board now request latest-first paginated public-safe group data (`limit=9` preview, `limit=20` full board) instead of relying on full-list client slicing. Public list responses omit member detail payloads; detail data is requested separately when the user clicks "查看详情". The public board detail helper now resolves group search through group/member IDs before loading request rows. Admin carpool group management defaults to active/effective groups, latest service time first, and 20 rows per page, with stale responses ignored when filters change quickly. A SQL index file was added for transport group/request/member list filters and latest-first sorting; it has not been applied to any database in this task.
+
+## Previous Task Update
+
+- Date: 2026-05-28
 - Scope: Production release of the accepted transport, membership, and storage/admin updates. GitHub was updated before Vercel deployment. No test data was uploaded; no database schema change, data clearing, or production data overwrite was performed.
 - GitHub commit: `5573d96` (`Release accepted transport and storage updates`) on `codex/membership-v1`.
 - Vercel deployment: `dpl_G2wPtMwemnobQCkDnpdMiPba8ayu`, production URL `https://webside-27a9etrg1-wwkevin8s-projects.vercel.app`, aliases `https://ngn.best` and `https://www.ngn.best`, status `READY`.
@@ -154,6 +160,7 @@
   - Production browser check confirmed pickup preview renders 9 cards and requests `limit=9`.
   - Production browser check confirmed full board field order: `接送机时间 / 服务类型 / 机场 / 航站楼 / 航班号 / 当前人数 / 拼车组编号 / 操作`.
   - Production browser check confirmed the first full-board join button text is `加入拼车`, is enabled, and is fully visible at desktop and mobile widths.
+  - Production browser check confirmed unauthenticated `加入拼车` click redirects to `login.html?return_to=%2Ftransport-board.html`; no join form was submitted and no production data was written.
   - Production browser check confirmed `查看详情` opens the detail modal without removing the board rows.
   - Production admin bundle `admin/assets/index-CyiSAfn1.js` matches the committed release bundle, and unauthenticated admin API access returns `401`.
   - Vercel inspect confirmed deployment `dpl_G2wPtMwemnobQCkDnpdMiPba8ayu` is production `Ready`.
