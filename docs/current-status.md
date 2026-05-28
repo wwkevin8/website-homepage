@@ -3,6 +3,15 @@
 ## Latest Task Update
 
 - Date: 2026-05-28
+- Scope: P0 production cleanup for empty/effectively-empty carpool groups. GitHub was updated before Vercel deployment. A one-time protected production cleanup deleted only `transport_groups` with zero effective active members older than 10 minutes plus their `transport_group_members` links; no `transport_requests` original orders were deleted. Admin login verification wrote only normal admin-session/login metadata.
+- GitHub commit: `b34c581` (`Restore empty carpool group cleanup`) on `codex/membership-v1`.
+- Vercel deployment: `dpl_DxaJtZ3btLutYucBexQnyWfonc7E`, production URL `https://webside-iue46oymp-wwkevin8s-projects.vercel.app`, alias `https://ngn.best`, status `READY`.
+- Summary: Server cleanup now runs before public carpool lists, public board data, admin transport group lists, and admin transport-dispatch aggregate routes. It uses a 10-minute grace window and deletes groups only when effective active member count is zero, so stale closed-order member links no longer keep 0/5 groups visible. One-time cleanup removed 13 historical groups including `GRP-260526-7L55`; follow-up dry-run found zero remaining candidates and direct DB checks found no remaining rows or member links for the removed group IDs while the original screenshot order `PU260526-0071` remained in `transport_requests`.
+- Verification: syntax checks passed for changed API/script files; `node scripts/regression-check.js` passed; `npm run build:prod` passed. Production warm API checks returned `zero_count=0` for `/api/public/transport-groups`, `/api/public/transport-board`, `/api/transport-groups`, `/api/admin/transport-groups`, and `/api/admin/transport-dispatch`. Playwright production checks opened `transport-board.html` and logged-in `admin/transport/groups`; neither showed `GRP-260526-7L55` or `0 / 5`, detail opened without failure, and the join button remained visible.
+
+## Previous Task Update
+
+- Date: 2026-05-28
 - Scope: P0 carpool page performance optimization production release. GitHub was updated before each Vercel deployment. No test data was uploaded; no production business data was deleted, cleared, overwritten, or modified by the release scripts. Admin login verification wrote only normal admin-session/login metadata.
 - GitHub commits: `2e91e75` (`Speed up public carpool group pagination`), `8f22504` (`Avoid cleanup during public carpool listing`), `da92fe0` (`Avoid cleanup during admin carpool group listing`), `7c28f69` (`Fix carpool board upcoming sort`), and `aefd7c4` (`Use upcoming sort for carpool detail requests`) on `codex/membership-v1`.
 - Vercel deployment: `dpl_6NPXyMgxu7xmBPSiDL82xxsjFhtZ`, production URL `https://webside-o56cau5o6-wwkevin8s-projects.vercel.app`, alias `https://ngn.best`, status `READY`.
@@ -173,9 +182,9 @@
 
 ## Current Project State
 
-- Production release `aefd7c4` is live on `https://ngn.best`.
+- Production release `b34c581` is live on `https://ngn.best`.
 - Public carpool student-priority display and join-button changes are deployed.
-- Admin transport group defaults, P0 carpool pagination/read-path performance changes, transport request recorded-toggle UI, and P7 storage/buy-box admin changes are deployed.
+- Admin transport group defaults, P0 carpool pagination/read-path performance changes, 10-minute empty/effectively-empty carpool group cleanup, transport request recorded-toggle UI, and P7 storage/buy-box admin changes are deployed.
 - Committed admin build output points to `admin/assets/index-BUK-S560.js` and `admin/assets/index-DVcvb6_8.css`.
 - Local-only storage seed/clear helpers remain ignored and must not be run against Preview or Production.
 
