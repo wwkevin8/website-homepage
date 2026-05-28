@@ -307,6 +307,7 @@ function recalculateStorageOrderPricing(existing, patch = {}) {
   const resultPatch = {
     estimated_box_count: effectiveCount,
     estimated_total_price: Number(estimate.estimatedTotalPrice.toFixed(2)),
+    final_price: Number(estimate.estimatedTotalPrice.toFixed(2)),
     estimate_summary_json: {
       ...summary,
       ...estimate,

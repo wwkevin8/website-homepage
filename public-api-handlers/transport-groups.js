@@ -47,6 +47,39 @@ function applySort(query, sort) {
     .order("created_at", { ascending: false });
 }
 
+function getPublicGroupTimeMs(group) {
+  const value = group?.preferred_time_start
+    || group?.flight_time_reference
+    || group?.flight_datetime
+    || group?.group_date
+    || "";
+  const parsed = new Date(value).getTime();
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function filterFuturePublicGroups(groups, includePast) {
+  if (includePast) {
+    return groups || [];
+  }
+  const now = Date.now();
+  return (groups || []).filter(group => {
+    const timeMs = getPublicGroupTimeMs(group);
+    return timeMs !== null && timeMs >= now;
+  });
+}
+
+function sortPublicGroupsByTime(groups, sort) {
+  const direction = sort === "latest" ? -1 : 1;
+  return [...(groups || [])].sort((left, right) => {
+    const leftTime = getPublicGroupTimeMs(left) ?? 0;
+    const rightTime = getPublicGroupTimeMs(right) ?? 0;
+    if (leftTime !== rightTime) {
+      return (leftTime - rightTime) * direction;
+    }
+    return new Date(right?.created_at || 0).getTime() - new Date(left?.created_at || 0).getTime();
+  });
+}
+
 function buildPublicGroupsBaseQuery(supabase, queryParams, dateFrom, sort) {
   const query = supabase
     .from("transport_groups_public_view")
@@ -125,9 +158,15 @@ async function listPublicGroupsPaginated(supabase, queryParams, limit, page, dat
   }
 
   const rawBatch = (data || []).map(applyEffectiveGroupCounts);
-  const enrichedGroups = filterPublicGroupsByGroupId(
-    filterRenderablePublicGroups(await enrichPublicGroupsBatch(supabase, rawBatch)),
-    queryParams.group_id
+  const enrichedGroups = sortPublicGroupsByTime(
+    filterPublicGroupsByGroupId(
+      filterFuturePublicGroups(
+        filterRenderablePublicGroups(await enrichPublicGroupsBatch(supabase, rawBatch)),
+        queryParams.include_past === "true"
+      ),
+      queryParams.group_id
+    ),
+    sort
   );
   const total = enrichedGroups.length;
   const from = (page - 1) * limit;
@@ -173,11 +212,17 @@ module.exports = async function handler(req, res) {
       throw error;
     }
 
-    const items = filterPublicGroupsByGroupId(
-      filterRenderablePublicGroups(
-        await enrichPublicGroupsBatch(supabase, (data || []).map(applyEffectiveGroupCounts))
+    const items = sortPublicGroupsByTime(
+      filterPublicGroupsByGroupId(
+        filterFuturePublicGroups(
+          filterRenderablePublicGroups(
+            await enrichPublicGroupsBatch(supabase, (data || []).map(applyEffectiveGroupCounts))
+          ),
+          includePast
+        ),
+        queryParams.group_id
       ),
-      queryParams.group_id
+      sort
     );
 
     ok(res, {

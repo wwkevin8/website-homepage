@@ -27,6 +27,10 @@ const MY_TRANSPORT_REQUEST_SELECT = [
   "luggage_count",
   "shareable",
   "status",
+  "membership_benefit_claim_id",
+  "membership_discount_amount",
+  "extra_charge_amount",
+  "final_price",
   "notes",
   "created_at",
   "transport_group_members(*)"

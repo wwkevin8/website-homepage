@@ -60,8 +60,12 @@
 
       <form class="calculator-card transport-filter-form" id="transportBoardFilters">
         <label class="field">
-          <span>搜索拼车组编号</span>
-          <input type="text" name="group_id" placeholder="例如 GRP-260413-022B">
+          <span>开始日期</span>
+          <input type="date" name="date_from">
+        </label>
+        <label class="field">
+          <span>结束日期</span>
+          <input type="date" name="date_to">
         </label>
         <label class="field">
           <span>服务类型</span>
@@ -78,12 +82,8 @@
           </select>
         </label>
         <label class="field">
-          <span>开始日期</span>
-          <input type="date" name="date_from">
-        </label>
-        <label class="field">
-          <span>结束日期</span>
-          <input type="date" name="date_to">
+          <span>搜索拼车组编号</span>
+          <input type="text" name="group_id" placeholder="例如 GRP-260413-022B">
         </label>
         <button class="button button-primary" type="submit">筛选</button>
       </form>

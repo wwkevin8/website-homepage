@@ -127,7 +127,7 @@ module.exports = async function handler(req, res) {
       .in("status", PUBLIC_REQUEST_STATUSES)
       .or("source.is.null,source.neq.admin_manual")
       .eq("shareable", true)
-      .gt("flight_datetime", nowIso);
+      .gte("flight_datetime", nowIso);
 
     if (queryParams.service_type) {
       query.eq("service_type", queryParams.service_type);

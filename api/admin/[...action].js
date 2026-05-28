@@ -43,6 +43,7 @@ const {
 } = require("../_lib/orders");
 const {
   cancelOrResetClaim,
+  calculateMembershipDiscount,
   createMembershipActivationCode,
   createMembershipActivationCodes,
   createManualClaim,
@@ -139,6 +140,28 @@ const STORAGE_ORDER_DETAIL_COLUMNS = [
   "service_flags_json",
   "calculator_snapshot_json"
 ];
+
+function getUkTodayInputValue(now = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/London",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).formatToParts(now);
+  const values = Object.fromEntries(parts.map(part => [part.type, part.value]));
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
+function addDaysToDateInputValue(dateText, days) {
+  const [year, month, day] = String(dateText || "").split("-").map(Number);
+  if (!year || !month || !day) return "";
+  const date = new Date(Date.UTC(year, month - 1, day + Number(days || 0)));
+  return [
+    date.getUTCFullYear(),
+    String(date.getUTCMonth() + 1).padStart(2, "0"),
+    String(date.getUTCDate()).padStart(2, "0")
+  ].join("-");
+}
 
 function isPerfLogEnabled() {
   return process.env.NODE_ENV !== "production";
@@ -477,7 +500,7 @@ function buildStorageExportRows(items = []) {
       "邮编": item.postcode || "",
       "预期价格": formatAdminCsvMoney(item.estimated_total_price),
       "会员减免": formatAdminCsvMoney(item.membership_discount_amount),
-      "额外加收": formatAdminCsvMoney(item.extra_charge_amount),
+      "会员不减免费用": formatAdminCsvMoney(item.extra_charge_amount),
       "最终价格": formatAdminCsvMoney(item.final_price),
       "状态": item.status || ""
     };
@@ -569,7 +592,7 @@ function buildStorageExportRows(items = []) {
       "邮编": item.postcode || "",
       "总费用": formatAdminCsvMoney(item.final_price ?? item.estimated_total_price),
       "会员减免": formatAdminCsvMoney(item.membership_discount_amount),
-      "额外加收": formatAdminCsvMoney(item.extra_charge_amount),
+      "会员不减免费用": formatAdminCsvMoney(item.extra_charge_amount),
       "订单状态": item.status || "",
       "线下记录": item.offline_recorded ? "已记录" : "未记录",
       "上次操作人": item.last_operated_by || "",
@@ -793,6 +816,53 @@ function buildStorageExecutionPaymentNote(item = {}) {
   if (note && note !== status) lines.push(note);
   if (lines.length) return lines.join("｜");
   return storageExportTotalAmount(item) > 0 ? "寄存费用待付" : "免费";
+}
+
+function storagePaymentStatusValue(item = {}) {
+  const billing = storageExportBillingInfo(item);
+  return String(billing.payment_status || billing.status || "").trim();
+}
+
+function storageIsPaid(item = {}) {
+  const status = storagePaymentStatusValue(item);
+  if (status === "paid") return true;
+  return storageExportTotalAmount(item) <= 0 && status === "waived";
+}
+
+function storageChargeStatusValue(item = {}) {
+  return storageExportTotalAmount(item) > 0 ? "charged" : "free";
+}
+
+function applyStorageWorkbenchFilters(rows, queryParams = {}) {
+  const chargeStatus = String(queryParams.charge_status || queryParams.chargeStatus || "").trim();
+  const paymentStatus = String(queryParams.payment_status || queryParams.paymentStatus || "").trim();
+  return rows.filter(row => {
+    if (chargeStatus === "charged" && storageChargeStatusValue(row) !== "charged") return false;
+    if ((chargeStatus === "free" || chargeStatus === "free_or_pending") && storageChargeStatusValue(row) !== "free") return false;
+    if (paymentStatus === "paid" && !storageIsPaid(row)) return false;
+    if (paymentStatus === "unpaid" && storageIsPaid(row)) return false;
+    return true;
+  });
+}
+
+function buildStorageWorkbenchStats(rows = []) {
+  const today = getUkTodayInputValue();
+  const nextSeven = addDaysToDateInputValue(today, 7);
+  return rows.reduce((stats, item) => {
+    const serviceDate = String(item.service_date_unified || item.service_date || "").slice(0, 10);
+    stats.total += 1;
+    if (item.offline_recorded) stats.offline_recorded += 1;
+    else stats.offline_unrecorded += 1;
+    if (!storageIsPaid(item)) stats.unpaid += 1;
+    if (serviceDate && serviceDate >= today && serviceDate <= nextSeven) stats.next_7_days += 1;
+    return stats;
+  }, {
+    total: 0,
+    offline_recorded: 0,
+    offline_unrecorded: 0,
+    unpaid: 0,
+    next_7_days: 0
+  });
 }
 
 function buildStorageExecutionRemark(item = {}) {
@@ -1032,13 +1102,21 @@ function expandStorageOrderForAdmin(item = {}) {
 
 function filterExpandedStorageRows(rows, queryParams = {}) {
   const serviceType = normalizeStorageOrderKind(queryParams.service_type || queryParams.order_type_filter || queryParams.storage_order_kind);
+  const dateScope = String(queryParams.date_scope || queryParams.date_status || "active").trim();
   const dateStart = String(queryParams.date_start || queryParams.start_date || "").trim();
   const dateEnd = String(queryParams.date_end || queryParams.end_date || "").trim();
+  const today = getUkTodayInputValue();
   return rows.filter(row => {
     if (serviceType && row.storage_order_kind !== serviceType) {
       return false;
     }
     const serviceDate = String(row.service_date_unified || "").slice(0, 10);
+    if (dateScope === "active" && (!serviceDate || serviceDate < today)) {
+      return false;
+    }
+    if ((dateScope === "expired" || dateScope === "invalid") && (!serviceDate || serviceDate >= today)) {
+      return false;
+    }
     if (dateStart && (!serviceDate || serviceDate < dateStart)) {
       return false;
     }
@@ -1110,6 +1188,79 @@ async function listStorageOperatorOptions(supabase) {
   return Array.from(new Set((data || [])
     .map(item => String(item.last_operated_by || "").trim())
     .filter(Boolean)));
+}
+
+async function fetchStorageOperationLogs(supabase, storageOrderId) {
+  if (!storageOrderId) return [];
+  const { data, error } = await supabase
+    .from("admin_operation_logs")
+    .select("id, action, before_data, after_data, metadata, created_at, admin_user_id, admin_user:admin_users(id, name, username, email)")
+    .eq("target_type", "storage_order")
+    .eq("target_id", storageOrderId)
+    .order("created_at", { ascending: false })
+    .limit(50);
+  if (error) {
+    console.warn("[admin-storage] failed to fetch operation logs", error);
+    return [];
+  }
+  return data || [];
+}
+
+function storageOrderNoCandidates(item = {}) {
+  const formJson = isPlainObject(item.customer_form_json) ? item.customer_form_json : {};
+  const serviceDetails = isPlainObject(formJson.serviceDetails)
+    ? formJson.serviceDetails
+    : (isPlainObject(formJson.service_details) ? formJson.service_details : {});
+  const rawCandidates = [
+    item.storage_pickup_order_no,
+    item.related_order_no,
+    item.parent_order_no,
+    item.box_order_no,
+    item.order_no,
+    formJson.storagePickupOrderNo,
+    formJson.storage_pickup_order_no,
+    serviceDetails.storagePickupOrderNo,
+    serviceDetails.storage_pickup_order_no
+  ]
+    .map(value => String(value || "").trim())
+    .filter(Boolean);
+  const derivedPickupCandidates = rawCandidates
+    .filter(value => /ST-B-?/i.test(value))
+    .map(value => value.replace(/^(.*ST-)B(-?.*)$/i, "$1P$2"));
+  return [...rawCandidates, ...derivedPickupCandidates]
+    .filter(value => /^.*ST-[PSR]/i.test(value));
+}
+
+async function fetchRelatedStorageOrderForBoxOrder(supabase, item = {}) {
+  const candidates = Array.from(new Set(storageOrderNoCandidates(item)));
+  if (!candidates.length) return null;
+  let selectedColumns = cachedStorageOrderDetailColumns || [...STORAGE_ORDER_DETAIL_COLUMNS];
+  for (let attempt = 0; attempt < 40; attempt += 1) {
+    const query = supabase
+      .from("storage_orders")
+      .select(selectedColumns.join(", "))
+      .neq("id", item.id)
+      .or(candidates.map(value => [
+        `order_no.eq.${value}`,
+        `storage_pickup_order_no.eq.${value}`,
+        `box_order_no.eq.${value}`,
+        `related_order_no.eq.${value}`,
+        `parent_order_no.eq.${value}`
+      ].join(",")).join(","))
+      .limit(1);
+    const { data, error } = await query;
+    if (!error) {
+      cachedStorageOrderDetailColumns = [...selectedColumns];
+      return Array.isArray(data) && data.length ? data[0] : null;
+    }
+    const missingColumn = extractMissingColumnName(error, "storage_orders");
+    if (!missingColumn || !selectedColumns.includes(missingColumn)) {
+      throw error;
+    }
+    selectedColumns = selectedColumns.filter(column => column !== missingColumn);
+    cachedStorageOrderDetailColumns = [...selectedColumns];
+  }
+  return null;
 }
 
 async function querySiteUsersWithFallback(supabase, { search = "", ids = [] } = {}) {
@@ -2299,6 +2450,11 @@ async function handleStorageOrders(req, res, supabase) {
     if (req.method === "GET") {
       const enrichmentStartedAt = nowMs();
       const [enrichedExisting] = await enrichStorageOrdersWithPublicUserIds(supabase, [existing]);
+      const relatedStorageOrder = await fetchRelatedStorageOrderForBoxOrder(supabase, existing).catch(error => {
+        console.warn("[admin-storage] failed to fetch related storage order", error);
+        return null;
+      });
+      const operationLogs = await fetchStorageOperationLogs(supabase, storageOrderId);
       logPerf("storage.detail", {
         authMs,
         queryMs: detailQueryMs,
@@ -2308,7 +2464,12 @@ async function handleStorageOrders(req, res, supabase) {
         rows: enrichedExisting ? 1 : 0,
         cacheHit: null
       });
-      ok(res, enrichedExisting || existing);
+      ok(res, {
+        order: relatedStorageOrder
+          ? { ...(enrichedExisting || existing), related_storage_order: relatedStorageOrder }
+          : (enrichedExisting || existing),
+        operation_logs: operationLogs
+      });
       return;
     }
 
@@ -2416,6 +2577,7 @@ async function handleStorageOrders(req, res, supabase) {
         patch.offline_recorded = patch.offline_recorded === true || patch.offline_recorded === "true";
       }
 
+      let membershipClaimPatch = null;
       if (body.recalculate_pricing === true || body.recalculate_pricing === "true") {
         const pricingResult = recalculateStorageOrderPricing(existing, patch);
         if (!pricingResult.ok) {
@@ -2423,6 +2585,57 @@ async function handleStorageOrders(req, res, supabase) {
           return;
         }
         Object.assign(patch, pricingResult.patch);
+        if (existing.membership_benefit_claim_id) {
+          const { data: membershipClaim, error: membershipClaimError } = await supabase
+            .from("membership_benefit_claims")
+            .select("*")
+            .eq("id", existing.membership_benefit_claim_id)
+            .maybeSingle();
+          if (membershipClaimError) {
+            throw membershipClaimError;
+          }
+          if (membershipClaim) {
+            const discountResult = calculateMembershipDiscount({ ...existing, ...patch }, membershipClaim);
+            patch.membership_discount_amount = discountResult.membershipDiscountAmount || 0;
+            patch.extra_charge_amount = discountResult.extraChargeAmount || 0;
+            patch.final_price = discountResult.finalPrice === null || discountResult.finalPrice === undefined
+              ? patch.final_price
+              : discountResult.finalPrice;
+            patch.membership_discount_breakdown_json = discountResult.breakdown || {};
+            membershipClaimPatch = {
+              membership_discount_amount: patch.membership_discount_amount,
+              extra_charge_amount: patch.extra_charge_amount,
+              final_price: patch.final_price,
+              discount_breakdown_json: patch.membership_discount_breakdown_json || {}
+            };
+          }
+        }
+      }
+
+      let relatedStorageUpdate = null;
+      if (
+        (body.sync_related_storage_order === true || body.sync_related_storage_order === "true")
+        && patch.estimated_box_count !== undefined
+      ) {
+        const relatedStorageOrder = await fetchRelatedStorageOrderForBoxOrder(supabase, existing);
+        if (relatedStorageOrder) {
+          const relatedPatch = {
+            estimated_box_count: patch.estimated_box_count
+          };
+          const relatedPricingResult = recalculateStorageOrderPricing(relatedStorageOrder, relatedPatch);
+          if (!relatedPricingResult.ok) {
+            badRequest(res, relatedPricingResult.reason || "关联寄存订单费用重算失败。");
+            return;
+          }
+          Object.assign(relatedPatch, relatedPricingResult.patch, {
+            last_operated_by: resolveAdminDisplayName(adminUser),
+            last_operated_at: new Date().toISOString()
+          });
+          relatedStorageUpdate = {
+            before: relatedStorageOrder,
+            patch: relatedPatch
+          };
+        }
       }
 
       const adminPatch = buildStorageAdminPatch(body);
@@ -2488,22 +2701,72 @@ async function handleStorageOrders(req, res, supabase) {
         throw updatedError;
       }
 
+      if (membershipClaimPatch && existing.membership_benefit_claim_id) {
+        const { error: membershipClaimUpdateError } = await supabase
+          .from("membership_benefit_claims")
+          .update(membershipClaimPatch)
+          .eq("id", existing.membership_benefit_claim_id);
+        if (membershipClaimUpdateError) {
+          throw membershipClaimUpdateError;
+        }
+      }
+
+      let relatedUpdated = null;
+      if (relatedStorageUpdate) {
+        const { data, error: relatedUpdateError } = await supabase
+          .from("storage_orders")
+          .update(relatedStorageUpdate.patch)
+          .eq("id", relatedStorageUpdate.before.id)
+          .select((cachedStorageOrderDetailColumns || STORAGE_ORDER_DETAIL_COLUMNS).join(", "))
+          .single();
+        if (relatedUpdateError) {
+          throw relatedUpdateError;
+        }
+        relatedUpdated = data;
+        await logAdminOperation(supabase, {
+          admin_user_id: adminUser.id,
+          target_type: "storage_order",
+          target_id: relatedStorageUpdate.before.id,
+          action: "storage_order_updated",
+          before_data: relatedStorageUpdate.before,
+          after_data: relatedUpdated,
+          metadata: {
+            order_no: relatedStorageUpdate.before.order_no || null,
+            source_order_no: existing.box_order_no || existing.order_no || null,
+            changed_fields: Object.keys(relatedStorageUpdate.patch),
+            sync_reason: "box_order_quantity_update"
+          }
+        }).catch(error => {
+          console.warn("[admin-storage] failed to write related storage update operation log", error);
+        });
+      }
+
+      const changedFields = Object.keys(patch);
+      const offlineRecordOnlyChanged = changedFields.every(fieldName => [
+        "offline_recorded",
+        "last_operated_by",
+        "last_operated_at"
+      ].includes(fieldName));
+      const operationAction = offlineRecordOnlyChanged && Object.prototype.hasOwnProperty.call(patch, "offline_recorded")
+        ? (patch.offline_recorded ? "storage_orders_marked_offline_recorded" : "storage_orders_unmarked_offline_recorded")
+        : "storage_order_updated";
+
       await logAdminOperation(supabase, {
         admin_user_id: adminUser.id,
         target_type: "storage_order",
         target_id: storageOrderId,
-        action: "storage_order_updated",
+        action: operationAction,
         before_data: existing,
         after_data: updated,
         metadata: {
           order_no: existing.order_no || null,
-          changed_fields: Object.keys(patch)
+          changed_fields: changedFields
         }
       }).catch(error => {
         console.warn("[admin-storage] failed to write update operation log", error);
       });
 
-      ok(res, updated);
+      ok(res, relatedUpdated ? { ...updated, related_storage_order: relatedUpdated } : updated);
       return;
     }
 
@@ -2730,11 +2993,16 @@ async function handleStorageOrders(req, res, supabase) {
     .map(normalizeStorageAdminListItem);
   const operatorOptions = await listStorageOperatorOptions(supabase);
   let responseItems = enrichedItems;
+  let currentStats = buildStorageWorkbenchStats(enrichedItems);
   if (allOrdersMode) {
     const expandedRows = enrichedItems.flatMap(expandStorageOrderForAdmin);
-    const filteredRows = filterExpandedStorageRows(expandedRows, queryParams);
+    const filteredRows = applyStorageWorkbenchFilters(
+      filterExpandedStorageRows(expandedRows, queryParams),
+      queryParams
+    );
     const sortedRows = sortStorageAdminRows(filteredRows, sort);
     count = sortedRows.length;
+    currentStats = buildStorageWorkbenchStats(sortedRows);
     responseItems = sortedRows.slice(from, to + 1);
   }
   const enrichmentMs = nowMs() - enrichmentStartedAt;
@@ -2758,6 +3026,7 @@ async function handleStorageOrders(req, res, supabase) {
   ok(res, {
     items: responseItems,
     operator_options: operatorOptions,
+    current_stats: currentStats,
     storage_tracking_ready: storageTrackingReady,
     storage_tracking_message: storageTrackingReady ? "" : storageOfflineTrackingMigrationMessage(),
     pagination: {
@@ -2844,7 +3113,10 @@ async function handleStorageOrdersExport(req, res, supabase) {
     .map(normalizeStorageAdminListItem);
   if (allOrdersMode) {
     items = sortStorageAdminRows(
-      filterExpandedStorageRows(items.flatMap(expandStorageOrderForAdmin), queryParams),
+      applyStorageWorkbenchFilters(
+        filterExpandedStorageRows(items.flatMap(expandStorageOrderForAdmin), queryParams),
+        queryParams
+      ),
       sort
     );
     if (selectedRowIds.size) {

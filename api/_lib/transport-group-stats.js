@@ -104,6 +104,7 @@ function computeTransportGroupPricingSnapshot(group, members, options = {}) {
   const maxPassengers = Number(group?.max_passengers || DEFAULT_GROUP_MAX_PASSENGERS);
   const terminals = uniqueNonEmpty(displayRequests.map(request => request.terminal));
   const flightNos = uniqueNonEmpty(displayRequests.map(request => request.flight_no));
+  const joinTargetRequestId = displayRequests.find(request => request.id)?.id || null;
   const pricingSeason = getPricingSeason(group?.group_date || displayRequests[0]?.flight_datetime || group?.created_at);
   const airportCode = String(group?.airport_code || displayRequests[0]?.airport_code || "").trim().toUpperCase();
   const airportPricing = PICKUP_PRICING[pricingSeason]?.[airportCode] || null;
@@ -131,6 +132,7 @@ function computeTransportGroupPricingSnapshot(group, members, options = {}) {
     terminal_summary: hasCrossTerminal ? terminals.join(" / ") : (terminals[0] || group?.terminal || "--"),
     terminal_values: terminals,
     flight_no_values: flightNos,
+    join_target_request_id: joinTargetRequestId,
     arrival_range: formatArrivalRange(displayRequests.map(request => request.flight_datetime)),
     surcharge_gbp: crossTerminalSurchargeTotalGbp,
     surcharge_hint: hasCrossTerminal ? "跨航站楼附加费按当前拼车人数每人 £15，已计入当前均价" : "无附加费",
@@ -150,6 +152,7 @@ function buildGroupStats(group, members, options = {}) {
     terminal_summary: pricing.terminal_summary,
     terminal_values: pricing.terminal_values,
     flight_no_values: pricing.flight_no_values,
+    join_target_request_id: pricing.join_target_request_id,
     arrival_range: pricing.arrival_range,
     surcharge_gbp: pricing.surcharge_gbp,
     surcharge_hint: pricing.surcharge_hint,
@@ -191,7 +194,7 @@ async function loadGroupStatsMap(supabase, groupIds, options = {}) {
     const membersQueryStartedAt = nowMs();
     const { data, error: membersError } = await supabase
       .from("transport_group_members")
-      .select("group_id, passenger_count_snapshot, transport_requests(passenger_count, status, terminal, flight_datetime, airport_code, flight_no, notes, luggage_count)")
+      .select("group_id, passenger_count_snapshot, transport_requests(id, passenger_count, status, terminal, flight_datetime, airport_code, flight_no, notes, luggage_count)")
       .in("group_id", normalizedGroupIds);
     if (metrics) {
       metrics.statsMemberQueryMs = (metrics.statsMemberQueryMs || 0) + (nowMs() - membersQueryStartedAt);

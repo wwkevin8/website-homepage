@@ -5,6 +5,12 @@ const { getProfileCompletionState } = require("../api/_lib/user-profile");
 const { buildJoinDraft, evaluateJoin } = require("../api/_lib/transport-join");
 const { createRequestRecord, addRequestToGroup, getGroupByBusinessId, getGroupMembersWithRequests } = require("../api/_lib/transport-group-lifecycle");
 const { sendTransportOrderSubmissionEmail } = require("../api/_lib/transport-order-submission-email");
+const {
+  bindClaimToOrder,
+  calculateMembershipDiscount,
+  getActiveClaim,
+  getCurrentMembershipCycle
+} = require("../api/_lib/membership");
 
 async function getTargetRequestContext(supabase, requestId) {
   const { data: request, error } = await supabase
@@ -95,8 +101,25 @@ module.exports = async function handler(req, res) {
       return;
     }
 
+    const membershipClaim = joinDraft.service_type === "pickup"
+      ? await getActiveClaim(supabase, siteUser.id, getCurrentMembershipCycle())
+      : null;
+    const membershipDiscount = membershipClaim?.benefit_type === "pickup" && ["selected", "reserved"].includes(membershipClaim.status)
+      ? calculateMembershipDiscount(joinDraft, membershipClaim)
+      : null;
+    const membershipPatch = membershipDiscount?.eligible
+      ? {
+          membership_benefit_claim_id: membershipClaim.id,
+          membership_discount_amount: membershipDiscount.membershipDiscountAmount,
+          extra_charge_amount: membershipDiscount.extraChargeAmount,
+          final_price: membershipDiscount.finalPrice,
+          membership_discount_breakdown_json: membershipDiscount.breakdown
+        }
+      : {};
+
     const request = await createRequestRecord(supabase, {
       ...joinDraft,
+      ...membershipPatch,
       site_user_id: siteUser.id,
       email_verified_snapshot: true,
       profile_verified_snapshot: true
@@ -107,6 +130,24 @@ module.exports = async function handler(req, res) {
     } catch (error) {
       await supabase.from("transport_requests").delete().eq("id", request.id);
       throw error;
+    }
+
+    let boundMembershipClaim = null;
+    if (membershipDiscount?.eligible && membershipClaim?.id) {
+      try {
+        boundMembershipClaim = await bindClaimToOrder(
+          supabase,
+          membershipClaim.id,
+          "transport_requests",
+          request.id,
+          request.order_no,
+          membershipDiscount
+        );
+      } catch (bindError) {
+        await supabase.from("transport_requests").delete().eq("id", request.id);
+        badRequest(res, bindError.message || "Membership benefit is no longer available for this order");
+        return;
+      }
     }
 
     let submissionEmail = null;
@@ -138,6 +179,10 @@ module.exports = async function handler(req, res) {
       surchargeGbp: evaluation.surchargeGbp,
       nextPassengerCount: evaluation.nextPassengerCount,
       status: "matched",
+      membershipBenefitClaimId: boundMembershipClaim?.id || null,
+      membershipDiscountAmount: membershipDiscount?.membershipDiscountAmount || 0,
+      extraChargeAmount: membershipDiscount?.extraChargeAmount || 0,
+      finalPrice: membershipDiscount?.finalPrice ?? null,
       submissionEmail
     });
   } catch (error) {

@@ -11,7 +11,7 @@ const ACTIVATION_CODE_PUBLIC_SELECT_WITH_BIRTHDAY = "id, code_prefix, membership
 const MEMBERSHIP_CONFIG = {
   defaultCycle: "2026-27",
   storage: {
-    freeStandardBoxLimit: 5
+    freeStandardBoxLimit: 6
   },
   pickup: {
     allowedServiceTypes: ["pickup"],
@@ -54,6 +54,26 @@ function normalizeMoney(value, fallback = 0) {
 
 function sumMoney(values) {
   return normalizeMoney((values || []).reduce((sum, value) => sum + normalizeMoney(value, 0), 0), 0);
+}
+
+function firstPositiveMoney(values) {
+  for (const value of values || []) {
+    const amount = normalizeMoney(value, 0);
+    if (amount > 0) {
+      return amount;
+    }
+  }
+  return 0;
+}
+
+function proportionalUncoveredAmount(totalAmount, coveredCount, totalCount) {
+  const total = normalizeMoney(totalAmount, 0);
+  const count = Math.max(0, Number(totalCount || 0));
+  if (total <= 0 || count <= 0) {
+    return 0;
+  }
+  const covered = Math.min(Math.max(0, Number(coveredCount || 0)), count);
+  return normalizeMoney(total * Math.max(0, count - covered) / count, 0);
 }
 
 function isPlainObject(value) {
@@ -313,26 +333,32 @@ function calculateStorageDiscount(orderPayload, claim) {
   );
   const standardBoxCount = Math.max(0, Number(orderPayload?.estimated_box_count || serviceDetails.storageBoxCount || 0));
   const coveredBoxCount = Math.min(standardBoxCount, MEMBERSHIP_CONFIG.storage.freeStandardBoxLimit);
+  const purchasedBoxCount = Math.max(0, Number(
+    pickNestedNumber({ estimate, serviceDetails, orderPayload }, [
+      "estimate.totalPurchaseBoxes",
+      "estimate.total_purchase_boxes",
+      "serviceDetails.purchaseQuantity",
+      "serviceDetails.purchaseQty",
+      "orderPayload.purchaseQuantity",
+      "orderPayload.purchaseQty"
+    ])
+  ));
 
-  const purchaseTotal = sumMoney([
+  const purchaseTotal = firstPositiveMoney([
     orderPayload?.purchaseTotal,
     estimate.purchaseTotal,
     serviceDetails.purchaseTotal,
-    ...(Array.isArray(orderPayload?.purchased_boxes) ? orderPayload.purchased_boxes.map(item => item?.subtotal || item?.purchase) : [])
+    Array.isArray(orderPayload?.purchased_boxes)
+      ? sumMoney(orderPayload.purchased_boxes.map(item => item?.subtotal || item?.purchase))
+      : 0
   ]);
+  const purchaseChargeableCount = purchasedBoxCount || standardBoxCount;
+  const uncoveredPurchaseTotal = proportionalUncoveredAmount(purchaseTotal, coveredBoxCount, purchaseChargeableCount);
   const overweightFee = normalizeMoney(pickNestedNumber({ estimate, serviceDetails }, [
     "estimate.overweightFee",
     "estimate.overweight_fee",
     "estimate.extraWeightFee",
     "serviceDetails.overweightFee"
-  ]));
-  const stairsFee = normalizeMoney(pickNestedNumber({ estimate, serviceDetails }, [
-    "estimate.stairsFee",
-    "estimate.stairs_fee",
-    "estimate.upstairsFee",
-    "estimate.upstairs_fee",
-    "serviceDetails.stairsFee",
-    "serviceDetails.upstairsFee"
   ]));
   const outOfCityReturnFee = normalizeMoney(pickNestedNumber({ estimate, serviceDetails }, [
     "estimate.outOfCityReturnFee",
@@ -347,9 +373,8 @@ function calculateStorageDiscount(orderPayload, claim) {
   ]));
 
   const excluded = [
-    { type: "box_purchase", amount: purchaseTotal },
+    { type: "box_purchase_over_limit", amount: uncoveredPurchaseTotal },
     { type: "overweight", amount: overweightFee },
-    { type: "stairs", amount: stairsFee },
     { type: "out_of_city_return", amount: outOfCityReturnFee },
     { type: "special_or_other", amount: otherExcludedFee }
   ].filter(item => item.amount > 0);
@@ -375,7 +400,9 @@ function calculateStorageDiscount(orderPayload, claim) {
       rules: {
         freeStandardBoxLimit: MEMBERSHIP_CONFIG.storage.freeStandardBoxLimit,
         standardBoxCount,
-        coveredBoxCount
+        coveredBoxCount,
+        purchasedBoxCount: purchaseChargeableCount,
+        coveredPurchaseBoxCount: Math.min(purchaseChargeableCount, coveredBoxCount)
       },
       included: [
         {

@@ -96,12 +96,15 @@ function checkTransportRequests() {
   expectIncludes(view, 'label: "行程地址"', "transport request itinerary address column exists");
   expectIncludes(view, 'label: "是否已记录"', "transport request offline-recorded column exists");
   expectIncludes(view, "toggleOfflineRecorded", "transport request offline-recorded toggle exists");
+  expectIncludes(view, "offline-recorded-toggle", "transport request offline-recorded rows use one status toggle button");
+  expectNotRegex(view, /切为未记录|标记已记录/, "transport request offline-recorded rows do not show extra action text");
   expectIncludes(api, 'if (sort === "flight_nearest")', "transport request API supports nearest sort");
   expectNotRegex(detail, /DetailSection\s+title="操作区"|title="操作区"/, "transport request detail has no operation section");
 }
 
 function checkTransportGroups() {
   const view = "apps/admin-vue/src/views/TransportGroupsView.vue";
+  const filters = "apps/admin-vue/src/components/TransportGroupFilters.vue";
   const api = "api/transport-groups/index.js";
   const joinPreview = "public-api-handlers/transport-join-preview.js";
   const joinSubmit = "public-api-handlers/transport-join-submit.js";
@@ -109,6 +112,10 @@ function checkTransportGroups() {
 
   expectRegex(view, /validity:\s*"active"/, "transport groups default to active groups");
   expectRegex(view, /sort:\s*"service_time_asc"/, "transport groups default to nearest service time");
+  expectIncludes(filters, 'v-model="model.validity"', "transport group validity filter exists");
+  expectIncludes(filters, 'value="active">有效单 / 有效组', "transport group active validity option exists");
+  expectIncludes(filters, 'value="invalid">无效或过期单', "transport group invalid validity option exists");
+  expectIncludes(filters, 'v-model="model.sort"', "transport group service-time sort filter exists");
   expectIncludes(view, "paginate: true", "transport groups use paginated admin loading");
   expectIncludes(api, "paginate", "transport groups API supports pagination");
   expectIncludes(joinPreview, "evaluateJoin", "join-carpool preview uses join evaluator");
@@ -124,7 +131,13 @@ function checkStorageWorkbench() {
 
   expectRegex(list, /sort:\s*"service_date_nearest"/, "storage workbench defaults to nearest service date");
   expectIncludes(list, "toggleOfflineRecorded", "storage recorded/unrecorded button mode exists");
+  expectIncludes(list, "offline-recorded-toggle", "storage offline-recorded column uses a reversible status button");
   expectIncludes(list, "togglePaymentReceived", "storage paid/unpaid button mode exists");
+  expectIncludes(list, "quick_date: filters.quickDate", "storage quick-date filter is sent to API query");
+  expectIncludes(list, "date_start: range.start", "storage quick-date range start is sent to API query");
+  expectIncludes(list, "offline_recorded: filters.offlineRecorded", "storage offline-recorded quick filter is sent to API query");
+  expectIncludes(list, "payment_status: filters.paymentStatus", "storage payment quick filter is sent to API query");
+  expectIncludes(list, "service_type: filters.serviceType", "storage service-type quick filter is sent to API query");
   expectIncludes(list, "未线下记录", "storage unrecorded filter/stat label exists");
   expectIncludes(list, "未收款", "storage unpaid filter/stat label exists");
   expectRegex(list, /今日\s*\/\s*未来 7 天/, "storage today / next 7 days stat exists");

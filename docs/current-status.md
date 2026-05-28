@@ -1,5 +1,89 @@
 # Current Status
 
+## Latest Task Update
+
+- Date: 2026-05-28
+- Scope: Membership pickup order recognition and admin highlighting. No commit, no deployment, no database schema change, no production data write, and no test-data upload.
+- Summary: Pickup membership selection is now recognized for join-carpool order creation as well as normal pickup submission. The membership status endpoint can display an existing pickup order as the effective linked member reservation when the claim was selected but the historical order lacks stored membership fields. The admin transport request list now marks pickup rows yellow when they are tied to a stored membership claim or inferred from the user's selected pickup membership claim. The profile page now shows the pickup membership standard for selected and bound pickup claims.
+
+## Latest Task Update
+
+- Date: 2026-05-28
+- Scope: Public transport board join-button recovery. No commit, no deployment, no database schema change, no production data write, and no test-data upload.
+- Summary: The public transport group API now exposes an opaque join target request id for each renderable group so the full board can open the join form from group-based rows. The full board click handler no longer replaces the entire table with an error message when join preparation fails; it preserves the list and shows a temporary inline notice instead. Local verification after restarting the dev server confirmed clicking `加入拼车` keeps the table visible and opens the join modal with a target request id in an authenticated browser context.
+
+## Latest Task Update
+
+- Date: 2026-05-28
+- Scope: Membership storage free-amount display sync. No commit, no deployment, no database schema change, no production data write, and no test-data upload.
+- Summary: The public membership status API now displays the latest linked `storage_orders` membership discount/final-price fields for storage claims instead of relying only on the older claim snapshot. Admin storage pricing recalculation now also syncs the linked `membership_benefit_claims` amount snapshot, so future recalculations keep the personal-center free amount aligned with the admin order detail.
+
+## Latest Task Update
+
+- Date: 2026-05-28
+- Scope: Admin storage detail schedule cleanup and pricing recalculation. No commit, no deployment, no database schema change, no production data write, and no test-data upload.
+- Summary: The storage order detail page removed the duplicate read-only storage start/end/date fields. The editable schedule row now shows pickup/return time slot, storage start date, storage end date, and live storage days on one line. Saving schedule changes triggers existing storage price recalculation, and membership-linked storage orders recalculate membership discount/final price from the updated dates.
+
+## Latest Task Update
+
+- Date: 2026-05-28
+- Scope: Admin storage order detail address-section deduplication. No commit, no deployment, no API change, no database change, no production data write, and no test-data upload.
+- Summary: The admin storage order detail page now removes the duplicate read-only address field grid from the "地址信息" section. The editable address form remains in place for room/building, postcode, lift, upstairs, full address, and save action.
+
+## Latest Task Update
+
+- Date: 2026-05-28
+- Scope: Admin storage all-orders membership-free price display. No commit, no deployment, no API change, no database change, no production data write, and no test-data upload.
+- Summary: In the storage all-orders list, membership-linked orders with a final payable amount of `0` now show `会员免费服务` in the price column instead of `£0.00`. Non-free orders keep the existing money display.
+
+## Latest Task Update
+
+- Date: 2026-05-28
+- Scope: Admin storage order detail UI cleanup. No commit, no deployment, no API change, no database change, no production data write, and no test-data upload.
+- Summary: The admin 寄存订单详情 page no longer shows the standalone "状态口径" section or its inline payment/offline-recorded action buttons. The top summary badges remain visible, and the following "用户与联系方式" section now moves up directly after "订单基础信息".
+
+## Latest Membership Rule Fix
+
+- Date: 2026-05-28
+- Scope: Membership storage entitlement rule correction. No commit, no deployment, no database schema change, no production data write, and no test-data upload.
+- Summary: Storage membership now covers up to 6 boxes, includes the matching free paper boxes, and no longer treats delivery/stairs-style service fees as "会员不减免费用". Local-only order `ST-C-260528-0002` was recalculated to `会员减免 £177.60`, `会员不减免费用 £0.00`, and `总费用 £0.00`.
+
+## Latest Acceptance Fix
+
+- Date: 2026-05-28
+- Scope: Membership storage discount excluded-fee cleanup. No commit, no deployment, no database schema change, no production data write, and no test-data upload.
+- Summary: Storage membership discount calculation now counts buy-box purchase fees once instead of summing duplicate sources. Admin storage detail now labels this line as "会员不减免费用" instead of "附加费用". Local-only order `ST-C-260528-0002` was recalculated to `会员减免 £152.60`, `会员不减免费用 £25.00`, and `总费用 £25.00`.
+
+## Latest Task Update
+
+- Date: 2026-05-28
+- Scope: Public transport board action-column layout tightening. No commit, no deployment, no database change, no production data write, and no test-data upload.
+- Summary: The full public transport board operation buttons now render on one row with `查看详情` on the left and `加入拼车` on the right. Table row spacing and cell padding were tightened while preserving full button visibility on desktop and mobile horizontal-scroll checks.
+
+## Previous Task Update
+
+- Date: 2026-05-28
+- Scope: Public carpool preview and full transport board student-priority display. No commit, no deployment, no database change, no production data write, and no test-data upload.
+- Summary: The pickup page public carpool preview now requests and displays up to 9 current/future groups with `limit=9` and upcoming sort. The full transport board now keeps upcoming sort on default load and after filtering, uses the student-priority column order `接送机时间 / 服务类型 / 机场 / 航站楼 / 航班号 / 当前人数 / 拼车组编号 / 操作`, moves the group ID after current headcount, and keeps operation buttons fully visible on desktop and mobile horizontal-scroll verification.
+
+## Previous Acceptance Fix
+
+- Date: 2026-05-28
+- Scope: P7 buy-box quantity recalculation and related local test order. No commit, no deployment, no database schema change, no production data write, and no test-data upload.
+- Summary: Buy-box quantity saving now recalculates and persists the current buy-box order total, no longer blocks the save when a separate related storage order is missing, and fetches a related storage order for the detail link when one exists. A local-only Supabase test order `TEST-ST-P-007` was created for `TEST-ST-B-007` to support manual linked-order testing.
+
+## Previous Task Update
+
+- Date: 2026-05-28
+- Scope: P7 storage all-orders offline-recorded column toggle. No commit, no deployment, no database change, no production data write, and no test-data upload.
+- Summary: The storage all-orders list now renders the "线下记录" column itself as a reversible status button. Clicking "已记录" switches the row back to "未记录", clicking "未记录" switches it to "已记录", and the existing `toggleOfflineRecorded` save path is reused.
+
+## Latest Handoff Update
+
+- Date: 2026-05-28
+- Scope: P7 buy-box order detail local UI cleanup. No commit, no deployment, no database change, no production data write, and no test-data upload.
+- Summary: The buy-box detail page combines the previous "买箱明细" and "费用汇总" blocks into one "买箱与费用汇总" block. Delivery information remains in its own block, box count editing still uses the existing save path, and the related storage-order link remains visible in the merged summary.
+
 ## Document Rules
 
 - Read this file together with `E:\webside\AGENTS.md` before analysis or implementation.
@@ -7,69 +91,87 @@
 
 ## Last Updated Task
 
-- Date: 2026-05-26
-- Scope: P6 performance patch v1 for admin transport request and carpool group list first-screen loading. The patch narrows carpool group list loading to server-side pagination and avoids reloading transport request operator options on every page. Source commit `801a416`; production deployment `dpl_7MjGbchq2YNWLvgRVjC775oYKiWE` is Ready and aliased to `https://ngn.best`. No production data, database schema, SQL indexes, business rules, price logic, payment logic, email behavior, or deployment configuration was changed.
+- Date: 2026-05-28
+- Scope: Transport request workbench offline-recorded column UI simplification. No commit, no deployment, no database change, no production data write, and no test-data upload.
+- Summary: The admin "登记接送机订单" list now uses one status button in the "是否已记录" column. The button text is only `未记录` or `已记录`, and clicking it still reuses the existing row-level offline-recorded toggle behavior.
 
 ## Latest Completed Work
 
-- Updated `apps/admin-vue/src/views/TransportGroupsView.vue`:
-  - Initial carpool group page load now requests `/api/transport-groups?paginate=true&page=1&page_size=10&validity=active&sort=service_time_asc`.
-  - Pagination now fetches the requested server page instead of slicing a full in-browser active-group list.
-  - Server-supported filters are sent to the API: service type, airport, status, validity, service-time sort, frontend visibility, date range, and keyword.
-  - Validity/sort/page-size changes reset to page 1 and refetch.
-  - Existing group row UI, action buttons, member enrichment display, dispatch summaries, payment display, price display, and risk display were preserved.
-
-- Updated `api/transport-groups/index.js`:
-  - Existing paginated list path is now used by the admin page.
-  - Keyword matching for group pagination can resolve group ids and related member request fields before enrichment.
-  - Existing enrichment logic remains batch-based and is now limited to the requested page for the default admin list.
-
-- Updated `api/transport-requests/index.js` and `apps/admin-vue/src/views/TransportRequestsView.vue`:
-  - Paginated transport request list still defaults to valid orders and nearest flight/service time.
-  - `last_operated_by` operator options are loaded on page 1, not every page.
-  - The frontend preserves previously loaded operator options when later pages omit `operator_options`, so the operator filter remains usable.
-
-- Updated `docs/PROJECT_MAP.md` for the changed list behavior of `/api/transport-groups` and `/api/transport-requests`.
-
-- Released to production from a clean detached worktree at commit `801a416` so unrelated local uncommitted files were not included:
-  - GitHub branch: `origin/codex/p6-performance-v1`
-  - Vercel deployment: `dpl_7MjGbchq2YNWLvgRVjC775oYKiWE`
-  - Production URL: `https://webside-ljtf7973r-wwkevin8s-projects.vercel.app`
-  - Alias: `https://ngn.best`
-  - Production state: `READY`
+- Regression protection exists:
+  - `REGRESSION_CHECKLIST.md` defines the required pre-commit checks for accepted transport request, transport group, storage workbench, and data-safety behavior.
+  - `scripts/regression-check.js` performs a static guard check for default filters/sorts, key fields/buttons, detail-page operation-section regressions, legacy-admin test entry usage, and local-only test-data script safety.
+  - `.gitignore` excludes `scripts/seed-storage-test-data.js` and `scripts/clear-storage-test-data.js` so local-only test data helpers cannot be accidentally committed.
+- P7 storage workbench local work now includes:
+  - `StorageAllOrdersView.vue` list compaction, a single visible filter form for validity, quick date, service content, payment status, offline-recorded status, operator, manual dates, sort, export, and pagination. The earlier duplicate top shortcut bar was removed so operators only use one filter area. The statistics cards are clickable and apply the matching list filters immediately.
+  - `StorageOrderDetailView.vue` detail migration/cleanup, customer-readable summary, internal notes, fee display, Chinese operation logs, the standalone "状态口径" block removed from the detail layout, and the duplicate read-only address grid removed from the "地址信息" section.
+  - `BoxOrderDetailView.vue` editable delivery information including delivery method, merged "买箱与费用汇总" block with the buy-box table, editable box quantity, box fee, delivery fee, adjustment/discount display, total fee, related storage-order link, payment/offline-recorded action buttons under internal notes/operation logs, and no old operation-section/backend-processing block.
+  - `api/admin/[...action].js` and `api/_lib/storage-orders.js` support storage workbench filtering, current stats, detail operation logs, internal notes, offline-recorded operation log labels, and buy-box quantity updates that recalculate pricing and sync a related storage order when one can be found.
+  - P7-specific CSS helper classes use storage-prefixed names where newly introduced for the workbench/detail pages.
+  - `StorageAllOrdersView.vue` filters send `date_scope`, `quick_date`, `date_start`, `date_end`, `offline_recorded`, `payment_status`, and `service_type` through the same query builder used by the table and export flow.
+  - Storage list loading ignores stale responses when a newer filter request has already started.
+- P6 carpool group regression fix:
+  - `TransportGroupFilters.vue` visibly renders active/all/invalid group validity options and nearest/farthest service-time sort options.
+  - `TransportGroupsView.vue` keeps default `validity: "active"` and `sort: "service_time_asc"`.
+  - `scripts/regression-check.js` checks that the carpool group validity and service-time sort controls remain present.
+- Transport request workbench cleanup:
+  - `TransportRequestsView.vue` exposes the existing `toggleOfflineRecorded` behavior directly in both the legacy transport request list column and the current workbench `是否已记录` column.
+  - The column now renders one status button only: `未记录` for unrecorded rows and `已记录` for recorded rows. The previous extra `切为未记录` / `标记已记录` action text was removed from this column.
+  - `styles.css` adds a scoped `offline-recorded-toggle` button style for the gray/green state button.
+  - `scripts/regression-check.js` now guards that transport request rows use one status toggle button and do not show the extra action text.
 
 ## Verification
 
-- `node --check api/transport-groups/index.js` passed.
-- `node --check api/transport-requests/index.js` passed.
-- `npm --prefix apps/admin-vue run build` passed with the existing Vite large-chunk warning.
-- Build output refreshed:
-  - `admin/index.html`
-  - `admin/assets/index-CJ4JLX1e.js`
-  - `admin/assets/index-Cn3hgMJD.css`
-- Vercel production build for deployment `dpl_7MjGbchq2YNWLvgRVjC775oYKiWE` passed and output:
-  - `/admin/assets/index-oXl2evCZ.js`
-  - `/admin/assets/index-DfE4uMCS.css`
-- `git diff --check` passed, with line-ending warnings only.
-- Local helper server was started at `http://localhost:3000` and then stopped.
-- Browser verification with mocked admin session confirmed:
-  - Carpool group initial request: `/api/transport-groups?paginate=true&page=1&page_size=10&validity=active&sort=service_time_asc`
-  - Next page request: `/api/transport-groups?paginate=true&page=2&page_size=10&validity=active&sort=service_time_asc`
-  - Validity switch request: `/api/transport-groups?paginate=true&page=1&page_size=10&validity=invalid&sort=service_time_asc`
-  - Sort switch request: `/api/transport-groups?paginate=true&page=1&page_size=10&validity=invalid&sort=service_time_desc`
-  - Transport request initial request remains `/api/transport-requests?paginate=true&page=1&page_size=10&status=active&sort=flight_nearest`
-- No production API was called with an authenticated session, and no production data was created, edited, deleted, cleared, or overwritten.
+- `Select-String` checks for `enhancedAddressFields` and `ReadonlyField v-for="item in enhancedAddressFields"` in `apps\admin-vue\src\views\StorageOrderDetailView.vue` returned no matches.
+- `npm --prefix apps/admin-vue run build` passed and refreshed the local `admin/` static output to `admin/assets/index-Bob6B9G_.js` and `admin/assets/index-DVcvb6_8.css`.
+- `rg -n "状态口径|statusFields|toggleOfflineRecorded|togglePaymentReceived|savingOffline|savingPayment" apps\admin-vue\src\views\StorageOrderDetailView.vue` returned no matches.
+- `npm --prefix apps/admin-vue run build` passed and refreshed the local `admin/` static output to `admin/assets/index-C3dKwvOn.js` and `admin/assets/index-DVcvb6_8.css`.
+- `node --check transport-public.js` passed.
+- `node --check public-api-handlers/transport-groups.js` passed.
+- `node --check public-api-handlers/transport-board.js` passed.
+- Local API verification at `http://localhost:3000/api/public/transport-groups?sort=upcoming&limit=9&page=1` returned 9 items, `page_size: 9`, `sort: upcoming`, current/future-only times, and ascending effective service times.
+- Browser verification on `pickup.html` confirmed the preview request URL includes `limit=9`, the preview rendered 9 rows, and the rendered times were ascending from future nearest to farthest.
+- Browser verification on `transport-board.html` confirmed default and post-filter requests include `sort=upcoming`, headers render in the student-priority order, the first row starts with `接送机时间`, group ID appears after current headcount, and operation buttons are fully visible on desktop plus after mobile horizontal scroll.
+- Browser verification on `transport-board.html` after the action-column tightening confirmed `查看详情` and `加入拼车` are on the same row, `加入拼车` is to the right, row gaps are 6px, and the two buttons remain visible on desktop and mobile horizontal-scroll checks.
+- `node scripts/regression-check.js` passed.
+- `npm --prefix apps/admin-vue run build` passed and refreshed the local `admin/` static output to `admin/assets/index-mouLrgPG.js` and `admin/assets/index-DVcvb6_8.css`.
+- Browser verification attempted at `http://127.0.0.1:3000/admin/transport/requests`, but the in-app browser was redirected to `admin-login.html` because it had no current administrator session. Authenticated click testing still needs a logged-in admin session.
+- A local-only Supabase row `TEST-ST-P-007` was created for manual linked-order testing; no Preview, Production, or maintenance endpoint was called.
+- No test data was uploaded.
+- No production data was written.
+- No deployment was run.
 
 ## Current Project State
 
-- Admin Vue source is the canonical admin UI source; `npm --prefix apps/admin-vue run build` refreshes the served `admin/` bundle.
-- The carpool group admin list no longer loads all active groups before first-screen pagination.
-- The transport request admin list remains server-paginated and keeps its default valid-order filter.
-- Production `https://ngn.best` is aliased to P6 performance deployment `dpl_7MjGbchq2YNWLvgRVjC775oYKiWE`.
-- No SQL index was added in this patch.
+- Public carpool student-priority display changes currently touch:
+  - `transport-public.js`
+  - `transport-board.html`
+  - `styles.css`
+  - `public-api-handlers/transport-groups.js`
+  - `public-api-handlers/transport-board.js`
+  - `docs/PROJECT_MAP.md`
+  - `docs/current-status.md`
+- P7 Preview candidate files should be limited to storage workbench files and docs:
+  - `api/_lib/storage-orders.js`
+  - `api/admin/[...action].js`
+  - `apps/admin-vue/src/views/StorageAllOrdersView.vue`
+  - `apps/admin-vue/src/views/StorageOrderDetailView.vue`
+  - `apps/admin-vue/src/views/BoxOrderDetailView.vue`
+  - `apps/admin-vue/src/components/TransportGroupFilters.vue`
+  - `apps/admin-vue/src/styles.css`
+  - `scripts/regression-check.js`
+  - `docs/PROJECT_MAP.md`
+  - `docs/current-status.md`
+- The transport request recorded-toggle usability change additionally touches:
+  - `apps/admin-vue/src/views/TransportRequestsView.vue`
+  - `apps/admin-vue/src/styles.css`
+  - `scripts/regression-check.js`
+- Local `admin/` build output is currently refreshed for manual acceptance only; do not include it in a source-only commit unless intentionally committing build artifacts for release.
+- Local-only storage seed/clear helpers remain ignored and must not be run against Preview or Production.
 
 ## Open Risks / Follow-Up
 
-- Advanced carpool filters that depend on derived enriched data, such as risk/payment/offline/readiness, are still evaluated on the loaded page data. Moving those fully server-side would be a separate, broader patch.
-- `/api/transport-groups` still runs `cleanupEmptyTransportGroups` on GET as existing behavior; this patch did not change group lifecycle cleanup.
-- If production is still slow after this patch, add production-safe sampled perf timing around group base query, cleanup, member query, duplicate lookup, and enrichment before considering SQL indexes or RPC/view changes.
+- Before the next commit, run `node scripts/regression-check.js` and include the result in the commit/release note.
+- The regression check is intentionally static/minimal; it does not replace focused browser/API verification before Preview or Production.
+- Re-test `http://127.0.0.1:3000/admin/transport/requests` in a logged-in admin session and click one `未记录` button plus one `已记录` button to confirm both directions update and write the expected operation log.
+- P7 should receive local/admin manual acceptance before commit, especially list filter behavior, detail payment/offline-recorded toggles, buy-box delivery edits, and buy-box related storage links.
+- Do not deploy P7 until after local acceptance, an intentional commit, and a separate release instruction.

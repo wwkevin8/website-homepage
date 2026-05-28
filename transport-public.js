@@ -7,7 +7,7 @@
   }
 
   const DEFAULT_BOARD_PAGE_SIZE = 10;
-  const DEFAULT_PREVIEW_SIZE = 3;
+  const DEFAULT_PREVIEW_SIZE = 9;
   const MODAL_ID = "pickupJoinModal";
   const CUSTOMER_SERVICE_QR_SRC = "./img/pickup-service-qr.jpg";
 
@@ -140,13 +140,13 @@
 
   function renderBoardHeader() {
     const labels = [
-      { full: "拼车组编号", short: "组号" },
+      { full: "接送机时间", short: "时间" },
       { full: "服务类型", short: "类型" },
       { full: "机场", short: "机场" },
       { full: "航站楼", short: "航站" },
       { full: "航班号", short: "航班" },
-      { full: "接机时间", short: "时间" },
       { full: "当前人数", short: "人数" },
+      { full: "拼车组编号", short: "组号" },
       { full: "操作", short: "查看" }
     ];
     return `
@@ -169,7 +169,7 @@
       <article class="transport-board-card transport-board-card-surface">
         <div class="transport-board-inline-row transport-board-inline-row-compact">
           <div class="transport-board-inline-item transport-board-inline-item-highlight">
-            <span>${Shared.escapeHtml(getGroupKey(item) || "--")}</span>
+            <span>${Shared.escapeHtml(getPickupTimeText(item))}</span>
           </div>
           <div class="transport-board-inline-item">
             <span>${Shared.escapeHtml(Shared.serviceLabel(item.service_type))}</span>
@@ -184,10 +184,10 @@
             <span>${Shared.escapeHtml(getFlightLabel(item))}</span>
           </div>
           <div class="transport-board-inline-item">
-            <span>${Shared.escapeHtml(getPickupTimeText(item))}</span>
+            <span>${Shared.escapeHtml(passengerSummary)}</span>
           </div>
           <div class="transport-board-inline-item">
-            <span>${Shared.escapeHtml(passengerSummary)}</span>
+            <span>${Shared.escapeHtml(getGroupKey(item) || "--")}</span>
           </div>
           <div class="transport-board-inline-item transport-board-inline-item-actions">
             <div class="transport-board-card-actions">
@@ -206,11 +206,11 @@
     return `
       <article class="pickup-board-card pickup-board-card-row">
         <div class="pickup-board-row-grid">
-          <div class="pickup-board-row-item pickup-board-row-item-service pickup-board-row-item-key" data-label="接机类型"><span>${Shared.escapeHtml(Shared.serviceLabel(item.service_type))}</span></div>
+          <div class="pickup-board-row-item pickup-board-row-item-service pickup-board-row-item-key" data-label="接送类型"><span>${Shared.escapeHtml(Shared.serviceLabel(item.service_type))}</span></div>
           <div class="pickup-board-row-item" data-label="机场"><span>${Shared.escapeHtml(getAirportLabel(item))}</span></div>
           <div class="pickup-board-row-item pickup-board-row-item-centered" data-label="航站楼" title="${Shared.escapeHtml(terminalSummary.fullText)}"><span>${Shared.escapeHtml(terminalSummary.shortText)}</span></div>
           <div class="pickup-board-row-item pickup-board-row-item-flight pickup-board-row-item-centered" data-label="航班号" title="${Shared.escapeHtml(flightSummary.fullText)}"><span>${Shared.escapeHtml(flightSummary.shortText)}</span></div>
-          <div class="pickup-board-row-item" data-label="接机时间"><span>${Shared.escapeHtml(getPickupTimeText(item))}</span></div>
+          <div class="pickup-board-row-item" data-label="接送机时间"><span>${Shared.escapeHtml(getPickupTimeText(item))}</span></div>
           <div class="pickup-board-row-item" data-label="人数/座位"><span>${Shared.escapeHtml(passengerSummary)}</span></div>
         </div>
       </article>
@@ -218,7 +218,7 @@
   }
 
   function renderPreviewHeader() {
-    const labels = ["接机类型", "机场", "航站楼", "航班号", "接机时间", "人数/座位"];
+    const labels = ["接送类型", "机场", "航站楼", "航班号", "接送机时间", "人数/座位"];
     return `
       <div class="pickup-board-table-head">
         <div class="pickup-board-row-grid">
@@ -238,6 +238,26 @@
       <span class="transport-pagination-current">第 ${page} 页</span>
       <button class="button button-secondary" type="button" data-page-action="next" ${hasNext ? "" : "disabled"}>下一页</button>
     `;
+  }
+
+  function showBoardActionError(container, message) {
+    if (!container) {
+      return;
+    }
+    const existingNotice = container.querySelector("[data-board-action-error]");
+    if (existingNotice) {
+      existingNotice.remove();
+    }
+    const notice = document.createElement("div");
+    notice.className = "transport-empty transport-board-action-error";
+    notice.dataset.boardActionError = "true";
+    notice.textContent = message || "当前拼车组暂时无法加入，请联系客服。";
+    container.prepend(notice);
+    window.setTimeout(() => {
+      if (notice.isConnected) {
+        notice.remove();
+      }
+    }, 6000);
   }
 
   function ensureModal() {
@@ -284,7 +304,7 @@
           <p>拼车组编号：${Shared.escapeHtml(getGroupKey(item) || "--")}</p>
           <p>机场：${Shared.escapeHtml(getAirportLabel(item))}</p>
           <p>航站楼：${Shared.escapeHtml(getTerminalLabel(item))}</p>
-          <p>${Shared.escapeHtml(isDropoff ? "送机时间" : "接机时间")}：${Shared.escapeHtml(getPickupTimeText(item))}</p>
+          <p>接送机时间：${Shared.escapeHtml(getPickupTimeText(item))}</p>
           <p>${Shared.escapeHtml(routeLabel)}：${Shared.escapeHtml(routeValue)}</p>
           <p>当前人数：${Number(item.current_passenger_count || item.passenger_count || 0)}</p>
           <p>剩余位置：${Number(item.remaining_passenger_count || 0)}</p>
@@ -487,7 +507,7 @@
           <p>拼车组编号：${Shared.escapeHtml(getGroupKey(item) || "--")}</p>
           <p>机场：${Shared.escapeHtml(airportLabel)}</p>
           <p>航站楼：${Shared.escapeHtml(terminalLabel)}</p>
-          <p>${Shared.escapeHtml(isDropoff ? "送机时间" : "接机时间")}：${Shared.escapeHtml(getPickupTimeText(item))}</p>
+          <p>接送机时间：${Shared.escapeHtml(getPickupTimeText(item))}</p>
           <p>${Shared.escapeHtml(routeSummaryLabel)}：${Shared.escapeHtml(routeSummaryText)}</p>
           <p>当前人数：${Number(item.current_passenger_count || item.passenger_count || 0)}</p>
           <p>剩余位置：${Number(item.remaining_passenger_count || 0)}</p>
@@ -555,7 +575,7 @@
       ["服务类型", Shared.serviceLabel(item.service_type)],
       ["机场", getAirportLabel(item)],
       ["航站楼情况", getTerminalLabel(item)],
-      [item.preferred_time_start || item.flight_time_reference ? "接机时间" : "接机时间范围", timeRange || "--"],
+      [item.preferred_time_start || item.flight_time_reference ? "接送机时间" : "接送机时间范围", timeRange || "--"],
       ["当前人数", `${Number(item.current_passenger_count || item.passenger_count || 0)}人`],
       ["剩余座位", `${Number(item.remaining_passenger_count || 0)}位`],
       ["当前平均价格", item.current_average_price_gbp ? `£${Number(item.current_average_price_gbp).toFixed(2)}` : "£0.00"],
@@ -731,7 +751,17 @@
     return lines.join("\n");
   }
 
-  async function resolveJoinTargetItem(groupId) {
+  async function resolveJoinTargetItem(item) {
+    const groupId = getGroupKey(item);
+    const directTargetRequestId = item?.join_target_request_id || item?.target_request_id || "";
+    if (directTargetRequestId) {
+      return {
+        ...item,
+        id: directTargetRequestId,
+        group_id: groupId
+      };
+    }
+
     const response = await Api.listPublicBoard({
       group_id: groupId,
       sort: "upcoming",
@@ -751,7 +781,7 @@
   }
 
   async function openJoinModal(item) {
-    const targetItem = await resolveJoinTargetItem(getGroupKey(item));
+    const targetItem = await resolveJoinTargetItem(item);
     const modalItem = {
       ...item,
       ...targetItem,
@@ -871,7 +901,7 @@
         airport_code: form.airport_code.value,
         date_from: form.date_from.value,
         date_to: form.date_to.value,
-        sort: form.date_from.value ? "upcoming" : "latest",
+        sort: "upcoming",
         limit: DEFAULT_BOARD_PAGE_SIZE,
         page
       }).catch(error => {
@@ -933,7 +963,7 @@
       const item = currentItems.find(entry => getGroupKey(entry) === joinButton.getAttribute("data-join-pickup"));
       if (item && isGroupJoinable(item)) {
         openJoinModal(item).catch(error => {
-          list.innerHTML = `<div class="transport-empty">${Shared.escapeHtml(error.message)}</div>`;
+          showBoardActionError(list, error.message);
         });
       }
     });
@@ -973,7 +1003,7 @@
           <div class="pickup-preview-time">${Shared.escapeHtml(getPickupTimeText(item))}</div>
           <div class="pickup-preview-grid">
             <div class="pickup-preview-cell">
-              <span class="pickup-preview-label">接机类型</span>
+              <span class="pickup-preview-label">接送类型</span>
               <strong class="pickup-preview-value">${Shared.escapeHtml(serviceLabel)}</strong>
             </div>
             <div class="pickup-preview-cell">
@@ -989,7 +1019,7 @@
               <strong class="pickup-preview-value">${Shared.escapeHtml(flightSummary.shortText)}</strong>
             </div>
             <div class="pickup-preview-cell">
-              <span class="pickup-preview-label">接机时间</span>
+              <span class="pickup-preview-label">接送机时间</span>
               <strong class="pickup-preview-value">${Shared.escapeHtml(getPickupTimeText(item))}</strong>
             </div>
             <div class="pickup-preview-cell">
@@ -1098,7 +1128,7 @@
     }
 
     list.innerHTML = `
-      <p class="pickup-board-preview-note">前台仅展示最近 3 个拼车组，完整信息请查看接机面板。</p>
+      <p class="pickup-board-preview-note">前台仅展示最近 9 个拼车组，完整信息请查看接机面板。</p>
       <div class="pickup-board-track-scroll">
         <div class="pickup-board-track">
           ${renderPreviewHeader()}
@@ -1167,7 +1197,7 @@
             <div class="pickup-board-row-item" data-label="机场"><span>${Shared.escapeHtml(getAirportLabel(item))}</span></div>
             <div class="pickup-board-row-item pickup-board-row-item-centered" data-label="航站楼" title="${Shared.escapeHtml(terminalSummary.fullText)}"><span>${Shared.escapeHtml(terminalSummary.shortText)}</span></div>
             <div class="pickup-board-row-item pickup-board-row-item-flight pickup-board-row-item-centered" data-label="航班号" title="${Shared.escapeHtml(flightSummary.fullText)}"><span>${Shared.escapeHtml(flightSummary.shortText)}</span></div>
-            <div class="pickup-board-row-item" data-label="接机时间"><span>${Shared.escapeHtml(getPickupTimeText(item))}</span></div>
+            <div class="pickup-board-row-item" data-label="接送机时间"><span>${Shared.escapeHtml(getPickupTimeText(item))}</span></div>
             <div class="pickup-board-row-item" data-label="人数/座位"><span>${Shared.escapeHtml(passengerSummary)}</span></div>
           </div>
         </div>
@@ -1209,7 +1239,7 @@
   function renderPreviewNotice() {
     return `
       <div class="pickup-board-preview-note" role="note" aria-label="预览提示">
-        <span class="pickup-board-preview-badge">仅展示最近 3 组</span>
+        <span class="pickup-board-preview-badge">仅展示最近 9 组</span>
         <span class="pickup-board-preview-copy">这里只展示最新拼车预览，想看全部班次与完整信息，请点击上方 <strong>查看完整拼车表格</strong> 进入接机面板。</span>
       </div>
     `;

@@ -1147,7 +1147,7 @@ textarea {
 }
 
 .transport-group-filter-row--primary {
-  grid-template-columns: minmax(220px, 1.4fr) repeat(3, minmax(130px, 0.85fr)) minmax(260px, auto);
+  grid-template-columns: minmax(220px, 1.4fr) repeat(5, minmax(130px, 0.85fr)) minmax(260px, auto);
 }
 
 .transport-group-filter-row--advanced {
@@ -1449,6 +1449,35 @@ textarea {
   display: block;
   color: #475569;
   cursor: help;
+}
+
+.offline-recorded-toggle {
+  min-width: 64px;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  padding: 3px 10px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+
+.offline-recorded-toggle:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.offline-recorded-toggle--recorded {
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+  color: #15803d;
+}
+
+.offline-recorded-toggle--unrecorded {
+  border-color: #e2e8f0;
+  background: #f8fafc;
+  color: #475569;
 }
 
 .workbench-row-number {
@@ -3341,6 +3370,43 @@ textarea {
   font-size: 15px;
 }
 
+.storage-related-order-panel--compact {
+  margin-bottom: 0;
+}
+
+.storage-fee-compact-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, .45fr);
+  gap: 12px;
+  align-items: stretch;
+}
+
+.storage-fee-compact-panel--merged {
+  margin-top: 12px;
+}
+
+.storage-fee-compact-form {
+  display: grid;
+  grid-template-columns: minmax(160px, .6fr) minmax(180px, .8fr) auto;
+  gap: 12px;
+  align-items: end;
+}
+
+.storage-fee-compact-form--merged {
+  grid-template-columns: minmax(140px, .7fr) repeat(4, minmax(140px, .8fr)) auto;
+}
+
+.storage-fee-compact-form label {
+  display: grid;
+  gap: 6px;
+}
+
+.storage-fee-compact-form label span {
+  color: #334155;
+  font-size: 13px;
+  font-weight: 700;
+}
+
 .storage-box-table-wrap {
   overflow-x: auto;
   border: 1px solid #e2e8f0;
@@ -4265,7 +4331,254 @@ textarea {
   color: #ffffff;
 }
 
+.storage-order-filter-panel--workbench {
+  grid-template-columns: minmax(260px, 1.4fr) repeat(7, minmax(120px, 0.8fr)) repeat(2, minmax(130px, 0.75fr)) minmax(170px, 0.95fr);
+}
+
+.storage-workbench-quick-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin: 0 0 12px;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.storage-filter-button-group {
+  display: grid;
+  gap: 6px;
+}
+
+.storage-filter-button-group > span {
+  color: #475569;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.storage-filter-button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.storage-filter-chip {
+  min-height: 38px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: #fff;
+  color: #334155;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.storage-filter-chip:hover,
+.storage-filter-chip.is-active {
+  border-color: #2563eb;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.storage-workbench-stats {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0 0 12px;
+}
+
+.storage-stat-card {
+  display: grid;
+  gap: 5px;
+  min-height: 72px;
+  padding: 12px 14px;
+  border: 1px solid #e2e8f0;
+  border-left: 4px solid #94a3b8;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.storage-stat-card:hover,
+.storage-stat-card.is-active {
+  border-color: #bfdbfe;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, .12);
+}
+
+.storage-stat-card span {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.storage-stat-card strong {
+  color: #0f172a;
+  font-size: 24px;
+  line-height: 1;
+}
+
+.storage-stat-card--blue { border-left-color: #2563eb; }
+.storage-stat-card--amber { border-left-color: #f59e0b; }
+.storage-stat-card--green { border-left-color: #10b981; }
+.storage-stat-card--rose { border-left-color: #e11d48; }
+.storage-stat-card--cyan { border-left-color: #0891b2; }
+
+.storage-workbench-table .admin-table th,
+.storage-workbench-table .admin-table td {
+  padding: 8px 9px;
+  font-size: 12px;
+}
+
+.storage-workbench-table .status-badge {
+  min-height: 22px;
+  padding: 2px 7px;
+}
+
+.storage-workbench-table .table-action-group--compact {
+  gap: 5px;
+}
+
+.storage-workbench-table .table-action-button {
+  min-height: 26px;
+  padding: 4px 7px;
+  font-size: 12px;
+}
+
+.storage-action-button--status {
+  min-width: 66px;
+}
+
+.storage-action-button--paid {
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+  color: #166534;
+}
+
+.storage-action-button--unpaid {
+  border-color: #fecaca;
+  background: #fff1f2;
+  color: #9f1239;
+}
+
+.storage-action-button--muted,
+.storage-action-button--subtle-danger {
+  border-color: #dbe3ef;
+  background: #f8fafc;
+  color: #64748b;
+}
+
+.storage-action-button--subtle-danger:hover {
+  border-color: #fecaca;
+  background: #fff1f2;
+  color: #9f1239;
+}
+
+.storage-remark-summary {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: #334155;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.35;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.storage-remark-summary:hover {
+  color: #2563eb;
+  text-decoration: underline;
+}
+
+.remark-editor--inline {
+  gap: 5px;
+}
+
+.remark-editor--inline textarea {
+  min-height: 52px;
+  padding: 6px 7px;
+  font-size: 12px;
+}
+
+.remark-editor__actions {
+  display: flex;
+  gap: 5px;
+}
+
+.storage-detail-summary-bar__badges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.storage-detail-action-row,
+.storage-detail-text-block__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+  margin: 8px 0;
+}
+
+.storage-box-count-form {
+  margin-top: 12px;
+}
+
+.storage-operation-log-list {
+  display: grid;
+  gap: 8px;
+}
+
+.storage-operation-log-item {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.storage-operation-log-item div {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.storage-operation-log-item strong {
+  color: #0f172a;
+  font-size: 13px;
+}
+
+.storage-operation-log-item span,
+.storage-operation-log-item p {
+  margin: 0;
+  color: #64748b;
+  font-size: 12px;
+}
+
 @media (max-width: 900px) {
+  .storage-order-filter-panel--workbench,
+  .storage-workbench-quick-filter-bar,
+  .storage-workbench-stats,
+  .storage-fee-compact-panel,
+  .storage-fee-compact-form,
+  .storage-fee-compact-form--merged {
+    grid-template-columns: 1fr;
+  }
+
   .manual-import-grid {
     grid-template-columns: 1fr;
   }

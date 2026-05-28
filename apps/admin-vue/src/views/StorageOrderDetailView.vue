@@ -19,6 +19,7 @@ const error = ref("");
 const notice = ref("");
 const savingSchedule = ref(false);
 const savingAddress = ref(false);
+const savingInternalNote = ref(false);
 const exporting = ref(false);
 const deleting = ref(false);
 const savingStatus = ref(false);
@@ -26,6 +27,8 @@ const deleteDialogOpen = ref(false);
 const statusDialogOpen = ref(false);
 const statusDraft = ref("");
 const relatedBoxOrder = ref(null);
+const operationLogs = ref([]);
+const summaryCopied = ref(false);
 
 const scheduleForm = reactive({
   service_time_slot: "",
@@ -41,6 +44,9 @@ const addressForm = reactive({
   postcode: "",
   has_lift: "",
   needs_upstairs: ""
+});
+const internalNoteForm = reactive({
+  service_notes: ""
 });
 
 const orderId = computed(() => String(route.params.id || "").trim());
@@ -86,6 +92,17 @@ function formatDate(value) {
   } catch (err) {
     return text;
   }
+}
+
+function calculateStorageDays(startValue, endValue) {
+  const start = String(startValue || "").slice(0, 10);
+  const end = String(endValue || "").slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(start) || !/^\d{4}-\d{2}-\d{2}$/.test(end)) return "--";
+  const startMs = new Date(`${start}T00:00:00Z`).getTime();
+  const endMs = new Date(`${end}T00:00:00Z`).getTime();
+  const diff = endMs - startMs;
+  if (!Number.isFinite(diff) || diff <= 0) return "--";
+  return String(Math.round(diff / 86400000));
 }
 
 function formatDateTime(value) {
@@ -157,6 +174,10 @@ const estimateSummary = computed(() => {
   return direct || serviceFlags.value?.estimate || serviceFlags.value?.pricing || {};
 });
 const calculatorSnapshot = computed(() => parseJson(order.value?.calculator_snapshot_json) || {});
+const adminForm = computed(() => {
+  const form = customerForm.value;
+  return form?.admin && typeof form.admin === "object" ? form.admin : {};
+});
 const purchaseItems = computed(() => {
   const direct = parseJson(order.value?.purchased_boxes);
   if (Array.isArray(direct) && direct.length) return direct;
@@ -284,6 +305,7 @@ function syncEditableForms(record = order.value || {}) {
   addressForm.postcode = String(firstValue(record.postcode, serviceDetails.value.postcode, customerForm.value.postcode) || "");
   addressForm.has_lift = boolFormValue(firstValue(record.has_lift, serviceDetails.value.hasLift));
   addressForm.needs_upstairs = boolFormValue(firstValue(record.needs_upstairs, serviceDetails.value.needsUpstairs, serviceDetails.value.needUpstairs));
+  internalNoteForm.service_notes = String(firstValue(adminForm.value.service_notes) || "");
   statusDraft.value = String(firstValue(record.status) || "");
 }
 
@@ -327,6 +349,41 @@ function statusTone(status) {
   if (status === "confirmed" || status === "completed") return "success";
   if (status === "cancelled" || status === "canceled") return "neutral";
   return "warning";
+}
+function billingInfo(record = order.value || {}) {
+  const formJson = parseJson(record.customer_form_json) || {};
+  const admin = formJson?.admin && typeof formJson.admin === "object" ? formJson.admin : {};
+  return {
+    ...(formJson?.billing && typeof formJson.billing === "object" ? formJson.billing : {}),
+    ...(admin?.billing && typeof admin.billing === "object" ? admin.billing : {})
+  };
+}
+function paymentStatusValue(record = order.value || {}) {
+  const billing = billingInfo(record);
+  return String(billing.payment_status || billing.status || "").trim();
+}
+function isPaymentReceived(record = order.value || {}) {
+  const status = paymentStatusValue(record);
+  if (status === "paid") return true;
+  return priceFormula.value.total <= 0 && status === "waived";
+}
+function paymentLabel(record = order.value || {}) {
+  return isPaymentReceived(record) ? "已收款" : "未收款";
+}
+function paymentTone(record = order.value || {}) {
+  return isPaymentReceived(record) ? "success" : "danger";
+}
+function chargeLabel() {
+  return priceFormula.value.total > 0 ? "收费" : "免费 / 待确认";
+}
+function chargeTone() {
+  return priceFormula.value.total > 0 ? "warning" : "neutral";
+}
+function offlineRecordedLabel(record = order.value || {}) {
+  return record?.offline_recorded ? "已记录" : "未记录";
+}
+function offlineRecordedTone(record = order.value || {}) {
+  return record?.offline_recorded ? "success" : "neutral";
 }
 
 function rowOrderNo(record = order.value || {}) {
@@ -447,25 +504,13 @@ const baseFields = computed(() => [
   field("创建时间", formatDateTime(order.value?.created_at)),
   field("更新时间", formatDateTime(order.value?.updated_at))
 ]);
-
 const enhancedContactFields = computed(() => [
   field("姓名", firstValue(order.value?.customer_name, customerForm.value.customerName, customerForm.value.name, userSnapshot.value.name)),
   field("邮箱", firstValue(order.value?.student_email, order.value?.linked_user_email, customerForm.value.email, userSnapshot.value.email)),
   field("电话", firstValue(order.value?.phone, customerForm.value.phone, userSnapshot.value.phone, serviceFlags.value.phone)),
   field("微信", firstValue(order.value?.wechat_id, customerForm.value.wechatId, customerForm.value.contactHandle, userSnapshot.value.wechatId))
 ]);
-const enhancedServiceFields = computed(() => [
-  field("寄存开始日期", formatDate(firstValue(order.value?.storage_start_date, order.value?.storage_intake_date, serviceDetails.value.serviceDate, serviceDetails.value.storageStartDate, summaryLine("取件日期")))),
-  field("寄存结束日期", formatDate(firstValue(order.value?.storage_end_date, order.value?.expected_storage_end_date, serviceDetails.value.expectedStorageEndDate, serviceDetails.value.storageEndDate, summaryLine("预计寄存结束日期")))),
-  field("寄存天数", firstValue(order.value?.storage_days, estimateSummary.value.days, serviceDetails.value.storageDays, serviceFlags.value.storageDays))
-]);
-const enhancedAddressFields = computed(() => [
-  field("公寓 / 楼栋 / 房间", firstValue(order.value?.room_or_building, serviceDetails.value.roomOrBuilding, serviceDetails.value.room, serviceFlags.value.roomOrBuilding, customerForm.value.roomOrBuilding, summaryLine("房间 / 楼栋 / 公寓名"))),
-  field("邮编", firstValue(order.value?.postcode, serviceDetails.value.postcode, serviceFlags.value.postcode, customerForm.value.postcode, summaryLine("邮编"))),
-  field("取件地址", firstValue(order.value?.address_full, serviceDetails.value.address, serviceDetails.value.fullAddress, serviceDetails.value.pickupAddress, serviceFlags.value.address, customerForm.value.address, summaryLine("地址"), summaryLine("取件地址")), true),
-  field("是否有电梯", boolLabel(firstValue(order.value?.has_lift, serviceDetails.value.hasLift))),
-  field("是否需要上楼", boolLabel(firstValue(order.value?.needs_upstairs, serviceDetails.value.needsUpstairs, serviceDetails.value.needUpstairs)))
-]);
+const scheduleStorageDays = computed(() => calculateStorageDays(scheduleForm.storage_start_date, scheduleForm.storage_end_date));
 const enhancedItemFields = computed(() => [
   field("寄存箱型", firstValue(order.value?.box_type_summary, order.value?.box_type, serviceDetails.value.boxType, serviceDetails.value.boxTypeSummary, serviceFlags.value.boxType, serviceFlags.value.boxTypeSummary, purchasedBoxSummary()), true),
   field("寄存数量", itemQuantitySummary()),
@@ -559,13 +604,14 @@ const priceFormula = computed(() => {
       { label: "楼梯费", amount: stairsFee, operator: "+" },
       { label: "超重费", amount: overweightFee, operator: "+" },
       { label: "购买箱子费用", amount: purchaseFee, operator: "+" },
-      ...(extraFee > 0 ? [{ label: "附加费用", amount: extraFee, operator: "+" }] : []),
+      ...(extraFee > 0 ? [{ label: "会员不减免费用", amount: extraFee, operator: "+" }] : []),
       { label: "会员减免", amount: discount, operator: "-" }
     ]
   };
 });
 const enhancedNoteFields = computed(() => [
-  field("用户备注", firstValue(order.value?.notes, customerForm.value.notes, serviceDetails.value.notes), true)
+  field("用户备注", firstValue(order.value?.notes, customerForm.value.notes, serviceDetails.value.notes), true),
+  field("内部备注", firstValue(adminForm.value.service_notes), true)
 ]);
 
 function readableSummaryLine(item) {
@@ -577,12 +623,21 @@ function readableSummaryLine(item) {
 const businessSummary = computed(() => [
   `订单编号：${rowOrderNo()}`,
   `服务类型：${serviceTypeLabel()}`,
-  ...enhancedContactFields.value.map(readableSummaryLine),
-  ...enhancedServiceFields.value.map(readableSummaryLine),
-  ...enhancedAddressFields.value.map(readableSummaryLine),
-  ...enhancedItemFields.value.map(readableSummaryLine),
-  `费用：总费用 ${formatFormulaMoney(priceFormula.value.total)}`,
-  ...enhancedNoteFields.value.map(readableSummaryLine)
+  `姓名：${displayValue(firstValue(order.value?.customer_name, customerForm.value.customerName, customerForm.value.name, userSnapshot.value.name))}`,
+  `电话：${displayValue(firstValue(order.value?.phone, customerForm.value.phone, userSnapshot.value.phone, serviceFlags.value.phone))}`,
+  `邮箱：${displayValue(firstValue(order.value?.student_email, order.value?.linked_user_email, customerForm.value.email, userSnapshot.value.email))}`,
+  `微信：${displayValue(firstValue(order.value?.wechat_id, customerForm.value.wechatId, customerForm.value.contactHandle, userSnapshot.value.wechatId))}`,
+  `服务日期：${formatDate(firstValue(order.value?.service_date, order.value?.storage_start_date, order.value?.storage_intake_date, order.value?.storage_end_date, order.value?.expected_storage_end_date))}`,
+  `时间段：${displayValue(firstValue(order.value?.service_time_slot, order.value?.service_time))}`,
+  `地址：${displayValue(firstValue(order.value?.address_full, serviceDetails.value.address, serviceDetails.value.fullAddress, serviceDetails.value.pickupAddress))}`,
+  `公寓 / 房间：${displayValue(firstValue(order.value?.room_or_building, serviceDetails.value.roomOrBuilding, customerForm.value.roomOrBuilding))}`,
+  `邮编：${displayValue(firstValue(order.value?.postcode, serviceDetails.value.postcode, customerForm.value.postcode))}`,
+  `箱子数量：${displayValue(itemQuantitySummary())}`,
+  `是否有电梯：${boolLabel(firstValue(order.value?.has_lift, serviceDetails.value.hasLift))}`,
+  `是否需要上楼：${boolLabel(firstValue(order.value?.needs_upstairs, serviceDetails.value.needsUpstairs, serviceDetails.value.needUpstairs))}`,
+  `总费用：${formatFormulaMoney(priceFormula.value.total)}`,
+  `用户备注：${displayValue(firstValue(order.value?.notes, customerForm.value.notes, serviceDetails.value.notes))}`,
+  `内部备注：${displayValue(firstValue(adminForm.value.service_notes))}`
 ].filter(Boolean).join("\n"));
 async function saveSchedule() {
   if (savingSchedule.value) return;
@@ -631,6 +686,80 @@ async function saveAddress() {
   } finally {
     savingAddress.value = false;
   }
+}
+
+async function saveInternalNote() {
+  if (savingInternalNote.value) return;
+  savingInternalNote.value = true;
+  notice.value = "";
+  error.value = "";
+  try {
+    await updateStorageOrder(orderId.value, {
+      customer_form_admin: {
+        service_notes: String(internalNoteForm.service_notes || "").trim()
+      }
+    });
+    await loadOrder({ silent: true });
+    notice.value = "内部备注已保存。";
+  } catch (err) {
+    notice.value = err.message || "内部备注保存失败。";
+  } finally {
+    savingInternalNote.value = false;
+  }
+}
+
+async function copyBusinessSummary() {
+  summaryCopied.value = false;
+  try {
+    await navigator.clipboard.writeText(businessSummary.value);
+    summaryCopied.value = true;
+    window.setTimeout(() => {
+      summaryCopied.value = false;
+    }, 1800);
+  } catch (err) {
+    notice.value = "复制失败，请手动选中摘要内容复制。";
+  }
+}
+
+function operationActor(log) {
+  const admin = log?.admin_user || {};
+  return admin.name || admin.username || admin.email || "未知管理员";
+}
+
+function operationActionLabel(action) {
+  return {
+    storage_order_updated: "更新寄存订单",
+    storage_order_deleted: "删除寄存订单",
+    storage_orders_marked_offline_recorded: "标记已线下记录",
+    storage_orders_unmarked_offline_recorded: "取消线下记录",
+    order_status_updated: "修改订单状态"
+  }[String(action || "")] || displayValue(action);
+}
+
+function operationChangedFields(log) {
+  const fields = Array.isArray(log?.metadata?.changed_fields) ? log.metadata.changed_fields : [];
+  const labels = {
+    service_date: "服务日期",
+    service_time_slot: "时间段",
+    storage_intake_date: "寄存开始日期",
+    storage_start_date: "寄存开始日期",
+    storage_end_date: "寄存结束日期",
+    expected_storage_end_date: "寄存结束日期",
+    address_full: "详细地址",
+    room_or_building: "公寓 / 房间",
+    postcode: "邮编",
+    has_lift: "是否有电梯",
+    needs_upstairs: "是否需要上楼",
+    customer_form_json: "内部备注 / 收款信息",
+    offline_recorded: "线下记录",
+    status: "订单状态",
+    last_operated_by: "上次操作人",
+    last_operated_at: "最近操作时间"
+  };
+  return fields
+    .filter(fieldName => !["last_operated_by", "last_operated_at"].includes(fieldName))
+    .map(fieldName => labels[fieldName] || fieldName)
+    .join("、");
 }
 
 function downloadBlob(blob, filename) {
@@ -730,6 +859,7 @@ async function loadOrder(options = {}) {
   try {
     const payload = await fetchStorageOrder(orderId.value);
     order.value = payload?.order || payload?.item || payload;
+    operationLogs.value = Array.isArray(payload?.operation_logs) ? payload.operation_logs : [];
     syncEditableForms(order.value);
     if (resolvedOrderType(order.value) === "box_order") {
       router.replace({
@@ -757,7 +887,7 @@ onMounted(loadOrder);
   <section class="storage-detail-view">
     <div class="view-heading">
       <div>
-        <p class="view-heading__eyebrow">Storage order detail</p>
+        <p class="view-heading__eyebrow">寄存订单详情</p>
         <h2>寄存订单详情</h2>
       </div>
       <div class="view-heading__actions">
@@ -776,7 +906,12 @@ onMounted(loadOrder);
           <span>订单编号</span>
           <strong>{{ rowOrderNo() }}</strong>
         </div>
-        <StatusBadge :tone="statusTone(order.status)">{{ statusLabel(order.status) }}</StatusBadge>
+        <div class="storage-detail-summary-bar__badges">
+          <StatusBadge :tone="statusTone(order.status)">{{ statusLabel(order.status) }}</StatusBadge>
+          <StatusBadge :tone="chargeTone()">{{ chargeLabel() }}</StatusBadge>
+          <StatusBadge :tone="paymentTone(order)">{{ paymentLabel(order) }}</StatusBadge>
+          <StatusBadge :tone="offlineRecordedTone(order)">{{ offlineRecordedLabel(order) }}</StatusBadge>
+        </div>
       </div>
 
       <DetailSection title="订单基础信息" description="订单编号和服务类型用于核对，不在详情页修改。">
@@ -792,9 +927,6 @@ onMounted(loadOrder);
       </DetailSection>
 
       <DetailSection title="寄存周期 / 预约信息" description="只展示和编辑寄存订单相关日期，不混入买箱配送字段。">
-        <div class="readonly-field-grid">
-          <ReadonlyField v-for="item in enhancedServiceFields" :key="item.label" v-bind="item" />
-        </div>
         <form class="editable-detail-form" @submit.prevent="saveSchedule">
           <label>
             <span>取件 / 送回时间段</span>
@@ -808,6 +940,10 @@ onMounted(loadOrder);
             <span>寄存结束日期</span>
             <input v-model="scheduleForm.storage_end_date" type="date" />
           </label>
+          <label>
+            <span>寄存天数</span>
+            <input :value="scheduleStorageDays" type="text" readonly />
+          </label>
           <div class="editable-detail-form__actions">
             <button class="primary-button" type="submit" :disabled="savingSchedule">
               {{ savingSchedule ? "保存中..." : "保存寄存预约信息" }}
@@ -816,10 +952,7 @@ onMounted(loadOrder);
         </form>
       </DetailSection>
       <DetailSection title="地址信息" description="地址、房间、邮编、电梯和楼层信息集中核对。">
-        <div class="readonly-field-grid">
-          <ReadonlyField v-for="item in enhancedAddressFields" :key="item.label" v-bind="item" />
-        </div>
-                <form class="editable-detail-form editable-detail-form--address" @submit.prevent="saveAddress">
+        <form class="editable-detail-form editable-detail-form--address" @submit.prevent="saveAddress">
           <label>
             <span>公寓 / 楼栋 / 房间</span>
             <input v-model="addressForm.room_or_building" type="text" />
@@ -911,12 +1044,40 @@ onMounted(loadOrder);
         <div class="readonly-field-grid">
           <ReadonlyField v-for="item in enhancedNoteFields" :key="item.label" v-bind="item" />
         </div>
+        <form class="editable-detail-form editable-detail-form--note" @submit.prevent="saveInternalNote">
+          <label class="editable-detail-form__wide">
+            <span>后台内部备注</span>
+            <textarea v-model="internalNoteForm.service_notes" rows="3" placeholder="仅后台客服可见"></textarea>
+          </label>
+          <div class="editable-detail-form__actions">
+            <button class="primary-button" type="submit" :disabled="savingInternalNote">
+              {{ savingInternalNote ? "保存中..." : "保存内部备注" }}
+            </button>
+          </div>
+        </form>
         <details v-if="businessSummary" class="detail-text-block">
-          <summary>展开客服可读摘要</summary>
+          <summary>展开 / 收起订单摘要</summary>
+          <div class="storage-detail-text-block__actions">
+            <button class="secondary-button" type="button" @click="copyBusinessSummary">
+              {{ summaryCopied ? "已复制" : "复制订单摘要" }}
+            </button>
+          </div>
           <pre>{{ businessSummary }}</pre>
         </details>
       </DetailSection>
 
+      <DetailSection title="操作记录" description="展示最近与该寄存订单相关的后台操作。">
+        <div v-if="operationLogs.length" class="storage-operation-log-list">
+          <article v-for="log in operationLogs" :key="log.id" class="storage-operation-log-item">
+            <div>
+              <strong>{{ operationActionLabel(log.action) }}</strong>
+              <span>{{ operationActor(log) }} · {{ formatDateTime(log.created_at) }}</span>
+            </div>
+            <p v-if="operationChangedFields(log)">字段：{{ operationChangedFields(log) }}</p>
+          </article>
+        </div>
+        <p v-else class="muted-line">暂无操作记录。</p>
+      </DetailSection>
     </template>
 
     <ConfirmDialog

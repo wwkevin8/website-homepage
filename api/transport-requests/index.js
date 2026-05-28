@@ -4,6 +4,7 @@ const { ok, created, badRequest, parseJsonBody, methodNotAllowed, serverError } 
 const { applyRequestFilters, mapRequestPayload, deriveRequestDisplayFlags } = require("../_lib/transport");
 const { createPickupRequestWithGroup } = require("../_lib/transport-group-lifecycle");
 const { logAdminOperation } = require("../_lib/orders");
+const { getCurrentMembershipCycle, LIVE_CLAIM_STATUSES } = require("../_lib/membership");
 
 function isPerfLogEnabled() {
   return process.env.NODE_ENV !== "production";
@@ -292,6 +293,66 @@ async function attachDuplicateFutureFlags(supabase, items) {
   });
 }
 
+async function attachPickupMembershipClaimFlags(supabase, items) {
+  const siteUserIds = Array.from(
+    new Set(
+      (items || [])
+        .filter(item => item?.service_type === "pickup")
+        .map(item => item.site_user_id)
+        .filter(Boolean)
+    )
+  );
+
+  if (!siteUserIds.length) {
+    return items || [];
+  }
+
+  const { data, error } = await supabase
+    .from("membership_benefit_claims")
+    .select("id, site_user_id, status, linked_order_id, linked_order_no, membership_discount_amount, extra_charge_amount, final_price, created_at")
+    .eq("membership_cycle", getCurrentMembershipCycle())
+    .eq("benefit_type", "pickup")
+    .in("status", LIVE_CLAIM_STATUSES)
+    .in("site_user_id", siteUserIds)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    throw error;
+  }
+
+  const claimsByUser = new Map();
+  (data || []).forEach(claim => {
+    const userClaims = claimsByUser.get(claim.site_user_id) || [];
+    userClaims.push(claim);
+    claimsByUser.set(claim.site_user_id, userClaims);
+  });
+
+  return (items || []).map(item => {
+    if (item?.service_type !== "pickup" || !item.site_user_id || item.membership_benefit_claim_id) {
+      return item;
+    }
+
+    const claims = claimsByUser.get(item.site_user_id) || [];
+    const claim = claims.find(row => (
+      (row.linked_order_id && String(row.linked_order_id) === String(item.id))
+      || (row.linked_order_no && String(row.linked_order_no) === String(item.order_no))
+    )) || claims.find(row => row.status === "selected" && !row.linked_order_id && !row.linked_order_no);
+
+    if (!claim) {
+      return item;
+    }
+
+    return {
+      ...item,
+      membership_pickup_claim_id: claim.id,
+      membership_pickup_claim_status: claim.status,
+      membership_inferred_from_claim: true,
+      membership_discount_amount: item.membership_discount_amount ?? claim.membership_discount_amount ?? 0,
+      membership_final_price: claim.final_price ?? null
+    };
+  });
+}
+
 function applyRequestFiltersCompat(query, queryParams, includeManualImportColumns) {
   const nextQueryParams = includeManualImportColumns
     ? queryParams
@@ -379,7 +440,8 @@ module.exports = async function handler(req, res) {
 
       const baseItems = (data || []).map(item => deriveRequestDisplayFlags(item));
       const duplicateFutureStartedAt = nowMs();
-      const items = compact ? baseItems : await attachDuplicateFutureFlags(supabase, baseItems);
+      const duplicateEnrichedItems = compact ? baseItems : await attachDuplicateFutureFlags(supabase, baseItems);
+      const items = compact ? duplicateEnrichedItems : await attachPickupMembershipClaimFlags(supabase, duplicateEnrichedItems);
       const duplicateFutureMs = compact ? 0 : nowMs() - duplicateFutureStartedAt;
       const rows = Array.isArray(items) ? items.length : 0;
 

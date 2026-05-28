@@ -186,6 +186,14 @@
     return Number.isFinite(number) ? `GBP ${number.toFixed(2)}` : String(value);
   }
 
+  function pickupBenefitStandardText(claim) {
+    const rules = claim?.discount_breakdown_json?.rules || {};
+    if (rules.matchedFreeMonth && rules.matchedFreeAirport) {
+      return "9 月 LHR / LGW 接机基础服务免费，额外费用以客服确认为准";
+    }
+    return "非 9 月或其他接机时间按会员接机权益优惠 GBP 100，最终金额以客服确认为准";
+  }
+
   function detailRow(label, value) {
     return `
       <div>
@@ -258,6 +266,7 @@
       bodyNode.innerHTML = `
         <p>您已选择：接机权益</p>
         <p>当前状态：已选择，尚未绑定订单。</p>
+        <p>会员接机权益标准：9 月 LHR / LGW 接机基础服务免费；其他接机时间按会员权益优惠 GBP 100，最终金额以客服确认为准。</p>
         <p>请前往接机页面提交订单，系统会自动识别您的会员权益。</p>
         <a class="button button-primary" href="./pickup-form.html">前往接机服务</a>
       `;
@@ -288,6 +297,7 @@
         <p>当前状态：已绑定订单 / 待服务完成</p>
         <div class="profile-membership-summary">
           ${detailRow("绑定订单号", claim.linked_order_no)}
+          ${claim.benefit_type === "pickup" ? detailRow("接机权益标准", pickupBenefitStandardText(claim)) : ""}
           ${detailRow("会员抵扣", formatMoney(claim.membership_discount_amount))}
           ${detailRow("额外费用", formatMoney(claim.extra_charge_amount))}
           ${detailRow("最终价格", formatMoney(claim.final_price))}

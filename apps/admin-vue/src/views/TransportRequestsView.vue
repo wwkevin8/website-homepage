@@ -44,7 +44,7 @@ const columns = [
   { key: "wb_contact_status", label: "联系状态", width: "112px" },
   { key: "wb_payment_collection_status", label: "收款状态", width: "120px" },
   { key: "wb_deposit_amount_gbp", label: "已收全款/定金", width: "128px" },
-  { key: "wb_offline_recorded", label: "是否已记录", width: "104px" },
+  { key: "wb_offline_recorded", label: "是否已记录", width: "118px" },
   { key: "wb_admin_note", label: "客服备注", width: "220px" },
   { key: "wb_last_operation", label: "最后操作", width: "132px" },
   { key: "wb_actions", label: "操作", width: "220px", className: "is-actions", sticky: "end" }
@@ -783,8 +783,13 @@ function offlineRecordedLabel(value) {
   return value ? "已记录" : "未记录";
 }
 
+function isOfflineRecordedSaving(row) {
+  return togglingId.value === String(requestActionId(row));
+}
+
 function isMembershipRequest(row) {
-  return Boolean(row?.membership_benefit_claim_id) || Number(row?.membership_discount_amount || 0) > 0;
+  return Boolean(row?.membership_benefit_claim_id || row?.membership_pickup_claim_id)
+    || Number(row?.membership_discount_amount || 0) > 0;
 }
 
 function requestRowClass(row) {
@@ -1670,7 +1675,7 @@ async function toggleOfflineRecorded(row) {
       offline_recorded: !Boolean(row.offline_recorded)
     });
     const nextRow = updated?.request || updated?.item || updated;
-    requests.value = requests.value.map(item => (item.id === row.id ? { ...item, ...nextRow } : item));
+    requests.value = requests.value.map(item => (String(item.id) === String(row.id) ? { ...item, ...nextRow } : item));
     notice.value = nextRow?.offline_recorded ? "已标记为已记录。" : "已取消已记录状态。";
   } catch (err) {
     notice.value = err.message || "线下记录状态保存失败，请稍后重试。";
@@ -1921,9 +1926,17 @@ watch(
           <StatusBadge :tone="requestStatusTone(row.status)">{{ requestStatusLabel(row.status) }}</StatusBadge>
         </template>
         <template #cell-offline_recorded="{ row }">
-          <StatusBadge :tone="row.offline_recorded ? 'success' : 'neutral'">
-            {{ offlineRecordedLabel(row.offline_recorded) }}
-          </StatusBadge>
+          <button
+            :class="[
+              'offline-recorded-toggle',
+              row.offline_recorded ? 'offline-recorded-toggle--recorded' : 'offline-recorded-toggle--unrecorded'
+            ]"
+            type="button"
+            :disabled="isOfflineRecordedSaving(row)"
+            @click="toggleOfflineRecorded(row)"
+          >
+            {{ isOfflineRecordedSaving(row) ? "保存中..." : offlineRecordedLabel(row.offline_recorded) }}
+          </button>
         </template>
         <template #cell-last_operation="{ row }">
           <span class="cell-stack" :title="[row.last_operated_by, formatDateTime(row.last_operated_at)].filter(Boolean).join(' / ') || '--'">
@@ -2020,9 +2033,17 @@ watch(
           <input v-model="ensureWorkbenchDraft(row).deposit_amount_gbp" class="workbench-input" min="0" step="0.01" type="number" />
         </template>
         <template #cell-wb_offline_recorded="{ row }">
-          <StatusBadge :tone="row.offline_recorded ? 'success' : 'neutral'">
-            {{ offlineRecordedLabel(row.offline_recorded) }}
-          </StatusBadge>
+          <button
+            :class="[
+              'offline-recorded-toggle',
+              row.offline_recorded ? 'offline-recorded-toggle--recorded' : 'offline-recorded-toggle--unrecorded'
+            ]"
+            type="button"
+            :disabled="isOfflineRecordedSaving(row)"
+            @click="toggleOfflineRecorded(row)"
+          >
+            {{ isOfflineRecordedSaving(row) ? "保存中..." : offlineRecordedLabel(row.offline_recorded) }}
+          </button>
         </template>
         <template #cell-wb_admin_note="{ row }">
           <textarea v-model="ensureWorkbenchDraft(row).admin_note" class="workbench-input workbench-note" rows="2"></textarea>
