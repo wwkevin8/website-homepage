@@ -3,7 +3,7 @@
 ## Latest Task Update
 
 - Date: 2026-05-28
-- Scope: P0 carpool page performance optimization. No commit, no deployment, no production data write, no data clearing, and no test-data upload.
+- Scope: P0 carpool page performance optimization preserved as post-release WIP commit `4a36dc5`. No deployment, no production data write, no data clearing, and no test-data upload.
 - Summary: Public carpool preview and full board now request latest-first paginated public-safe group data (`limit=9` preview, `limit=20` full board) instead of relying on full-list client slicing. Public list responses omit member detail payloads; detail data is requested separately when the user clicks "查看详情". The public board detail helper now resolves group search through group/member IDs before loading request rows. Admin carpool group management defaults to active/effective groups, latest service time first, and 20 rows per page, with stale responses ignored when filters change quickly. A SQL index file was added for transport group/request/member list filters and latest-first sorting; it has not been applied to any database in this task.
 
 ## Previous Task Update
