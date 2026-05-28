@@ -3,6 +3,15 @@
 ## Latest Task Update
 
 - Date: 2026-05-28
+- Scope: P0 transport group service-time sort label/value fix. GitHub was updated before Vercel deployment. No test data was uploaded and no production business data was deleted, cleared, or modified; admin verification wrote only normal admin login/session metadata.
+- GitHub commits: `af6878e` (`Fix transport group service time sort labels`) and `a29cab1` (`Sort public transport board by service time`) on `codex/membership-v1`.
+- Vercel deployment: `dpl_BgmJ9KeH89ohYEzueC5dCzrCZ1VK`, production URL `https://webside-nbtz3su6k-wwkevin8s-projects.vercel.app`, alias `https://ngn.best`, status `READY`.
+- Summary: Admin carpool group filters now explicitly map `service_time_asc` to `服务时间：最近到最远` and `service_time_desc` to `服务时间：最远到最近`. Admin and public sort normalization accept service-time aliases consistently, with ascending as nearest-to-farthest and descending/farthest as farthest-to-nearest. Public transport board now sorts and filters its final rendered rows by the displayed service time after group enrichment, preventing request-time ordering from overriding the board order.
+- Verification: `node --check` for changed API handlers passed, `node scripts/regression-check.js` passed, and `npm run build:prod` passed. Production admin API returned ASC times `2026-05-28 -> 2026-05-29 -> 2026-05-30 -> 2026-06-02` and DESC/farthest times `2026-09-20 -> 2026-09-19 -> 2026-09-18 -> 2026-08-12` with `zero_count=0`. Logged-in browser verification showed default dropdown `service_time_asc / 服务时间：最近到最远`, and selecting `service_time_desc / 服务时间：最远到最近` loaded farthest-first rows. Public `/api/public/transport-groups` and `/api/public/transport-board` both returned correct upcoming/farthest service-time order.
+
+## Previous Task Update
+
+- Date: 2026-05-28
 - Scope: P0 production cleanup for empty/effectively-empty carpool groups. GitHub was updated before Vercel deployment. A one-time protected production cleanup deleted only `transport_groups` with zero effective active members older than 10 minutes plus their `transport_group_members` links; no `transport_requests` original orders were deleted. Admin login verification wrote only normal admin-session/login metadata.
 - GitHub commit: `b34c581` (`Restore empty carpool group cleanup`) on `codex/membership-v1`.
 - Vercel deployment: `dpl_DxaJtZ3btLutYucBexQnyWfonc7E`, production URL `https://webside-iue46oymp-wwkevin8s-projects.vercel.app`, alias `https://ngn.best`, status `READY`.
@@ -182,9 +191,9 @@
 
 ## Current Project State
 
-- Production release `b34c581` is live on `https://ngn.best`.
+- Production release `a29cab1` is live on `https://ngn.best`.
 - Public carpool student-priority display and join-button changes are deployed.
-- Admin transport group defaults, P0 carpool pagination/read-path performance changes, 10-minute empty/effectively-empty carpool group cleanup, transport request recorded-toggle UI, and P7 storage/buy-box admin changes are deployed.
+- Admin transport group defaults, service-time sort label/value fix, P0 carpool pagination/read-path performance changes, 10-minute empty/effectively-empty carpool group cleanup, transport request recorded-toggle UI, and P7 storage/buy-box admin changes are deployed.
 - Committed admin build output points to `admin/assets/index-BUK-S560.js` and `admin/assets/index-DVcvb6_8.css`.
 - Local-only storage seed/clear helpers remain ignored and must not be run against Preview or Production.
 
