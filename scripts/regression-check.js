@@ -119,8 +119,13 @@ function checkTransportGroups() {
   expectIncludes(filters, 'value="active">有效单 / 有效组', "transport group active validity option exists");
   expectIncludes(filters, 'value="invalid">无效或过期单', "transport group invalid validity option exists");
   expectIncludes(filters, 'v-model="model.sort"', "transport group service-time sort filter exists");
+  expectIncludes(filters, 'value: "service_time_asc", label: "服务时间：最近到最远"', "transport group ASC sort label/value mapping is correct");
+  expectIncludes(filters, 'value: "service_time_desc", label: "服务时间：最远到最近"', "transport group DESC sort label/value mapping is correct");
   expectIncludes(view, "paginate: true", "transport groups use paginated admin loading");
+  expectIncludes(view, "normalizeServiceTimeSort(filters.sort)", "transport groups normalize client-side service-time sort");
   expectIncludes(api, "paginate", "transport groups API supports pagination");
+  expectIncludes(api, '"farthest"', "transport groups API supports farthest service-time sort alias");
+  expectIncludes(api, '"desc"', "transport groups API maps DESC service-time sort aliases to descending order");
   expectIncludes(api, "cleanupEmptyTransportGroups", "transport groups API runs empty-group cleanup before listing");
   expectIncludes(adminApi, 'head === "transport-groups" || head === "transport-dispatch"', "admin transport aggregate routes list requests through cleanup-enabled handler");
   expectIncludes(publicGroups, "cleanupEmptyTransportGroups", "public transport groups list runs empty-group cleanup before listing");

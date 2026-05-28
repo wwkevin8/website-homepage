@@ -15,7 +15,7 @@ function parsePositiveInteger(value) {
 
 function normalizePublicSort(value) {
   const sort = String(value || "").trim().toLowerCase();
-  if (sort === "service_time_desc" || sort === "farthest") {
+  if (["service_time_desc", "service_desc", "time_desc", "farthest", "desc"].includes(sort)) {
     return "farthest";
   }
   return "upcoming";

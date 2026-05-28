@@ -461,6 +461,14 @@ function groupServiceTimeValue(group) {
   return Number.NaN;
 }
 
+function normalizeServiceTimeSort(sort) {
+  const normalized = String(sort || "").trim().toLowerCase();
+  if (["service_time_desc", "service_desc", "time_desc", "farthest", "desc"].includes(normalized)) {
+    return "service_time_desc";
+  }
+  return "service_time_asc";
+}
+
 function compareGroupsByServiceTime(left, right) {
   const leftTime = groupServiceTimeValue(left);
   const rightTime = groupServiceTimeValue(right);
@@ -469,7 +477,7 @@ function compareGroupsByServiceTime(left, right) {
   if (leftMissing && rightMissing) return 0;
   if (leftMissing) return 1;
   if (rightMissing) return -1;
-  const direction = filters.sort === "service_time_desc" ? -1 : 1;
+  const direction = normalizeServiceTimeSort(filters.sort) === "service_time_desc" ? -1 : 1;
   return (leftTime - rightTime) * direction;
 }
 
@@ -510,7 +518,7 @@ function buildQuery(nextPage = page.value || 1) {
     airport_code: filters.airportCode,
     status: filters.status,
     validity: filters.validity,
-    sort: filters.sort,
+    sort: normalizeServiceTimeSort(filters.sort),
     visible_on_frontend: filters.visibleOnFrontend,
     date_from: filters.dateFrom,
     date_to: filters.dateTo

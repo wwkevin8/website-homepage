@@ -10,6 +10,11 @@ defineEmits(["submit", "reset"]);
 
 const showAdvanced = ref(false);
 
+const sortOptions = [
+  { value: "service_time_asc", label: "服务时间：最近到最远" },
+  { value: "service_time_desc", label: "服务时间：最远到最近" }
+];
+
 const airportOptions = [
   { code: "LHR", name: "Heathrow" },
   { code: "LGW", name: "Gatwick" },
@@ -71,8 +76,9 @@ const airportOptions = [
       <label class="field">
         <span>排序方式</span>
         <select v-model="model.sort">
-          <option value="service_time_asc">服务时间：最近到最久</option>
-          <option value="service_time_desc">服务时间：最久到最近</option>
+          <option v-for="option in sortOptions" :key="option.value" :value="option.value">
+            {{ option.label }}
+          </option>
         </select>
       </label>
       <div class="filter-actions transport-group-filter-panel__actions">
