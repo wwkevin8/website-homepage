@@ -113,7 +113,7 @@ function sortPublicGroupsByTime(groups, sort) {
 function buildPublicGroupsBaseQuery(supabase, queryParams, dateFrom, sort) {
   const query = supabase
     .from("transport_groups_public_view")
-    .select(PUBLIC_GROUP_LIST_COLUMNS, { count: "exact" })
+    .select(PUBLIC_GROUP_LIST_COLUMNS)
     .eq("visible_on_frontend", true)
     .in("status", getPublicGroupStatuses(queryParams))
     .gt("current_passenger_count", 0);
@@ -192,8 +192,8 @@ async function listPublicGroupsPaginated(supabase, queryParams, limit, page, dat
   const query = buildPublicGroupsBaseQuery(supabase, queryParams, dateFrom, sort);
   applyPublicGroupIdFilter(query, queryParams.group_id);
   const from = (page - 1) * limit;
-  const to = from + limit - 1;
-  const { data, error, count } = await query.range(from, to);
+  const to = from + limit;
+  const { data, error } = await query.range(from, to);
   if (error) {
     throw error;
   }
@@ -209,15 +209,16 @@ async function listPublicGroupsPaginated(supabase, queryParams, limit, page, dat
     ),
     sort
   );
-  const total = count || 0;
-  const items = enrichedGroups;
+  const hasNext = enrichedGroups.length > limit;
+  const items = enrichedGroups.slice(0, limit);
+  const total = from + items.length + (hasNext ? 1 : 0);
 
   return {
     items,
     total,
     page,
     page_size: limit,
-    has_next: (page * limit) < total,
+    has_next: hasNext,
     date_from: dateFrom || null,
     include_past: queryParams.include_past === "true",
     sort
