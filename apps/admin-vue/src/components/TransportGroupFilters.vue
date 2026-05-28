@@ -71,8 +71,8 @@ const airportOptions = [
       <label class="field">
         <span>排序方式</span>
         <select v-model="model.sort">
-          <option value="service_time_asc">服务时间：最久到最近</option>
-          <option value="service_time_desc">服务时间：最近到最久</option>
+          <option value="service_time_asc">服务时间：最近到最久</option>
+          <option value="service_time_desc">服务时间：最久到最近</option>
         </select>
       </label>
       <div class="filter-actions transport-group-filter-panel__actions">

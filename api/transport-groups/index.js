@@ -153,7 +153,7 @@ function normalizeValidityFilter(value) {
 
 function normalizeServiceTimeSort(value) {
   const normalized = String(value || "").trim().toLowerCase();
-  return normalized === "service_time_asc" || normalized === "time_asc" ? "service_time_asc" : "service_time_desc";
+  return normalized === "service_time_desc" || normalized === "time_desc" ? "service_time_desc" : "service_time_asc";
 }
 
 function normalizeLegacyGroupStatusInput(input = {}) {

@@ -55,14 +55,14 @@ function parsePositiveInteger(value) {
 
 function normalizePublicSort(value) {
   const sort = String(value || "").trim().toLowerCase();
-  if (sort === "oldest" || sort === "upcoming") {
-    return "oldest";
+  if (sort === "service_time_desc" || sort === "farthest") {
+    return "farthest";
   }
-  return "latest";
+  return "upcoming";
 }
 
 function applySort(query, sort) {
-  if (sort === "latest") {
+  if (sort === "farthest") {
     query
       .order("group_date", { ascending: false })
       .order("preferred_time_start", { ascending: false, nullsFirst: false })
@@ -98,7 +98,7 @@ function filterFuturePublicGroups(groups, includePast) {
 }
 
 function sortPublicGroupsByTime(groups, sort) {
-  const direction = sort === "latest" ? -1 : 1;
+  const direction = sort === "farthest" ? -1 : 1;
   return [...(groups || [])].sort((left, right) => {
     const leftTime = getPublicGroupTimeMs(left) ?? 0;
     const rightTime = getPublicGroupTimeMs(right) ?? 0;

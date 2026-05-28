@@ -1,7 +1,6 @@
 const { getSupabaseAdmin } = require("../api/_lib/supabase");
 const { ok, methodNotAllowed, serverError } = require("../api/_lib/http");
-const { PUBLIC_REQUEST_STATUSES, closeExpiredRequests, deriveDisplayGroupId, DEFAULT_GROUP_MAX_PASSENGERS } = require("../api/_lib/transport");
-const { backfillMissingPickupGroups } = require("../api/_lib/transport-group-lifecycle");
+const { PUBLIC_REQUEST_STATUSES, deriveDisplayGroupId, DEFAULT_GROUP_MAX_PASSENGERS } = require("../api/_lib/transport");
 const { loadGroupStatsMap, parseLuggageDisplay, uniqueNonEmpty, getPricingSeason, roundCurrency, formatArrivalRange, PICKUP_PRICING } = require("../api/_lib/transport-group-stats");
 
 function isMissingColumnError(error, marker) {
@@ -15,14 +14,14 @@ function parsePositiveInteger(value) {
 
 function normalizePublicSort(value) {
   const sort = String(value || "").trim().toLowerCase();
-  if (sort === "oldest" || sort === "upcoming") {
-    return "oldest";
+  if (sort === "service_time_desc" || sort === "farthest") {
+    return "farthest";
   }
-  return "latest";
+  return "upcoming";
 }
 
 function applySort(query, sort) {
-  if (sort === "latest") {
+  if (sort === "farthest") {
     query.order("flight_datetime", { ascending: false }).order("created_at", { ascending: false });
     return;
   }
@@ -120,9 +119,6 @@ module.exports = async function handler(req, res) {
   const supabase = getSupabaseAdmin();
 
   try {
-    await backfillMissingPickupGroups(supabase, { excludeSources: ["admin_manual"] });
-    await closeExpiredRequests(supabase);
-
     const queryParams = req.query || {};
     const limit = parsePositiveInteger(queryParams.limit);
     const page = parsePositiveInteger(queryParams.page) || 1;
@@ -181,7 +177,7 @@ module.exports = async function handler(req, res) {
 
     let query = supabase
       .from("transport_requests")
-      .select("id, order_no, service_type, airport_code, airport_name, terminal, flight_no, flight_datetime, location_from, location_to, passenger_count, shareable, status, created_at, transport_group_members(*)", { count: "exact" })
+      .select("id, order_no, service_type, airport_code, airport_name, terminal, flight_no, flight_datetime, location_from, location_to, passenger_count, shareable, status, created_at, transport_group_members(*)")
       .in("status", PUBLIC_REQUEST_STATUSES)
       .or("source.is.null,source.neq.admin_manual")
       .eq("shareable", true);
@@ -213,11 +209,11 @@ module.exports = async function handler(req, res) {
 
     if (limit) {
       const from = (page - 1) * limit;
-      const to = from + limit - 1;
+      const to = from + limit;
       query = query.range(from, to);
     }
 
-    const { data, error, count } = await query;
+    const { data, error } = await query;
     if (error) {
       throw error;
     }
@@ -318,15 +314,16 @@ module.exports = async function handler(req, res) {
     const publicItems = rows
       .map(item => mapBoardItem(item, membersByGroup, groupStatsById.get(item.group_id)))
       .filter(item => !isFullBoardItem(item));
-    const total = limit ? (count || 0) : publicItems.length;
-    const items = publicItems;
+    const hasNext = limit ? publicItems.length > limit : false;
+    const items = limit ? publicItems.slice(0, limit) : publicItems;
+    const total = limit ? ((page - 1) * limit + items.length + (hasNext ? 1 : 0)) : publicItems.length;
 
     ok(res, {
       items,
       total,
       page,
       page_size: limit || items.length,
-      has_next: limit ? (page * limit) < total : false,
+      has_next: hasNext,
       sort
     });
   } catch (error) {

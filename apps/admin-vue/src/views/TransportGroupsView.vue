@@ -29,7 +29,7 @@ const defaultFilters = {
   terminal: "",
   status: "",
   validity: "active",
-  sort: "service_time_desc",
+  sort: "service_time_asc",
   visibleOnFrontend: "",
   risk: "",
   dateFrom: "",

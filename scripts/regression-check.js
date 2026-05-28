@@ -111,7 +111,7 @@ function checkTransportGroups() {
   const lifecycle = "api/_lib/transport-group-lifecycle.js";
 
   expectRegex(view, /validity:\s*"active"/, "transport groups default to active groups");
-  expectRegex(view, /sort:\s*"service_time_desc"/, "transport groups default to latest service time");
+  expectRegex(view, /sort:\s*"service_time_asc"/, "transport groups default to nearest upcoming service time");
   expectIncludes(filters, 'v-model="model.validity"', "transport group validity filter exists");
   expectIncludes(filters, 'value="active">有效单 / 有效组', "transport group active validity option exists");
   expectIncludes(filters, 'value="invalid">无效或过期单', "transport group invalid validity option exists");

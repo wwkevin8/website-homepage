@@ -941,7 +941,8 @@
         airport_code: form.airport_code.value,
         date_from: form.date_from.value,
         date_to: form.date_to.value,
-        sort: "latest",
+        effective: "active",
+        sort: "upcoming",
         limit: DEFAULT_BOARD_PAGE_SIZE,
         page
       }).catch(error => {
@@ -1102,7 +1103,8 @@
     list.innerHTML = '<div class="transport-loading">加载中...</div>';
 
     const response = await Api.listPublicGroups({
-      sort: "latest",
+      effective: "active",
+      sort: "upcoming",
       limit: DEFAULT_PREVIEW_SIZE,
       page: 1
     }).catch(error => {
@@ -1154,7 +1156,8 @@
     list.innerHTML = '<div class="transport-loading">加载中...</div>';
 
     const response = await Api.listPublicGroups({
-      sort: "latest",
+      effective: "active",
+      sort: "upcoming",
       limit: DEFAULT_PREVIEW_SIZE,
       page: 1
     }).catch(error => {
@@ -1316,7 +1319,8 @@
     list.innerHTML = '<div class="transport-loading">加载中...</div>';
 
     const response = await Api.listPublicGroups({
-      sort: "latest",
+      effective: "active",
+      sort: "upcoming",
       limit: DEFAULT_PREVIEW_SIZE,
       page: 1
     }).catch(error => {
