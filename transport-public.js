@@ -765,7 +765,8 @@
 
     const response = await Api.listPublicBoard({
       group_id: groupId,
-      sort: "latest",
+      effective: "active",
+      sort: "upcoming",
       limit: 50,
       page: 1
     });
@@ -876,7 +877,8 @@
 
     const response = await Api.listPublicBoard({
       group_id: groupId,
-      sort: "latest",
+      effective: "active",
+      sort: "upcoming",
       limit: 50,
       page: 1
     });
