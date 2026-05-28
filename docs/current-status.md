@@ -4,9 +4,9 @@
 
 - Date: 2026-05-28
 - Scope: P0 carpool page performance optimization production release. GitHub was updated before each Vercel deployment. No test data was uploaded; no production business data was deleted, cleared, overwritten, or modified by the release scripts. Admin login verification wrote only normal admin-session/login metadata.
-- GitHub commits: `2e91e75` (`Speed up public carpool group pagination`), `8f22504` (`Avoid cleanup during public carpool listing`), and `da92fe0` (`Avoid cleanup during admin carpool group listing`) on `codex/membership-v1`.
-- Vercel deployment: `dpl_2C9V1xQzyVGEU5mFF92kTa9HZiLb`, production URL `https://webside-le37wafw1-wwkevin8s-projects.vercel.app`, alias `https://ngn.best`, status `READY`.
-- Summary: Production Supabase index migration `transport_carpool_perf_indexes` was applied and `ANALYZE` was run for `transport_groups`, `transport_requests`, and `transport_group_members`. Public carpool preview and full board now use latest-first paginated public-safe group data (`limit=9` preview, `limit=20` board), omit heavy member detail payloads on list responses, and load details only after the detail button is clicked. Public and admin list GET endpoints no longer run empty-group cleanup during page open, so these read paths stay fast and do not perform maintenance writes. Admin carpool group management defaults to active/effective groups, latest service time first, and 20 rows per page.
+- GitHub commits: `2e91e75` (`Speed up public carpool group pagination`), `8f22504` (`Avoid cleanup during public carpool listing`), `da92fe0` (`Avoid cleanup during admin carpool group listing`), `7c28f69` (`Fix carpool board upcoming sort`), and `aefd7c4` (`Use upcoming sort for carpool detail requests`) on `codex/membership-v1`.
+- Vercel deployment: `dpl_6NPXyMgxu7xmBPSiDL82xxsjFhtZ`, production URL `https://webside-o56cau5o6-wwkevin8s-projects.vercel.app`, alias `https://ngn.best`, status `READY`.
+- Summary: Production Supabase index migration `transport_carpool_perf_indexes` was applied and `ANALYZE` was run for `transport_groups`, `transport_requests`, and `transport_group_members`. Public carpool preview and full board now use effective/current-future paginated public-safe group data (`limit=9` preview, `limit=20` board), nearest upcoming service time first, omit heavy member detail payloads on list responses, and load details only after the detail button is clicked. Public and admin list GET endpoints no longer run empty-group cleanup during page open, so these read paths stay fast and do not perform maintenance writes. Admin carpool group management defaults to active/effective groups, nearest upcoming service time first, and 20 rows per page.
 
 ## Previous Task Update
 
@@ -173,10 +173,10 @@
 
 ## Current Project State
 
-- Production release `da92fe0` is live on `https://ngn.best`.
+- Production release `aefd7c4` is live on `https://ngn.best`.
 - Public carpool student-priority display and join-button changes are deployed.
 - Admin transport group defaults, P0 carpool pagination/read-path performance changes, transport request recorded-toggle UI, and P7 storage/buy-box admin changes are deployed.
-- Committed admin build output points to `admin/assets/index-CyiSAfn1.js` and `admin/assets/index-DVcvb6_8.css`.
+- Committed admin build output points to `admin/assets/index-BUK-S560.js` and `admin/assets/index-DVcvb6_8.css`.
 - Local-only storage seed/clear helpers remain ignored and must not be run against Preview or Production.
 
 ## Open Risks / Follow-Up
