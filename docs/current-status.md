@@ -3,6 +3,14 @@
 ## Latest Task Update
 
 - Date: 2026-05-28
+- Scope: Production release of the accepted transport, membership, and storage/admin updates. GitHub was updated before Vercel deployment. No test data was uploaded; no database schema change, data clearing, or production data overwrite was performed.
+- GitHub commit: `5573d96` (`Release accepted transport and storage updates`) on `codex/membership-v1`.
+- Vercel deployment: `dpl_G2wPtMwemnobQCkDnpdMiPba8ayu`, production URL `https://webside-27a9etrg1-wwkevin8s-projects.vercel.app`, aliases `https://ngn.best` and `https://www.ngn.best`, status `READY`.
+- Summary: Production now includes the accepted public carpool ordering/display updates, join-button recovery, admin transport group/request list defaults and recorded-toggle UI, membership pickup/storage sync updates, and P7 storage/buy-box admin detail/list improvements.
+
+## Previous Task Update
+
+- Date: 2026-05-28
 - Scope: Membership pickup order recognition and admin highlighting. No commit, no deployment, no database schema change, no production data write, and no test-data upload.
 - Summary: Pickup membership selection is now recognized for join-carpool order creation as well as normal pickup submission. The membership status endpoint can display an existing pickup order as the effective linked member reservation when the claim was selected but the historical order lacks stored membership fields. The admin transport request list now marks pickup rows yellow when they are tied to a stored membership claim or inferred from the user's selected pickup membership claim. The profile page now shows the pickup membership standard for selected and bound pickup claims.
 
@@ -136,42 +144,35 @@
 - `npm --prefix apps/admin-vue run build` passed and refreshed the local `admin/` static output to `admin/assets/index-mouLrgPG.js` and `admin/assets/index-DVcvb6_8.css`.
 - Browser verification attempted at `http://127.0.0.1:3000/admin/transport/requests`, but the in-app browser was redirected to `admin-login.html` because it had no current administrator session. Authenticated click testing still needs a logged-in admin session.
 - A local-only Supabase row `TEST-ST-P-007` was created for manual linked-order testing; no Preview, Production, or maintenance endpoint was called.
+- Release verification on 2026-05-28:
+  - `node scripts/regression-check.js` passed before deployment.
+  - `npm run build:prod` passed before deployment.
+  - `git push origin codex/membership-v1` pushed release commit `5573d96` before production deployment.
+  - `npm run deploy:prod` deployed production `dpl_G2wPtMwemnobQCkDnpdMiPba8ayu`, status `READY`, alias `https://ngn.best`.
+  - Production public API `https://ngn.best/api/public/transport-groups?sort=upcoming&limit=9&page=1` returned 9 items, `page_size: 9`, `sort: upcoming`, and ascending service times.
+  - Production full board API with `limit=10` returned ascending service times.
+  - Production browser check confirmed pickup preview renders 9 cards and requests `limit=9`.
+  - Production browser check confirmed full board field order: `接送机时间 / 服务类型 / 机场 / 航站楼 / 航班号 / 当前人数 / 拼车组编号 / 操作`.
+  - Production browser check confirmed the first full-board join button text is `加入拼车`, is enabled, and is fully visible at desktop and mobile widths.
+  - Production browser check confirmed `查看详情` opens the detail modal without removing the board rows.
+  - Production admin bundle `admin/assets/index-CyiSAfn1.js` matches the committed release bundle, and unauthenticated admin API access returns `401`.
+  - Vercel inspect confirmed deployment `dpl_G2wPtMwemnobQCkDnpdMiPba8ayu` is production `Ready`.
+  - Vercel error-level logs in the first hour showed only Node `[DEP0169] url.parse()` deprecation warnings on successful `200` requests; no 5xx deployment failure was observed.
 - No test data was uploaded.
 - No production data was written.
-- No deployment was run.
+- No production data was cleared, overwritten, or modified during release verification. Admin login and recorded-toggle clicks were intentionally not executed because they would write production `last_login_at` or order status data.
 
 ## Current Project State
 
-- Public carpool student-priority display changes currently touch:
-  - `transport-public.js`
-  - `transport-board.html`
-  - `styles.css`
-  - `public-api-handlers/transport-groups.js`
-  - `public-api-handlers/transport-board.js`
-  - `docs/PROJECT_MAP.md`
-  - `docs/current-status.md`
-- P7 Preview candidate files should be limited to storage workbench files and docs:
-  - `api/_lib/storage-orders.js`
-  - `api/admin/[...action].js`
-  - `apps/admin-vue/src/views/StorageAllOrdersView.vue`
-  - `apps/admin-vue/src/views/StorageOrderDetailView.vue`
-  - `apps/admin-vue/src/views/BoxOrderDetailView.vue`
-  - `apps/admin-vue/src/components/TransportGroupFilters.vue`
-  - `apps/admin-vue/src/styles.css`
-  - `scripts/regression-check.js`
-  - `docs/PROJECT_MAP.md`
-  - `docs/current-status.md`
-- The transport request recorded-toggle usability change additionally touches:
-  - `apps/admin-vue/src/views/TransportRequestsView.vue`
-  - `apps/admin-vue/src/styles.css`
-  - `scripts/regression-check.js`
-- Local `admin/` build output is currently refreshed for manual acceptance only; do not include it in a source-only commit unless intentionally committing build artifacts for release.
+- Production release `5573d96` is live on `https://ngn.best`.
+- Public carpool student-priority display and join-button changes are deployed.
+- Admin transport group defaults, transport request recorded-toggle UI, and P7 storage/buy-box admin changes are deployed.
+- Committed admin build output points to `admin/assets/index-CyiSAfn1.js` and `admin/assets/index-DVcvb6_8.css`.
 - Local-only storage seed/clear helpers remain ignored and must not be run against Preview or Production.
 
 ## Open Risks / Follow-Up
 
 - Before the next commit, run `node scripts/regression-check.js` and include the result in the commit/release note.
-- The regression check is intentionally static/minimal; it does not replace focused browser/API verification before Preview or Production.
-- Re-test `http://127.0.0.1:3000/admin/transport/requests` in a logged-in admin session and click one `未记录` button plus one `已记录` button to confirm both directions update and write the expected operation log.
-- P7 should receive local/admin manual acceptance before commit, especially list filter behavior, detail payment/offline-recorded toggles, buy-box delivery edits, and buy-box related storage links.
-- Do not deploy P7 until after local acceptance, an intentional commit, and a separate release instruction.
+- The regression check is intentionally static/minimal; it does not replace focused browser/API verification before future releases.
+- Admin recorded-toggle click testing was not performed on production because it would modify live order data. If the operator wants a live click test, choose a safe real order and explicitly authorize the temporary toggle and revert.
+- Investigate the Vercel/Node `[DEP0169] url.parse()` deprecation warning separately; it appeared as error-level logs on successful requests and was not a release blocker.
