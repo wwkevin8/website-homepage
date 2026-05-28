@@ -22,6 +22,8 @@ const BLOCKED_JOIN_GROUP_STATUSES = new Set([
 ]);
 
 const MAX_TIME_ADJUST_CANDIDATE_HOURS = 3;
+const DEFAULT_EMPTY_GROUP_GRACE_MINUTES = 10;
+
 function isMissingColumnError(error, marker) {
   return Boolean(error?.message && error.message.includes(marker));
 }
@@ -263,7 +265,7 @@ async function createGroupForRequest(supabase, request, options = {}) {
 
   if (memberError) {
     try {
-      await deleteEmptyGroupIfEligible(supabase, groupRef, { reason: "failed_group_membership_insert" });
+      await deleteEmptyGroupIfEligible(supabase, groupRef, { reason: "failed_group_membership_insert", force: true });
     } catch (cleanupError) {
       memberError.cleanup_error = cleanupError?.message || String(cleanupError);
       memberError.message = `${memberError.message || "failed to create group membership"}; cleanup of newly-created empty group failed: ${memberError.cleanup_error}`;
@@ -355,16 +357,139 @@ async function getGroupMembersWithRequests(supabase, groupId) {
 }
 
 async function getTransportGroupMemberCount(supabase, groupId) {
+  const groupIds = Array.from(new Set((Array.isArray(groupId) ? groupId : [groupId]).filter(Boolean)));
+  if (!groupIds.length) {
+    return 0;
+  }
   const { count, error } = await supabase
     .from("transport_group_members")
     .select("id", { count: "exact", head: true })
-    .eq("group_id", groupId);
+    .in("group_id", groupIds);
 
   if (error) {
     throw error;
   }
 
   return Number(count || 0);
+}
+
+function isActiveGroupMember(member = {}) {
+  const requestStatus = String(member.transport_requests?.status || "").toLowerCase();
+  return Boolean(member.transport_requests) && !["closed", "cancelled"].includes(requestStatus);
+}
+
+function summarizeGroupMembers(members = []) {
+  return (members || []).reduce((summary, member) => {
+    summary.member_count += 1;
+    if (isActiveGroupMember(member)) {
+      summary.active_member_count += 1;
+      summary.active_passenger_count += Number(member.transport_requests?.passenger_count || member.passenger_count_snapshot || 0);
+    }
+    return summary;
+  }, {
+    member_count: 0,
+    active_member_count: 0,
+    active_passenger_count: 0
+  });
+}
+
+async function getTransportGroupMemberStats(supabase, groupId) {
+  const groupIds = Array.from(new Set((Array.isArray(groupId) ? groupId : [groupId]).filter(Boolean)));
+  if (!groupIds.length) {
+    return summarizeGroupMembers([]);
+  }
+  const { data, error } = await supabase
+    .from("transport_group_members")
+    .select("group_id, request_id, passenger_count_snapshot, transport_requests(id, status, passenger_count)")
+    .in("group_id", groupIds);
+
+  if (error) {
+    throw error;
+  }
+
+  return summarizeGroupMembers(data || []);
+}
+
+function groupRefCandidates(group, fallback) {
+  return Array.from(new Set([
+    group?.group_id,
+    group?.group_ref,
+    group?.id,
+    fallback
+  ].map(value => String(value || "").trim()).filter(Boolean)));
+}
+
+async function loadTransportGroupMemberStatsMap(supabase, groups = []) {
+  const refGroups = (groups || []).map(group => ({
+    group,
+    refs: groupRefCandidates(group)
+  }));
+  const refs = Array.from(new Set(refGroups.flatMap(item => item.refs)));
+  const statsMap = new Map();
+
+  refGroups.forEach(item => {
+    item.refs.forEach(ref => statsMap.set(ref, summarizeGroupMembers([])));
+  });
+
+  if (!refs.length) {
+    return statsMap;
+  }
+
+  const { data, error } = await supabase
+    .from("transport_group_members")
+    .select("group_id, request_id, passenger_count_snapshot, transport_requests(id, status, passenger_count)")
+    .in("group_id", refs);
+
+  if (error) {
+    throw error;
+  }
+
+  const membersByRef = new Map();
+  (data || []).forEach(member => {
+    const ref = String(member.group_id || "").trim();
+    if (!membersByRef.has(ref)) {
+      membersByRef.set(ref, []);
+    }
+    membersByRef.get(ref).push(member);
+  });
+
+  refGroups.forEach(item => {
+    const members = item.refs.flatMap(ref => membersByRef.get(ref) || []);
+    const stats = summarizeGroupMembers(members);
+    item.refs.forEach(ref => statsMap.set(ref, stats));
+  });
+
+  return statsMap;
+}
+
+function getEmptyGroupGraceMinutes(options = {}) {
+  const value = Number(options.graceMinutes ?? options.grace_minutes ?? DEFAULT_EMPTY_GROUP_GRACE_MINUTES);
+  return Number.isFinite(value) && value >= 0 ? value : DEFAULT_EMPTY_GROUP_GRACE_MINUTES;
+}
+
+function getEmptyGroupCutoffIso(options = {}) {
+  if (options.cutoffIso) {
+    return options.cutoffIso;
+  }
+  const graceMinutes = getEmptyGroupGraceMinutes(options);
+  return new Date(Date.now() - graceMinutes * 60 * 1000).toISOString();
+}
+
+function getGroupAgeReferenceIso(group = {}) {
+  return group.updated_at || group.created_at || null;
+}
+
+function isEmptyGroupOldEnough(group = {}, options = {}) {
+  if (options.force === true) {
+    return true;
+  }
+  const referenceIso = getGroupAgeReferenceIso(group);
+  if (!referenceIso) {
+    return false;
+  }
+  const referenceMs = new Date(referenceIso).getTime();
+  const cutoffMs = new Date(getEmptyGroupCutoffIso(options)).getTime();
+  return Number.isFinite(referenceMs) && Number.isFinite(cutoffMs) && referenceMs <= cutoffMs;
 }
 
 async function deleteEmptyGroupIfEligible(supabase, groupOrId, options = {}) {
@@ -385,14 +510,43 @@ async function deleteEmptyGroupIfEligible(supabase, groupOrId, options = {}) {
     }
   }
 
-  const memberCount = await getTransportGroupMemberCount(supabase, group.group_id || groupId);
-  if (memberCount !== 0) {
-    return { deleted: false, reason: "members_exist", member_count: memberCount, group };
+  const refs = groupRefCandidates(group, groupId);
+  const memberStats = options.memberStats || await getTransportGroupMemberStats(supabase, refs);
+  if (memberStats.active_member_count !== 0) {
+    return {
+      deleted: false,
+      reason: "members_exist",
+      member_count: memberStats.member_count,
+      active_member_count: memberStats.active_member_count,
+      active_passenger_count: memberStats.active_passenger_count,
+      group
+    };
+  }
+
+  if (!isEmptyGroupOldEnough(group, options)) {
+    return {
+      deleted: false,
+      reason: "empty_group_grace_period",
+      member_count: memberStats.member_count,
+      active_member_count: memberStats.active_member_count,
+      active_passenger_count: memberStats.active_passenger_count,
+      group,
+      cleanup_after: getEmptyGroupCutoffIso({ ...options, cutoffIso: undefined })
+    };
   }
 
   const deletedAt = new Date().toISOString();
   const reason = options.reason || "zero_members";
   await logEmptyGroupDeletion(supabase, group, deletedAt, reason);
+
+  const memberDelete = await supabase
+    .from("transport_group_members")
+    .delete()
+    .in("group_id", refs);
+
+  if (memberDelete.error) {
+    throw memberDelete.error;
+  }
 
   const { error } = await supabase
     .from("transport_groups")
@@ -407,16 +561,21 @@ async function deleteEmptyGroupIfEligible(supabase, groupOrId, options = {}) {
     deleted: true,
     group_id: group.group_id || groupId,
     deleted_at: deletedAt,
-    reason
+    reason,
+    member_count: memberStats.member_count,
+    active_member_count: memberStats.active_member_count,
+    active_passenger_count: memberStats.active_passenger_count
   };
 }
 
 async function cleanupEmptyTransportGroups(supabase, options = {}) {
   const limit = Math.min(Math.max(Number(options.limit || 200), 1), 500);
+  const cutoffIso = getEmptyGroupCutoffIso(options);
   const { data, error } = await supabase
     .from("transport_groups")
     .select("*")
-    .order("updated_at", { ascending: false, nullsFirst: false })
+    .or(`updated_at.lte.${cutoffIso},and(updated_at.is.null,created_at.lte.${cutoffIso})`)
+    .order("updated_at", { ascending: true, nullsFirst: true })
     .limit(limit);
 
   if (error) {
@@ -425,9 +584,26 @@ async function cleanupEmptyTransportGroups(supabase, options = {}) {
 
   const deleted = [];
   const skipped = [];
-  for (const group of data || []) {
-    const result = await deleteEmptyGroupIfEligible(supabase, normalizeGroupRecord(group), {
+  const normalizedGroups = (data || []).map(group => normalizeGroupRecord(group));
+  const statsMap = await loadTransportGroupMemberStatsMap(supabase, normalizedGroups);
+  for (const group of normalizedGroups) {
+    const refs = groupRefCandidates(group);
+    const memberStats = refs.map(ref => statsMap.get(ref)).find(Boolean) || summarizeGroupMembers([]);
+    if (memberStats.active_member_count !== 0) {
+      skipped.push({
+        deleted: false,
+        reason: "members_exist",
+        member_count: memberStats.member_count,
+        active_member_count: memberStats.active_member_count,
+        active_passenger_count: memberStats.active_passenger_count,
+        group
+      });
+      continue;
+    }
+    const result = await deleteEmptyGroupIfEligible(supabase, group, {
       ...options,
+      cutoffIso,
+      memberStats,
       reason: "zero_members"
     });
     if (result.deleted) {
@@ -441,7 +617,7 @@ async function cleanupEmptyTransportGroups(supabase, options = {}) {
 }
 
 function getActiveMembers(members) {
-  return (members || []).filter(member => member.transport_requests && member.transport_requests.status !== "closed");
+  return (members || []).filter(isActiveGroupMember);
 }
 
 async function getGroupCapacityStats(supabase, groupId, group = null) {
@@ -996,7 +1172,7 @@ async function moveRequestToNewSingleGroupSafely(supabase, request, requestPaylo
 
     if (newGroupRef) {
       try {
-        const cleanupGroup = await deleteEmptyGroupIfEligible(supabase, newGroupRef, { reason: "failed_move_out_new_single" });
+        const cleanupGroup = await deleteEmptyGroupIfEligible(supabase, newGroupRef, { reason: "failed_move_out_new_single", force: true });
         compensation.push({ step: "delete_new_single_group_if_empty", ok: true, result: cleanupGroup });
       } catch (cleanupError) {
         compensation.push({

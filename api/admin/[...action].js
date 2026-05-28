@@ -67,6 +67,7 @@ const {
   updateCommunityComment,
   updateCommunityPost
 } = require("../_lib/admin-community");
+const transportGroupsHandler = require("../transport-groups");
 
 let cachedStorageOrderAdminColumns = null;
 let cachedStorageOrderDetailColumns = null;
@@ -4467,6 +4468,10 @@ module.exports = async function handler(req, res) {
     }
     if (head === "community-users") {
       await handleCommunityUsers(req, res, supabase);
+      return;
+    }
+    if (head === "transport-groups" || head === "transport-dispatch") {
+      await transportGroupsHandler(req, res);
       return;
     }
 

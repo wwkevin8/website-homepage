@@ -106,6 +106,9 @@ function checkTransportGroups() {
   const view = "apps/admin-vue/src/views/TransportGroupsView.vue";
   const filters = "apps/admin-vue/src/components/TransportGroupFilters.vue";
   const api = "api/transport-groups/index.js";
+  const adminApi = "api/admin/[...action].js";
+  const publicGroups = "public-api-handlers/transport-groups.js";
+  const publicBoard = "public-api-handlers/transport-board.js";
   const joinPreview = "public-api-handlers/transport-join-preview.js";
   const joinSubmit = "public-api-handlers/transport-join-submit.js";
   const lifecycle = "api/_lib/transport-group-lifecycle.js";
@@ -118,9 +121,15 @@ function checkTransportGroups() {
   expectIncludes(filters, 'v-model="model.sort"', "transport group service-time sort filter exists");
   expectIncludes(view, "paginate: true", "transport groups use paginated admin loading");
   expectIncludes(api, "paginate", "transport groups API supports pagination");
+  expectIncludes(api, "cleanupEmptyTransportGroups", "transport groups API runs empty-group cleanup before listing");
+  expectIncludes(adminApi, 'head === "transport-groups" || head === "transport-dispatch"', "admin transport aggregate routes list requests through cleanup-enabled handler");
+  expectIncludes(publicGroups, "cleanupEmptyTransportGroups", "public transport groups list runs empty-group cleanup before listing");
+  expectIncludes(publicBoard, "cleanupEmptyTransportGroups", "public transport board list runs empty-group cleanup before listing");
   expectIncludes(joinPreview, "evaluateJoin", "join-carpool preview uses join evaluator");
   expectIncludes(joinSubmit, "evaluateJoin", "join-carpool submit uses join evaluator");
   expectIncludes(lifecycle, "cleanupEmptyTransportGroups", "empty-group cleanup helper exists");
+  expectIncludes(lifecycle, "DEFAULT_EMPTY_GROUP_GRACE_MINUTES = 10", "empty-group cleanup keeps the 10-minute grace window");
+  expectIncludes(lifecycle, "active_member_count", "empty-group cleanup uses effective active members, not stale closed members");
 }
 
 function checkStorageWorkbench() {
