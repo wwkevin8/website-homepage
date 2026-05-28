@@ -130,6 +130,8 @@ function checkTransportGroups() {
   expectIncludes(adminApi, 'head === "transport-groups" || head === "transport-dispatch"', "admin transport aggregate routes list requests through cleanup-enabled handler");
   expectIncludes(publicGroups, "cleanupEmptyTransportGroups", "public transport groups list runs empty-group cleanup before listing");
   expectIncludes(publicBoard, "cleanupEmptyTransportGroups", "public transport board list runs empty-group cleanup before listing");
+  expectIncludes(publicBoard, "sortBoardItemsByServiceTime", "public transport board sorts final rendered rows by service time");
+  expectIncludes(publicBoard, "filterFutureBoardItems", "public transport board filters active rows by final service time");
   expectIncludes(joinPreview, "evaluateJoin", "join-carpool preview uses join evaluator");
   expectIncludes(joinSubmit, "evaluateJoin", "join-carpool submit uses join evaluator");
   expectIncludes(lifecycle, "cleanupEmptyTransportGroups", "empty-group cleanup helper exists");

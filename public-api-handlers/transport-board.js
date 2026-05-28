@@ -30,6 +30,41 @@ function applySort(query, sort) {
   query.order("flight_datetime", { ascending: true }).order("created_at", { ascending: false });
 }
 
+function getBoardItemServiceTimeMs(item) {
+  const value = item?.preferred_time_start
+    || item?.flight_time_reference
+    || item?.flight_datetime
+    || "";
+  const parsed = new Date(value).getTime();
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function sortBoardItemsByServiceTime(items, sort) {
+  const direction = sort === "farthest" ? -1 : 1;
+  return [...(items || [])].sort((left, right) => {
+    const leftTime = getBoardItemServiceTimeMs(left);
+    const rightTime = getBoardItemServiceTimeMs(right);
+    if (leftTime === null && rightTime === null) return 0;
+    if (leftTime === null) return 1;
+    if (rightTime === null) return -1;
+    if (leftTime !== rightTime) {
+      return (leftTime - rightTime) * direction;
+    }
+    return new Date(right?.created_at || 0).getTime() - new Date(left?.created_at || 0).getTime();
+  });
+}
+
+function filterFutureBoardItems(items, includePast) {
+  if (includePast) {
+    return items || [];
+  }
+  const now = Date.now();
+  return (items || []).filter(item => {
+    const serviceTimeMs = getBoardItemServiceTimeMs(item);
+    return serviceTimeMs !== null && serviceTimeMs >= now;
+  });
+}
+
 function mapBoardItem(item, membersByGroup, groupStats) {
   const members = membersByGroup.get(item.group_id) || [];
   const activeMembers = members.filter(member => member.transport_requests?.status !== "closed");
@@ -316,9 +351,13 @@ module.exports = async function handler(req, res) {
     const publicItems = rows
       .map(item => mapBoardItem(item, membersByGroup, groupStatsById.get(item.group_id)))
       .filter(item => !isFullBoardItem(item));
-    const hasNext = limit ? publicItems.length > limit : false;
-    const items = limit ? publicItems.slice(0, limit) : publicItems;
-    const total = limit ? ((page - 1) * limit + items.length + (hasNext ? 1 : 0)) : publicItems.length;
+    const sortedItems = sortBoardItemsByServiceTime(
+      filterFutureBoardItems(publicItems, String(queryParams.effective || "").trim().toLowerCase() === "all"),
+      sort
+    );
+    const hasNext = limit ? sortedItems.length > limit : false;
+    const items = limit ? sortedItems.slice(0, limit) : sortedItems;
+    const total = limit ? ((page - 1) * limit + items.length + (hasNext ? 1 : 0)) : sortedItems.length;
 
     ok(res, {
       items,
