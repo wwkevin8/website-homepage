@@ -154,7 +154,7 @@ function normalizeValidityFilter(value) {
 
 function normalizeServiceTimeSort(value) {
   const normalized = String(value || "").trim().toLowerCase();
-  return normalized === "service_time_desc" || normalized === "time_desc" ? "service_time_desc" : "service_time_asc";
+  return normalized === "service_time_asc" || normalized === "time_asc" ? "service_time_asc" : "service_time_desc";
 }
 
 function normalizeLegacyGroupStatusInput(input = {}) {
@@ -284,7 +284,7 @@ function buildGroupsBaseQuery(supabase, queryParams, options = {}) {
     .order("created_at", { ascending: false });
 
   applyGroupFilters(query, normalizedQueryParams);
-  const validity = normalizeValidityFilter(normalizedQueryParams.validity);
+  const validity = normalizeValidityFilter(normalizedQueryParams.validity || normalizedQueryParams.effective);
   if (validity === "active") {
     query.gte("group_date", getLondonDateString());
   } else if (validity === "invalid") {
@@ -568,7 +568,7 @@ module.exports = async function handler(req, res) {
       const orderNo = String(queryParams.order_no || "").trim().toUpperCase();
       const paginate = String(queryParams.paginate || "").toLowerCase() === "true";
       const page = Math.max(Number.parseInt(queryParams.page, 10) || 1, 1);
-      const pageSize = Math.min(Math.max(Number.parseInt(queryParams.page_size, 10) || 10, 1), 100);
+      const pageSize = Math.min(Math.max(Number.parseInt(queryParams.page_size, 10) || 20, 1), 100);
       const effectiveQueryParams = { ...queryParams };
 
       if (orderNo) {

@@ -13,6 +13,14 @@ function parsePositiveInteger(value) {
   return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
 }
 
+function normalizePublicSort(value) {
+  const sort = String(value || "").trim().toLowerCase();
+  if (sort === "oldest" || sort === "upcoming") {
+    return "oldest";
+  }
+  return "latest";
+}
+
 function applySort(query, sort) {
   if (sort === "latest") {
     query.order("flight_datetime", { ascending: false }).order("created_at", { ascending: false });
@@ -118,16 +126,73 @@ module.exports = async function handler(req, res) {
     const queryParams = req.query || {};
     const limit = parsePositiveInteger(queryParams.limit);
     const page = parsePositiveInteger(queryParams.page) || 1;
-    const sort = queryParams.sort === "latest" ? "latest" : "upcoming";
+    const sort = normalizePublicSort(queryParams.sort);
     const nowIso = new Date().toISOString();
+    const groupSearchTerm = String(queryParams.group_id || "").trim().toUpperCase();
+    let requestIdsForGroupSearch = null;
+
+    if (groupSearchTerm) {
+      const { data: matchedGroups, error: matchedGroupsError } = await supabase
+        .from("transport_groups_public_view")
+        .select("group_id,id")
+        .ilike("group_id", `%${groupSearchTerm}%`)
+        .limit(20);
+
+      if (matchedGroupsError) {
+        throw matchedGroupsError;
+      }
+
+      const matchedGroupIds = Array.from(new Set((matchedGroups || []).map(item => item.group_id || item.id).filter(Boolean)));
+      if (!matchedGroupIds.length) {
+        ok(res, {
+          items: [],
+          total: 0,
+          page,
+          page_size: limit || 0,
+          has_next: false,
+          sort
+        });
+        return;
+      }
+
+      const { data: matchedMembers, error: matchedMembersError } = await supabase
+        .from("transport_group_members")
+        .select("request_id")
+        .in("group_id", matchedGroupIds)
+        .limit(200);
+
+      if (matchedMembersError) {
+        throw matchedMembersError;
+      }
+
+      requestIdsForGroupSearch = Array.from(new Set((matchedMembers || []).map(item => item.request_id).filter(Boolean)));
+      if (!requestIdsForGroupSearch.length) {
+        ok(res, {
+          items: [],
+          total: 0,
+          page,
+          page_size: limit || 0,
+          has_next: false,
+          sort
+        });
+        return;
+      }
+    }
 
     let query = supabase
       .from("transport_requests")
       .select("id, order_no, service_type, airport_code, airport_name, terminal, flight_no, flight_datetime, location_from, location_to, passenger_count, shareable, status, created_at, transport_group_members(*)", { count: "exact" })
       .in("status", PUBLIC_REQUEST_STATUSES)
       .or("source.is.null,source.neq.admin_manual")
-      .eq("shareable", true)
-      .gte("flight_datetime", nowIso);
+      .eq("shareable", true);
+
+    if (String(queryParams.effective || "").trim().toLowerCase() !== "all") {
+      query.gte("flight_datetime", nowIso);
+    }
+
+    if (requestIdsForGroupSearch) {
+      query.in("id", requestIdsForGroupSearch);
+    }
 
     if (queryParams.service_type) {
       query.eq("service_type", queryParams.service_type);
@@ -146,9 +211,13 @@ module.exports = async function handler(req, res) {
 
     applySort(query, sort);
 
-    const hasGroupSearch = Boolean(String(queryParams.group_id || "").trim());
+    if (limit) {
+      const from = (page - 1) * limit;
+      const to = from + limit - 1;
+      query = query.range(from, to);
+    }
 
-    const { data, error } = await query;
+    const { data, error, count } = await query;
     if (error) {
       throw error;
     }
@@ -241,16 +310,16 @@ module.exports = async function handler(req, res) {
       });
     }
 
-    if (hasGroupSearch) {
-      const groupKeyword = String(queryParams.group_id || "").trim().toUpperCase();
+    if (groupSearchTerm) {
+      const groupKeyword = groupSearchTerm;
       rows = rows.filter(item => String(item.group_id || "").toUpperCase().includes(groupKeyword));
     }
 
     const publicItems = rows
       .map(item => mapBoardItem(item, membersByGroup, groupStatsById.get(item.group_id)))
       .filter(item => !isFullBoardItem(item));
-    const total = publicItems.length;
-    const items = limit ? publicItems.slice((page - 1) * limit, (page - 1) * limit + limit) : publicItems;
+    const total = limit ? (count || 0) : publicItems.length;
+    const items = publicItems;
 
     ok(res, {
       items,

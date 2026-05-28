@@ -29,7 +29,7 @@ const defaultFilters = {
   terminal: "",
   status: "",
   validity: "active",
-  sort: "service_time_asc",
+  sort: "service_time_desc",
   visibleOnFrontend: "",
   risk: "",
   dateFrom: "",
@@ -38,7 +38,7 @@ const defaultFilters = {
   offlineStatus: "",
   dispatchReadiness: "",
   dispatchStatus: "",
-  pageSize: 10
+  pageSize: 20
 };
 
 let filters = reactive({ ...defaultFilters });
@@ -48,6 +48,7 @@ const serverPagination = ref({ page: 1, page_size: defaultFilters.pageSize, tota
 const loading = ref(false);
 const error = ref("");
 const notice = ref("");
+let loadRequestSeq = 0;
 
 const filteredGroups = computed(() => allGroups.value.filter(group => matchesClientFilters(group)).sort(compareGroupsByServiceTime));
 const pagedGroups = computed(() => filteredGroups.value);
@@ -517,11 +518,15 @@ function buildQuery(nextPage = page.value || 1) {
 }
 
 async function loadGroups(nextPage = 1) {
+  const requestSeq = ++loadRequestSeq;
   loading.value = true;
   error.value = "";
   notice.value = "";
   try {
     const payload = await fetchTransportGroups(buildQuery(nextPage));
+    if (requestSeq !== loadRequestSeq) {
+      return;
+    }
     allGroups.value = Array.isArray(payload?.items) ? payload.items : Array.isArray(payload) ? payload : [];
     page.value = nextPage;
     serverPagination.value = payload?.pagination || {
@@ -531,6 +536,9 @@ async function loadGroups(nextPage = 1) {
       total_pages: allGroups.value.length ? 1 : 0
     };
   } catch (err) {
+    if (requestSeq !== loadRequestSeq) {
+      return;
+    }
     allGroups.value = [];
     serverPagination.value = {
       page: nextPage,
@@ -540,7 +548,9 @@ async function loadGroups(nextPage = 1) {
     };
     error.value = err.message || "拼车组列表加载失败。";
   } finally {
-    loading.value = false;
+    if (requestSeq === loadRequestSeq) {
+      loading.value = false;
+    }
   }
 }
 

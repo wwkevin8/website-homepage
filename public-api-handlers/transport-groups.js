@@ -5,6 +5,28 @@ const { loadGroupStatsMap } = require("../api/_lib/transport-group-stats");
 const { cleanupEmptyTransportGroups } = require("../api/_lib/transport-group-lifecycle");
 
 const PUBLIC_JOINABLE_GROUP_STATUSES = ["single_member", "active"];
+const PUBLIC_GROUP_LIST_COLUMNS = [
+  "id",
+  "group_id",
+  "service_type",
+  "group_date",
+  "airport_code",
+  "airport_name",
+  "terminal",
+  "location_from",
+  "location_to",
+  "flight_time_reference",
+  "preferred_time_start",
+  "preferred_time_end",
+  "vehicle_type",
+  "max_passengers",
+  "visible_on_frontend",
+  "status",
+  "created_at",
+  "current_passenger_count",
+  "remaining_passenger_count",
+  "member_request_count"
+].join(",");
 
 function getPublicGroupStatuses(queryParams = {}) {
   const status = String(queryParams.status || "").trim().toLowerCase();
@@ -30,6 +52,14 @@ function getLondonTodayIsoDate() {
 function parsePositiveInteger(value) {
   const parsed = Number.parseInt(value, 10);
   return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+}
+
+function normalizePublicSort(value) {
+  const sort = String(value || "").trim().toLowerCase();
+  if (sort === "oldest" || sort === "upcoming") {
+    return "oldest";
+  }
+  return "latest";
 }
 
 function applySort(query, sort) {
@@ -83,7 +113,7 @@ function sortPublicGroupsByTime(groups, sort) {
 function buildPublicGroupsBaseQuery(supabase, queryParams, dateFrom, sort) {
   const query = supabase
     .from("transport_groups_public_view")
-    .select("*", { count: "exact" })
+    .select(PUBLIC_GROUP_LIST_COLUMNS, { count: "exact" })
     .eq("visible_on_frontend", true)
     .in("status", getPublicGroupStatuses(queryParams))
     .gt("current_passenger_count", 0);
@@ -119,11 +149,12 @@ async function enrichPublicGroupsBatch(supabase, groups) {
     const { dispatch_status, ...publicGroup } = group || {};
     const groupKey = group.group_id || group.id;
     const groupStats = groupStatsById.get(groupKey) || {};
+    const { member_details, ...listStats } = groupStats;
     const sourceOrderNos = Array.isArray(group.source_order_nos) ? group.source_order_nos : [];
     const sourceFlightNos = groupStats.flight_no_values || [];
     return {
       ...publicGroup,
-      ...groupStats,
+      ...listStats,
       id: groupKey,
       group_id: groupKey,
       source_order_nos: sourceOrderNos,
@@ -150,9 +181,19 @@ function filterPublicGroupsByGroupId(groups, groupIdKeyword) {
   return (groups || []).filter(group => String(group.group_id || group.id || "").toUpperCase().includes(keyword));
 }
 
+function applyPublicGroupIdFilter(query, groupIdKeyword) {
+  const keyword = String(groupIdKeyword || "").trim().toUpperCase();
+  if (keyword) {
+    query.ilike("group_id", `%${keyword}%`);
+  }
+}
+
 async function listPublicGroupsPaginated(supabase, queryParams, limit, page, dateFrom, sort) {
   const query = buildPublicGroupsBaseQuery(supabase, queryParams, dateFrom, sort);
-  const { data, error } = await query;
+  applyPublicGroupIdFilter(query, queryParams.group_id);
+  const from = (page - 1) * limit;
+  const to = from + limit - 1;
+  const { data, error, count } = await query.range(from, to);
   if (error) {
     throw error;
   }
@@ -168,9 +209,8 @@ async function listPublicGroupsPaginated(supabase, queryParams, limit, page, dat
     ),
     sort
   );
-  const total = enrichedGroups.length;
-  const from = (page - 1) * limit;
-  const items = enrichedGroups.slice(from, from + limit);
+  const total = count || 0;
+  const items = enrichedGroups;
 
   return {
     items,
@@ -197,9 +237,10 @@ module.exports = async function handler(req, res) {
     const queryParams = req.query || {};
     const limit = parsePositiveInteger(queryParams.limit);
     const page = parsePositiveInteger(queryParams.page) || 1;
-    const includePast = queryParams.include_past === "true";
+    const effectiveFilter = String(queryParams.effective || "").trim().toLowerCase();
+    const includePast = queryParams.include_past === "true" || effectiveFilter === "all";
     const dateFrom = includePast ? (queryParams.date_from || "") : (queryParams.date_from || getLondonTodayIsoDate());
-    const sort = queryParams.sort === "latest" ? "latest" : "upcoming";
+    const sort = normalizePublicSort(queryParams.sort);
 
     if (limit) {
       ok(res, await listPublicGroupsPaginated(supabase, queryParams, limit, page, dateFrom, sort));
@@ -207,6 +248,7 @@ module.exports = async function handler(req, res) {
     }
 
     const query = buildPublicGroupsBaseQuery(supabase, queryParams, dateFrom, sort);
+    applyPublicGroupIdFilter(query, queryParams.group_id);
     const { data, error } = await query;
     if (error) {
       throw error;

@@ -6,10 +6,11 @@
     return;
   }
 
-  const DEFAULT_BOARD_PAGE_SIZE = 10;
+  const DEFAULT_BOARD_PAGE_SIZE = 20;
   const DEFAULT_PREVIEW_SIZE = 9;
   const MODAL_ID = "pickupJoinModal";
   const CUSTOMER_SERVICE_QR_SRC = "./img/pickup-service-qr.jpg";
+  const detailCache = new Map();
 
   function normalizeResponse(payload) {
     return {
@@ -764,7 +765,7 @@
 
     const response = await Api.listPublicBoard({
       group_id: groupId,
-      sort: "upcoming",
+      sort: "latest",
       limit: 50,
       page: 1
     });
@@ -864,15 +865,52 @@
     });
   }
 
-  function openDetailModal(item) {
+  async function loadDetailItem(item) {
+    const groupId = getGroupKey(item);
+    if (!groupId) {
+      return item;
+    }
+    if (detailCache.has(groupId)) {
+      return detailCache.get(groupId);
+    }
+
+    const response = await Api.listPublicBoard({
+      group_id: groupId,
+      sort: "latest",
+      limit: 50,
+      page: 1
+    });
+    const items = Array.isArray(response?.items)
+      ? response.items.filter(entry => String(entry.group_id || "") === String(groupId))
+      : [];
+    const detailItem = items.find(entry => Array.isArray(entry.member_details) && entry.member_details.length) || items[0] || item;
+    const mergedItem = {
+      ...item,
+      ...detailItem,
+      id: getGroupKey(item),
+      group_id: groupId
+    };
+    detailCache.set(groupId, mergedItem);
+    return mergedItem;
+  }
+
+  async function openDetailModal(item) {
     const modal = ensureModal();
     const title = modal.querySelector("#pickupJoinModalTitle");
     const content = modal.querySelector("#pickupJoinModalContent");
     if (title) {
       title.textContent = "查看拼车详情信息";
     }
-    content.innerHTML = buildDetailView(item);
+    content.innerHTML = '<div class="transport-loading">正在加载详情...</div>';
     modal.hidden = false;
+    try {
+      content.innerHTML = buildDetailView(await loadDetailItem(item));
+    } catch (error) {
+      content.innerHTML = `
+        ${buildDetailView(item)}
+        <div class="transport-empty">${Shared.escapeHtml(error.message || "详情加载失败，请稍后重试。")}</div>
+      `;
+    }
   }
 
   async function initBoardPage() {
@@ -886,9 +924,11 @@
     let currentPage = 1;
     let hasNextPage = false;
     let currentItems = [];
+    let renderSeq = 0;
     Shared.populateAirportCodeSelect(form.airport_code, true);
 
     async function render(page = 1) {
+      const requestSeq = ++renderSeq;
       currentPage = page;
       list.innerHTML = '<div class="transport-loading">加载中...</div>';
       if (pagination) {
@@ -901,14 +941,20 @@
         airport_code: form.airport_code.value,
         date_from: form.date_from.value,
         date_to: form.date_to.value,
-        sort: "upcoming",
+        sort: "latest",
         limit: DEFAULT_BOARD_PAGE_SIZE,
         page
       }).catch(error => {
+        if (requestSeq !== renderSeq) {
+          return null;
+        }
         list.innerHTML = `<div class="transport-empty">${Shared.escapeHtml(error.message)}</div>`;
         return null;
       });
 
+      if (requestSeq !== renderSeq) {
+        return;
+      }
       if (!response) {
         return;
       }
@@ -951,7 +997,9 @@
       if (detailButton) {
         const item = currentItems.find(entry => getGroupKey(entry) === detailButton.getAttribute("data-view-pickup"));
         if (item) {
-          openDetailModal(item);
+          openDetailModal(item).catch(error => {
+            showBoardActionError(list, error.message);
+          });
         }
         return;
       }
@@ -1054,7 +1102,7 @@
     list.innerHTML = '<div class="transport-loading">加载中...</div>';
 
     const response = await Api.listPublicGroups({
-      sort: "upcoming",
+      sort: "latest",
       limit: DEFAULT_PREVIEW_SIZE,
       page: 1
     }).catch(error => {
@@ -1106,7 +1154,7 @@
     list.innerHTML = '<div class="transport-loading">加载中...</div>';
 
     const response = await Api.listPublicGroups({
-      sort: "upcoming",
+      sort: "latest",
       limit: DEFAULT_PREVIEW_SIZE,
       page: 1
     }).catch(error => {
@@ -1268,7 +1316,7 @@
     list.innerHTML = '<div class="transport-loading">加载中...</div>';
 
     const response = await Api.listPublicGroups({
-      sort: "upcoming",
+      sort: "latest",
       limit: DEFAULT_PREVIEW_SIZE,
       page: 1
     }).catch(error => {
