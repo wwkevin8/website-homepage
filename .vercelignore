@@ -17,6 +17,11 @@ ops-login.json
 *.payload.json
 .tmp*
 *.log
+accept-*.csv
+transport-bulk-import-group-test*.csv
+transport-bulk-import-group-test*.xlsx
+*test*.csv
+*test*.xlsx
 _inspect_src_zip_2/
 backup/
 brand/
