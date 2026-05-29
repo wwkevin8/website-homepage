@@ -3,11 +3,12 @@
 ## Latest Task Update
 
 - Date: 2026-05-29
-- Scope: Hide system empty-carpool cleanup from admin recent-operation logs. GitHub was updated before Vercel preview deployment. No production deployment, no database schema change, no production data write, and no production data deletion were performed.
+- Scope: Production release for pre-freeze transport/storage safety fixes and the admin recent-operation cleanup display fix. GitHub was updated before Vercel production deployment. No database schema change, no production data cleanup, and no test-data upload were performed.
 - GitHub commit: `d08bc2f` (`chore: hide system cleanup from recent operations`) on `release/transport-storage-preflight`.
 - Vercel preview deployment: `dpl_Bc6LFNH79abwUVRATJmbRAw7XguE`, preview URL `https://webside-4tcs0dvrb-wwkevin8s-projects.vercel.app`, status `READY`.
-- Summary: Empty carpool group auto-cleanup still runs, but it no longer writes `empty_group_deleted` rows into `admin_operation_logs`. The admin dashboard recent-operation query also excludes existing `empty_group_deleted` rows so system cleanup is not shown as an unknown administrator action. Historical database rows were not deleted.
-- Verification: `node --check api/_lib/transport-group-lifecycle.js`, `node --check api/admin/[...action].js`, and `node scripts/regression-check.js` passed.
+- Vercel production deployment: `dpl_BfcgVkpGi3ZUZPBejUwYxRFyb6gT`, production URL `https://webside-fs3ibssfo-wwkevin8s-projects.vercel.app`, aliases `https://ngn.best` and `https://www.ngn.best`, status `READY`.
+- Summary: Public carpool APIs expose only public-safe fields, the membership storage 5-box display / 6-box billing-free threshold remains documented, batch transport import templates remain header-only, root test CSV/XLSX files are excluded from Vercel uploads, the QA daily-flow cron is no longer scheduled, and empty carpool auto-cleanup no longer appears in admin recent-operation logs as an unknown administrator action.
+- Verification: `node --check api/_lib/transport-group-lifecycle.js`, `node --check api/admin/[...action].js`, and `node scripts/regression-check.js` passed before deployment. Production Vercel inspect confirmed `target production` and `READY`. `https://ngn.best/`, `/admin/`, `/api/public/transport-groups`, and `/api/public/transport-board` returned 200. Public transport group and board API key checks found no `location_from`, `location_to`, `address`, `order_no`, `source_order_no`, `source_order_nos`, or `source_order_no_preview` fields.
 
 ## Previous Task Update
 
