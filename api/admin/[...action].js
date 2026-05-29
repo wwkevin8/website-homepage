@@ -2214,6 +2214,7 @@ async function handleDashboard(req, res, supabase) {
     safeDashboardQuery(() => supabase
       .from("admin_operation_logs")
       .select("id, action, target_type, target_id, order_id, created_at, admin_user:admin_users(id, name, username, email)")
+      .neq("action", "empty_group_deleted")
       .order("created_at", { ascending: false })
       .limit(8))
   ]);

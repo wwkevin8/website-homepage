@@ -112,32 +112,7 @@ function buildCandidateWarning(code, message) {
 }
 
 async function logEmptyGroupDeletion(supabase, group, deletedAt, reason) {
-  try {
-    await supabase
-      .from("admin_operation_logs")
-      .insert({
-        admin_user_id: null,
-        target_type: "transport_group",
-        target_id: group.group_ref || group.id || null,
-        action: "empty_group_deleted",
-        before_data: {
-          group_id: group.group_ref || group.id || null,
-          group_code: group.group_id || null
-        },
-        after_data: null,
-        metadata: {
-          group_id: group.group_ref || group.id || null,
-          group_code: group.group_id || null,
-          deleted_at: deletedAt,
-          reason
-        }
-      });
-  } catch (error) {
-    console.warn("empty_group_delete_log_failed", {
-      group_id: group.group_id || group.id || null,
-      message: error?.message || String(error)
-    });
-  }
+  return;
 }
 
 function summarizeCandidateGroup(group, stats, warnings = []) {

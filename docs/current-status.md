@@ -3,6 +3,13 @@
 ## Latest Task Update
 
 - Date: 2026-05-29
+- Scope: Hide system empty-carpool cleanup from admin recent-operation logs. No deployment, no database schema change, no production data write, and no production data deletion were performed.
+- Summary: Empty carpool group auto-cleanup still runs, but it no longer writes `empty_group_deleted` rows into `admin_operation_logs`. The admin dashboard recent-operation query also excludes existing `empty_group_deleted` rows so system cleanup is not shown as an unknown administrator action. Historical database rows were not deleted.
+- Verification: `node --check api/_lib/transport-group-lifecycle.js`, `node --check api/admin/[...action].js`, and `node scripts/regression-check.js` passed.
+
+## Previous Task Update
+
+- Date: 2026-05-29
 - Scope: Pre-freeze minimal fixes for the accepted pickup/carpool and storage membership flows. GitHub was updated before Vercel preview deployment. No production deployment, no database schema change, no production data write, no production data cleanup, and no test-data upload were performed.
 - GitHub commit: `f91e6ed` (`chore: pre-release fixes for transport and storage modules`) on `release/transport-storage-preflight`.
 - Vercel preview deployment: `dpl_DdWMoAer3MGNFQS61mMGpfxBo3GJ`, preview URL `https://webside-f5g1jk590-wwkevin8s-projects.vercel.app`, status `READY`.
