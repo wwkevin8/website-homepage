@@ -120,8 +120,6 @@ function mapBoardItem(item, membersByGroup, groupStats) {
     flight_datetime: item.flight_datetime,
     preferred_time_start: item.preferred_time_start || null,
     flight_time_reference: item.flight_time_reference || null,
-    location_from: item.location_from,
-    location_to: item.location_to,
     passenger_count: item.passenger_count,
     current_passenger_count: resolvedPassengerCount,
     remaining_passenger_count: resolvedRemainingPassengerCount,
@@ -214,7 +212,7 @@ module.exports = async function handler(req, res) {
 
     let query = supabase
       .from("transport_requests")
-      .select("id, order_no, service_type, airport_code, airport_name, terminal, flight_no, flight_datetime, location_from, location_to, passenger_count, shareable, status, created_at, transport_group_members(*)")
+      .select("id, service_type, airport_code, airport_name, terminal, flight_no, flight_datetime, passenger_count, shareable, status, created_at, transport_group_members(*)")
       .in("status", PUBLIC_REQUEST_STATUSES)
       .or("source.is.null,source.neq.admin_manual")
       .eq("shareable", true);

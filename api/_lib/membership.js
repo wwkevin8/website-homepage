@@ -11,7 +11,9 @@ const ACTIVATION_CODE_PUBLIC_SELECT_WITH_BIRTHDAY = "id, code_prefix, membership
 const MEMBERSHIP_CONFIG = {
   defaultCycle: "2026-27",
   storage: {
-    freeStandardBoxLimit: 6
+    displayedMembershipBoxBenefit: 5,
+    // Business rule: public copy says 5 boxes, but billing starts charging only from the 7th box.
+    membershipBillingFreeBoxLimit: 6
   },
   pickup: {
     allowedServiceTypes: ["pickup"],
@@ -332,7 +334,7 @@ function calculateStorageDiscount(orderPayload, claim) {
     0
   );
   const standardBoxCount = Math.max(0, Number(orderPayload?.estimated_box_count || serviceDetails.storageBoxCount || 0));
-  const coveredBoxCount = Math.min(standardBoxCount, MEMBERSHIP_CONFIG.storage.freeStandardBoxLimit);
+  const coveredBoxCount = Math.min(standardBoxCount, MEMBERSHIP_CONFIG.storage.membershipBillingFreeBoxLimit);
   const purchasedBoxCount = Math.max(0, Number(
     pickNestedNumber({ estimate, serviceDetails, orderPayload }, [
       "estimate.totalPurchaseBoxes",
@@ -398,7 +400,8 @@ function calculateStorageDiscount(orderPayload, claim) {
     breakdown: {
       source: "server_mapped_storage_payload",
       rules: {
-        freeStandardBoxLimit: MEMBERSHIP_CONFIG.storage.freeStandardBoxLimit,
+        displayedMembershipBoxBenefit: MEMBERSHIP_CONFIG.storage.displayedMembershipBoxBenefit,
+        membershipBillingFreeBoxLimit: MEMBERSHIP_CONFIG.storage.membershipBillingFreeBoxLimit,
         standardBoxCount,
         coveredBoxCount,
         purchasedBoxCount: purchaseChargeableCount,

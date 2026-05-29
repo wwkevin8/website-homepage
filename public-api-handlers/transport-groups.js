@@ -13,8 +13,6 @@ const PUBLIC_GROUP_LIST_COLUMNS = [
   "airport_code",
   "airport_name",
   "terminal",
-  "location_from",
-  "location_to",
   "flight_time_reference",
   "preferred_time_start",
   "preferred_time_end",
@@ -146,19 +144,28 @@ async function enrichPublicGroupsBatch(supabase, groups) {
   const groupStatsById = await loadGroupStatsMap(supabase, groupIds, { groups });
 
   return groups.map(group => {
-    const { dispatch_status, ...publicGroup } = group || {};
+    const publicGroup = { ...(group || {}) };
+    delete publicGroup.dispatch_status;
+    delete publicGroup.location_from;
+    delete publicGroup.location_to;
+    delete publicGroup.source_order_no;
+    delete publicGroup.source_order_nos;
+    delete publicGroup.source_order_no_preview;
     const groupKey = group.group_id || group.id;
     const groupStats = groupStatsById.get(groupKey) || {};
-    const { member_details, ...listStats } = groupStats;
-    const sourceOrderNos = Array.isArray(group.source_order_nos) ? group.source_order_nos : [];
+    const listStats = { ...groupStats };
+    delete listStats.member_details;
+    delete listStats.location_from;
+    delete listStats.location_to;
+    delete listStats.source_order_no;
+    delete listStats.source_order_nos;
+    delete listStats.source_order_no_preview;
     const sourceFlightNos = groupStats.flight_no_values || [];
     return {
       ...publicGroup,
       ...listStats,
       id: groupKey,
       group_id: groupKey,
-      source_order_nos: sourceOrderNos,
-      source_order_no_preview: sourceOrderNos.length > 1 ? `${sourceOrderNos[0]} +${sourceOrderNos.length - 1}` : (sourceOrderNos[0] || null),
       source_flight_nos: sourceFlightNos,
       source_flight_no_preview: sourceFlightNos.length > 1 ? `${sourceFlightNos[0]} +${sourceFlightNos.length - 1}` : (sourceFlightNos[0] || null)
     };

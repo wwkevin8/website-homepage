@@ -151,39 +151,7 @@ const GROUP_IDENTIFIER_HELP = [
   "多行填写相同内容（例如 新组A）：系统会创建一个新的拼车组，所有填写 新组A 的订单都会加入同一个拼车组。",
   "填写已有 GRP 编号：系统会尝试加入该已有拼车组；如果编号不存在，预览阶段会标红，不允许导入。"
 ];
-const TEMP_GROUP_EXAMPLE_ONE = {
-  student_name: "王五",
-  phone: "+44 7100 011111",
-  wechat: "wechat_wang",
-  service_type: "接机",
-  airport_code: "LHR",
-  terminal: "T2",
-  flight_no: "CA937",
-  flight_datetime: "2026/05/26 13:00",
-  service_time: "2026/05/26 11:30",
-  address: "Nottingham NG1 1AA",
-  passenger_count: "1",
-  luggage_count: "2",
-  contact_status: "未联系",
-  payment_collection_status: "未收款",
-  group_id: "新组A",
-  admin_note: "临时组示例：同标识第1行"
-};
-const TEMP_GROUP_EXAMPLE_TWO = {
-  ...TEMP_GROUP_EXAMPLE_ONE,
-  student_name: "赵六",
-  phone: "+44 7200 022222",
-  wechat: "wechat_zhao",
-  flight_no: "CA938",
-  group_id: "新组A",
-  admin_note: "临时组示例：同标识第2行"
-};
-const IMPORT_TEMPLATE_EXAMPLES = [
-  IMPORT_COLUMNS.map(column => column.example_auto_group ?? ""),
-  IMPORT_COLUMNS.map(column => column.example_existing_group ?? ""),
-  IMPORT_COLUMNS.map(column => TEMP_GROUP_EXAMPLE_ONE[column.key] ?? ""),
-  IMPORT_COLUMNS.map(column => TEMP_GROUP_EXAMPLE_TWO[column.key] ?? "")
-];
+const IMPORT_TEMPLATE_EXAMPLES = [];
 const IMPORT_HEADER_ALIAS_MAP = IMPORT_COLUMNS.reduce((map, column) => {
   [column.label, ...(column.aliases || [])].forEach(alias => {
     map.set(normalizeImportHeader(alias), column.label);
@@ -1468,7 +1436,7 @@ function buildXlsxTemplate() {
   return createZip([
     {
       name: "[Content_Types].xml",
-      content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/worksheets/sheet2.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>`
+      content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>`
     },
     {
       name: "_rels/.rels",
@@ -1476,14 +1444,13 @@ function buildXlsxTemplate() {
     },
     {
       name: "xl/workbook.xml",
-      content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="导入模板" sheetId="1" r:id="rId1"/><sheet name="填写示例" sheetId="2" r:id="rId2"/></sheets></workbook>`
+      content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="导入模板" sheetId="1" r:id="rId1"/></sheets></workbook>`
     },
     {
       name: "xl/_rels/workbook.xml.rels",
-      content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"/></Relationships>`
+      content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>`
     },
-    { name: "xl/worksheets/sheet1.xml", content: sheetXml([IMPORT_TEMPLATE_HEADERS]) },
-    { name: "xl/worksheets/sheet2.xml", content: sheetXml([IMPORT_TEMPLATE_HEADERS, ...IMPORT_TEMPLATE_EXAMPLES]) }
+    { name: "xl/worksheets/sheet1.xml", content: sheetXml([IMPORT_TEMPLATE_HEADERS]) }
   ]);
 }
 
@@ -2305,13 +2272,8 @@ watch(
           </ol>
         </details>
         <details class="import-template-help">
-          <summary>可直接测试的粘贴示例</summary>
-          <ul>
-            <li>示例第 1 行留空：导入后自动创建一个新的单人拼车组。</li>
-            <li>示例第 2 行填写不存在的 GRP：预览应标红并禁止导入。</li>
-            <li>示例第 3、4 行同填“新组A”：导入后应进入同一个新拼车组。</li>
-          </ul>
-          <textarea class="template-sample-textarea" readonly rows="5" :value="IMPORT_TEMPLATE_SAMPLE_TEXT"></textarea>
+          <summary>请按字段格式填写后导入</summary>
+          <textarea class="template-sample-textarea" readonly rows="3" :value="IMPORT_TEMPLATE_SAMPLE_TEXT"></textarea>
         </details>
         <p v-if="importFileName" class="muted-line">已读取文件：{{ importFileName }}</p>
         <div v-if="importPreviewRows.length" class="import-preview-table-wrap">
