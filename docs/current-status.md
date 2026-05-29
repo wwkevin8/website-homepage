@@ -3,7 +3,9 @@
 ## Latest Task Update
 
 - Date: 2026-05-29
-- Scope: Pre-freeze minimal fixes for the accepted pickup/carpool and storage membership flows. No deployment, no database schema change, no production data write, no production data cleanup, and no test-data upload were performed.
+- Scope: Pre-freeze minimal fixes for the accepted pickup/carpool and storage membership flows. GitHub was updated before Vercel preview deployment. No production deployment, no database schema change, no production data write, no production data cleanup, and no test-data upload were performed.
+- GitHub commit: `f91e6ed` (`chore: pre-release fixes for transport and storage modules`) on `release/transport-storage-preflight`.
+- Vercel preview deployment: `dpl_DdWMoAer3MGNFQS61mMGpfxBo3GJ`, preview URL `https://webside-f5g1jk590-wwkevin8s-projects.vercel.app`, status `READY`.
 - Summary: Public carpool list APIs now stop exposing detailed route addresses, source order numbers, and order numbers beyond the fields needed by the current public carpool display. Storage membership now records the intended split rule: public/display copy remains 5 standard boxes and 5 free paper boxes, while billing uses a 6-box free threshold and starts charging from the 7th box. The Vue admin batch manual transport import template now generates header-only copy/CSV/XLSX templates and the helper panel says `请按字段格式填写后导入` instead of presenting directly importable test rows.
 - Verification: `node --check public-api-handlers/transport-groups.js`, `node --check public-api-handlers/transport-board.js`, and `node --check api/_lib/membership.js` passed. A local calculation check with test price `£10` per standard box returned final price `£0` for 5 boxes, `£0` for 6 boxes, and `£10` for 7 boxes. `npm --prefix apps/admin-vue run build` passed and refreshed the local admin static output to `admin/assets/index-ZJr_YCzC.js`. `node scripts/regression-check.js` passed. Static scans confirmed no direct test sample names/phone rows in the import template source, no `可直接测试` / `填写示例` template wording, and no public board response mapping for `location_from`, `location_to`, or `order_no`.
 
