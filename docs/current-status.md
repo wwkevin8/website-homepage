@@ -2,6 +2,13 @@
 
 ## Latest Task Update
 
+- Date: 2026-05-29
+- Scope: Admin storage all-orders table/export column cleanup. No commit, no deployment, no database schema change, no production data write, and no test-data upload.
+- Summary: `/admin/storage/orders` no longer displays the pinyin column. The visible execution-table order is now selection/sequence, service date, name, service content, apartment/detail address, time slot, charge status, phone, price, payment status, offline record, internal remark, and actions. The storage order execution export also keeps the time-slot column after the address column and continues to omit pinyin.
+- Verification: `node --check api/admin/[...action].js` passed; `npm --prefix apps/admin-vue run build` passed and refreshed the local admin bundle to `admin/assets/index-Ql51SaM9.js`; `node scripts/regression-check.js` passed. A mocked authenticated local browser check at `http://localhost:3000/admin/storage/orders` confirmed headers render as `序号 / 服务日期 / 姓名 / 服务内容 / 公寓 / 详细地址 / 时间段 / 是否收费 / 电话 / 价格 / 收款状态 / 线下记录 / 内部备注 / 操作`, no `拼音` text appears, row action buttons render, the filter form renders and re-queries, and pagination renders. Direct local admin login could not reach the live list because `/api/admin/login` returned `500` in the current local auth/database environment.
+
+## Previous Task Update
+
 - Date: 2026-05-28
 - Scope: P0 transport group service-time sort label/value fix. GitHub was updated before Vercel deployment. No test data was uploaded and no production business data was deleted, cleared, or modified; admin verification wrote only normal admin login/session metadata.
 - GitHub commits: `af6878e` (`Fix transport group service time sort labels`) and `a29cab1` (`Sort public transport board by service time`) on `codex/membership-v1`.
@@ -155,6 +162,11 @@
 
 ## Verification
 
+- `node --check api/admin/[...action].js` passed after the storage export column-order change.
+- `npm --prefix apps/admin-vue run build` passed and refreshed the local admin static output to `admin/assets/index-Ql51SaM9.js` plus the existing `admin/assets/index-DVcvb6_8.css`.
+- Mocked authenticated Playwright verification of `/admin/storage/orders` confirmed the table no longer shows `拼音`, the time-slot column appears after the address column, row action buttons render, the filter form can trigger a new list request, and pagination renders.
+- Direct local browser login to `/admin/storage/orders` was blocked by local `/api/admin/login` returning `500`, so the real authenticated local-data table could not be checked in the current environment.
+- `node scripts/regression-check.js` passed.
 - `Select-String` checks for `enhancedAddressFields` and `ReadonlyField v-for="item in enhancedAddressFields"` in `apps\admin-vue\src\views\StorageOrderDetailView.vue` returned no matches.
 - `npm --prefix apps/admin-vue run build` passed and refreshed the local `admin/` static output to `admin/assets/index-Bob6B9G_.js` and `admin/assets/index-DVcvb6_8.css`.
 - `rg -n "状态口径|statusFields|toggleOfflineRecorded|togglePaymentReceived|savingOffline|savingPayment" apps\admin-vue\src\views\StorageOrderDetailView.vue` returned no matches.
@@ -194,7 +206,7 @@
 - Production release `a29cab1` is live on `https://ngn.best`.
 - Public carpool student-priority display and join-button changes are deployed.
 - Admin transport group defaults, service-time sort label/value fix, P0 carpool pagination/read-path performance changes, 10-minute empty/effectively-empty carpool group cleanup, transport request recorded-toggle UI, and P7 storage/buy-box admin changes are deployed.
-- Committed admin build output points to `admin/assets/index-BUK-S560.js` and `admin/assets/index-DVcvb6_8.css`.
+- Current local admin build output points to `admin/assets/index-Ql51SaM9.js` and `admin/assets/index-DVcvb6_8.css`; this storage-column cleanup has not been committed or deployed yet.
 - Local-only storage seed/clear helpers remain ignored and must not be run against Preview or Production.
 
 ## Open Risks / Follow-Up

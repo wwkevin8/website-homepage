@@ -21,11 +21,10 @@ const FIXED_PAGE_SIZE = 10;
 const columns = [
   { key: "row_index", label: "序号", width: "70px" },
   { key: "service_date", label: "服务日期", width: "8%" },
-  { key: "service_time_slot", label: "时间段", width: "8%" },
   { key: "customer_name", label: "姓名", width: "8%" },
-  { key: "customer_pinyin", label: "拼音", width: "7%" },
   { key: "service_content", label: "服务内容", width: "13%", className: "is-wrap" },
   { key: "address_summary", label: "公寓 / 详细地址", width: "18%", className: "is-wrap" },
+  { key: "service_time_slot", label: "时间段", width: "8%" },
   { key: "charge_status", label: "是否收费", width: "7%" },
   { key: "phone", label: "电话", width: "9%" },
   { key: "total_fee", label: "价格", width: "7%", className: "is-number" },
@@ -344,11 +343,6 @@ function rowRemarkText(order) {
 
 function rowInternalRemarkSummary(order) {
   return rowCustomerServiceRemarkText(order) || "添加备注";
-}
-
-function customerPinyin(order) {
-  const formJson = asObject(order.customer_form_json);
-  return firstText(order.customer_pinyin, order.name_pinyin, formJson.customerPinyin, formJson.customer_pinyin);
 }
 
 function rowServiceContentLines(order) {
@@ -974,9 +968,6 @@ onMounted(() => {
         </template>
         <template #cell-customer_name="{ row }">
           <strong class="cell-truncate" :title="displayValue(row.customer_name)">{{ displayValue(row.customer_name) }}</strong>
-        </template>
-        <template #cell-customer_pinyin="{ row }">
-          <span class="cell-truncate" :title="displayValue(customerPinyin(row))">{{ displayValue(customerPinyin(row)) }}</span>
         </template>
         <template #cell-service_content="{ row }">
           <span class="cell-stack cell-stack--wrap execution-text-cell" :title="rowServiceContentLines(row).join('\n')">
