@@ -372,6 +372,12 @@ function resolveStaticPath(urlPathname) {
     relativePath = "/index.html";
   }
 
+  const localRewrites = new Map([
+    ["/postage", "/postage.html"],
+    ["/postage/submit", "/postage-submit.html"]
+  ]);
+  relativePath = localRewrites.get(relativePath) || relativePath;
+
   if (isBlockedStaticPath(relativePath)) {
     return null;
   }

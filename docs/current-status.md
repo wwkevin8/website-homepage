@@ -3,6 +3,13 @@
 ## Latest Task Update
 
 - Date: 2026-05-30
+- Scope: Fixed local helper-server routing for the postage submit form. No production deployment, database change, API behavior change, or production data write was performed.
+- Summary: Updated `dev-server.js` so local `npm run dev` maps `/postage` to `postage.html` and `/postage/submit` to `postage-submit.html`, matching the Vercel rewrite behavior that already works in production.
+- Verification: `node --check dev-server.js` passed. A temporary local helper server on port 3100 returned `200 OK` for `http://127.0.0.1:3100/postage/submit`. Existing port 3000 dev servers must be restarted before they pick up this local routing fix.
+
+## Previous Task Update
+
+- Date: 2026-05-30
 - Scope: Released postage request submission and postage admin workbench V1 to production. GitHub was updated before Vercel deployment. No test order was submitted and no production business order data was created during verification.
 - GitHub commits: `eeb56d4` (`Add postage request workflow`) and `091b200` (`Update postage release handoff`) on `release/transport-storage-preflight`, pushed to `origin`.
 - Supabase migration: Applied `supabase/20260530_postage_orders.sql` to project `brmsymzkmdnxzhrcaghw` via `supabase db query --linked --file`. Verification confirmed `postage_orders`, `postage_order_logs`, and `allocate_postage_order_no` exist; `postage_order_counters`, `postage_orders`, and `postage_order_logs` have RLS enabled and forced.
