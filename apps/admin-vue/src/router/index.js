@@ -12,6 +12,7 @@ import MembershipsView from "@/views/MembershipsView.vue";
 import NotFoundView from "@/views/NotFoundView.vue";
 import OrderDetailView from "@/views/OrderDetailView.vue";
 import OrdersView from "@/views/OrdersView.vue";
+import PostageOrdersView from "@/views/PostageOrdersView.vue";
 import StorageAllOrdersView from "@/views/StorageAllOrdersView.vue";
 import StorageOrderDetailView from "@/views/StorageOrderDetailView.vue";
 import StorageOrdersView from "@/views/StorageOrdersView.vue";
@@ -133,6 +134,12 @@ const router = createRouter({
           name: "transport-sync-logs",
           component: TransportSyncLogsView,
           meta: { title: "同步巡检日志" }
+        },
+        {
+          path: "postage/orders",
+          name: "postage-orders",
+          component: PostageOrdersView,
+          meta: { title: "邮寄工单" }
         },
         {
           path: "storage/orders",

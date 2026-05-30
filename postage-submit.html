@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="/favicon.ico?v=20260509">
+  <link rel="icon" href="/favicon.png?v=20260509" type="image/png">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=20260509">
+  <title>提交邮寄需求 | NGN</title>
+  <meta name="description" content="登录后提交 NGN 邮寄服务需求，客服会联系确认路线、送箱、取件和最终价格。">
+  <link rel="stylesheet" href="./styles.css?v=20260530-postage-submit-v1">
+</head>
+<body class="postage-submit-body" data-require-auth-page="true">
+  <header class="postage-submit-header">
+    <a class="brand" href="/postage" aria-label="返回邮寄服务页">
+      <div class="brand-lockup brand-lockup-header">
+        <div class="logo-wordmark">NGN</div>
+        <div class="logo-subtitle">NOTTINGHAM GOOD NEIGHBOR</div>
+      </div>
+    </a>
+    <nav class="postage-submit-nav" aria-label="邮寄提交导航">
+      <a href="/postage">邮寄服务页</a>
+      <a href="tel:07941008555">07941 008555</a>
+      <span>微信：NOTTINGHAMNGN</span>
+      <div class="site-auth-nav" data-site-auth-nav></div>
+    </nav>
+  </header>
+
+  <main class="postage-submit-page">
+    <section class="postage-submit-hero">
+      <div>
+        <p class="postage-kicker">Postage Request</p>
+        <h1>提交邮寄需求</h1>
+        <p>请填写真实邮寄需求。提交后不是确认价格，客服会联系你确认路线、送箱、取件和最终价格。</p>
+      </div>
+      <aside>
+        <strong>当前状态说明</strong>
+        <span>邮寄需求已提交后，订单状态为“新提交”。最终费用以实际称重和客服确认为准。</span>
+      </aside>
+    </section>
+
+    <section class="postage-submit-success" data-postage-success hidden>
+      <p class="postage-kicker">Submitted</p>
+      <h2>提交成功</h2>
+      <p class="postage-submit-safe-copy">邮寄需求已提交，客服会联系你确认路线、送箱、取件和最终价格。最终费用以实际称重和客服确认为准。</p>
+      <dl>
+        <div><dt>订单编号</dt><dd data-success-order-no>--</dd></div>
+        <div><dt>当前状态</dt><dd>新提交</dd></div>
+        <div><dt>客服微信</dt><dd>NOTTINGHAMNGN</dd></div>
+        <div><dt>客服电话</dt><dd>07941 008555</dd></div>
+      </dl>
+      <div class="postage-submit-success-actions">
+        <a class="button button-primary" href="/postage">返回邮寄服务页</a>
+        <button class="button button-secondary" type="button" data-copy-support-wechat>复制客服微信</button>
+      </div>
+      <p class="postage-submit-notice" data-success-email-note></p>
+    </section>
+
+    <form class="postage-submit-form" data-postage-form novalidate>
+      <div class="postage-submit-message" data-postage-message role="status" aria-live="polite"></div>
+
+      <section class="postage-submit-section">
+        <div class="postage-submit-section-head">
+          <span>01</span>
+          <div>
+            <h2>用户信息</h2>
+            <p>已登录资料会自动带出，你也可以修改本次订单的联系方式。</p>
+          </div>
+        </div>
+        <div class="postage-submit-grid">
+          <label class="postage-submit-field"><span>姓名 *</span><input name="customer_name" autocomplete="name" required></label>
+          <label class="postage-submit-field"><span>微信号</span><input name="wechat_id" autocomplete="off"></label>
+          <label class="postage-submit-field"><span>手机号</span><input name="phone" autocomplete="tel"></label>
+          <label class="postage-submit-field"><span>邮箱</span><input name="email" type="email" autocomplete="email"></label>
+        </div>
+      </section>
+
+      <section class="postage-submit-section">
+        <div class="postage-submit-section-head">
+          <span>02</span>
+          <div>
+            <h2>服务和路线</h2>
+            <p>预期路线可以不选，客服会按物品和当期规则帮你确认。</p>
+          </div>
+        </div>
+        <div class="postage-submit-grid">
+          <label class="postage-submit-field">
+            <span>服务类型 *</span>
+            <select name="service_type" required>
+              <option value="">请选择</option>
+              <option>英国寄中国</option>
+              <option>中国寄英国</option>
+              <option>英国境内邮寄</option>
+              <option>毕业证 UPS 特快</option>
+              <option>奶粉邮寄</option>
+              <option>其他 / 不确定</option>
+            </select>
+          </label>
+          <label class="postage-submit-field">
+            <span>预期路线</span>
+            <select name="preferred_route">
+              <option value="">不确定，需要客服推荐</option>
+              <option>香港邮局空运</option>
+              <option>香港邮局海运</option>
+              <option>顺丰包税路线</option>
+              <option>皇家邮局空运</option>
+              <option>UPS 特快</option>
+              <option>英国境内</option>
+              <option>奶粉邮寄</option>
+            </select>
+          </label>
+        </div>
+      </section>
+
+      <section class="postage-submit-section">
+        <div class="postage-submit-section-head">
+          <span>03</span>
+          <div>
+            <h2>包裹信息</h2>
+            <p>这里只收集真实需求，不绑定估价器结果。</p>
+          </div>
+        </div>
+        <div class="postage-submit-grid">
+          <label class="postage-submit-field"><span>预计箱数 *</span><input name="box_count" type="number" min="1" step="1" value="1" required></label>
+          <label class="postage-submit-field"><span>预计单箱重量 kg</span><input name="single_box_weight" type="number" min="0.1" step="0.1"></label>
+          <label class="postage-submit-check"><input name="different_box_weights" type="checkbox"><span>每箱重量可能不同</span></label>
+          <label class="postage-submit-check"><input name="need_boxes" type="checkbox" data-toggle-box-delivery><span>需要购买纸箱</span></label>
+          <label class="postage-submit-field">
+            <span>纸箱型号</span>
+            <select name="box_type" data-toggle-box-delivery>
+              <option value="">暂不确定</option>
+              <option value="1号箱子">1号箱子</option>
+              <option value="2号箱子" disabled>2号箱子 · 暂时没货</option>
+              <option value="3号箱子">3号箱子</option>
+              <option value="4号箱子">4号箱子</option>
+              <option value="5号箱子">5号箱子</option>
+              <option value="6号箱子">6号箱子</option>
+            </select>
+          </label>
+          <label class="postage-submit-check"><input name="need_packing_materials" type="checkbox" data-toggle-box-delivery><span>需要购买包装材料</span></label>
+          <label class="postage-submit-field postage-submit-field-wide"><span>包装材料类型</span><input name="packing_materials" data-toggle-box-delivery placeholder="例如：气泡膜、胶带、护角"></label>
+        </div>
+        <fieldset class="postage-submit-fieldset">
+          <legend>物品类型</legend>
+          <label><input type="checkbox" name="item_types" value="衣物"> 衣物</label>
+          <label><input type="checkbox" name="item_types" value="书籍"> 书籍</label>
+          <label><input type="checkbox" name="item_types" value="日用品"> 日用品</label>
+          <label><input type="checkbox" name="item_types" value="文件"> 文件</label>
+          <label><input type="checkbox" name="item_types" value="奶粉" data-sensitive-item> 奶粉</label>
+          <label><input type="checkbox" name="item_types" value="电器" data-sensitive-item> 电器</label>
+          <label><input type="checkbox" name="item_types" value="香水 / 液体" data-sensitive-item> 香水 / 液体</label>
+          <label><input type="checkbox" name="item_types" value="带电池产品" data-sensitive-item> 带电池产品</label>
+          <label><input type="checkbox" name="item_types" value="易碎品" data-sensitive-item> 易碎品</label>
+          <label><input type="checkbox" name="item_types" value="其他" data-sensitive-item> 其他</label>
+        </fieldset>
+        <label class="postage-submit-check"><input name="has_sensitive_items" type="checkbox" data-sensitive-manual><span>包含敏感或需要客服确认的物品</span></label>
+        <p class="postage-submit-warning" data-sensitive-warning hidden>该类物品可能涉及路线限制、退回、扣关、延误或额外费用，请等待客服确认后再寄出。</p>
+        <label class="postage-submit-field"><span>用户备注</span><textarea name="user_note" rows="3" placeholder="例如：箱子比较多、希望先送箱、收件地址待补充"></textarea></label>
+      </section>
+
+      <section class="postage-submit-section" data-box-delivery-section hidden>
+        <div class="postage-submit-section-head">
+          <span>04</span>
+          <div>
+            <h2>送箱信息</h2>
+            <p>如果你需要购买纸箱，通常会先安排送箱，打包完成后再安排取件。送箱时间和取件时间可以不同。</p>
+          </div>
+        </div>
+        <label class="postage-submit-check"><input name="need_box_delivery" type="checkbox" checked><span>需要送箱</span></label>
+        <label class="postage-submit-check"><input name="box_delivery_same_as_pickup" type="checkbox" checked data-same-address><span>送箱地址与取件地址相同</span></label>
+        <div class="postage-submit-grid" data-box-address-fields hidden>
+          <label class="postage-submit-field postage-submit-field-wide"><span>送箱地址</span><input name="box_delivery_address"></label>
+          <label class="postage-submit-field"><span>送箱 Postcode</span><input name="box_delivery_postcode"></label>
+          <label class="postage-submit-field"><span>送箱公寓 / 宿舍</span><input name="box_delivery_building"></label>
+          <label class="postage-submit-field"><span>送箱房间号</span><input name="box_delivery_room"></label>
+        </div>
+        <div class="postage-submit-grid">
+          <label class="postage-submit-check"><input name="box_delivery_need_upstairs" type="checkbox"><span>需要上楼送箱</span></label>
+          <label class="postage-submit-check"><input name="box_delivery_has_lift" type="checkbox"><span>有电梯</span></label>
+          <label class="postage-submit-field"><span>期望送箱日期</span><input name="preferred_box_delivery_date" type="date"></label>
+          <label class="postage-submit-field"><span>期望送箱时间段</span><select name="preferred_box_delivery_time_slot"><option value="">请选择</option><option>上午</option><option>下午</option><option>晚上</option><option>都可以</option></select></label>
+          <label class="postage-submit-field postage-submit-field-wide"><span>送箱备注</span><textarea name="box_delivery_note" rows="2"></textarea></label>
+        </div>
+      </section>
+
+      <section class="postage-submit-section">
+        <div class="postage-submit-section-head"><span>05</span><div><h2>取件信息</h2><p>取件日期和送箱日期分开填写。</p></div></div>
+        <label class="postage-submit-check"><input name="need_pickup" type="checkbox" checked><span>需要上门取件</span></label>
+        <div class="postage-submit-grid">
+          <label class="postage-submit-field postage-submit-field-wide"><span>取件地址</span><input name="pickup_address"></label>
+          <label class="postage-submit-field"><span>Postcode</span><input name="pickup_postcode"></label>
+          <label class="postage-submit-field"><span>公寓 / 宿舍名称</span><input name="pickup_building"></label>
+          <label class="postage-submit-field"><span>房间号</span><input name="pickup_room"></label>
+          <label class="postage-submit-check"><input name="pickup_need_upstairs" type="checkbox"><span>需要上楼取件</span></label>
+          <label class="postage-submit-check"><input name="pickup_has_lift" type="checkbox"><span>有电梯</span></label>
+          <label class="postage-submit-field"><span>期望取件日期</span><input name="preferred_pickup_date" type="date"></label>
+          <label class="postage-submit-field"><span>期望取件时间段</span><select name="preferred_pickup_time_slot"><option value="">请选择</option><option>上午</option><option>下午</option><option>晚上</option><option>都可以</option></select></label>
+          <label class="postage-submit-field postage-submit-field-wide"><span>取件备注</span><textarea name="pickup_note" rows="2"></textarea></label>
+        </div>
+      </section>
+
+      <section class="postage-submit-section">
+        <div class="postage-submit-section-head"><span>06</span><div><h2>收件信息</h2><p>如果暂时不确定完整地址，可以先提交需求，后续客服会联系补充。</p></div></div>
+        <div class="postage-submit-grid">
+          <label class="postage-submit-field"><span>收件国家 / 地区</span><input name="recipient_country"></label>
+          <label class="postage-submit-field"><span>收件城市</span><input name="recipient_city"></label>
+          <label class="postage-submit-field"><span>收件人姓名</span><input name="recipient_name"></label>
+          <label class="postage-submit-field"><span>收件人手机号</span><input name="recipient_phone"></label>
+          <label class="postage-submit-field postage-submit-field-wide"><span>收件地址</span><textarea name="recipient_address" rows="3"></textarea></label>
+        </div>
+      </section>
+
+      <section class="postage-submit-section">
+        <label class="postage-submit-risk">
+          <input name="risk_confirmed" type="checkbox" required>
+          <span>我已了解邮寄价格、时效、清关、税费、禁寄物品和赔付规则均以承运商、海关和目的地国家/地区最新要求为准。提交需求不代表价格已确认，最终费用需以实际称重和客服确认为准。</span>
+        </label>
+        <div class="postage-submit-actions">
+          <button class="button button-primary" type="submit" data-submit-button>提交邮寄需求</button>
+          <a class="button button-secondary" href="/postage">返回邮寄服务页</a>
+        </div>
+      </section>
+    </form>
+  </main>
+
+  <script src="./site-auth.js?v=20260530-postage-submit-v1"></script>
+  <script src="./postage-submit.js?v=20260530-postage-submit-v1"></script>
+</body>
+</html>

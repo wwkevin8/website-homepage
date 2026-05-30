@@ -417,6 +417,35 @@ export function fetchStorageOrders(filters = {}) {
   return request(`/api/admin/storage-orders${query ? `?${query}` : ""}`);
 }
 
+export function fetchPostageOrders(filters = {}) {
+  const searchParams = new URLSearchParams();
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== "") {
+      searchParams.set(key, value);
+    }
+  });
+  const query = searchParams.toString();
+  return request(`/api/admin/postage-orders${query ? `?${query}` : ""}`);
+}
+
+export function fetchPostageOrder(id) {
+  const searchParams = new URLSearchParams();
+  searchParams.set("id", id);
+  return request(`/api/admin/postage-orders?${searchParams.toString()}`);
+}
+
+export function updatePostageOrder(id, payload = {}) {
+  const searchParams = new URLSearchParams();
+  searchParams.set("id", id);
+  return request(`/api/admin/postage-orders?${searchParams.toString()}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(payload)
+  });
+}
+
 export function fetchStorageOrder(id) {
   const searchParams = new URLSearchParams();
   searchParams.set("id", id);

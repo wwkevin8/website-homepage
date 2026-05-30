@@ -2,6 +2,42 @@
 
 ## Latest Task Update
 
+- Date: 2026-05-30
+- Scope: Implemented postage request submission and postage admin workbench V1 locally. No commit, no deployment, no production data write, and no Supabase migration application were performed in this task.
+- Summary: Added logged-in postage request submission at `/postage/submit`, public `/postage` CTAs, server-side postage order creation with `POST-YYYYMMDD-###` order numbers, independent order status and box-delivery status fields, 2号箱子 frontend/server blocking, student-only Resend confirmation email with客服微信 `NOTTINGHAMNGN`, phone `07941 008555`, and `/img/storage-service-qr.jpg` QR image. Added admin-only `/admin/postage/orders` Vue workbench with list filters, quick filters, search, pagination, copy summary, and right-side drawer editing. No customer-service reminder email logic or customer-service notification recipient env var was added.
+- Database/docs: Added `supabase/20260530_postage_orders.sql` for `postage_orders`, `postage_order_logs`, and postage order-number allocation with RLS enabled/forced and anon/authenticated direct access revoked. Updated `docs/PROJECT_MAP.md` for the new page, APIs, tables, admin route, statuses, email helper, and QR/contact fallback notes.
+- Verification: `node --check postage-submit.js`, `node --check postage.js`, `node --check api/_lib/postage-orders.js`, `node --check api/_lib/postage-order-notifier.js`, `node --check public-api-handlers/postage-order-submit.js`, `node --check api/_lib/postage-admin.js`, and `node --check api/admin/[...action].js` passed. `vercel.json` parsed successfully. `npm --prefix apps/admin-vue run build`, `npm run build:preview`, and `node scripts/regression-check.js` passed. Browser checks against the local service confirmed `/postage` has three login-protected “提交邮寄需求” CTAs, the unauthenticated click redirects to `login.html?return_to=%2Fpostage%2Fsubmit`, desktop/mobile public postage pages have no forbidden commitment wording, and mobile width has no page-level horizontal overflow. The local helper server does not apply the `/postage/submit` rewrite directly, but `vercel.json` and the preview build include it.
+
+## Previous Task Update
+
+- Date: 2026-05-30
+- Scope: Reworked the public postage page art direction locally after the user rejected the pale-green visual direction. No commit, no deployment, no database schema change, no API change, no payment/email integration, no admin/backend logic, and no production data write were performed.
+- Summary: Updated the postage CSS in `styles.css` from the previous pale-green service aesthetic to a stronger airmail/editorial direction using deep navy, paper white, cobalt blue, and amber. The hero now uses a full-width dark airmail plane with a paper-label service panel, the resource dock and estimator/result panels use the new palette, and mobile hero layout was fixed so the title and actions appear immediately instead of being pushed off-screen.
+- Verification: `node --check postage.js` and `node --check postage-data.js` passed. Local Playwright verification against `http://127.0.0.1:3000/postage.html` confirmed the rendered hero colors are navy/white/amber/cobalt rather than pale green, the prohibited modal still opens with 17 items, desktop width 1440px and mobile width 390px have no page-level horizontal overflow, and the mobile hero title is visible in the first viewport.
+
+## Previous Task Update
+
+- Date: 2026-05-30
+- Scope: Simplified and re-layered the public postage page UI locally after follow-up design feedback. No commit, no deployment, no database schema change, no API change, no payment/email integration, no admin/backend logic, and no production data write were performed.
+- Summary: Reworked `postage.html`, `postage.js`, and the postage CSS in `styles.css` so the page reads as a simpler service console: the hero remains visually strong, a new resource dock opens price/packing/prohibited/FAQ/tracking information in modal windows, detailed lower-page sections are collapsed by default, and route cards now show compact summaries with full route detail available in a modal. This preserves the full reference data while reducing visible page clutter and making the information hierarchy clearer.
+- Verification: `node --check postage.js` and `node --check postage-data.js` passed. Local Playwright verification against `http://127.0.0.1:3000/postage.html` confirmed five resource-dock buttons, five collapsed detail panels, route detail modal behavior, prohibited modal with 17 items, price modal and expanded price detail with 30 rows, FAQ modal with 15 items, and no page-level horizontal overflow at 1440px or 390px widths.
+
+## Previous Task Update
+
+- Date: 2026-05-30
+- Scope: Improved the public postage service page UI and interactions locally. No commit, no deployment, no database schema change, no API change, no payment/email integration, no admin/backend logic, and no production data write were performed.
+- Summary: Enhanced `postage.html`, `postage.js`, and the postage styles in `styles.css` with a richer first viewport, service metric chips, a parcel/status visual, route-category filter controls, estimator quick presets, fee-composition bars, and a copyable estimate summary. The estimator now also correctly hides route-specific fields through a scoped `[hidden]` style so ordinary routes do not show the special quantity input.
+- Verification: `node --check postage.js` and `node --check postage-data.js` passed. Local Playwright verification against `http://127.0.0.1:3000/postage.html` confirmed the route filters show the expected special routes, the document preset switches to `certificateUps` and shows `£35`, the result renders three fee bars and a copy-estimate button, and desktop/mobile widths had no page-level horizontal overflow (`scrollWidth` matched `clientWidth` at 1440px and 390px). Mobile verification confirmed ordinary routes hide the special quantity field and certificate UPS hides the weight field while showing the quantity field.
+
+## Previous Task Update
+
+- Date: 2026-05-29
+- Scope: Added the public V1 postage service page locally. No commit, no deployment, no database schema change, no API change, no payment/email integration, no admin/backend logic, and no production data write were performed.
+- Summary: Added `/postage` / `postage.html` as a static NGN/GBCN postage information page with service-route cards, cautious quick-route guidance, a front-end estimator, full 1-30kg postage reference data from `img/post/微信图片_20260529214726.jpg`, box/material information, prohibited-item warnings, FAQ accordions, tracking links, and contact CTA. The estimator calculates ordinary international routes as single-box route price times box count, then adds box and upstairs pickup fees; UK domestic, certificate UPS, and milk powder routes use their separate rules instead of the ordinary kg table. Public service navigation now links to the postage page from homepage, pickup, storage, and moving pages.
+- Verification: `node --check postage-data.js` and `node --check postage.js` passed. `vercel.json` parsed successfully. Local `http://127.0.0.1:3000/postage` and `/postage.html` returned 200. Playwright screenshots were saved under `output/playwright/` for desktop, mobile, estimator, price-table horizontal scroll, FAQ, and prohibited-item sections. Mobile overflow check returned `clientWidth=390` and `scrollWidth=390`, so the page itself does not horizontally overflow. Estimator verification confirmed Hong Kong Post air `20kg × 3 boxes` shows `£87 × 3 = £261` postage, UK domestic uses its own 10kg rule, certificate UPS uses document-count pricing, and milk powder uses can-count pricing. `npm run build:preview` passed and produced preview build output under `.vercel/output`.
+
+## Previous Task Update
+
 - Date: 2026-05-29
 - Scope: Production release for pre-freeze transport/storage safety fixes and the admin recent-operation cleanup display fix. GitHub was updated before Vercel production deployment. No database schema change, no production data cleanup, and no test-data upload were performed.
 - GitHub commit: `d08bc2f` (`chore: hide system cleanup from recent operations`) on `release/transport-storage-preflight`.
@@ -225,14 +261,18 @@
 ## Current Project State
 
 - Production release `407d4e8` is live on `https://ngn.best`.
+- Local working tree now includes postage submission/admin V1 changes, but they are not committed, not deployed, and the postage Supabase migration has not been applied.
 - Public carpool student-priority display and join-button changes are deployed.
 - Admin transport group defaults, service-time sort label/value fix, P0 carpool pagination/read-path performance changes, 10-minute empty/effectively-empty carpool group cleanup, transport request recorded-toggle UI, and P7 storage/buy-box admin changes are deployed.
-- Current admin build output points to `admin/assets/index-Ql51SaM9.js` and `admin/assets/index-DVcvb6_8.css`.
+- Current local admin build output points to `admin/assets/index-CzlmK430.js` and `admin/assets/index-DhGdrE2_.css`.
 - Local-only storage seed/clear helpers remain ignored and must not be run against Preview or Production.
 
 ## Open Risks / Follow-Up
 
-- Before the next commit, run `node scripts/regression-check.js` and include the result in the commit/release note.
+- Before release, apply `supabase/20260530_postage_orders.sql` to Supabase, verify the SQL on the target project, and then perform an authenticated postage submission test.
+- Production postage confirmation email needs `RESEND_API_KEY` and a confirmed sender (`POSTAGE_EMAIL_FROM` optional; otherwise auth/SMTP fallback sender is used). There is intentionally no customer-service notification recipient.
+- Before the next commit/release, include the latest `node scripts/regression-check.js`, admin build, and preview build results in the note.
 - The regression check is intentionally static/minimal; it does not replace focused browser/API verification before future releases.
+- Full logged-in `/postage/submit` form submission and admin drawer editing were not executed against production or a real Supabase project in this task because the migration is not applied and no test account/data-write authorization was provided.
 - Admin recorded-toggle click testing was not performed on production because it would modify live order data. If the operator wants a live click test, choose a safe real order and explicitly authorize the temporary toggle and revert.
 - Investigate the Vercel/Node `[DEP0169] url.parse()` deprecation warning separately; it appeared as error-level logs on successful requests and was not a release blocker.

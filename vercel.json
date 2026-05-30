@@ -24,6 +24,16 @@
       "permanent": true
     },
     {
+      "source": "/postage.html",
+      "destination": "/postage",
+      "permanent": true
+    },
+    {
+      "source": "/postage-submit.html",
+      "destination": "/postage/submit",
+      "permanent": true
+    },
+    {
       "source": "/admin-vue",
       "destination": "/admin/",
       "permanent": false
@@ -59,6 +69,14 @@
     {
       "source": "/moving",
       "destination": "/moving.html"
+    },
+    {
+      "source": "/postage",
+      "destination": "/postage.html"
+    },
+    {
+      "source": "/postage/submit",
+      "destination": "/postage-submit.html"
     }
   ],
   "headers": [

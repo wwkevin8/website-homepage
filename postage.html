@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="/favicon.ico?v=20260509">
+  <link rel="icon" href="/favicon.png?v=20260509" type="image/png">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=20260509">
+  <title>左邻右里 | GBCN 诺丁汉邮寄服务</title>
+  <meta name="description" content="GBCN 诺丁汉友邻邮寄服务，提供英国寄中国、中国寄英国、英国境内、毕业证 UPS、奶粉邮寄、纸箱材料与物流查询协助。">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;800&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css?v=20260529-postage-v1">
+</head>
+<body class="postage-body">
+  <div class="topbar topbar-storage storage-service-topbar postage-topbar">
+    <header class="site-header storage-service-header">
+      <a class="brand" href="./" aria-label="左邻右里首页">
+        <div class="brand-lockup brand-lockup-header">
+          <div class="logo-wordmark">NGN</div>
+          <div class="logo-subtitle">NOTTINGHAM GOOD NEIGHBOR</div>
+        </div>
+      </a>
+
+      <nav class="site-nav" aria-label="主导航">
+        <div class="pickup-nav-dropdown">
+          <button class="nav-link nav-link-secondary pickup-nav-dropdown-toggle" type="button" aria-expanded="false" aria-controls="storageOtherServicesMenu">
+            其他服务
+          </button>
+          <div class="pickup-nav-dropdown-menu" id="storageOtherServicesMenu" hidden>
+            <a class="pickup-nav-dropdown-item" href="./">订房主页</a>
+            <a class="pickup-nav-dropdown-item" href="./pickup">接机服务</a>
+            <a class="pickup-nav-dropdown-item" href="./storage">寄存服务</a>
+            <a class="pickup-nav-dropdown-item" href="./moving">搬家服务</a>
+          </div>
+        </div>
+        <a href="#postage-routes">路线</a>
+        <a href="#postage-prices">价格</a>
+        <a href="#postage-prohibited">禁寄提醒</a>
+        <a href="#postage-contact">联系我们</a>
+      </nav>
+
+      <div class="header-actions">
+        <div class="site-auth-nav" data-site-auth-nav></div>
+        <button class="storage-mobile-menu-toggle" type="button" aria-label="菜单" data-storage-menu-toggle>
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+      </div>
+    </header>
+    <div class="storage-mobile-menu" id="storage-mobile-menu" hidden>
+      <div class="storage-mobile-menu-inner">
+        <a class="storage-mobile-menu-card" href="./" data-menu-icon="home" data-storage-menu-link>
+          <span class="storage-mobile-menu-icon" aria-hidden="true"></span>
+          <span class="storage-mobile-menu-copy">
+            <strong>订房主页</strong>
+            <small>返回 NGN 服务首页</small>
+          </span>
+        </a>
+        <a class="storage-mobile-menu-card" href="./pickup" data-menu-icon="pickup" data-storage-menu-link>
+          <span class="storage-mobile-menu-icon" aria-hidden="true"></span>
+          <span class="storage-mobile-menu-copy">
+            <strong>接送机服务</strong>
+            <small>机场接送与拼车安排</small>
+          </span>
+        </a>
+        <a class="storage-mobile-menu-card" href="./storage" data-menu-icon="storage" data-storage-menu-link>
+          <span class="storage-mobile-menu-icon" aria-hidden="true"></span>
+          <span class="storage-mobile-menu-copy">
+            <strong>寄存服务</strong>
+            <small>学生行李寄存安排</small>
+          </span>
+        </a>
+        <a class="storage-mobile-menu-card" href="./moving" data-menu-icon="pickup" data-storage-menu-link>
+          <span class="storage-mobile-menu-icon" aria-hidden="true"></span>
+          <span class="storage-mobile-menu-copy">
+            <strong>搬家服务</strong>
+            <small>本地与跨城市搬家安排</small>
+          </span>
+        </a>
+        <a class="storage-mobile-menu-card" href="#postage-prices" data-menu-icon="price" data-storage-menu-link>
+          <span class="storage-mobile-menu-icon" aria-hidden="true"></span>
+          <span class="storage-mobile-menu-copy">
+            <strong>邮费价格</strong>
+            <small>查看价格表与估价器</small>
+          </span>
+        </a>
+        <a class="storage-mobile-menu-card is-contact" href="#postage-contact" data-menu-icon="contact" data-storage-menu-link>
+          <span class="storage-mobile-menu-icon" aria-hidden="true"></span>
+          <span class="storage-mobile-menu-copy">
+            <strong>联系我们</strong>
+            <small>微信或电话联系确认</small>
+          </span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <main class="postage-page" id="top">
+    <section class="postage-hero">
+      <div class="postage-shell postage-hero-grid">
+        <div class="postage-hero-copy">
+          <p class="postage-kicker">Nottingham Postage Desk</p>
+          <h1>GBCN 邮寄服务</h1>
+          <p class="postage-hero-line">取件 · 称重 · 路线建议 · 发出协助</p>
+          <p class="postage-hero-text">给诺丁汉同学用的本地邮寄协助：行李、文件、小包裹、奶粉和英国境内寄送，都先按场景判断，再确认路线与规则。</p>
+          <div class="postage-hero-actions">
+            <a class="button button-primary" href="./postage/submit" data-requires-login data-return-to="/postage/submit" data-post-login-url="/postage/submit">提交邮寄需求</a>
+            <a class="button button-primary" href="#postage-contact" data-postage-scroll>立即咨询</a>
+            <a class="button button-secondary" href="#postage-prices" data-postage-scroll>查看价格</a>
+            <a class="button button-outline" href="#postage-prohibited" data-postage-scroll>查看禁寄物品</a>
+          </div>
+          <div class="postage-hero-contact">
+            <span>电话：<a href="tel:07941008555">07941 008555</a></span>
+            <span>微信：NOTTINGHAMNGN</span>
+          </div>
+          <div class="postage-hero-metrics" aria-label="邮寄服务概览">
+            <article>
+              <strong>11+</strong>
+              <span>可咨询路线</span>
+            </article>
+            <article>
+              <strong>1-30kg</strong>
+              <span>参考价覆盖</span>
+            </article>
+            <article>
+              <strong>本地取件</strong>
+              <span>诺丁汉范围协助</span>
+            </article>
+          </div>
+        </div>
+        <aside class="postage-trust-card" aria-label="服务亮点">
+          <span>本地服务</span>
+          <h2>把邮寄流程拆成三步</h2>
+          <div class="postage-parcel-visual" aria-hidden="true">
+            <div class="postage-parcel-box">
+              <span></span>
+              <strong>NGN</strong>
+            </div>
+            <div class="postage-route-line">
+              <i></i>
+              <i></i>
+              <i></i>
+            </div>
+            <div class="postage-mini-status">
+              <b>Pickup</b>
+              <span>Weighing</span>
+              <span>Dispatch</span>
+            </div>
+          </div>
+          <ul>
+            <li>诺丁汉本地上门取件</li>
+            <li>多条邮寄路线可选</li>
+            <li>可提供纸箱和包装材料</li>
+            <li>可协助称重、拍照和物流查询</li>
+            <li>每个包裹含基础保险</li>
+          </ul>
+        </aside>
+      </div>
+    </section>
+
+    <section class="postage-section postage-command-section" aria-label="邮寄服务操作台">
+      <div class="postage-shell postage-command-grid">
+        <div class="postage-command-copy">
+          <p class="postage-kicker">Service Console</p>
+          <h2>资料按需打开</h2>
+          <p>价格、包装、禁寄和物流入口都保留，但不再堆在页面上。先估大概费用，再点开对应窗口确认细节。</p>
+        </div>
+        <div class="postage-resource-dock" aria-label="邮寄资料入口">
+          <button type="button" data-postage-modal="prices"><span>价格表</span><strong>1-30kg 参考价</strong></button>
+          <button type="button" data-postage-modal="packing"><span>包装材料</span><strong>纸箱尺寸与材料</strong></button>
+          <button type="button" data-postage-modal="prohibited"><span>禁寄提醒</span><strong>敏感品先确认</strong></button>
+          <button type="button" data-postage-modal="tracking"><span>物流查询</span><strong>常用查询入口</strong></button>
+        </div>
+      </div>
+    </section>
+
+    <section class="postage-section" id="postage-routes">
+      <div class="postage-shell">
+        <div class="postage-section-head">
+          <p class="postage-kicker">Service Routes</p>
+          <h2>按场景选路线</h2>
+          <p>先看你的包裹属于哪类，再打开详情确认重量、限制、税费和时效。</p>
+        </div>
+        <div class="postage-route-toolbar" aria-label="路线筛选">
+          <button class="is-active" type="button" data-route-filter="all">全部</button>
+          <button type="button" data-route-filter="china">寄往中国/港澳台</button>
+          <button type="button" data-route-filter="uk">英国境内</button>
+          <button type="button" data-route-filter="special">文件/奶粉</button>
+        </div>
+        <div class="postage-card-grid" id="postageRouteCards"></div>
+      </div>
+    </section>
+
+    <section class="postage-section postage-section-soft">
+      <div class="postage-shell">
+        <div class="postage-section-head">
+          <p class="postage-kicker">Quick Guide</p>
+          <h2>快速判断</h2>
+          <p>不确定时，先按重量、物品类型和是否着急判断；最终路线再由客服按当期规则确认。</p>
+        </div>
+        <div class="postage-guide-grid" id="postageQuickGuides"></div>
+      </div>
+    </section>
+
+    <section class="postage-section" id="postage-estimator">
+      <div class="postage-shell postage-estimator-wrap">
+        <div class="postage-estimator-header">
+          <div>
+            <p class="postage-kicker">Estimator</p>
+            <h2>邮费估算</h2>
+          </div>
+          <p>选路线、填单箱重量和箱数，先看一个参考区间。正式报价会按实际称重、包装和当期规则确认。</p>
+        </div>
+        <div class="postage-estimator-layout">
+          <div class="postage-submit-inline-cta">
+            <span>估价只作参考</span>
+            <strong>准备好了就提交真实邮寄需求</strong>
+            <a class="button button-primary" href="./postage/submit" data-requires-login data-return-to="/postage/submit" data-post-login-url="/postage/submit">提交邮寄需求</a>
+          </div>
+          <form class="postage-estimator-card" id="postageEstimatorForm">
+          <div class="postage-preset-row" aria-label="快速估价场景">
+            <button class="is-active" type="button" data-postage-preset="student">学生行李</button>
+            <button type="button" data-postage-preset="document">毕业证</button>
+            <button type="button" data-postage-preset="uk">英国境内</button>
+          </div>
+          <label class="postage-field">
+            <span>选择路线</span>
+            <select id="postageRoute"></select>
+          </label>
+          <label class="postage-field" id="postageWeightField">
+            <span>单箱重量 kg</span>
+            <input id="postageWeight" type="number" min="1" max="30" step="0.1" value="20">
+          </label>
+          <label class="postage-field" id="postageSpecialQuantityField" hidden>
+            <span id="postageSpecialQuantityLabel">数量</span>
+            <input id="postageSpecialQuantity" type="number" min="1" step="1" value="1">
+            <small id="postageSpecialQuantityHelp"></small>
+          </label>
+          <label class="postage-field">
+            <span>箱子数量</span>
+            <input id="postageBoxCount" type="number" min="1" step="1" value="3">
+          </label>
+          <label class="postage-field">
+            <span>是否需要上楼取件</span>
+            <select id="postageStairs">
+              <option value="none">不需要 / 楼下交接</option>
+              <option value="elevator">需要，有电梯 £2/箱</option>
+              <option value="noElevator">需要，无电梯 £4/箱</option>
+              <option value="unknown">不确定，联系客服确认</option>
+            </select>
+          </label>
+          <label class="postage-check">
+            <input id="postageBuyBox" type="checkbox" checked>
+            <span>需要购买纸箱</span>
+          </label>
+          <label class="postage-field">
+            <span>纸箱型号</span>
+            <select id="postageBoxType"></select>
+          </label>
+          </form>
+          <aside class="postage-result-card" id="postageEstimateResult" aria-live="polite"></aside>
+        </div>
+      </div>
+    </section>
+
+    <section class="postage-section postage-price-entry-section" id="postage-prices">
+      <div class="postage-shell postage-price-entry">
+        <div>
+          <p class="postage-kicker">Price Table</p>
+          <h2>邮费价格参考</h2>
+          <p>完整 1-30kg 路线价格放在窗口里查看，页面不再摊开长表。价格仅供估算，最终以实际称重和路线规则为准。</p>
+        </div>
+        <button type="button" data-postage-modal="prices">
+          <span>打开价格表</span>
+          <strong>查看完整横向表格</strong>
+        </button>
+      </div>
+    </section>
+
+    <section class="postage-section">
+      <div class="postage-shell">
+        <div class="postage-section-head">
+          <p class="postage-kicker">Process</p>
+          <h2>流程很短</h2>
+        </div>
+        <div class="postage-process-grid">
+          <article><span>01</span><h3>联系客服预约</h3><p>提供姓名、电话、宿舍/公寓地址、收件人信息、预计箱数和物品类型。</p></article>
+          <article><span>02</span><h3>上门取件 / 仓库自送</h3><p>工作人员可上门取件。如需上楼取件，将按箱数另收费用。</p></article>
+          <article><span>03</span><h3>称重拍照确认路线</h3><p>我们会称重、拍照，并根据物品、重量和目的地建议合适路线。</p></article>
+          <article><span>04</span><h3>支付邮费并等待发出</h3><p>确认价格后支付邮费，我们安排发货，并提供查询方式。</p></article>
+        </div>
+        <p class="postage-inline-note">旺季请至少提前 1-2 天预约。6-9 月为高峰期，建议尽早联系。</p>
+      </div>
+    </section>
+
+    <section class="postage-section postage-section-soft postage-collapsible-section postage-faq-panel-section">
+      <div class="postage-shell">
+        <details class="postage-detail-panel">
+          <summary>
+            <span><b>Packing</b> 纸箱尺寸与包装材料</span>
+            <small>展开查看纸箱型号、材料费用和示意图</small>
+          </summary>
+          <div class="postage-packing-layout">
+        <div>
+          <div class="postage-section-head">
+            <p class="postage-kicker">Packing</p>
+            <h2>纸箱尺寸与包装材料</h2>
+            <p>行李箱不能直接邮寄，需要装进专用箱子后再邮寄。易碎品请提前告知，建议自行加强包装；我们会尽量协助包装，但无法确保易碎品完全不受损。</p>
+          </div>
+          <div class="postage-box-grid" id="postageBoxGrid"></div>
+          <ul class="postage-material-list" id="postageMaterials"></ul>
+        </div>
+        <div class="postage-photo-stack">
+          <figure>
+            <img src="./img/storage-pricing/box-sizes/box-size-overview.png" alt="纸箱尺寸总览">
+            <figcaption>纸箱尺寸总览</figcaption>
+          </figure>
+          <figure>
+            <img src="./img/storage-pricing/box-sizes/box-top-view.png" alt="纸箱俯视示意">
+            <figcaption>包装示意图</figcaption>
+          </figure>
+        </div>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <section class="postage-section postage-library-strip-section" id="postage-prohibited" aria-label="邮寄资料窗口">
+      <div class="postage-shell postage-library-strip">
+        <button type="button" data-postage-modal="prohibited">
+          <span>Important Notice</span>
+          <strong>禁寄物品提醒</strong>
+          <small>敏感品、风险说明和禁寄清单</small>
+        </button>
+        <button type="button" data-postage-modal="faq">
+          <span>FAQ</span>
+          <strong>常见问题</strong>
+          <small>预约、保险、清关和寄送限制</small>
+        </button>
+        <button type="button" data-postage-modal="tracking">
+          <span>Tracking</span>
+          <strong>物流查询方式</strong>
+          <small>常用承运商查询入口</small>
+        </button>
+      </div>
+    </section>
+
+    <section class="postage-section postage-contact-section" id="postage-contact">
+      <div class="postage-shell postage-contact-card">
+        <div>
+          <p class="postage-kicker">Contact</p>
+          <h2>直接发信息，我们帮你判断</h2>
+          <p>把箱数、重量、物品类型、目的地和是否着急发过来，我们会按当前规则推荐路线。</p>
+          <div class="postage-contact-lines">
+            <span>电话：<a href="tel:07941008555">07941 008555</a></span>
+            <span>微信：NOTTINGHAMNGN</span>
+          </div>
+        </div>
+        <div class="postage-contact-actions">
+          <a class="button button-primary" href="./postage/submit" data-requires-login data-return-to="/postage/submit" data-post-login-url="/postage/submit">提交邮寄需求</a>
+          <button class="button button-primary" type="button" data-copy-wechat>复制微信号 <span data-copy-status></span></button>
+          <a class="button button-secondary" href="tel:07941008555">拨打电话</a>
+          <button class="button button-outline" id="postageBackTop" type="button">返回顶部</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="postage-modal" data-postage-modal-root hidden>
+    <div class="postage-modal-backdrop" data-postage-modal-close></div>
+    <section class="postage-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="postageModalTitle">
+      <button class="postage-modal-close" type="button" aria-label="关闭窗口" data-postage-modal-close>×</button>
+      <p class="postage-kicker" data-postage-modal-kicker>Postage Library</p>
+      <h2 id="postageModalTitle" data-postage-modal-title>邮寄资料</h2>
+      <div class="postage-modal-body" data-postage-modal-body></div>
+    </section>
+  </div>
+
+  <button class="postage-faq-float" type="button" data-postage-modal="faq">
+    <span>FAQ</span>
+    <strong>常见问题</strong>
+  </button>
+
+  <footer class="site-footer">
+    <div class="footer-copy">
+      <div class="footer-brand">
+        <div class="brand-lockup brand-lockup-footer">
+          <div class="logo-wordmark">NGN</div>
+          <div class="logo-subtitle">NOTTINGHAM GOOD NEIGHBOR</div>
+        </div>
+      </div>
+      <p>面向诺丁汉留学生的本地订房与生活服务团队</p>
+    </div>
+    <div class="footer-contact-grid">
+      <div class="footer-contact-item">
+        <span class="footer-contact-label">营业时间</span>
+        <div class="footer-hours-list">
+          <div class="footer-hours-row">
+            <span class="footer-hours-day">周一至周五</span>
+            <span class="footer-hours-time">08:00 - 18:00</span>
+          </div>
+          <div class="footer-hours-row">
+            <span class="footer-hours-day">周六至周日</span>
+            <span class="footer-hours-time">休息</span>
+          </div>
+        </div>
+      </div>
+      <div class="footer-contact-item">
+        <span class="footer-contact-label">公司地址</span>
+        <p class="footer-contact-value footer-address-text">Unit 3 Central Ct, Finch Cl, Nottingham NG7 2NN, United Kingdom</p>
+      </div>
+      <div class="footer-contact-item">
+        <span class="footer-contact-label">联系方式</span>
+        <div class="footer-links">
+          <p class="footer-contact-value"><a href="tel:07941008555">07941 008555</a></p>
+          <p class="footer-contact-value"><a href="mailto:info@ngn.best">info@ngn.best</a></p>
+        </div>
+      </div>
+    </div>
+    <small id="footer-year"></small>
+  </footer>
+
+  <script src="./site-auth.js?v=20260529-postage-v1"></script>
+  <script src="./script.js?v=20260529-postage-v1"></script>
+  <script src="./postage-data.js?v=20260529-postage-v1"></script>
+  <script src="./postage.js?v=20260529-postage-v1"></script>
+</body>
+</html>

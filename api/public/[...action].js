@@ -10,6 +10,7 @@ const membershipMeHandler = require("../../public-api-handlers/membership-me");
 const membershipRedeemCodeHandler = require("../../public-api-handlers/membership-redeem-code");
 const myStorageOrdersHandler = require("../../public-api-handlers/my-storage-orders");
 const myTransportRequestsHandler = require("../../public-api-handlers/my-transport-requests");
+const postageOrderSubmitHandler = require("../../public-api-handlers/postage-order-submit");
 const storageOrderSubmitHandler = require("../../public-api-handlers/storage-order-submit");
 const transportBoardHandler = require("../../public-api-handlers/transport-board");
 const transportGroupsHandler = require("../../public-api-handlers/transport-groups");
@@ -34,6 +35,7 @@ const HANDLERS = {
   "membership/redeem-code": membershipRedeemCodeHandler,
   "my-storage-orders": myStorageOrdersHandler,
   "my-transport-requests": myTransportRequestsHandler,
+  "postage-order-submit": postageOrderSubmitHandler,
   "storage-order-submit": storageOrderSubmitHandler,
   "transport-board": transportBoardHandler,
   "transport-groups": transportGroupsHandler,

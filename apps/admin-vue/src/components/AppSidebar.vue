@@ -41,6 +41,14 @@ const sections = [
       { label: "寄存同步巡检日志", icon: "L", route: { name: "storage-sync-logs" } },
     ],
   },
+  {
+    id: "postage",
+    title: "邮寄管理",
+    icon: "P",
+    links: [
+      { label: "邮寄工单", icon: "P", route: { name: "postage-orders" } },
+    ],
+  },
 ];
 
 const route = useRoute();

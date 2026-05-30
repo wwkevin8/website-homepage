@@ -28,6 +28,7 @@ const {
 } = require("../_lib/admin-managers");
 const { buildStorageOrderAdminFilters } = require("../_lib/storage-orders");
 const { recalculateStorageOrderPricing } = require("../_lib/storage-pricing");
+const { handlePostageOrders } = require("../_lib/postage-admin");
 const {
   parsePositiveInteger,
   parsePageSize,
@@ -4417,6 +4418,14 @@ module.exports = async function handler(req, res) {
     }
     if (head === "storage-orders") {
       await handleStorageOrders(req, res, supabase);
+      return;
+    }
+    if (head === "postage-orders") {
+      const adminUser = await requireAdminUser(req, res, supabase);
+      if (!adminUser) {
+        return;
+      }
+      await handlePostageOrders(req, res, supabase, adminUser);
       return;
     }
     if (head === "orders" && !second) {
