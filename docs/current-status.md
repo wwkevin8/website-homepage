@@ -3,10 +3,11 @@
 ## Latest Task Update
 
 - Date: 2026-05-30
-- Scope: Implemented postage request submission and postage admin workbench V1 locally. No commit, no deployment, no production data write, and no Supabase migration application were performed in this task.
+- Scope: Implemented postage request submission and postage admin workbench V1 and pushed it to GitHub. No Vercel deployment, no production data write, and no Supabase migration application were performed yet.
+- GitHub commit: `eeb56d4` (`Add postage request workflow`) on `release/transport-storage-preflight`, pushed to `origin`.
 - Summary: Added logged-in postage request submission at `/postage/submit`, public `/postage` CTAs, server-side postage order creation with `POST-YYYYMMDD-###` order numbers, independent order status and box-delivery status fields, 2号箱子 frontend/server blocking, student-only Resend confirmation email with客服微信 `NOTTINGHAMNGN`, phone `07941 008555`, and `/img/storage-service-qr.jpg` QR image. Added admin-only `/admin/postage/orders` Vue workbench with list filters, quick filters, search, pagination, copy summary, and right-side drawer editing. No customer-service reminder email logic or customer-service notification recipient env var was added.
 - Database/docs: Added `supabase/20260530_postage_orders.sql` for `postage_orders`, `postage_order_logs`, and postage order-number allocation with RLS enabled/forced and anon/authenticated direct access revoked. Updated `docs/PROJECT_MAP.md` for the new page, APIs, tables, admin route, statuses, email helper, and QR/contact fallback notes.
-- Verification: `node --check postage-submit.js`, `node --check postage.js`, `node --check api/_lib/postage-orders.js`, `node --check api/_lib/postage-order-notifier.js`, `node --check public-api-handlers/postage-order-submit.js`, `node --check api/_lib/postage-admin.js`, and `node --check api/admin/[...action].js` passed. `vercel.json` parsed successfully. `npm --prefix apps/admin-vue run build`, `npm run build:preview`, and `node scripts/regression-check.js` passed. Browser checks against the local service confirmed `/postage` has three login-protected “提交邮寄需求” CTAs, the unauthenticated click redirects to `login.html?return_to=%2Fpostage%2Fsubmit`, desktop/mobile public postage pages have no forbidden commitment wording, and mobile width has no page-level horizontal overflow. The local helper server does not apply the `/postage/submit` rewrite directly, but `vercel.json` and the preview build include it.
+- Verification: `node --check postage-submit.js`, `node --check postage.js`, `node --check api/_lib/postage-orders.js`, `node --check api/_lib/postage-order-notifier.js`, `node --check public-api-handlers/postage-order-submit.js`, `node --check api/_lib/postage-admin.js`, and `node --check api/admin/[...action].js` passed. `vercel.json` parsed successfully. `npm --prefix apps/admin-vue run build`, `npm run build:preview`, and `node scripts/regression-check.js` passed. Browser checks against the local service confirmed `/postage` has three login-protected “提交邮寄需求” CTAs, the unauthenticated click redirects to `login.html?return_to=%2Fpostage%2Fsubmit`, desktop/mobile public postage pages have no forbidden commitment wording, and mobile width has no page-level horizontal overflow. Vercel env listing confirmed `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `RESEND_API_KEY`, `AUTH_EMAIL_FROM`, session secrets, Turnstile, and cron secret exist for target environments. Supabase CLI migration execution is currently blocked because no local Supabase access token is configured. The local helper server does not apply the `/postage/submit` rewrite directly, but `vercel.json` and the preview build include it.
 
 ## Previous Task Update
 
@@ -261,7 +262,7 @@
 ## Current Project State
 
 - Production release `407d4e8` is live on `https://ngn.best`.
-- Local working tree now includes postage submission/admin V1 changes, but they are not committed, not deployed, and the postage Supabase migration has not been applied.
+- Local working tree has pushed postage submission/admin V1 changes to GitHub, but they are not deployed and the postage Supabase migration has not been applied.
 - Public carpool student-priority display and join-button changes are deployed.
 - Admin transport group defaults, service-time sort label/value fix, P0 carpool pagination/read-path performance changes, 10-minute empty/effectively-empty carpool group cleanup, transport request recorded-toggle UI, and P7 storage/buy-box admin changes are deployed.
 - Current local admin build output points to `admin/assets/index-CzlmK430.js` and `admin/assets/index-DhGdrE2_.css`.
@@ -269,7 +270,7 @@
 
 ## Open Risks / Follow-Up
 
-- Before release, apply `supabase/20260530_postage_orders.sql` to Supabase, verify the SQL on the target project, and then perform an authenticated postage submission test.
+- Before release, apply `supabase/20260530_postage_orders.sql` to Supabase project `brmsymzkmdnxzhrcaghw`, verify the SQL on the target project, and then perform an authenticated postage submission test. Local CLI execution requires `supabase login` or `SUPABASE_ACCESS_TOKEN`.
 - Production postage confirmation email needs `RESEND_API_KEY` and a confirmed sender (`POSTAGE_EMAIL_FROM` optional; otherwise auth/SMTP fallback sender is used). There is intentionally no customer-service notification recipient.
 - Before the next commit/release, include the latest `node scripts/regression-check.js`, admin build, and preview build results in the note.
 - The regression check is intentionally static/minimal; it does not replace focused browser/API verification before future releases.
