@@ -336,7 +336,7 @@ export function fetchTransportGroups(filters = {}) {
     }
   });
   const query = searchParams.toString();
-  return request(`/api/transport-groups${query ? `?${query}` : ""}`);
+  return request(`/api/admin/transport-groups${query ? `?${query}` : ""}`);
 }
 
 export function fetchTransportGroup(id) {
