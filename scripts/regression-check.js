@@ -105,6 +105,7 @@ function checkTransportRequests() {
 function checkTransportGroups() {
   const view = "apps/admin-vue/src/views/TransportGroupsView.vue";
   const filters = "apps/admin-vue/src/components/TransportGroupFilters.vue";
+  const adminVueApi = "apps/admin-vue/src/api/admin-api.js";
   const api = "api/transport-groups/index.js";
   const adminApi = "api/admin/[...action].js";
   const publicGroups = "public-api-handlers/transport-groups.js";
@@ -123,6 +124,8 @@ function checkTransportGroups() {
   expectIncludes(filters, 'value: "service_time_desc", label: "服务时间：最远到最近"', "transport group DESC sort label/value mapping is correct");
   expectIncludes(view, "paginate: true", "transport groups use paginated admin loading");
   expectIncludes(view, "normalizeServiceTimeSort(filters.sort)", "transport groups normalize client-side service-time sort");
+  expectIncludes(adminVueApi, 'return request(`/api/admin/transport-groups${query ? `?${query}` : ""}`);', "Vue admin transport group list uses the admin aggregate API");
+  expectNotRegex(adminVueApi, /fetchTransportGroups[\s\S]*?request\(`\/api\/transport-groups\$\{query/, "Vue admin transport group list does not use the broken direct list route");
   expectIncludes(api, "paginate", "transport groups API supports pagination");
   expectIncludes(api, '"farthest"', "transport groups API supports farthest service-time sort alias");
   expectIncludes(api, '"desc"', "transport groups API maps DESC service-time sort aliases to descending order");

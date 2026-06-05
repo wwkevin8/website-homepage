@@ -2,10 +2,11 @@
 
 ## Latest Task Update
 
-- Date: 2026-05-30
-- Scope: Fixed local helper-server routing for the postage submit form. No production deployment, database change, API behavior change, or production data write was performed.
-- Summary: Updated `dev-server.js` so local `npm run dev` maps `/postage` to `postage.html` and `/postage/submit` to `postage-submit.html`, matching the Vercel rewrite behavior that already works in production.
-- Verification: `node --check dev-server.js` passed. A temporary local helper server on port 3100 returned `200 OK` for `http://127.0.0.1:3100/postage/submit`. Existing port 3000 dev servers must be restarted before they pick up this local routing fix.
+- Date: 2026-06-05
+- Scope: Investigated the recurring 2.0 NGN admin transport groups empty-list issue and added a source-level regression guard. This work touched only the Vue admin transport-group list API source already fixed in the hotfix branch, `scripts/regression-check.js`, and this status file. No driver-side work, database change, API behavior change, public page change, email/payment change, or unrelated local dirty work was included.
+- Summary: Root cause is release-line drift, not missing production data. The previous fix commit `b2bf2c3` changed `apps/admin-vue/src/api/admin-api.js` and deployed a corrected admin bundle, but it lived only on `origin/codex/hotfix-admin-groups-list`; `origin/release/transport-storage-preflight` still had `fetchTransportGroups()` requesting `/api/transport-groups?...`. Any later production deployment from the release branch would rebuild the old source and reintroduce the broken list request. The true Vue admin source is `apps/admin-vue/src/api/admin-api.js`; `admin/assets/index-*.js` is only build output. The Vue admin list must use `/api/admin/transport-groups`; detail/update/delete/member-save stay on `/api/transport-groups/:id` and `/api/transport-groups/:id/members`.
+- Verification: `git show HEAD:apps/admin-vue/src/api/admin-api.js` on the release branch confirmed the old direct list route, while the hotfix branch source contains `/api/admin/transport-groups`. `git branch -r --contains b2bf2c3` showed only `origin/codex/hotfix-admin-groups-list`, proving the prior fix was not in the release branch. `scripts/regression-check.js` now fails if Vue `fetchTransportGroups()` uses the broken direct list route again.
+- Open risks / follow-up: Keep this fix merged or fast-forwarded into the actual release/deployment branch before future Vercel production deployments. Legacy `transport-api.js` and one QA runner check still reference `/api/transport-groups?...` for old non-Vue admin/test flows; they were classified as dangerous/legacy but intentionally left untouched for this narrow P0 fix.
 
 ## Previous Task Update
 
