@@ -411,17 +411,6 @@
     return dateTimeValue ? dateTimeValue.slice(0, 10) : "";
   }
 
-  function shiftIsoMinutes(value, minutes) {
-    if (!value) {
-      return "";
-    }
-    const parsed = new Date(value);
-    if (Number.isNaN(parsed.getTime())) {
-      return "";
-    }
-    return new Date(parsed.getTime() + minutes * 60000).toISOString();
-  }
-
   function getJoinReferenceDateTime(item) {
     return item?.preferred_time_start || item?.flight_time_reference || item?.flight_datetime || "";
   }
@@ -489,9 +478,6 @@
     const terminalLabel = getTerminalLabel(item);
     const referenceDateTime = getJoinReferenceDateTime(item);
     const fixedPreferredTime = toLondonDateTimeLocalValue(referenceDateTime);
-    const joinWindowMinutes = isDropoff ? 360 : 240;
-    const flightDateTimeMin = toLondonDateTimeLocalValue(shiftIsoMinutes(referenceDateTime, -joinWindowMinutes));
-    const flightDateTimeMax = toLondonDateTimeLocalValue(shiftIsoMinutes(referenceDateTime, joinWindowMinutes));
     const deadlineDate = toLondonDateValue(referenceDateTime);
     const passengerCount = Number(item.passenger_count || 1) || 1;
     return `
@@ -524,9 +510,8 @@
           <label><span>航班号</span><input name="flight_no" required></label>
           <label>
             <span>${Shared.escapeHtml(timingLabel)}</span>
-            <input name="flight_datetime" type="datetime-local" min="${Shared.escapeHtml(flightDateTimeMin)}" max="${Shared.escapeHtml(flightDateTimeMax)}" required>
-            <small class="pickup-join-field-hint">允许时间范围：当前拼车组时间前后 ${isDropoff ? "6" : "4"} 小时。</small>
-            <small class="pickup-join-field-hint">需在当前拼车组时间前后 4 小时内。</small>
+            <input name="flight_datetime" type="datetime-local" required>
+            <small class="pickup-join-field-hint">如与当前拼车组时间相差较大，系统会显示风险提醒，但不阻止提交。</small>
           </label>
           <label>
             <span>接送期望时间</span>
@@ -667,6 +652,9 @@
     if (!evaluation.joinable && evaluation.reason) {
       lines.push(`原因：${evaluation.reason}`);
     }
+    (evaluation.warnings || []).forEach(warning => {
+      lines.push(`风险提醒：${warning.message || warning}`);
+    });
     if (evaluation.joinable && evaluation.surchargeGbp > 0) {
       lines.push(`提示：跨航站楼附加费 +£${evaluation.surchargeGbp}`);
     }
@@ -691,6 +679,9 @@
     if (!evaluation.joinable && evaluation.reason) {
       lines.push(`原因：${evaluation.reason}`);
     }
+    (evaluation.warnings || []).forEach(warning => {
+      lines.push(`风险提醒：${warning.message || warning}`);
+    });
     if (evaluation.joinable && evaluation.surchargeGbp > 0) {
       lines.push(`提示：跨航站楼附加费 +£${evaluation.surchargeGbp}`);
     }

@@ -5,6 +5,7 @@ const { getProfileCompletionState } = require("../api/_lib/user-profile");
 const { buildJoinDraft, evaluateJoin } = require("../api/_lib/transport-join");
 const { createRequestRecord, addRequestToGroup, getGroupByBusinessId, getGroupMembersWithRequests } = require("../api/_lib/transport-group-lifecycle");
 const { sendTransportOrderSubmissionEmail } = require("../api/_lib/transport-order-submission-email");
+const { logAdminOperation } = require("../api/_lib/orders");
 const {
   bindClaimToOrder,
   calculateMembershipDiscount,
@@ -51,6 +52,72 @@ async function listActiveFutureTransportRequests(supabase, siteUserId) {
   }
 
   return Array.isArray(data) ? data : [];
+}
+
+function hasTimeRiskWarning(evaluation) {
+  return (evaluation?.warnings || []).some(warning => {
+    return ["large_time_gap", "cross_midnight_date_mismatch"].includes(String(warning?.code || ""));
+  });
+}
+
+function formatTimeDistance(minutes) {
+  const value = Number(minutes);
+  if (!Number.isFinite(value)) return null;
+  return `${Math.round((value / 60) * 10) / 10} 小时`;
+}
+
+function formatContactSummary(request, siteUser) {
+  return [
+    request.student_name || siteUser?.nickname,
+    request.phone || siteUser?.phone,
+    request.wechat || siteUser?.wechat_id,
+    request.email || siteUser?.email
+  ].filter(Boolean).join(" / ");
+}
+
+async function logFrontendJoinTimeRisk(supabase, { siteUser, request, targetRequest, group, evaluation }) {
+  if (!hasTimeRiskWarning(evaluation)) {
+    return;
+  }
+
+  try {
+    const orderTime = evaluation.orderTime || request.preferred_time_start || request.flight_datetime;
+    const targetGroupTime = evaluation.targetGroupTime || group.preferred_time_start || group.flight_time_reference || targetRequest.preferred_time_start || targetRequest.flight_datetime;
+    const distanceText = formatTimeDistance(evaluation.timeDistanceMinutes) || "未知";
+    await logAdminOperation(supabase, {
+      admin_user_id: null,
+      target_type: "transport_request",
+      target_id: request.id,
+      action: "transport_frontend_join_time_risk_confirmed",
+      before_data: {
+        order_time: orderTime,
+        target_group_time: targetGroupTime
+      },
+      after_data: {
+        group_id: group.group_id,
+        risk_confirmed: true
+      },
+      metadata: {
+        operation_type: "前台加入",
+        risk_confirmed: true,
+        order_no: request.order_no,
+        request_id: request.id,
+        target_order_no: targetRequest.order_no || null,
+        target_group_id: group.group_id,
+        site_user_id: siteUser?.id || null,
+        site_user_email: siteUser?.email || null,
+        contact_summary: formatContactSummary(request, siteUser),
+        original_order_time: orderTime,
+        target_group_time: targetGroupTime,
+        time_distance_minutes: evaluation.timeDistanceMinutes,
+        time_distance_text: distanceText,
+        warnings: evaluation.warnings || [],
+        summary: `前台加入：订单时间 ${orderTime}，目标组时间 ${targetGroupTime}，时间差 ${distanceText}，风险提示已确认。`
+      }
+    });
+  } catch (error) {
+    console.warn("transport frontend join time-risk log failed", error?.message || error);
+  }
 }
 
 module.exports = async function handler(req, res) {
@@ -132,6 +199,14 @@ module.exports = async function handler(req, res) {
       throw error;
     }
 
+    await logFrontendJoinTimeRisk(supabase, {
+      siteUser,
+      request,
+      targetRequest,
+      group,
+      evaluation
+    });
+
     let boundMembershipClaim = null;
     if (membershipDiscount?.eligible && membershipClaim?.id) {
       try {
@@ -178,6 +253,8 @@ module.exports = async function handler(req, res) {
       groupId: group.group_id,
       surchargeGbp: evaluation.surchargeGbp,
       nextPassengerCount: evaluation.nextPassengerCount,
+      warnings: evaluation.warnings || [],
+      timeDistanceMinutes: evaluation.timeDistanceMinutes ?? null,
       status: "matched",
       membershipBenefitClaimId: boundMembershipClaim?.id || null,
       membershipDiscountAmount: membershipDiscount?.membershipDiscountAmount || 0,

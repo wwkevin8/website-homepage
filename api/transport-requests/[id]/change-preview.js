@@ -515,6 +515,27 @@ function summarizeTargetGroup(group, stats, warnings = []) {
   };
 }
 
+function collectTargetGroupWarnings(groups = [], searchedTargetGroup = null) {
+  const warnings = [];
+  const seen = new Set();
+  const add = warning => {
+    if (!warning) return;
+    const key = `${warning.code || ""}:${warning.message || ""}:${warning.target_group_time || ""}:${warning.order_time || ""}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    warnings.push({
+      ...warning,
+      source: "target_group_warning"
+    });
+  };
+
+  (groups || []).forEach(group => (group.warnings || []).forEach(add));
+  if (searchedTargetGroup?.joinable) {
+    (searchedTargetGroup.group?.warnings || []).forEach(add);
+  }
+  return warnings;
+}
+
 async function searchTargetGroup(supabase, request, searchText, currentGroupId) {
   const targetGroupId = normalizeText(searchText);
   if (!targetGroupId) return null;
@@ -660,6 +681,10 @@ module.exports = async function handler(req, res) {
         });
       }
     }
+
+    collectTargetGroupWarnings(candidateGroups, searchedTargetGroup).forEach(warning => {
+      risks.push(warning);
+    });
 
     const isMultiMemberRouteBreakingChange = currentGroup
       && currentMembers.length > 1
