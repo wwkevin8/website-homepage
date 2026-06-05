@@ -46,6 +46,39 @@ Before making any change, Codex must explicitly report which rule files and stat
 - Do not deploy uncommitted local changes to Vercel unless the user explicitly overrides this rule for that single task.
 - After deployment, record both the GitHub commit and the Vercel deployment in `docs/current-status.md`.
 
+## Production Deployment Regression Prevention Rules
+
+1. The current production release branch is `origin/release/transport-storage-preflight`. Every production hotfix and feature release must ultimately land on this release branch. Fixes must not remain only on `codex/hotfix-*`, local-only branches, or other temporary branches.
+2. Before every production deployment, Codex must output and inspect:
+   - `git branch --show-current`
+   - `git status --short`
+   - `git log --oneline -5`
+   - `git branch -r --contains HEAD`
+3. Before every production deployment, Codex must explicitly report:
+   - the current local branch;
+   - the current `HEAD` commit;
+   - whether the current commit is contained in `origin/release/transport-storage-preflight`;
+   - whether uncommitted local changes exist;
+   - whether the deployment includes only changes accepted or verified in the current release scope.
+4. Every P0/P1 bug fix must include:
+   - a fix in the real source code, not only generated output;
+   - a rebuild when build output is affected;
+   - the smallest practical `scripts/regression-check.js` guard to prevent the same regression;
+   - a `docs/current-status.md` update recording the root cause and fix approach.
+5. Do not fix bugs by editing only `admin/assets` or other build artifacts. Always identify and fix the corresponding source file first, then rebuild when needed.
+6. A production deployment may include only one release theme. Do not mix unaccepted driver-side work, postage changes, storage changes, pickup/dropoff or carpool changes, admin style changes, test-data work, or other unrelated changes into the same hotfix deployment.
+7. Before every production deployment, run and pass:
+   - `npm.cmd --prefix apps/admin-vue run build`
+   - `node --check api/admin/[...action].js`
+   - `node scripts/regression-check.js`
+8. For deployments touching critical live pages, Codex must list the manual acceptance items before or during verification:
+   - whether the admin page opens;
+   - whether the list shows data;
+   - whether detail pages work;
+   - whether save/update flows work;
+   - whether related public frontend display remains unaffected.
+9. Never upload test data to production. When a task involves database changes or data scripts, Codex must first state whether the action can affect production data and what safeguards or environment boundaries apply.
+
 ## Modification Scope Control
 
 - Do not edit unrelated HTML, CSS, JS, API, SQL, or config files.
