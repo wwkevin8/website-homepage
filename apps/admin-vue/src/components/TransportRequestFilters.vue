@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from "vue";
+import { computed, ref } from "vue";
 
 const model = defineModel({
   type: Object,
@@ -18,6 +18,8 @@ const props = defineProps({
 });
 
 defineEmits(["submit", "reset", "export"]);
+
+const mobileFiltersExpanded = ref(false);
 
 const airportOptions = [
   { code: "LHR", name: "希思罗机场" },
@@ -39,7 +41,15 @@ const operatorSelectOptions = computed(() => {
 </script>
 
 <template>
-  <form class="admin-filter-panel transport-request-filter-panel" @submit.prevent="$emit('submit')" @reset.prevent="$emit('reset')">
+  <form
+    :class="[
+      'admin-filter-panel',
+      'transport-request-filter-panel',
+      { 'is-mobile-filter-expanded': mobileFiltersExpanded }
+    ]"
+    @submit.prevent="$emit('submit')"
+    @reset.prevent="$emit('reset')"
+  >
     <div class="transport-request-filter-row transport-request-filter-row--primary">
       <label class="field">
         <span>关键词</span>
@@ -79,6 +89,13 @@ const operatorSelectOptions = computed(() => {
         </select>
       </label>
     </div>
+    <button
+      class="transport-request-mobile-filter-toggle"
+      type="button"
+      @click="mobileFiltersExpanded = !mobileFiltersExpanded"
+    >
+      {{ mobileFiltersExpanded ? "收起筛选" : "更多筛选" }}
+    </button>
     <div class="transport-request-filter-row transport-request-filter-row--secondary">
       <label class="field">
         <span>联系状态</span>

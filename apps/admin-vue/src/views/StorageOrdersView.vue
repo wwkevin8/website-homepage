@@ -467,7 +467,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <section class="storage-orders-view">
+  <section class="storage-orders-view" :class="{ 'storage-orders-view--box': orderType === 'box_order' }">
     <div class="view-heading">
       <div>
         <p class="view-heading__eyebrow">Storage orders</p>
