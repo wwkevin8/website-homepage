@@ -108,6 +108,50 @@ function buildAfterValues(changedFields) {
   }, {});
 }
 
+function findTimeRisk(preview) {
+  return (preview?.risks || []).find(risk => {
+    return ["large_time_gap", "cross_midnight_date_mismatch"].includes(String(risk?.code || ""));
+  }) || null;
+}
+
+function formatRiskDistance(risk) {
+  const minutes = Number(risk?.time_distance_minutes);
+  if (Number.isFinite(minutes)) {
+    return `${Math.round((minutes / 60) * 10) / 10} 小时`;
+  }
+  const hours = Number(risk?.time_distance_hours);
+  if (Number.isFinite(hours)) {
+    return `${Math.round(hours * 10) / 10} 小时`;
+  }
+  return "未知";
+}
+
+function buildBackendTransferTimeRiskMetadata(preview, groupAction, operatedBy) {
+  if (groupAction !== "transfer_existing_group") {
+    return {};
+  }
+  const risk = findTimeRisk(preview);
+  if (!risk) {
+    return {};
+  }
+  const orderTime = risk.order_time || null;
+  const targetGroupTime = risk.target_group_time || null;
+  const distanceText = formatRiskDistance(risk);
+  return {
+    operation_type: "后台转组",
+    risk_confirmed: true,
+    time_risk_confirmed: true,
+    operator_name: operatedBy,
+    original_order_time: orderTime,
+    target_group_time: targetGroupTime,
+    time_distance_minutes: risk.time_distance_minutes ?? null,
+    time_distance_hours: risk.time_distance_hours ?? null,
+    time_distance_text: distanceText,
+    time_risk_warning: risk.message || null,
+    time_risk_summary: `客服手动转组：订单时间 ${orderTime || "未知"}，目标组时间 ${targetGroupTime || "未知"}，时间差 ${distanceText}，已人工确认。`
+  };
+}
+
 async function runPreview(req, id, body) {
   const previewReq = new EventEmitter();
   previewReq.method = "POST";
@@ -579,6 +623,7 @@ module.exports = async function handler(req, res) {
     const requestPayload = buildUpdatePayload(preview.changed_fields, operatedBy, operatedAt);
     const beforeValues = buildBeforeValues(preview.changed_fields);
     const afterValues = buildAfterValues(preview.changed_fields);
+    const timeRiskMetadata = buildBackendTransferTimeRiskMetadata(preview, groupAction, operatedBy);
     const previousMeta = {
       last_operated_by: existing.last_operated_by,
       last_operated_at: existing.last_operated_at
@@ -700,6 +745,7 @@ module.exports = async function handler(req, res) {
         source_snapshot_hash: preview.source_snapshot_hash,
         order_change_log_id: logRow.id,
         removal_operation_log_id: removalOperation?.id || null,
+        ...timeRiskMetadata,
         group_lifecycle: groupLifecycle
       }
     });
@@ -714,6 +760,7 @@ module.exports = async function handler(req, res) {
         confirmed: true,
         admin_operation_log_id: adminOperation.id,
         removal_operation_log_id: removalOperation?.id || null,
+        ...timeRiskMetadata,
         group_lifecycle: groupLifecycle
       }
     });

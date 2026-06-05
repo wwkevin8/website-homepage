@@ -8,6 +8,24 @@ function getIsoDatePart(value) {
   return new Date(value).toISOString().slice(0, 10);
 }
 
+function getDateDistanceDays(a, b) {
+  const left = new Date(`${a}T00:00:00.000Z`);
+  const right = new Date(`${b}T00:00:00.000Z`);
+  if (Number.isNaN(left.getTime()) || Number.isNaN(right.getTime())) {
+    return null;
+  }
+  return Math.abs(left.getTime() - right.getTime()) / (24 * 60 * 60 * 1000);
+}
+
+function buildTimeWarning(code, message, context = {}) {
+  return {
+    code,
+    message,
+    risk_confirmed: true,
+    ...context
+  };
+}
+
 function normalizeCity(value) {
   return String(value || "").trim().toLowerCase();
 }
@@ -68,7 +86,11 @@ function buildJoinResult({
   sameTerminal,
   sameDate,
   withinTimeWindow,
-  group
+  group,
+  warnings = [],
+  timeDistanceMinutes = null,
+  targetGroupTime = null,
+  orderTime = null
 }) {
   return {
     joinable,
@@ -81,6 +103,10 @@ function buildJoinResult({
     sameTerminal,
     sameDate,
     withinTimeWindow,
+    warnings,
+    timeDistanceMinutes,
+    targetGroupTime,
+    orderTime,
     groupId: group.group_id
   };
 }
@@ -93,8 +119,14 @@ function evaluateJoin({ targetRequest, group, activeMembers, joinPayload, active
   const sameTerminal = String(targetRequest.terminal || "").trim().toUpperCase() === String(joinPayload.terminal || "").trim().toUpperCase();
   const targetPickupTime = getEffectivePickupTime(targetRequest);
   const joinPickupTime = getEffectivePickupTime(joinPayload);
-  const sameDate = getIsoDatePart(targetPickupTime || targetRequest.flight_datetime) === getIsoDatePart(joinPickupTime || joinPayload.flight_datetime);
-  const withinTimeWindow = getMinutesDifference(targetPickupTime || targetRequest.flight_datetime, joinPickupTime || joinPayload.flight_datetime) <= 240;
+  const effectiveTargetDate = targetPickupTime || targetRequest.flight_datetime;
+  const effectiveJoinDate = joinPickupTime || joinPayload.flight_datetime;
+  const sameDate = getIsoDatePart(effectiveTargetDate) === getIsoDatePart(effectiveJoinDate);
+  const joinWindowMinutes = 240;
+  const timeDistanceMinutes = getMinutesDifference(effectiveTargetDate, effectiveJoinDate);
+  const withinTimeWindow = timeDistanceMinutes <= joinWindowMinutes;
+  const allowCrossMidnightDateMismatch = false;
+  const warnings = [];
   const sameTypeRequests = (activeFutureRequests || []).filter(item => item.service_type === joinPayload.service_type);
   const earliestSameTypeRequest = sameTypeRequests[0] || null;
   const nextFlightTime = new Date(joinPayload.flight_datetime).getTime();
@@ -140,6 +172,34 @@ function evaluateJoin({ targetRequest, group, activeMembers, joinPayload, active
     surchargeGbp = Number(joinPayload.passenger_count || 0) * 15;
   }
 
+  if (false && joinable && !withinTimeWindow) {
+    warnings.push(buildTimeWarning(
+      "large_time_gap",
+      "该订单时间与目标拼车组时间相差较大，请确认是否仍要加入。",
+      {
+        operation_type: "前台加入",
+        threshold_minutes: joinWindowMinutes,
+        time_distance_minutes: Math.round(timeDistanceMinutes),
+        order_time: effectiveJoinDate,
+        target_group_time: effectiveTargetDate
+      }
+    ));
+  }
+
+  if (false && joinable && allowCrossMidnightDateMismatch) {
+    warnings.push(buildTimeWarning(
+      "cross_midnight_date_mismatch",
+      "该订单与目标拼车组跨午夜但实际时间差较近，请确认日期与时间后再加入。",
+      {
+        operation_type: "前台加入",
+        threshold_minutes: joinWindowMinutes,
+        time_distance_minutes: Math.round(timeDistanceMinutes),
+        order_time: effectiveJoinDate,
+        target_group_time: effectiveTargetDate
+      }
+    ));
+  }
+
   return buildJoinResult({
     joinable,
     reason,
@@ -150,7 +210,11 @@ function evaluateJoin({ targetRequest, group, activeMembers, joinPayload, active
     sameTerminal,
     sameDate,
     withinTimeWindow,
-    group
+    group,
+    warnings,
+    timeDistanceMinutes: Math.round(timeDistanceMinutes),
+    targetGroupTime: effectiveTargetDate,
+    orderTime: effectiveJoinDate
   });
 }
 
@@ -374,14 +438,22 @@ function evaluateJoinWindowAware({ targetRequest, group, activeMembers, joinPayl
   const joinPickupTime = getEffectivePickupTime(joinPayload);
   const effectiveTargetDate = targetPickupTime || targetRequest.flight_datetime;
   const effectiveJoinDate = joinPickupTime || joinPayload.flight_datetime;
-  const sameDate = getIsoDatePart(effectiveTargetDate) === getIsoDatePart(effectiveJoinDate);
+  const targetDatePart = getIsoDatePart(effectiveTargetDate);
+  const joinDatePart = getIsoDatePart(effectiveJoinDate);
+  const sameDate = targetDatePart === joinDatePart;
   const joinWindowMinutes = getStrictJoinWindowMinutes(joinPayload.service_type);
-  const withinTimeWindow = getMinutesDifference(effectiveTargetDate, effectiveJoinDate) <= joinWindowMinutes;
+  const timeDistanceMinutes = getMinutesDifference(effectiveTargetDate, effectiveJoinDate);
+  const withinTimeWindow = timeDistanceMinutes <= joinWindowMinutes;
+  const adjacentDateDistance = getDateDistanceDays(targetDatePart, joinDatePart);
+  const allowCrossMidnightDateMismatch = !sameDate
+    && adjacentDateDistance === 1
+    && withinTimeWindow;
   const sameTypeRequest = (activeFutureRequests || []).find(item => item.service_type === joinPayload.service_type);
 
   let joinable = true;
   let reason = "";
   let surchargeGbp = 0;
+  const warnings = [];
 
   if (!sameServiceType) {
     joinable = false;
@@ -389,10 +461,10 @@ function evaluateJoinWindowAware({ targetRequest, group, activeMembers, joinPayl
   } else if (!sameAirport) {
     joinable = false;
     reason = "机场不同，无法加入当前拼车组。";
-  } else if (!sameDate) {
+  } else if (!sameDate && !allowCrossMidnightDateMismatch) {
     joinable = false;
     reason = joinPayload.service_type === "dropoff" ? "送机日期不同，无法拼车。" : "接机日期不同，无法拼车。";
-  } else if (!withinTimeWindow) {
+  } else if (false && !withinTimeWindow) {
     joinable = false;
     reason = joinPayload.service_type === "dropoff" ? "送机时间差超过 6 小时，无法拼车。" : "接机时间差超过 4 小时，无法拼车。";
   } else if (!["published", "matched"].includes(targetRequest.status)) {
@@ -430,7 +502,112 @@ function evaluateJoinWindowAware({ targetRequest, group, activeMembers, joinPayl
   });
 }
 
+function evaluateJoinWindowAwareRelaxed({ targetRequest, group, activeMembers, joinPayload, activeFutureRequests = [] }) {
+  const currentPassengerCount = activeMembers.reduce((sum, item) => sum + Number(item.transport_requests?.passenger_count || 0), 0);
+  const nextPassengerCount = currentPassengerCount + Number(joinPayload.passenger_count || 0);
+  const sameServiceType = String(targetRequest.service_type || "").trim() === String(joinPayload.service_type || "").trim();
+  const sameAirport = String(targetRequest.airport_code || "").trim().toUpperCase() === String(joinPayload.airport_code || "").trim().toUpperCase();
+  const sameTerminal = String(targetRequest.terminal || "").trim().toUpperCase() === String(joinPayload.terminal || "").trim().toUpperCase();
+  const groupStatus = String(group?.status || "").trim().toLowerCase();
+  const effectiveTargetDate = getEffectivePickupTime(targetRequest) || targetRequest.flight_datetime;
+  const effectiveJoinDate = getEffectivePickupTime(joinPayload) || joinPayload.flight_datetime;
+  const targetDatePart = getIsoDatePart(effectiveTargetDate);
+  const joinDatePart = getIsoDatePart(effectiveJoinDate);
+  const sameDate = targetDatePart === joinDatePart;
+  const joinWindowMinutes = getStrictJoinWindowMinutes(joinPayload.service_type);
+  const timeDistanceMinutes = getMinutesDifference(effectiveTargetDate, effectiveJoinDate);
+  const withinTimeWindow = timeDistanceMinutes <= joinWindowMinutes;
+  const allowCrossMidnightDateMismatch = !sameDate
+    && getDateDistanceDays(targetDatePart, joinDatePart) === 1
+    && withinTimeWindow;
+  const sameTypeRequest = (activeFutureRequests || []).find(item => item.service_type === joinPayload.service_type);
+  const warnings = [];
+
+  let joinable = true;
+  let reason = "";
+  let surchargeGbp = 0;
+
+  if (!sameServiceType) {
+    joinable = false;
+    reason = "服务类型不同，无法加入当前拼车组。";
+  } else if (!sameAirport) {
+    joinable = false;
+    reason = "机场不同，无法加入当前拼车组。";
+  } else if (["full", "closed", "cancelled"].includes(groupStatus)) {
+    joinable = false;
+    reason = "当前拼车组已满员、关闭或取消，无法加入。";
+  } else if (groupStatus && !["single_member", "active", "open"].includes(groupStatus)) {
+    joinable = false;
+    reason = "当前拼车组状态不可加入。";
+  } else if (!sameDate && !allowCrossMidnightDateMismatch) {
+    joinable = false;
+    reason = joinPayload.service_type === "dropoff" ? "送机日期不同，无法拼车。" : "接机日期不同，无法拼车。";
+  } else if (!["published", "matched"].includes(targetRequest.status)) {
+    joinable = false;
+    reason = "当前拼车组状态不可加入。";
+  } else if (!targetRequest.shareable) {
+    joinable = false;
+    reason = "当前拼车组不接受拼车。";
+  } else if (new Date(targetRequest.flight_datetime).getTime() <= Date.now()) {
+    joinable = false;
+    reason = "当前拼车组已过期。";
+  } else if (sameTypeRequest) {
+    joinable = false;
+    reason = `当前账号已存在一张未来有效${joinPayload.service_type === "dropoff" ? "送机" : "接机"}单（${sameTypeRequest.order_no}），同一账号同类服务一次只保留一张有效单。`;
+  } else if (nextPassengerCount > DEFAULT_GROUP_MAX_PASSENGERS) {
+    joinable = false;
+    reason = `加入后总人数将超过 ${DEFAULT_GROUP_MAX_PASSENGERS} 人。`;
+  }
+
+  if (joinable && !sameTerminal) {
+    surchargeGbp = Number(joinPayload.passenger_count || 0) * 15;
+  }
+  if (joinable && !withinTimeWindow) {
+    warnings.push(buildTimeWarning(
+      "large_time_gap",
+      "该订单时间与目标拼车组时间相差较大，请确认是否仍要加入。",
+      {
+        operation_type: "前台加入",
+        threshold_minutes: joinWindowMinutes,
+        time_distance_minutes: Math.round(timeDistanceMinutes),
+        order_time: effectiveJoinDate,
+        target_group_time: effectiveTargetDate
+      }
+    ));
+  }
+  if (joinable && allowCrossMidnightDateMismatch) {
+    warnings.push(buildTimeWarning(
+      "cross_midnight_date_mismatch",
+      "该订单与目标拼车组跨午夜但实际时间差较近，请确认日期与时间后再加入。",
+      {
+        operation_type: "前台加入",
+        threshold_minutes: joinWindowMinutes,
+        time_distance_minutes: Math.round(timeDistanceMinutes),
+        order_time: effectiveJoinDate,
+        target_group_time: effectiveTargetDate
+      }
+    ));
+  }
+
+  return buildJoinResult({
+    joinable,
+    reason,
+    surchargeGbp,
+    currentPassengerCount,
+    nextPassengerCount,
+    sameAirport,
+    sameTerminal,
+    sameDate,
+    withinTimeWindow,
+    group,
+    warnings,
+    timeDistanceMinutes: Math.round(timeDistanceMinutes),
+    targetGroupTime: effectiveTargetDate,
+    orderTime: effectiveJoinDate
+  });
+}
+
 module.exports = {
   buildJoinDraft,
-  evaluateJoin: evaluateJoinWindowAware
+  evaluateJoin: evaluateJoinWindowAwareRelaxed
 };

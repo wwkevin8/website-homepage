@@ -112,6 +112,7 @@ function checkTransportGroups() {
   const publicBoard = "public-api-handlers/transport-board.js";
   const joinPreview = "public-api-handlers/transport-join-preview.js";
   const joinSubmit = "public-api-handlers/transport-join-submit.js";
+  const joinHelper = "api/_lib/transport-join.js";
   const lifecycle = "api/_lib/transport-group-lifecycle.js";
 
   expectRegex(view, /validity:\s*"active"/, "transport groups default to active groups");
@@ -137,9 +138,15 @@ function checkTransportGroups() {
   expectIncludes(publicBoard, "filterFutureBoardItems", "public transport board filters active rows by final service time");
   expectIncludes(joinPreview, "evaluateJoin", "join-carpool preview uses join evaluator");
   expectIncludes(joinSubmit, "evaluateJoin", "join-carpool submit uses join evaluator");
+  expectIncludes(joinHelper, "evaluateJoinWindowAwareRelaxed", "join-carpool evaluator uses relaxed time-difference behavior");
+  expectIncludes(joinHelper, "large_time_gap", "join-carpool evaluator returns large-time-gap warnings");
+  expectIncludes(joinHelper, "cross_midnight_date_mismatch", "join-carpool evaluator warns for allowed cross-midnight joins");
+  expectIncludes(joinSubmit, "transport_frontend_join_time_risk_confirmed", "frontend large-time-gap joins are logged after success");
   expectIncludes(lifecycle, "cleanupEmptyTransportGroups", "empty-group cleanup helper exists");
   expectIncludes(lifecycle, "DEFAULT_EMPTY_GROUP_GRACE_MINUTES = 10", "empty-group cleanup keeps the 10-minute grace window");
   expectIncludes(lifecycle, "active_member_count", "empty-group cleanup uses effective active members, not stale closed members");
+  expectIncludes(lifecycle, "buildTimeDistanceWarning", "backend transfer uses warnings for large time gaps");
+  expectNotRegex(lifecycle, /distance\s*>\s*MAX_TIME_ADJUST_CANDIDATE_HOURS\)\s*\{\s*throw buildTransportLifecycleError\("target group time is outside the allowed window"/, "backend transfer no longer hard-blocks large time gaps");
 }
 
 function checkStorageWorkbench() {

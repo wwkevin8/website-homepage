@@ -87,6 +87,35 @@ function hoursApart(left, right) {
   return Math.abs(leftDate.getTime() - rightDate.getTime()) / (60 * 60 * 1000);
 }
 
+function addIsoDays(dateText, days) {
+  const date = new Date(`${dateText}T00:00:00.000Z`);
+  if (Number.isNaN(date.getTime())) {
+    return dateText;
+  }
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+function getDateDistanceDays(leftDateText, rightDateText) {
+  const left = new Date(`${leftDateText}T00:00:00.000Z`);
+  const right = new Date(`${rightDateText}T00:00:00.000Z`);
+  if (Number.isNaN(left.getTime()) || Number.isNaN(right.getTime())) {
+    return null;
+  }
+  return Math.abs(left.getTime() - right.getTime()) / (24 * 60 * 60 * 1000);
+}
+
+function getServiceDateCandidates(serviceDate) {
+  return [addIsoDays(serviceDate, -1), serviceDate, addIsoDays(serviceDate, 1)]
+    .filter((value, index, list) => value && list.indexOf(value) === index);
+}
+
+function isAdjacentServiceDateWithinWindow(groupDate, serviceDate, distanceHours, thresholdHours) {
+  return getDateDistanceDays(groupDate, serviceDate) === 1
+    && Number.isFinite(Number(distanceHours))
+    && Number(distanceHours) <= thresholdHours;
+}
+
 function deriveServiceDateFromTimes(times = {}) {
   const source = times.preferred_time_start || times.flight_datetime;
   if (!source) {
@@ -109,6 +138,20 @@ function getGroupDisplayId(group, fallback) {
 
 function buildCandidateWarning(code, message) {
   return { code, message };
+}
+
+function buildTimeDistanceWarning(distanceHours, targetGroupTime, referenceTime) {
+  return {
+    code: "large_time_gap",
+    message: "当前订单时间与目标组时间差超过 3 小时，请人工确认。",
+    operation_type: "后台转组",
+    risk_confirmed: true,
+    threshold_hours: MAX_TIME_ADJUST_CANDIDATE_HOURS,
+    time_distance_hours: Math.round(Number(distanceHours) * 10) / 10,
+    time_distance_minutes: Math.round(Number(distanceHours) * 60),
+    order_time: referenceTime,
+    target_group_time: targetGroupTime
+  };
 }
 
 async function logEmptyGroupDeletion(supabase, group, deletedAt, reason) {
@@ -643,9 +686,6 @@ function validateGroupJoinShape(request, group, stats, times = {}, options = {})
   if (group.airport_code !== request.airport_code) {
     throw buildTransportLifecycleError("target group airport_code does not match", 400);
   }
-  if (group.group_date !== serviceDate) {
-    throw buildTransportLifecycleError("target group date does not match", 400);
-  }
   if (!stats.active_members.length) {
     throw buildTransportLifecycleError("target group has no active members", 400);
   }
@@ -656,8 +696,28 @@ function validateGroupJoinShape(request, group, stats, times = {}, options = {})
   const targetGroupTime = group.preferred_time_start || group.flight_time_reference;
   const referenceTime = times.preferred_time_start || times.flight_datetime;
   const distance = hoursApart(referenceTime, targetGroupTime);
-  if (distance === null || distance > MAX_TIME_ADJUST_CANDIDATE_HOURS) {
+  if (distance === null) {
     throw buildTransportLifecycleError("target group time is outside the allowed window", 400);
+  }
+  if (group.group_date !== serviceDate) {
+    if (isAdjacentServiceDateWithinWindow(group.group_date, serviceDate, distance, MAX_TIME_ADJUST_CANDIDATE_HOURS)) {
+      warnings.push({
+        code: "cross_midnight_date_mismatch",
+        message: "订单与目标组服务日期不同但属于跨午夜近距离场景，请人工确认日期与时间。",
+        operation_type: "后台转组",
+        risk_confirmed: true,
+        threshold_hours: MAX_TIME_ADJUST_CANDIDATE_HOURS,
+        time_distance_hours: Math.round(Number(distance) * 10) / 10,
+        time_distance_minutes: Math.round(Number(distance) * 60),
+        order_time: referenceTime,
+        target_group_time: targetGroupTime
+      });
+    } else {
+      throw buildTransportLifecycleError("target group date does not match", 400);
+    }
+  }
+  if (distance > MAX_TIME_ADJUST_CANDIDATE_HOURS) {
+    warnings.push(buildTimeDistanceWarning(distance, targetGroupTime, referenceTime));
   }
 
   const requestTerminal = normalizeText(request.terminal);
@@ -720,7 +780,7 @@ async function findTimeAdjustCandidateGroups(supabase, request, times = {}, opti
     .select("group_id, service_type, group_date, airport_code, terminal, location_from, location_to, preferred_time_start, current_passenger_count, remaining_passenger_count, status")
     .eq("service_type", request.service_type)
     .eq("airport_code", request.airport_code)
-    .eq("group_date", serviceDate)
+    .in("group_date", getServiceDateCandidates(serviceDate))
     .in("status", [GROUP_STATUS.SINGLE_MEMBER, GROUP_STATUS.ACTIVE, "open"])
     .gte("remaining_passenger_count", passengerCount)
     .order("preferred_time_start", { ascending: true, nullsFirst: false })
