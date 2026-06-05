@@ -4739,3 +4739,997 @@ textarea {
   }
 }
 
+@media (max-width: 768px) {
+  body.admin-mobile-density-active {
+    overflow-x: hidden;
+  }
+
+  .admin-mobile-density {
+    padding: 12px 8px 20px;
+  }
+
+  .admin-mobile-density .view-heading {
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .admin-mobile-density .view-heading h2 {
+    font-size: 16px;
+    line-height: 1.25;
+  }
+
+  .admin-mobile-density .view-heading__eyebrow,
+  .admin-mobile-density .view-heading p,
+  .admin-mobile-density .section-heading p,
+  .admin-mobile-density .dashboard-panel__heading p {
+    font-size: 9px;
+    line-height: 1.3;
+  }
+
+  .admin-mobile-density .view-heading__actions {
+    gap: 6px;
+  }
+
+  .admin-mobile-density .view-heading__actions button,
+  .admin-mobile-density .primary-button,
+  .admin-mobile-density .secondary-button,
+  .admin-mobile-density .table-action-button,
+  .admin-mobile-density .pagination button,
+  .admin-mobile-density .filter-actions button {
+    min-height: 28px;
+    border-radius: 7px;
+    padding: 5px 8px;
+    font-size: 10px;
+    line-height: 1.2;
+  }
+
+  .admin-mobile-density .admin-filter-panel {
+    gap: 8px;
+    margin-bottom: 10px;
+    padding: 10px;
+  }
+
+  .admin-mobile-density .field,
+  .admin-mobile-density .admin-filter-panel label {
+    gap: 4px;
+    font-size: 10px;
+  }
+
+  .admin-mobile-density .field span,
+  .admin-mobile-density .admin-filter-panel label > span {
+    font-size: 9px;
+    line-height: 1.25;
+  }
+
+  .admin-mobile-density input,
+  .admin-mobile-density select,
+  .admin-mobile-density textarea {
+    min-height: 28px;
+    border-radius: 7px;
+    padding: 5px 7px;
+    font-size: 10px;
+    line-height: 1.25;
+  }
+
+  .admin-mobile-density textarea {
+    min-height: 48px;
+  }
+
+  .admin-mobile-density .admin-table-wrap {
+    margin-inline: -2px;
+    overflow-x: auto;
+    border-radius: 7px;
+  }
+
+  .admin-mobile-density .admin-table {
+    min-width: 760px;
+  }
+
+  .admin-mobile-density .admin-table th,
+  .admin-mobile-density .admin-table td {
+    padding: 6px 7px;
+    font-size: 9px;
+    line-height: 1.28;
+  }
+
+  .admin-mobile-density .admin-table th {
+    font-size: 8px;
+  }
+
+  .admin-mobile-density .status-badge,
+  .admin-mobile-density .offline-recorded-toggle,
+  .admin-mobile-density .table-sort-button {
+    min-height: 20px;
+    padding: 2px 6px;
+    font-size: 8px;
+  }
+
+  .admin-mobile-density .cell-stack {
+    gap: 2px;
+  }
+
+  .admin-mobile-density .cell-stack small {
+    font-size: 8px;
+    line-height: 1.25;
+  }
+
+  .admin-mobile-density .pagination,
+  .admin-mobile-density .filter-actions,
+  .admin-mobile-density .table-action-group,
+  .admin-mobile-density .transport-list-toolbar__actions,
+  .admin-mobile-density .orders-bulk-toolbar__actions,
+  .admin-mobile-density .view-heading__actions {
+    gap: 5px;
+  }
+
+  .admin-mobile-density .pagination {
+    padding: 8px 0;
+    font-size: 9px;
+  }
+
+  .admin-mobile-density .inline-notice,
+  .admin-mobile-density .empty-state,
+  .admin-mobile-density .detail-muted,
+  .admin-mobile-density .transport-list-toolbar__summary,
+  .admin-mobile-density .orders-bulk-toolbar__summary {
+    font-size: 9px;
+    line-height: 1.35;
+  }
+
+  .admin-mobile-density .admin-section-panel,
+  .admin-mobile-density .admin-panel,
+  .admin-mobile-density .dashboard-panel,
+  .admin-mobile-density .metric-card,
+  .admin-mobile-density .detail-section,
+  .admin-mobile-density .detail-summary-bar,
+  .admin-mobile-density .transport-detail-panel,
+  .admin-mobile-density .storage-fee-compact-panel {
+    border-radius: 7px;
+    padding: 10px;
+  }
+
+  .admin-mobile-density .admin-section-panel,
+  .admin-mobile-density .dashboard-workbench,
+  .admin-mobile-density .storage-detail-view,
+  .admin-mobile-density .transport-group-detail-view,
+  .admin-mobile-density .transport-request-detail-view {
+    gap: 10px;
+  }
+
+  .admin-mobile-density .section-heading,
+  .admin-mobile-density .dashboard-panel__heading,
+  .admin-mobile-density .detail-section__heading,
+  .admin-mobile-density .transport-panel-header,
+  .admin-mobile-density .membership-modal__header,
+  .admin-mobile-density .postage-order-drawer__header {
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .admin-mobile-density .section-heading h3,
+  .admin-mobile-density .dashboard-panel__heading h3,
+  .admin-mobile-density .detail-section__heading h3,
+  .admin-mobile-density .transport-detail-panel h3,
+  .admin-mobile-density .membership-modal__header h3,
+  .admin-mobile-density .postage-order-editor-section h3 {
+    font-size: 13px;
+    line-height: 1.25;
+  }
+
+  .admin-mobile-density .dashboard-hero {
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .admin-mobile-density .dashboard-hero h2 {
+    font-size: 18px;
+  }
+
+  .admin-mobile-density .dashboard-kpis,
+  .admin-mobile-density .dashboard-panel-grid,
+  .admin-mobile-density .dashboard-panel-grid--charts,
+  .admin-mobile-density .dashboard-quick-links,
+  .admin-mobile-density .storage-workbench-stats {
+    gap: 8px;
+  }
+
+  .admin-mobile-density .dashboard-kpi-card {
+    min-height: 74px;
+    gap: 8px;
+    padding: 10px;
+  }
+
+  .admin-mobile-density .dashboard-kpi-card__icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    font-size: 11px;
+  }
+
+  .admin-mobile-density .dashboard-kpi-card p,
+  .admin-mobile-density .metric-card span {
+    font-size: 9px;
+  }
+
+  .admin-mobile-density .dashboard-kpi-card strong,
+  .admin-mobile-density .metric-card strong {
+    margin-top: 6px;
+    font-size: 18px;
+  }
+
+  .admin-mobile-density .dashboard-kpi-card small,
+  .admin-mobile-density .dashboard-trend-day small,
+  .admin-mobile-density .dashboard-status-list li,
+  .admin-mobile-density .dashboard-task-row small,
+  .admin-mobile-density .dashboard-risk-card small {
+    font-size: 8px;
+  }
+
+  .admin-mobile-density .dashboard-trend-chart {
+    height: 150px;
+    gap: 6px;
+    padding: 8px 4px 0;
+  }
+
+  .admin-mobile-density .dashboard-donut-wrap {
+    grid-template-columns: 96px minmax(0, 1fr);
+    min-height: 132px;
+    gap: 10px;
+  }
+
+  .admin-mobile-density .dashboard-donut {
+    width: 96px;
+    height: 96px;
+  }
+
+  .admin-mobile-density .dashboard-donut::after {
+    inset: 24px;
+  }
+
+  .admin-mobile-density .dashboard-donut span,
+  .admin-mobile-density .dashboard-risk-card strong {
+    font-size: 16px;
+  }
+
+  .admin-mobile-density .dashboard-task-row,
+  .admin-mobile-density .dashboard-risk-card,
+  .admin-mobile-density .dashboard-quick-links a {
+    min-height: 30px;
+    border-radius: 7px;
+    padding: 7px 8px;
+    font-size: 9px;
+  }
+
+  .admin-mobile-density .dashboard-task-row strong,
+  .admin-mobile-density .dashboard-risk-card span {
+    font-size: 10px;
+  }
+
+  .admin-mobile-density .dashboard-task-row__type {
+    min-width: 58px;
+    padding: 3px 6px;
+    font-size: 8px;
+  }
+
+  .admin-mobile-density .orders-bulk-toolbar,
+  .admin-mobile-density .transport-list-toolbar,
+  .admin-mobile-density .storage-workbench-quick-filter-bar,
+  .admin-mobile-density .storage-workbench-bulk-toolbar {
+    gap: 7px;
+    margin-bottom: 8px;
+    padding: 8px;
+    border-radius: 7px;
+  }
+
+  .admin-mobile-density .readonly-field-grid,
+  .admin-mobile-density .community-detail-grid,
+  .admin-mobile-density .transport-readonly-detail-grid,
+  .admin-mobile-density .transport-operation-log-grid,
+  .admin-mobile-density .sync-log-details__grid,
+  .admin-mobile-density .postage-order-editor-grid,
+  .admin-mobile-density .editable-detail-form,
+  .admin-mobile-density .transport-simple-detail-form,
+  .admin-mobile-density .storage-fee-compact-form,
+  .admin-mobile-density .storage-fee-compact-form--merged {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .admin-mobile-density .readonly-field,
+  .admin-mobile-density .transport-readonly-detail-grid div,
+  .admin-mobile-density .community-detail-grid div,
+  .admin-mobile-density .sync-log-details__grid section,
+  .admin-mobile-density .storage-operation-log-item,
+  .admin-mobile-density .transport-operation-log-list li {
+    border-radius: 7px;
+    padding: 8px;
+  }
+
+  .admin-mobile-density .readonly-field span,
+  .admin-mobile-density .transport-readonly-detail-grid dt,
+  .admin-mobile-density .transport-operation-log-grid dt,
+  .admin-mobile-density .sync-log-details__grid strong,
+  .admin-mobile-density .community-detail-grid span {
+    font-size: 8px;
+    line-height: 1.25;
+  }
+
+  .admin-mobile-density .readonly-field strong,
+  .admin-mobile-density .transport-readonly-detail-grid dd,
+  .admin-mobile-density .transport-operation-log-grid dd,
+  .admin-mobile-density .community-detail-grid strong,
+  .admin-mobile-density .storage-operation-log-item strong {
+    font-size: 10px;
+    line-height: 1.35;
+  }
+
+  .admin-mobile-density .detail-text-block,
+  .admin-mobile-density .detail-text-block pre,
+  .admin-mobile-density .community-detail-list li,
+  .admin-mobile-density .transport-operation-log-list span,
+  .admin-mobile-density .transport-operation-log-list p,
+  .admin-mobile-density .storage-operation-log-item span,
+  .admin-mobile-density .storage-operation-log-item p,
+  .admin-mobile-density .sync-log-details__grid p,
+  .admin-mobile-density .sync-log-details__grid ul {
+    font-size: 9px;
+    line-height: 1.35;
+  }
+
+  .admin-mobile-density .membership-last-operation,
+  .admin-mobile-density .storage-detail-summary-bar__badges,
+  .admin-mobile-density .group-overview-cards,
+  .admin-mobile-density .group-payment-cards,
+  .admin-mobile-density .dispatch-readiness-list,
+  .admin-mobile-density .dispatch-risk-list,
+  .admin-mobile-density .manual-import-grid {
+    gap: 6px;
+  }
+
+  body.admin-mobile-density-active .membership-modal__panel,
+  body.admin-mobile-density-active .transport-change-modal__panel,
+  body.admin-mobile-density-active .transport-confirm-modal,
+  body.admin-mobile-density-active .postage-order-drawer__panel,
+  body.admin-mobile-density-active .transport-log-drawer__panel {
+    width: min(100vw, 640px);
+    border-radius: 0;
+  }
+
+  body.admin-mobile-density-active .membership-modal__panel,
+  body.admin-mobile-density-active .transport-change-modal__panel,
+  body.admin-mobile-density-active .transport-confirm-modal {
+    padding: 12px;
+  }
+
+  body.admin-mobile-density-active .postage-order-drawer__header,
+  body.admin-mobile-density-active .postage-order-drawer__body,
+  .admin-mobile-density .postage-order-editor-section {
+    padding: 10px;
+  }
+
+  body.admin-mobile-density-active .postage-order-drawer__body,
+  body.admin-mobile-density-active .membership-modal__panel,
+  body.admin-mobile-density-active .transport-change-modal__panel,
+  body.admin-mobile-density-active .transport-log-drawer__body {
+    gap: 10px;
+  }
+
+  .admin-mobile-density .postage-order-log-list article {
+    gap: 6px;
+    padding: 8px;
+    font-size: 9px;
+  }
+
+  .admin-mobile-density .manual-import-section,
+  .admin-mobile-density .manual-import-preview,
+  .admin-mobile-density .transport-current-group-hint,
+  .admin-mobile-density .dispatch-summary-preview,
+  .admin-mobile-density .dispatch-readiness-panel {
+    border-radius: 7px;
+    padding: 9px;
+    font-size: 9px;
+  }
+
+  .admin-mobile-density .storage-workbench-table .table-action-group--compact {
+    gap: 4px;
+  }
+
+  .admin-mobile-density .storage-workbench-table .table-action-group--compact .table-action-button,
+  .admin-mobile-density .table-action-group--compact .table-action-button {
+    min-height: 22px;
+    padding: 3px 5px;
+    font-size: 8px;
+  }
+
+  body.admin-mobile-density-active .admin-sidebar {
+    width: min(70vw, 212px);
+    padding: 10px 8px;
+  }
+
+  body.admin-mobile-density-active .admin-sidebar__brand {
+    min-height: 30px;
+    gap: 6px;
+    font-size: 11px;
+  }
+
+  body.admin-mobile-density-active .admin-sidebar__mark {
+    width: 26px;
+    height: 26px;
+    flex-basis: 26px;
+    border-radius: 6px;
+    font-size: 9px;
+  }
+
+  body.admin-mobile-density-active .admin-sidebar__environment,
+  body.admin-mobile-density-active .admin-sidebar__section-title,
+  body.admin-mobile-density-active .admin-sidebar__section-toggle,
+  body.admin-mobile-density-active .admin-sidebar__link,
+  body.admin-mobile-density-active .admin-sidebar__account-name,
+  body.admin-mobile-density-active .admin-sidebar__account button {
+    font-size: 9px;
+    line-height: 1.18;
+  }
+
+  body.admin-mobile-density-active .admin-sidebar__nav {
+    gap: 6px;
+    margin-top: 10px;
+  }
+
+  body.admin-mobile-density-active .admin-sidebar__section {
+    gap: 3px;
+  }
+
+  body.admin-mobile-density-active .admin-sidebar__section-toggle,
+  body.admin-mobile-density-active .admin-sidebar__link {
+    min-height: 26px;
+    gap: 6px;
+    padding: 4px 7px;
+    border-radius: 6px;
+  }
+
+  body.admin-mobile-density-active .admin-sidebar__icon {
+    width: 18px;
+    height: 18px;
+    flex-basis: 18px;
+    border-radius: 5px;
+    font-size: 8px;
+  }
+
+  body.admin-mobile-density-active .admin-sidebar__section-links {
+    gap: 2px;
+  }
+
+  body.admin-mobile-density-active .admin-sidebar__label,
+  body.admin-mobile-density-active .admin-sidebar__section-title-text {
+    font-size: 9px;
+    line-height: 1.18;
+  }
+
+  body.admin-mobile-density-active .admin-sidebar__chevron {
+    width: 6px;
+    height: 6px;
+    border-width: 1.5px;
+  }
+
+  body.admin-mobile-density-active .admin-sidebar__environment {
+    gap: 5px;
+    margin-top: 8px;
+    padding: 6px 7px;
+    border-radius: 6px;
+  }
+
+  body.admin-mobile-density-active .admin-sidebar__account {
+    gap: 6px;
+    padding: 10px 3px 2px;
+  }
+
+  body.admin-mobile-density-active .admin-sidebar__account-name {
+    padding: 0 6px;
+  }
+
+  body.admin-mobile-density-active .admin-sidebar__account button {
+    min-height: 28px;
+    gap: 5px;
+    padding: 4px 8px;
+    border-radius: 6px;
+  }
+
+  body.admin-mobile-density-active .admin-sidebar__collapse-button {
+    width: 28px;
+    height: 28px;
+    flex-basis: 28px;
+    border-radius: 6px;
+  }
+
+  body.admin-mobile-density-active .admin-sidebar__collapse-button span {
+    width: 7px;
+    height: 7px;
+  }
+
+  .transport-request-mobile-filter-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 28px;
+    width: 100%;
+    border: 1px solid #cbd5e1;
+    border-radius: 7px;
+    background: #ffffff;
+    color: #334155;
+    font-size: 10px;
+    font-weight: 700;
+  }
+
+  .transport-request-filter-panel .transport-request-filter-row {
+    gap: 8px;
+  }
+
+  .transport-request-filter-panel .transport-request-filter-row--primary,
+  .transport-request-filter-panel .transport-request-filter-row--controls {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .transport-request-filter-panel .transport-request-filter-row--primary .field:first-child,
+  .transport-request-filter-panel .transport-request-filter-row--controls .filter-actions {
+    grid-column: 1 / -1;
+  }
+
+  .transport-request-filter-panel .transport-request-filter-row--secondary {
+    display: none;
+  }
+
+  .transport-request-filter-panel.is-mobile-filter-expanded .transport-request-filter-row--secondary {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .transport-request-filter-panel__actions {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .transport-groups-view .admin-table,
+  .storage-all-orders-view .admin-table,
+  .storage-orders-view:not(.storage-all-orders-view) .admin-table {
+    table-layout: fixed;
+  }
+
+  .transport-groups-view .admin-table {
+    min-width: 760px;
+  }
+
+  .storage-all-orders-view .admin-table {
+    min-width: 900px;
+  }
+
+  .storage-orders-view:not(.storage-all-orders-view) .admin-table {
+    min-width: 840px;
+  }
+
+  .storage-orders-view.storage-orders-view--box .admin-table {
+    min-width: 920px;
+  }
+
+  .storage-today-work-orders-view .today-work-filter-panel {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+  }
+
+  .storage-today-work-orders-view .today-work-summary {
+    font-size: 10px;
+  }
+
+  .storage-today-work-orders-view .today-work-table {
+    min-width: 1280px;
+  }
+
+  .storage-today-work-orders-view .today-work-table th,
+  .storage-today-work-orders-view .today-work-table td {
+    padding: 5px 6px;
+    font-size: 9px;
+    line-height: 1.25;
+  }
+
+  .storage-today-work-orders-view .remark-editor textarea {
+    min-height: 34px;
+    font-size: 8px;
+  }
+}
+
+@media (min-width: 769px) {
+  .transport-request-mobile-filter-toggle {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .admin-mobile-density .dashboard-view,
+  .admin-mobile-density .orders-view,
+  .admin-mobile-density .users-view,
+  .admin-mobile-density .memberships-view,
+  .admin-mobile-density .community-view,
+  .admin-mobile-density .managers-view,
+  .admin-mobile-density .transport-requests-view,
+  .admin-mobile-density .transport-groups-view,
+  .admin-mobile-density .storage-all-orders-view,
+  .admin-mobile-density .storage-orders-view,
+  .admin-mobile-density .storage-today-work-orders-view,
+  .admin-mobile-density .storage-sync-logs-view,
+  .admin-mobile-density .postage-orders-view {
+    font-size: 9px;
+  }
+
+  .admin-mobile-density .dashboard-view .dashboard-hero,
+  .admin-mobile-density .orders-view .view-heading,
+  .admin-mobile-density .users-view .view-heading,
+  .admin-mobile-density .memberships-view .view-heading,
+  .admin-mobile-density .community-view .view-heading,
+  .admin-mobile-density .managers-view .view-heading,
+  .admin-mobile-density .transport-requests-view .view-heading,
+  .admin-mobile-density .transport-groups-view .view-heading,
+  .admin-mobile-density .storage-all-orders-view .view-heading,
+  .admin-mobile-density .storage-orders-view .view-heading,
+  .admin-mobile-density .storage-today-work-orders-view .view-heading,
+  .admin-mobile-density .storage-sync-logs-view .view-heading,
+  .admin-mobile-density .postage-orders-view .view-heading {
+    align-items: flex-start;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+
+  .admin-mobile-density .orders-view .view-heading h2,
+  .admin-mobile-density .users-view .view-heading h2,
+  .admin-mobile-density .memberships-view .view-heading h2,
+  .admin-mobile-density .community-view .view-heading h2,
+  .admin-mobile-density .managers-view .view-heading h2,
+  .admin-mobile-density .transport-requests-view .view-heading h2,
+  .admin-mobile-density .transport-groups-view .view-heading h2,
+  .admin-mobile-density .storage-all-orders-view .view-heading h2,
+  .admin-mobile-density .storage-orders-view .view-heading h2,
+  .admin-mobile-density .storage-today-work-orders-view .view-heading h2,
+  .admin-mobile-density .storage-sync-logs-view .view-heading h2,
+  .admin-mobile-density .postage-orders-view .view-heading h2 {
+    font-size: 15px;
+    line-height: 1.2;
+  }
+
+  .admin-mobile-density .dashboard-view .dashboard-hero h2 {
+    font-size: 17px;
+    line-height: 1.18;
+  }
+
+  .admin-mobile-density .dashboard-view .dashboard-hero p,
+  .admin-mobile-density .orders-view .view-heading p,
+  .admin-mobile-density .users-view .view-heading p,
+  .admin-mobile-density .memberships-view .view-heading p,
+  .admin-mobile-density .community-view .view-heading p,
+  .admin-mobile-density .managers-view .view-heading p,
+  .admin-mobile-density .transport-requests-view .view-heading p,
+  .admin-mobile-density .transport-groups-view .view-heading p,
+  .admin-mobile-density .storage-all-orders-view .view-heading p,
+  .admin-mobile-density .storage-orders-view .view-heading p,
+  .admin-mobile-density .storage-today-work-orders-view .view-heading p,
+  .admin-mobile-density .storage-sync-logs-view .view-heading p,
+  .admin-mobile-density .postage-orders-view .view-heading p,
+  .admin-mobile-density .section-heading p,
+  .admin-mobile-density .inline-notice,
+  .admin-mobile-density .active-filter-banner {
+    font-size: 8px;
+    line-height: 1.28;
+  }
+
+  .admin-mobile-density .dashboard-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .admin-mobile-density .dashboard-kpi-card {
+    min-height: 66px;
+    gap: 6px;
+    padding: 8px;
+  }
+
+  .admin-mobile-density .dashboard-kpi-card__icon {
+    width: 26px;
+    height: 26px;
+    flex-basis: 26px;
+    font-size: 9px;
+  }
+
+  .admin-mobile-density .dashboard-kpi-card p {
+    font-size: 8px;
+  }
+
+  .admin-mobile-density .dashboard-kpi-card strong {
+    margin-top: 3px;
+    font-size: 16px;
+  }
+
+  .admin-mobile-density .dashboard-kpi-card small,
+  .admin-mobile-density .dashboard-cache-note {
+    font-size: 7px;
+    line-height: 1.25;
+  }
+
+  .admin-mobile-density .dashboard-panel-grid,
+  .admin-mobile-density .dashboard-panel-grid--charts {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .admin-mobile-density .dashboard-panel {
+    padding: 8px;
+  }
+
+  .admin-mobile-density .dashboard-panel__heading h3,
+  .admin-mobile-density .section-heading h3 {
+    font-size: 12px;
+    line-height: 1.22;
+  }
+
+  .admin-mobile-density .dashboard-trend-chart {
+    height: 126px;
+  }
+
+  .admin-mobile-density .dashboard-chart-legend,
+  .admin-mobile-density .dashboard-status-list li {
+    gap: 5px;
+    font-size: 8px;
+  }
+
+  .admin-mobile-density .dashboard-donut-wrap {
+    grid-template-columns: 82px minmax(0, 1fr);
+    min-height: 108px;
+  }
+
+  .admin-mobile-density .dashboard-donut {
+    width: 82px;
+    height: 82px;
+  }
+
+  .admin-mobile-density .dashboard-donut::after {
+    inset: 21px;
+  }
+
+  .admin-mobile-density .dashboard-donut span,
+  .admin-mobile-density .dashboard-risk-card strong {
+    font-size: 14px;
+  }
+
+  .admin-mobile-density .dashboard-task-row,
+  .admin-mobile-density .dashboard-risk-card,
+  .admin-mobile-density .dashboard-quick-links a {
+    min-height: 27px;
+    gap: 5px;
+    padding: 6px 7px;
+    font-size: 8px;
+  }
+
+  .admin-mobile-density .dashboard-task-row strong,
+  .admin-mobile-density .dashboard-risk-card span {
+    font-size: 9px;
+  }
+
+  .admin-mobile-density .dashboard-log-table {
+    min-width: 620px;
+  }
+
+  .admin-mobile-density .dashboard-log-table th,
+  .admin-mobile-density .dashboard-log-table td {
+    padding: 5px 6px;
+    font-size: 8px;
+  }
+
+  .admin-mobile-density .orders-view .order-filter-panel,
+  .admin-mobile-density .users-view .admin-filter-panel,
+  .admin-mobile-density .memberships-view .membership-filter-panel,
+  .admin-mobile-density .memberships-view .membership-code-filter-panel,
+  .admin-mobile-density .community-view .community-filter-panel,
+  .admin-mobile-density .managers-view .manager-filter-panel,
+  .admin-mobile-density .transport-requests-view .transport-request-filter-panel,
+  .admin-mobile-density .transport-groups-view .transport-group-filter-panel,
+  .admin-mobile-density .storage-all-orders-view .storage-order-filter-panel,
+  .admin-mobile-density .storage-orders-view .storage-order-filter-panel,
+  .admin-mobile-density .storage-today-work-orders-view .today-work-filter-panel,
+  .admin-mobile-density .storage-sync-logs-view .sync-log-filter-panel,
+  .admin-mobile-density .postage-orders-view .postage-order-filter-panel {
+    gap: 6px;
+    margin-bottom: 8px;
+    padding: 8px;
+  }
+
+  .admin-mobile-density .orders-view .order-filter-panel,
+  .admin-mobile-density .users-view .admin-filter-panel,
+  .admin-mobile-density .community-view .community-filter-panel,
+  .admin-mobile-density .managers-view .manager-filter-panel,
+  .admin-mobile-density .transport-groups-view .transport-group-filter-row,
+  .admin-mobile-density .storage-orders-view .storage-order-filter-panel,
+  .admin-mobile-density .postage-orders-view .postage-order-filter-panel {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-mobile-density .orders-view .order-filter-panel > label:first-child,
+  .admin-mobile-density .users-view .admin-filter-panel > label:first-child,
+  .admin-mobile-density .community-view .community-filter-panel__search,
+  .admin-mobile-density .membership-filter-panel__search,
+  .admin-mobile-density .membership-code-filter-panel__search,
+  .admin-mobile-density .postage-order-filter-panel > label:first-child {
+    grid-column: 1 / -1;
+  }
+
+  .admin-mobile-density .orders-view .filter-actions,
+  .admin-mobile-density .users-view .filter-actions,
+  .admin-mobile-density .community-view .community-filter-panel__actions,
+  .admin-mobile-density .managers-view .filter-actions,
+  .admin-mobile-density .transport-groups-view .transport-group-filter-panel__actions,
+  .admin-mobile-density .storage-orders-view .storage-order-filter-panel__actions,
+  .admin-mobile-density .postage-orders-view .postage-order-filter-panel__actions {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 5px;
+  }
+
+  .admin-mobile-density .transport-groups-view .transport-group-filter-panel__actions,
+  .admin-mobile-density .storage-orders-view .storage-order-filter-panel__actions,
+  .admin-mobile-density .postage-orders-view .postage-order-filter-panel__actions {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .admin-mobile-density .field,
+  .admin-mobile-density .admin-filter-panel label,
+  .admin-mobile-density .storage-filter-button-group > span {
+    font-size: 8px;
+  }
+
+  .admin-mobile-density input,
+  .admin-mobile-density select,
+  .admin-mobile-density textarea,
+  .admin-mobile-density .storage-filter-chip {
+    min-height: 26px;
+    padding: 4px 6px;
+    font-size: 9px;
+  }
+
+  .admin-mobile-density .primary-button,
+  .admin-mobile-density .secondary-button,
+  .admin-mobile-density .filter-actions button,
+  .admin-mobile-density .view-heading__actions button,
+  .admin-mobile-density .storage-filter-chip,
+  .admin-mobile-density .storage-action-button--status,
+  .admin-mobile-density .storage-action-button--paid,
+  .admin-mobile-density .storage-action-button--unpaid {
+    min-height: 26px;
+    padding: 4px 7px;
+    font-size: 9px;
+  }
+
+  .admin-mobile-density .orders-bulk-toolbar,
+  .admin-mobile-density .storage-workbench-quick-filter-bar,
+  .admin-mobile-density .storage-workbench-bulk-toolbar,
+  .admin-mobile-density .transport-list-toolbar {
+    gap: 6px;
+    padding: 7px;
+  }
+
+  .admin-mobile-density .orders-bulk-toolbar__summary,
+  .admin-mobile-density .storage-workbench-bulk-toolbar,
+  .admin-mobile-density .transport-list-toolbar__summary {
+    font-size: 8px;
+  }
+
+  .admin-mobile-density .orders-bulk-toolbar__actions,
+  .admin-mobile-density .storage-workbench-bulk-toolbar__actions,
+  .admin-mobile-density .transport-list-toolbar__actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .admin-mobile-density .admin-section-panel {
+    gap: 8px;
+    padding: 8px;
+  }
+
+  .admin-mobile-density .admin-table-wrap {
+    margin-inline: 0;
+    max-width: 100%;
+  }
+
+  .admin-mobile-density .admin-table th,
+  .admin-mobile-density .admin-table td {
+    padding: 5px 6px;
+    font-size: 8px;
+    line-height: 1.24;
+  }
+
+  .admin-mobile-density .admin-table th {
+    font-size: 7px;
+  }
+
+  .admin-mobile-density .admin-table .cell-truncate,
+  .admin-mobile-density .admin-table .cell-stack,
+  .admin-mobile-density .admin-table .cell-stack strong {
+    font-size: 8px;
+    line-height: 1.24;
+  }
+
+  .admin-mobile-density .admin-table .cell-stack small,
+  .admin-mobile-density .membership-last-operation,
+  .admin-mobile-density .membership-last-operation span {
+    font-size: 7px;
+    line-height: 1.22;
+  }
+
+  .admin-mobile-density .status-badge,
+  .admin-mobile-density .offline-recorded-toggle,
+  .admin-mobile-density .table-sort-button,
+  .admin-mobile-density .table-action-button {
+    min-height: 19px;
+    padding: 2px 5px;
+    font-size: 7px;
+    line-height: 1.15;
+  }
+
+  .admin-mobile-density .table-action-group,
+  .admin-mobile-density .table-action-group--compact {
+    gap: 3px;
+  }
+
+  .admin-mobile-density .orders-view .admin-table {
+    min-width: 1040px;
+  }
+
+  .admin-mobile-density .users-view .admin-table,
+  .admin-mobile-density .community-view .admin-table,
+  .admin-mobile-density .managers-view .admin-table,
+  .admin-mobile-density .transport-groups-view .admin-table {
+    min-width: 720px;
+  }
+
+  .admin-mobile-density .memberships-view .admin-table {
+    min-width: 820px;
+  }
+
+  .admin-mobile-density .transport-requests-view .admin-table {
+    min-width: 1180px;
+  }
+
+  .admin-mobile-density .storage-all-orders-view .admin-table,
+  .admin-mobile-density .storage-orders-view .admin-table,
+  .admin-mobile-density .postage-orders-view .admin-table {
+    min-width: 860px;
+  }
+
+  .admin-mobile-density .storage-workbench-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .admin-mobile-density .storage-stat-card {
+    min-height: 48px;
+    padding: 7px 8px;
+  }
+
+  .admin-mobile-density .storage-stat-card span {
+    font-size: 8px;
+  }
+
+  .admin-mobile-density .storage-stat-card strong {
+    font-size: 15px;
+  }
+
+  .admin-mobile-density .pagination {
+    gap: 5px;
+    font-size: 8px;
+  }
+
+  .admin-mobile-density .pagination button {
+    min-height: 24px;
+    padding: 3px 6px;
+    font-size: 8px;
+  }
+}
+

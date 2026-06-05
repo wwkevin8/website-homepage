@@ -1,8 +1,17 @@
 <script setup>
+import { onMounted, onUnmounted } from "vue";
 import AppSidebar from "@/components/AppSidebar.vue";
 import { useUiStore } from "@/stores/ui";
 
 const uiStore = useUiStore();
+
+onMounted(() => {
+  document.body.classList.add("admin-mobile-density-active");
+});
+
+onUnmounted(() => {
+  document.body.classList.remove("admin-mobile-density-active");
+});
 </script>
 
 <template>
@@ -31,7 +40,7 @@ const uiStore = useUiStore();
     ></button>
     <AppSidebar />
     <div class="admin-shell__body">
-      <main class="admin-shell__main">
+      <main class="admin-shell__main admin-mobile-density">
         <RouterView />
       </main>
     </div>
