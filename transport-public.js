@@ -809,6 +809,18 @@
     const form = modal.querySelector("#pickupJoinForm");
     const evaluationNode = modal.querySelector("#pickupJoinEvaluation");
     const previewButton = modal.querySelector("#pickupJoinPreviewButton");
+    const submitButton = form?.querySelector('button[type="submit"]');
+    const submitButtonIdleText = submitButton?.textContent || "确认加入拼车";
+    let submitInFlight = false;
+
+    function setSubmitLoading(isLoading) {
+      submitInFlight = isLoading;
+      if (!submitButton) {
+        return;
+      }
+      submitButton.disabled = isLoading;
+      submitButton.textContent = isLoading ? "提交中，请稍候..." : submitButtonIdleText;
+    }
 
     previewButton.addEventListener("click", async () => {
       try {
@@ -821,12 +833,20 @@
 
     form.addEventListener("submit", async event => {
       event.preventDefault();
+      if (submitInFlight) {
+        return;
+      }
+      setSubmitLoading(true);
+      if (evaluationNode) {
+        evaluationNode.innerHTML = "<p>正在提交，请勿重复点击。</p>";
+      }
       try {
         const payload = serializeJoinForm(form);
         const existingRequests = await listMyFutureTransportRequests();
         const promptText = buildFutureOrderPrompt(payload.service_type, existingRequests);
         if (promptText && !window.confirm(promptText)) {
           renderEvaluation(evaluationNode, "已取消提交。", true);
+          setSubmitLoading(false);
           return;
         }
         const result = await Api.submitJoinPickup(payload);
@@ -853,6 +873,7 @@
         content.innerHTML = buildJoinSuccessView(summary);
       } catch (error) {
         renderEvaluation(evaluationNode, error.message, true);
+        setSubmitLoading(false);
       }
     });
   }
