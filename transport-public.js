@@ -10,6 +10,7 @@
   const DEFAULT_PREVIEW_SIZE = 9;
   const MODAL_ID = "pickupJoinModal";
   const CUSTOMER_SERVICE_QR_SRC = "./img/pickup-service-qr.jpg";
+  const UK_TIME_NOTICE_HTML = '<p class="pickup-join-grid-wide pickup-join-field-hint" style="margin: 2px 0 8px 18px; color: #d92d20; font-weight: 600; background: linear-gradient(90deg, #e11d48, #f97316, #eab308, #22c55e, #06b6d4, #3b82f6, #8b5cf6); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">时间请统一填写英国当地时间。系统默认按英国时间保存和显示，请不要填写中国时间；如填写中国时间可能会导致接送机安排错误。</p>';
   const detailCache = new Map();
 
   function normalizeResponse(payload) {
@@ -314,6 +315,7 @@
           <h3>你的加入信息</h3>
           <label><span>航班号</span><input name="flight_no" required></label>
           <label><span>${Shared.escapeHtml(timingLabel)}</span><input name="flight_datetime" type="datetime-local" required></label>
+          ${UK_TIME_NOTICE_HTML}
           <label><span>机场代码</span><input name="airport_code" value="${Shared.escapeHtml(item.airport_code || "")}" required></label>
           <label><span>机场名称</span><input name="airport_name" value="${Shared.escapeHtml(getAirportLabel(item))}" required></label>
           <label><span>航站楼</span><input name="terminal" value="${Shared.escapeHtml(item.terminal || "")}"></label>
@@ -517,6 +519,7 @@
             <span>接送期望时间</span>
             <input name="preferred_time_start" value="${Shared.escapeHtml(fixedPreferredTime)}" readonly>
           </label>
+          ${UK_TIME_NOTICE_HTML}
           <label>
             <span>拼车截至日期</span>
             <input name="deadline_date" value="${Shared.escapeHtml(deadlineDate)}" readonly>

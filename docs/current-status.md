@@ -3,6 +3,12 @@
 ## Latest Task Update
 
 - Date: 2026-07-08
+- Scope: Added the UK-time warning to the public "join carpool" modal. This changed only `transport-public.js` display copy plus this status note. No database schema, API, admin logic, submit payload shape, validation rules, existing order data, automatic timezone conversion, email behavior, or production data was changed.
+- Summary: The join-carpool form now shows the same UK-time warning near its time fields, including the full text telling customers to fill UK local time and not China time. The warning uses the current rainbow text treatment and slight right shift so it matches the public pickup form notice.
+- Verification: Static inspection confirmed the warning was added to both join form templates and the existing time field names remain unchanged.
+- Open risks / follow-up: Run the release checks and production verification before considering the modal copy live.
+
+- Date: 2026-07-08
 - Scope: Adjusted the public pickup/dropoff form UK-time notice presentation again. This changed only the existing `pickup-form.html` warning paragraph plus this status note. No database schema, API, admin logic, JavaScript submit/validation logic, existing order data, automatic timezone conversion, email behavior, or production data was changed.
 - Summary: The UK-time warning near the flight/service time fields now uses a rainbow gradient text treatment and is shifted slightly to the right while keeping the previous upward position and bottom spacing.
 - Release: GitHub commit `b89ee19` (`fix: use rainbow UK time notice`) was pushed to `origin/release/transport-storage-preflight`. Vercel production deployment `dpl_5YDGHj2Wpgv3SWNygdb7A8FnsxXF` is `READY` at `https://webside-5i353dotm-wwkevin8s-projects.vercel.app`, with aliases `https://ngn.best` and `https://www.ngn.best`.
