@@ -2,6 +2,13 @@
 
 ## Latest Task Update
 
+- Date: 2026-07-08
+- Scope: Implemented the minimal public pickup/dropoff form timezone copy update. This changed only the existing frontend hint text on `pickup-form.html` plus this status note. No database schema, API, admin logic, existing order data, email behavior, automatic timezone conversion, build output, deployment config, or production data was changed.
+- Summary: The public form's existing `.carpool-time-hint` under the `flight_datetime`, `preferred_time`, and `deadline_date` fields now clearly tells customers to enter UK local time and not China time: "时间请统一填写英国当地时间。系统默认按英国时间保存和显示，请不要填写中国时间；如填写中国时间可能会导致接送机安排错误。" The existing field names, input types, submit payload, validation, summary generation, and styling classes were left unchanged.
+- Release: Pending commit, push, and production deployment for this scoped copy-only change.
+- Verification: Static inspection confirmed `flight_datetime`, `preferred_time`, and `deadline_date` remain present with their original input types and that only the hint text changed in `pickup-form.html`. `node --check pickup-form.js` passed. Release-required checks must pass before production deployment.
+- Open risks / follow-up: Browser visual verification should confirm the longer hint wraps cleanly and remains visible near the time fields after deployment.
+
 - Date: 2026-06-05
 - Scope: Investigated the recurring 2.0 NGN admin transport groups empty-list issue and added a source-level regression guard. This work touched only the Vue admin transport-group list API source already fixed in the hotfix branch, `scripts/regression-check.js`, and this status file. No driver-side work, database change, API behavior change, public page change, email/payment change, or unrelated local dirty work was included.
 - Summary: Root cause is release-line drift, not missing production data. The previous fix commit `b2bf2c3` changed `apps/admin-vue/src/api/admin-api.js` and deployed a corrected admin bundle, but it lived only on `origin/codex/hotfix-admin-groups-list`; `origin/release/transport-storage-preflight` still had `fetchTransportGroups()` requesting `/api/transport-groups?...`. Any later production deployment from the release branch would rebuild the old source and reintroduce the broken list request. The true Vue admin source is `apps/admin-vue/src/api/admin-api.js`; `admin/assets/index-*.js` is only build output. The Vue admin list must use `/api/admin/transport-groups`; detail/update/delete/member-save stay on `/api/transport-groups/:id` and `/api/transport-groups/:id/members`.
