@@ -3,6 +3,12 @@
 ## Latest Task Update
 
 - Date: 2026-07-08
+- Scope: Adjusted the public pickup/dropoff form UK-time notice presentation. This changed only the existing `pickup-form.html` warning paragraph plus this status note. No database schema, API, admin logic, JavaScript submit/validation logic, existing order data, automatic timezone conversion, email behavior, or production data was changed.
+- Summary: The UK-time warning near the flight/service time fields is now red, slightly bolder, moved upward, and given bottom spacing so it no longer visually crowds the following "同行人数" block.
+- Verification: Static inspection confirmed the change is limited to the existing `.carpool-time-hint` paragraph style and text position; the time field names and input types remain unchanged.
+- Open risks / follow-up: Complete the normal release checks and production visual verification before marking this visual polish live.
+
+- Date: 2026-07-08
 - Scope: Implemented the minimal public pickup/dropoff form timezone copy update. This changed only the existing frontend hint text on `pickup-form.html` plus this status note. No database schema, API, admin logic, existing order data, email behavior, automatic timezone conversion, build output, deployment config, or production data was changed.
 - Summary: The public form's existing `.carpool-time-hint` under the `flight_datetime`, `preferred_time`, and `deadline_date` fields now clearly tells customers to enter UK local time and not China time: "时间请统一填写英国当地时间。系统默认按英国时间保存和显示，请不要填写中国时间；如填写中国时间可能会导致接送机安排错误。" The existing field names, input types, submit payload, validation, summary generation, and styling classes were left unchanged.
 - Release: GitHub commit `8593979efca0ba7ca8be20ab2fb176decb12c34c` (`fix: add UK time notice to public pickup form`) was pushed to `origin/release/transport-storage-preflight`. GitHub/Vercel auto deployment produced preview `dpl_5HKtF8dDMAEiEMvobvHKguYExHtc` at `https://webside-ddwyff2g8-wwkevin8s-projects.vercel.app`. Manual Vercel production deployment `dpl_DushHkJb55xs53WLrySFuPUDuYbk` is `READY` at `https://webside-b3k71pemi-wwkevin8s-projects.vercel.app`, with aliases `https://ngn.best` and `https://www.ngn.best`.
