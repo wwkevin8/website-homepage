@@ -54,23 +54,16 @@
     return input?.parentElement?.textContent?.trim() || "";
   }
 
-  function formatDateTime(value) {
+  function formatDateTimeLocalText(value) {
     if (!value) {
       return "-";
     }
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) {
-      return value;
+    const match = String(value).trim().match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+    if (!match) {
+      return String(value);
     }
-    return new Intl.DateTimeFormat("zh-CN", {
-      timeZone: "Europe/London",
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false
-    }).format(date);
+    const [, year, month, day, hour, minute] = match;
+    return `${year}/${month}/${day} ${hour}:${minute}`;
   }
 
   function getLondonDateParts(date = new Date()) {
@@ -225,8 +218,8 @@
       `机场: ${data.airport_name}`,
       `航站楼: ${data.terminal}`,
       `航班号: ${data.flight_no}`,
-      `航班时间: ${formatDateTime(data.flight_datetime)}`,
-      `期望时间: ${formatDateTime(data.preferred_time)}`,
+      `航班时间: ${formatDateTimeLocalText(data.flight_datetime)}`,
+      `期望时间: ${formatDateTimeLocalText(data.preferred_time)}`,
       `同行人数: ${data.passenger_count_label}`,
       `截止日期: ${data.deadline_date || "-"}`,
       `行李: ${data.luggage_text}`,

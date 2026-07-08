@@ -413,6 +413,18 @@
     return dateTimeValue ? dateTimeValue.slice(0, 10) : "";
   }
 
+  function formatDateTimeLocalText(value) {
+    if (!value) {
+      return "--";
+    }
+    const match = String(value).trim().match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+    if (!match) {
+      return String(value);
+    }
+    const [, year, month, day, hour, minute] = match;
+    return `${year}/${month}/${day} ${hour}:${minute}`;
+  }
+
   function getJoinReferenceDateTime(item) {
     return item?.preferred_time_start || item?.flight_time_reference || item?.flight_datetime || "";
   }
@@ -864,8 +876,8 @@
           airportName: airportLabel,
           terminal: payload.terminal || terminalLabel,
           flightNo: payload.flight_no,
-          flightDatetimeText: Shared.formatDateTime(payload.flight_datetime),
-          preferredTimeText: Shared.formatDateTime(payload.preferred_time_start || referenceDateTime),
+          flightDatetimeText: formatDateTimeLocalText(payload.flight_datetime),
+          preferredTimeText: formatDateTimeLocalText(payload.preferred_time_start || referenceDateTime),
           deadlineDate: deadlineDate || "--",
           passengerCount: 1,
           luggageCount: payload.luggage_count,

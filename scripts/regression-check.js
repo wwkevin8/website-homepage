@@ -149,6 +149,43 @@ function checkTransportGroups() {
   expectNotRegex(lifecycle, /distance\s*>\s*MAX_TIME_ADJUST_CANDIDATE_HOURS\)\s*\{\s*throw buildTransportLifecycleError\("target group time is outside the allowed window"/, "backend transfer no longer hard-blocks large time gaps");
 }
 
+function formatDateTimeLocalTextForRegression(value) {
+  if (!value) {
+    return "--";
+  }
+  const match = String(value).trim().match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+  if (!match) {
+    return String(value);
+  }
+  const [, year, month, day, hour, minute] = match;
+  return `${year}/${month}/${day} ${hour}:${minute}`;
+}
+
+function checkPublicSubmissionSummaryDateTimes() {
+  const pickupForm = "pickup-form.js";
+  const transportPublic = "transport-public.js";
+
+  expectIncludes(pickupForm, "function formatDateTimeLocalText(value)", "pickup summary has local datetime text formatter");
+  expectIncludes(pickupForm, "`航班时间: ${formatDateTimeLocalText(data.flight_datetime)}`", "pickup summary flight time uses raw datetime-local text");
+  expectIncludes(pickupForm, "`期望时间: ${formatDateTimeLocalText(data.preferred_time)}`", "pickup summary preferred time uses raw datetime-local text");
+  expectNotRegex(pickupForm, /航班时间:\s*\$\{formatDateTime\(data\.flight_datetime\)\}/, "pickup summary flight time avoids timezone formatter");
+  expectNotRegex(pickupForm, /期望时间:\s*\$\{formatDateTime\(data\.preferred_time\)\}/, "pickup summary preferred time avoids timezone formatter");
+
+  expectIncludes(transportPublic, "function formatDateTimeLocalText(value)", "join summary has local datetime text formatter");
+  expectIncludes(transportPublic, "flightDatetimeText: formatDateTimeLocalText(payload.flight_datetime)", "join summary flight time uses raw datetime-local text");
+  expectIncludes(transportPublic, "preferredTimeText: formatDateTimeLocalText(payload.preferred_time_start || referenceDateTime)", "join summary preferred time uses raw datetime-local text");
+  expectNotRegex(transportPublic, /Shared\.formatDateTime\(payload\.flight_datetime\)/, "join summary flight time avoids shared timezone formatter");
+  expectNotRegex(transportPublic, /Shared\.formatDateTime\(payload\.preferred_time_start\s*\|\|\s*referenceDateTime\)/, "join summary preferred time avoids shared timezone formatter");
+
+  const sampleFlight = formatDateTimeLocalTextForRegression("2026-09-18T19:30");
+  const samplePreferred = formatDateTimeLocalTextForRegression("2026-09-18T21:00");
+  if (sampleFlight === "2026/09/18 19:30" && samplePreferred === "2026/09/18 21:00") {
+    pass("datetime-local summary samples keep the customer-entered wall time");
+  } else {
+    fail("datetime-local summary samples keep the customer-entered wall time", `${sampleFlight}, ${samplePreferred}`);
+  }
+}
+
 function checkStorageWorkbench() {
   const list = "apps/admin-vue/src/views/StorageAllOrdersView.vue";
   const detail = "apps/admin-vue/src/views/StorageOrderDetailView.vue";
@@ -216,6 +253,7 @@ function main() {
   checkLegacyEntrypoints();
   checkTransportRequests();
   checkTransportGroups();
+  checkPublicSubmissionSummaryDateTimes();
   checkStorageWorkbench();
   checkLocalOnlyScripts();
 
