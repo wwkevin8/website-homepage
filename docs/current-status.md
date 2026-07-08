@@ -3,6 +3,12 @@
 ## Latest Task Update
 
 - Date: 2026-07-08
+- Scope: Adjusted the public pickup/dropoff form UK-time notice presentation again. This changed only the existing `pickup-form.html` warning paragraph plus this status note. No database schema, API, admin logic, JavaScript submit/validation logic, existing order data, automatic timezone conversion, email behavior, or production data was changed.
+- Summary: The UK-time warning near the flight/service time fields now uses a rainbow gradient text treatment and is shifted slightly to the right while keeping the previous upward position and bottom spacing.
+- Verification: Static inspection confirmed the change is limited to the existing `.carpool-time-hint` paragraph style; the warning text, time field names, input types, submit payload, and validation logic remain unchanged.
+- Open risks / follow-up: Complete the normal release checks and production visual verification before marking this visual polish live.
+
+- Date: 2026-07-08
 - Scope: Adjusted the public pickup/dropoff form UK-time notice presentation. This changed only the existing `pickup-form.html` warning paragraph plus this status note. No database schema, API, admin logic, JavaScript submit/validation logic, existing order data, automatic timezone conversion, email behavior, or production data was changed.
 - Summary: The UK-time warning near the flight/service time fields is now red, slightly bolder, moved upward, and given bottom spacing so it no longer visually crowds the following "同行人数" block.
 - Release: GitHub commit `ac24b38` (`fix: highlight UK time notice`) was pushed to `origin/release/transport-storage-preflight`. Vercel production deployment `dpl_Ga6EhFDW96EZkh3VY4kpLk2RtLsp` is `READY` at `https://webside-ijy4xnye7-wwkevin8s-projects.vercel.app`, with aliases `https://ngn.best` and `https://www.ngn.best`.
