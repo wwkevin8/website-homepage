@@ -23,6 +23,42 @@
     return path;
   }
 
+  function setCarButtonState(button, label, isLoading) {
+    if (!button) {
+      return;
+    }
+    if (isLoading && !button.dataset.loadingMinWidth) {
+      button.dataset.loadingMinWidth = `${Math.ceil(button.getBoundingClientRect().width)}px`;
+      button.style.minWidth = button.dataset.loadingMinWidth;
+    } else if (!isLoading && button.dataset.loadingMinWidth) {
+      button.style.minWidth = "";
+      delete button.dataset.loadingMinWidth;
+    }
+    button.classList.toggle("button-is-loading", isLoading);
+    button.setAttribute("aria-busy", isLoading ? "true" : "false");
+    button.replaceChildren();
+
+    if (!isLoading) {
+      button.textContent = label;
+      return;
+    }
+
+    const content = document.createElement("span");
+    content.className = "button-loading-content";
+
+    const car = document.createElement("span");
+    car.className = "button-car-loader";
+    car.setAttribute("aria-hidden", "true");
+    car.innerHTML = '<span class="button-car-trail"></span><span class="button-car-body"></span><span class="button-car-wheel button-car-wheel-front"></span><span class="button-car-wheel button-car-wheel-back"></span>';
+
+    const text = document.createElement("span");
+    text.className = "button-loading-label";
+    text.textContent = label;
+
+    content.append(car, text);
+    button.append(content);
+  }
+
   async function renderPickupMembershipHint() {
     const hint = $("#pickupMembershipHint");
     if (!hint) {
@@ -588,14 +624,29 @@
 
     let latestSummary = "";
     let submissionLocked = false;
+    let submitInFlight = false;
     let timeConstraints = applyTimeConstraints(form);
+    const submitButton = form.querySelector('button[type="submit"]');
+    const submitButtonIdleText = submitButton?.textContent?.trim() || "提交";
 
     function unlockSubmission() {
       submissionLocked = false;
-      const submitButton = form.querySelector('button[type="submit"]');
+      if (submitInFlight) {
+        return;
+      }
       if (submitButton) {
         submitButton.disabled = false;
+        setCarButtonState(submitButton, submitButtonIdleText, false);
       }
+    }
+
+    function setSubmitLoading(isLoading) {
+      submitInFlight = isLoading;
+      if (!submitButton) {
+        return;
+      }
+      submitButton.disabled = isLoading || submissionLocked;
+      setCarButtonState(submitButton, isLoading ? "提交中..." : submitButtonIdleText, isLoading);
     }
 
     form.addEventListener("input", function () {
@@ -659,6 +710,10 @@
     form.addEventListener("submit", async function (event) {
       event.preventDefault();
       setMessage(messageNode, "", "");
+
+      if (submitInFlight) {
+        return;
+      }
 
       if (submissionLocked) {
         setMessage(messageNode, "这张表单已经提交成功了。如需重新提交，请先修改信息或刷新页面。", "error");
@@ -754,21 +809,20 @@
         ].join(" | ")
       };
 
+      setSubmitLoading(true);
+
       try {
         const existingRequests = await listMyFutureTransportRequests();
         const promptText = buildFutureOrderPrompt(payload.service_type, existingRequests);
         if (promptText && !window.confirm(promptText)) {
           setMessage(messageNode, "已取消提交。", "error");
+          setSubmitLoading(false);
           return;
         }
       } catch (error) {
         setMessage(messageNode, `提交前检查失败：${error.message}`, "error");
+        setSubmitLoading(false);
         return;
-      }
-
-      const submitButton = form.querySelector('button[type="submit"]');
-      if (submitButton) {
-        submitButton.disabled = true;
       }
 
       try {
@@ -804,9 +858,7 @@
         }
         openSummaryModal();
       } finally {
-        if (submitButton) {
-          submitButton.disabled = submissionLocked;
-        }
+        setSubmitLoading(false);
       }
     });
   });

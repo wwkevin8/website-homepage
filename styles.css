@@ -5387,6 +5387,126 @@ body.storage-receipt-open {
   transform: none;
 }
 
+.button.button-is-loading {
+  cursor: not-allowed;
+  opacity: 0.82;
+}
+
+.button-loading-content {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  white-space: nowrap;
+}
+
+.button-car-loader {
+  position: relative;
+  flex: 0 0 auto;
+  width: 30px;
+  height: 17px;
+  animation: buttonCarStart 1.1s ease-in-out infinite;
+}
+
+.button-car-body {
+  position: absolute;
+  left: 7px;
+  top: 5px;
+  width: 18px;
+  height: 8px;
+  border-radius: 7px 8px 4px 4px;
+  background: currentColor;
+  box-shadow: 3px -4px 0 -1px currentColor;
+}
+
+.button-car-body::before {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: -3px;
+  width: 7px;
+  height: 4px;
+  border-radius: 4px 4px 1px 1px;
+  background: rgba(255, 255, 255, 0.42);
+}
+
+.button-car-wheel {
+  position: absolute;
+  bottom: 1px;
+  width: 6px;
+  height: 6px;
+  border: 1px solid currentColor;
+  border-top-color: rgba(255, 255, 255, 0.45);
+  border-radius: 50%;
+  background: rgba(15, 34, 65, 0.18);
+  animation: buttonCarWheel 0.55s linear infinite;
+}
+
+.button-car-wheel-front {
+  right: 3px;
+}
+
+.button-car-wheel-back {
+  left: 9px;
+}
+
+.button-car-trail {
+  position: absolute;
+  left: 0;
+  top: 7px;
+  width: 12px;
+  height: 2px;
+  border-radius: 999px;
+  background: currentColor;
+  opacity: 0.72;
+  transform-origin: right center;
+  animation: buttonCarTrail 1.1s ease-in-out infinite;
+}
+
+@keyframes buttonCarStart {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  45% {
+    transform: translateX(3px);
+  }
+  65% {
+    transform: translateX(1px);
+  }
+}
+
+@keyframes buttonCarWheel {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes buttonCarTrail {
+  0%,
+  100% {
+    opacity: 0.18;
+    transform: scaleX(0.35);
+  }
+  42% {
+    opacity: 0.72;
+    transform: scaleX(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button-car-loader,
+  .button-car-wheel,
+  .button-car-trail {
+    animation: none;
+  }
+
+  .button-car-trail {
+    opacity: 0.35;
+    transform: scaleX(0.65);
+  }
+}
+
 .full-width {
   width: 100%;
 }

@@ -12,6 +12,42 @@
   const CUSTOMER_SERVICE_QR_SRC = "./img/pickup-service-qr.jpg";
   const detailCache = new Map();
 
+  function setCarButtonState(button, label, isLoading) {
+    if (!button) {
+      return;
+    }
+    if (isLoading && !button.dataset.loadingMinWidth) {
+      button.dataset.loadingMinWidth = `${Math.ceil(button.getBoundingClientRect().width)}px`;
+      button.style.minWidth = button.dataset.loadingMinWidth;
+    } else if (!isLoading && button.dataset.loadingMinWidth) {
+      button.style.minWidth = "";
+      delete button.dataset.loadingMinWidth;
+    }
+    button.classList.toggle("button-is-loading", isLoading);
+    button.setAttribute("aria-busy", isLoading ? "true" : "false");
+    button.replaceChildren();
+
+    if (!isLoading) {
+      button.textContent = label;
+      return;
+    }
+
+    const content = document.createElement("span");
+    content.className = "button-loading-content";
+
+    const car = document.createElement("span");
+    car.className = "button-car-loader";
+    car.setAttribute("aria-hidden", "true");
+    car.innerHTML = '<span class="button-car-trail"></span><span class="button-car-body"></span><span class="button-car-wheel button-car-wheel-front"></span><span class="button-car-wheel button-car-wheel-back"></span>';
+
+    const text = document.createElement("span");
+    text.className = "button-loading-label";
+    text.textContent = label;
+
+    content.append(car, text);
+    button.append(content);
+  }
+
   function normalizeResponse(payload) {
     return {
       items: Array.isArray(payload?.items) ? payload.items : [],
@@ -821,24 +857,61 @@
     const form = modal.querySelector("#pickupJoinForm");
     const evaluationNode = modal.querySelector("#pickupJoinEvaluation");
     const previewButton = modal.querySelector("#pickupJoinPreviewButton");
+    const submitButton = form?.querySelector('button[type="submit"]');
+    const previewButtonIdleText = previewButton?.textContent?.trim() || "检查是否可加入";
+    const submitButtonIdleText = submitButton?.textContent || "确认加入拼车";
+    let previewInFlight = false;
+    let submitInFlight = false;
+
+    function setPreviewLoading(isLoading) {
+      previewInFlight = isLoading;
+      if (!previewButton) {
+        return;
+      }
+      previewButton.disabled = isLoading;
+      setCarButtonState(previewButton, isLoading ? "检查中..." : previewButtonIdleText, isLoading);
+    }
+
+    function setSubmitLoading(isLoading) {
+      submitInFlight = isLoading;
+      if (!submitButton) {
+        return;
+      }
+      submitButton.disabled = isLoading;
+      setCarButtonState(submitButton, isLoading ? "加入中..." : submitButtonIdleText, isLoading);
+    }
 
     previewButton.addEventListener("click", async () => {
+      if (previewInFlight) {
+        return;
+      }
+      setPreviewLoading(true);
       try {
         const result = await Api.previewJoinPickup(serializeJoinForm(form));
         renderEvaluation(evaluationNode, result);
       } catch (error) {
         renderEvaluation(evaluationNode, error.message, true);
+      } finally {
+        setPreviewLoading(false);
       }
     });
 
     form.addEventListener("submit", async event => {
       event.preventDefault();
+      if (submitInFlight) {
+        return;
+      }
+      setSubmitLoading(true);
+      if (evaluationNode) {
+        evaluationNode.innerHTML = "<p>正在提交，请勿重复点击。</p>";
+      }
       try {
         const payload = serializeJoinForm(form);
         const existingRequests = await listMyFutureTransportRequests();
         const promptText = buildFutureOrderPrompt(payload.service_type, existingRequests);
         if (promptText && !window.confirm(promptText)) {
           renderEvaluation(evaluationNode, "已取消提交。", true);
+          setSubmitLoading(false);
           return;
         }
         const result = await Api.submitJoinPickup(payload);
@@ -865,6 +938,7 @@
         content.innerHTML = buildJoinSuccessView(summary);
       } catch (error) {
         renderEvaluation(evaluationNode, error.message, true);
+        setSubmitLoading(false);
       }
     });
   }
