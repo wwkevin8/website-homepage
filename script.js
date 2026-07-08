@@ -2217,7 +2217,6 @@ function buildStorageReadableMessage(summary, customerForm) {
 }
 
 const storageBookingDraftKey = "ngn-storage-booking-draft-v1";
-const storageDefaultBoxWeightKg = 21;
 
 function saveStorageBookingDraft(payload) {
   try {
@@ -2238,76 +2237,6 @@ function clearStorageBookingDraft() {
   try {
     window.sessionStorage.removeItem(storageBookingDraftKey);
   } catch (error) {}
-}
-
-function stripStorageClientMeta(payload) {
-  if (!payload || typeof payload !== "object") {
-    return {};
-  }
-  const { clientMeta, ...safePayload } = payload;
-  return safePayload;
-}
-
-function showStorageWeightConfirmDialog() {
-  return new Promise(resolve => {
-    const existingModal = document.querySelector("[data-storage-weight-confirm-modal]");
-    if (existingModal) {
-      existingModal.remove();
-    }
-
-    const modal = document.createElement("div");
-    modal.className = "storage-weight-confirm-modal";
-    modal.dataset.storageWeightConfirmModal = "true";
-    modal.setAttribute("role", "dialog");
-    modal.setAttribute("aria-modal", "true");
-    modal.setAttribute("aria-labelledby", "storageWeightConfirmTitle");
-    modal.innerHTML = `
-      <div class="storage-weight-confirm-backdrop"></div>
-      <div class="storage-weight-confirm-dialog">
-        <h2 id="storageWeightConfirmTitle">请确认最大重量</h2>
-        <p>当前最大重量使用默认值 21kg/箱。请确认每个箱子的实际最大重量无误。如实际重量超过 21kg，请返回修改，以免影响取件/搬运安排。</p>
-        <div class="storage-weight-confirm-actions">
-          <button class="button button-secondary" type="button" data-storage-weight-confirm-cancel>返回修改</button>
-          <button class="button button-primary" type="button" data-storage-weight-confirm-ok>确认无误，继续提交</button>
-        </div>
-      </div>
-    `;
-
-    const close = confirmed => {
-      document.removeEventListener("keydown", handleKeydown);
-      modal.remove();
-      document.body.classList.remove("storage-weight-confirm-open");
-      resolve(confirmed);
-    };
-
-    modal.querySelector("[data-storage-weight-confirm-cancel]")?.addEventListener("click", () => close(false));
-    modal.querySelector("[data-storage-weight-confirm-ok]")?.addEventListener("click", () => close(true));
-    modal.addEventListener("click", event => {
-      if (event.target === modal || event.target.classList.contains("storage-weight-confirm-backdrop")) {
-        close(false);
-      }
-    });
-    const handleKeydown = event => {
-      if (event.key === "Escape") {
-        close(false);
-      }
-    };
-    document.addEventListener("keydown", handleKeydown);
-    document.body.appendChild(modal);
-    document.body.classList.add("storage-weight-confirm-open");
-    modal.querySelector("[data-storage-weight-confirm-cancel]")?.focus();
-  });
-}
-
-async function confirmStorageDefaultWeightsIfNeeded(state) {
-  if (!state?.required || state.confirmed) {
-    return true;
-  }
-  const confirmed = await showStorageWeightConfirmDialog();
-  if (confirmed) {
-    state.confirmed = true;
-  }
-  return confirmed;
 }
 
 function isStorageLocalFileMode() {
@@ -2596,7 +2525,6 @@ function initStorageCalculator(activeLang) {
   const resultOtherCityText = document.querySelector("#resultOtherCityText");
   const resultBreakdownEmpty = document.querySelector("#resultBreakdownEmpty");
   const resultBreakdown = document.querySelector("#resultBreakdown");
-  const resultBreakdownCard = resultBreakdown?.closest(".result-breakdown-card");
   const bookingSummary = document.querySelector("#storageBookingSummary");
   const copyBookingSummaryButton = document.querySelector("#copyBookingSummaryButton");
   const goToStorageBookingButton = document.querySelector("#goToStorageBookingButton");
@@ -2648,8 +2576,7 @@ function initStorageCalculator(activeLang) {
       boxType: card.dataset.boxTypeCard || "1",
       storageQty: card.querySelector("[data-box-count]")?.value || "0",
       purchaseQty: card.querySelector("[data-box-purchase]")?.value || "0",
-      maxWeightKg: card.querySelector("[data-box-weight]")?.value || "",
-      maxWeightUserEdited: card.querySelector("[data-box-weight]")?.dataset.userEdited === "true"
+      maxWeightKg: card.querySelector("[data-box-weight]")?.value || ""
     }));
   }
 
@@ -2657,11 +2584,6 @@ function initStorageCalculator(activeLang) {
     const currentLang = form.dataset.lang || activeLang;
     const title = getBoxTypeTitle(boxType, currentLang);
     const canDelete = Number(boxType) > 1;
-    const maxWeightValue = values.maxWeightUserEdited
-      ? (values.maxWeightKg ?? "")
-      : values.maxWeightKg !== undefined && values.maxWeightKg !== null && values.maxWeightKg !== ""
-      ? values.maxWeightKg
-      : storageDefaultBoxWeightKg;
     return `
       <article class="box-type-card" data-box-type-card="${boxType}">
         <div class="box-type-card-head">
@@ -2679,7 +2601,7 @@ function initStorageCalculator(activeLang) {
           </label>
           <label class="mini-field">
             <span data-i18n="calcMaximumWeight">${translations[currentLang].calcMaximumWeight}</span>
-            <input id="boxWeight${boxType}" class="box-order-input" data-box-weight="${boxType}" ${values.maxWeightUserEdited ? 'data-user-edited="true"' : ""} type="number" min="0" max="99" step="1" value="${maxWeightValue}" inputmode="numeric">
+            <input id="boxWeight${boxType}" class="box-order-input" data-box-weight="${boxType}" type="number" min="0" max="99" step="1" value="${values.maxWeightKg || ""}" inputmode="numeric">
           </label>
         </div>
       </article>
@@ -2694,7 +2616,7 @@ function initStorageCalculator(activeLang) {
 
     const validBoxTypes = Object.keys(storageBoxCatalog);
     const seenBoxTypes = new Set();
-    const cards = (values.length ? values : [{ boxType: "1", storageQty: "0", purchaseQty: "0", maxWeightKg: "", maxWeightUserEdited: false }])
+    const cards = (values.length ? values : [{ boxType: "1", storageQty: "0", purchaseQty: "0", maxWeightKg: "" }])
       .map(value => ({
         ...value,
         boxType: validBoxTypes.includes(String(value.boxType || "")) ? String(value.boxType) : "1"
@@ -2833,18 +2755,12 @@ function initStorageCalculator(activeLang) {
       const storageQty = Math.max(0, boxCounts[boxType] || 0);
       const purchaseQty = Math.max(0, purchaseCounts[boxType] || 0);
       const rawValue = input.value.trim();
-      const wasDisabled = input.disabled;
 
       if (storageQty <= 0 && purchaseQty <= 0) {
-        if (!input.value.trim()) {
-          input.value = String(storageDefaultBoxWeightKg);
-        }
-        input.disabled = false;
+        input.value = "";
+        input.disabled = true;
         input.required = false;
-        if (input.value.trim() === String(storageDefaultBoxWeightKg) && input.dataset.userEdited !== "true") {
-          input.dataset.defaultValueActive = "true";
-        }
-        input.setAttribute("aria-disabled", "false");
+        input.setAttribute("aria-disabled", "true");
         input.setCustomValidity("");
         return;
       }
@@ -2854,13 +2770,10 @@ function initStorageCalculator(activeLang) {
       input.setAttribute("aria-disabled", "false");
 
       if (rawValue === "") {
-        if (wasDisabled && input.dataset.userEdited !== "true") {
-          input.value = String(storageDefaultBoxWeightKg);
-          input.dataset.defaultValueActive = "true";
-          input.setCustomValidity("");
-          return;
-        }
         input.setCustomValidity(translations[currentLang].calcWeightRequired);
+        if (showPrompt) {
+          input.reportValidity();
+        }
         return;
       }
 
@@ -2873,34 +2786,9 @@ function initStorageCalculator(activeLang) {
       }
 
       let boxWeight = Math.max(0, Math.floor(Number(rawValue) || 0));
-      if (boxWeight !== storageDefaultBoxWeightKg || input.dataset.userEdited === "true") {
-        delete input.dataset.defaultValueActive;
-      }
+      input.value = String(boxWeight);
       input.setCustomValidity("");
     });
-  }
-
-  function getWeightDefaultConfirmationState() {
-    const boxCounts = getBoxCounts();
-    const purchaseCounts = getPurchaseCounts();
-    const affectedBoxTypes = boxWeightInputs
-      .filter(input => (
-        !input.disabled
-        && (Math.max(0, boxCounts[input.dataset.boxWeight] || 0) > 0 || Math.max(0, purchaseCounts[input.dataset.boxWeight] || 0) > 0)
-        && input.value.trim() === String(storageDefaultBoxWeightKg)
-        && input.dataset.userEdited !== "true"
-      ))
-      .map(input => input.dataset.boxWeight)
-      .filter(Boolean);
-    return {
-      required: affectedBoxTypes.length > 0,
-      confirmed: false,
-      affectedBoxTypes
-    };
-  }
-
-  async function confirmDefaultWeightsIfNeeded(state = getWeightDefaultConfirmationState()) {
-    return confirmStorageDefaultWeightsIfNeeded(state);
   }
 
   function getBoxCounts() {
@@ -2937,6 +2825,7 @@ function initStorageCalculator(activeLang) {
       }
 
       let weight = Math.max(0, Math.floor(Number(input.value) || 0));
+      input.value = String(weight);
       accumulator[boxType] = weight;
       return accumulator;
     }, {});
@@ -3105,9 +2994,6 @@ function initStorageCalculator(activeLang) {
       preferredOrderType,
       serviceLabel: summary.serviceLabel,
       serviceFlags,
-      clientMeta: {
-        weightDefaultConfirmation: getWeightDefaultConfirmationState()
-      },
       calculatorSnapshot: {
         boxCounts: getBoxCounts(),
         purchaseCounts: getPurchaseCounts(),
@@ -3203,13 +3089,6 @@ function initStorageCalculator(activeLang) {
   function renderBreakdown(items, currentLang, emptyKey = "resultBreakdownEmpty") {
     if (!resultBreakdown || !resultBreakdownEmpty) {
       return;
-    }
-
-    if (resultBreakdownCard && !resultBreakdownCard.querySelector(".storage-weight-estimate-reminder")) {
-      const reminder = document.createElement("p");
-      reminder.className = "storage-weight-estimate-reminder";
-      reminder.textContent = "最大重量已默认按 21kg/箱估算，请根据实际情况核对并修改。如实际重量更高，请务必填写真实重量，避免现场产生超重费用或无法搬运。";
-      resultBreakdownCard.appendChild(reminder);
     }
 
     resultBreakdown.innerHTML = "";
@@ -3378,10 +3257,6 @@ function initStorageCalculator(activeLang) {
 
   function handleCalculatorInput(input) {
     refreshBoxInputs();
-    if (boxWeightInputs.includes(input)) {
-      input.dataset.userEdited = "true";
-      delete input.dataset.defaultValueActive;
-    }
     if (input === startDateInput || boxPurchaseInputs.includes(input)) {
       syncDateRange();
     }
@@ -3432,7 +3307,7 @@ function initStorageCalculator(activeLang) {
     if (values.some(value => value.boxType === boxType) || values.length >= maxBoxTypes) {
       return;
     }
-    values.push({ boxType, storageQty: "0", purchaseQty: "0", maxWeightKg: "", maxWeightUserEdited: false });
+    values.push({ boxType, storageQty: "0", purchaseQty: "0", maxWeightKg: "" });
     renderBoxTypeCards(values);
     renderEstimate();
   });
@@ -3447,7 +3322,7 @@ function initStorageCalculator(activeLang) {
       const currentCard = boxTypeCardList.querySelectorAll("[data-box-type-card]")[index];
       return currentCard !== card;
     });
-    renderBoxTypeCards(values.length ? values : [{ boxType: "1", storageQty: "0", purchaseQty: "0", maxWeightKg: "", maxWeightUserEdited: false }]);
+    renderBoxTypeCards(values.length ? values : [{ boxType: "1", storageQty: "0", purchaseQty: "0", maxWeightKg: "" }]);
     syncAppointmentFields();
     renderEstimate();
   });
@@ -3519,19 +3394,6 @@ function initStorageCalculator(activeLang) {
         window.alert(dateValidationMessage);
         return;
       }
-      const defaultWeightState = draft.clientMeta?.weightDefaultConfirmation || getWeightDefaultConfirmationState();
-      const defaultWeightConfirmed = await confirmStorageDefaultWeightsIfNeeded(defaultWeightState);
-      if (!defaultWeightConfirmed) {
-        setBookingFormMessage("请返回修改最大重量后再继续预约。");
-        return;
-      }
-      draft.clientMeta = {
-        ...(draft.clientMeta || {}),
-        weightDefaultConfirmation: {
-          ...defaultWeightState,
-          confirmed: true
-        }
-      };
     }
 
     if (preferredOrderType === "storage_return") {
@@ -3574,12 +3436,6 @@ function initStorageCalculator(activeLang) {
     const validationMessage = validateBookingForm(summary, customerForm);
     if (validationMessage) {
       setBookingFormMessage(validationMessage);
-      return;
-    }
-    const defaultWeightState = getWeightDefaultConfirmationState();
-    const defaultWeightConfirmed = await confirmDefaultWeightsIfNeeded(defaultWeightState);
-    if (!defaultWeightConfirmed) {
-      setBookingFormMessage("请返回修改最大重量后再继续提交。");
       return;
     }
 
@@ -4425,27 +4281,9 @@ function initStorageBookingPage() {
       setMessage(validationMessage);
       return;
     }
-    if (orderType === "storage_collection") {
-      const defaultWeightState = draft?.clientMeta?.weightDefaultConfirmation || { required: false, confirmed: false, affectedBoxTypes: [] };
-      const defaultWeightConfirmed = await confirmStorageDefaultWeightsIfNeeded(defaultWeightState);
-      if (!defaultWeightConfirmed) {
-        setMessage("请返回修改最大重量后再继续提交。");
-        return;
-      }
-      if (draft) {
-        draft.clientMeta = {
-          ...(draft.clientMeta || {}),
-          weightDefaultConfirmation: {
-            ...defaultWeightState,
-            confirmed: true
-          }
-        };
-        saveStorageBookingDraft(draft);
-      }
-    }
 
     const payload = {
-      ...stripStorageClientMeta(draft || {}),
+      ...(draft || {}),
       source: "storage_service_booking",
       orderType,
       serviceLabel: serviceLabels[orderType] || "寄存服务预约",
