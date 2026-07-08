@@ -13,6 +13,42 @@
   const UK_TIME_NOTICE_HTML = '<p class="pickup-join-grid-wide pickup-join-field-hint" style="margin: 2px 0 8px 18px; color: #d92d20; font-weight: 600; background: linear-gradient(90deg, #e11d48, #f97316, #eab308, #22c55e, #06b6d4, #3b82f6, #8b5cf6); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">时间请统一填写英国当地时间。系统默认按英国时间保存和显示，请不要填写中国时间；如填写中国时间可能会导致接送机安排错误。</p>';
   const detailCache = new Map();
 
+  function setCarButtonState(button, label, isLoading) {
+    if (!button) {
+      return;
+    }
+    if (isLoading && !button.dataset.loadingMinWidth) {
+      button.dataset.loadingMinWidth = `${Math.ceil(button.getBoundingClientRect().width)}px`;
+      button.style.minWidth = button.dataset.loadingMinWidth;
+    } else if (!isLoading && button.dataset.loadingMinWidth) {
+      button.style.minWidth = "";
+      delete button.dataset.loadingMinWidth;
+    }
+    button.classList.toggle("button-is-loading", isLoading);
+    button.setAttribute("aria-busy", isLoading ? "true" : "false");
+    button.replaceChildren();
+
+    if (!isLoading) {
+      button.textContent = label;
+      return;
+    }
+
+    const content = document.createElement("span");
+    content.className = "button-loading-content";
+
+    const car = document.createElement("span");
+    car.className = "button-car-loader";
+    car.setAttribute("aria-hidden", "true");
+    car.innerHTML = '<span class="button-car-trail"></span><span class="button-car-body"></span><span class="button-car-wheel button-car-wheel-front"></span><span class="button-car-wheel button-car-wheel-back"></span>';
+
+    const text = document.createElement("span");
+    text.className = "button-loading-label";
+    text.textContent = label;
+
+    content.append(car, text);
+    button.append(content);
+  }
+
   function normalizeResponse(payload) {
     return {
       items: Array.isArray(payload?.items) ? payload.items : [],
@@ -825,8 +861,19 @@
     const evaluationNode = modal.querySelector("#pickupJoinEvaluation");
     const previewButton = modal.querySelector("#pickupJoinPreviewButton");
     const submitButton = form?.querySelector('button[type="submit"]');
+    const previewButtonIdleText = previewButton?.textContent?.trim() || "检查是否可加入";
     const submitButtonIdleText = submitButton?.textContent || "确认加入拼车";
+    let previewInFlight = false;
     let submitInFlight = false;
+
+    function setPreviewLoading(isLoading) {
+      previewInFlight = isLoading;
+      if (!previewButton) {
+        return;
+      }
+      previewButton.disabled = isLoading;
+      setCarButtonState(previewButton, isLoading ? "检查中..." : previewButtonIdleText, isLoading);
+    }
 
     function setSubmitLoading(isLoading) {
       submitInFlight = isLoading;
@@ -834,15 +881,21 @@
         return;
       }
       submitButton.disabled = isLoading;
-      submitButton.textContent = isLoading ? "提交中，请稍候..." : submitButtonIdleText;
+      setCarButtonState(submitButton, isLoading ? "加入中..." : submitButtonIdleText, isLoading);
     }
 
     previewButton.addEventListener("click", async () => {
+      if (previewInFlight) {
+        return;
+      }
+      setPreviewLoading(true);
       try {
         const result = await Api.previewJoinPickup(serializeJoinForm(form));
         renderEvaluation(evaluationNode, result);
       } catch (error) {
         renderEvaluation(evaluationNode, error.message, true);
+      } finally {
+        setPreviewLoading(false);
       }
     });
 
