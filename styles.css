@@ -7410,6 +7410,18 @@ body.storage-receipt-open {
   font-size: 0.95rem;
 }
 
+.storage-weight-estimate-reminder {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  border-radius: 12px;
+  background: rgba(255, 249, 236, 0.82);
+  color: #8a4305;
+  font-size: 0.9rem;
+  font-weight: 650;
+  line-height: 1.65;
+}
+
 .calculator-section {
   position: relative;
 }
@@ -18476,6 +18488,64 @@ body.storage-receipt-open {
   font-size: 1rem;
   font-weight: 650;
   line-height: 1.8;
+}
+
+.storage-weight-confirm-open {
+  overflow: hidden;
+}
+
+.storage-weight-confirm-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+
+.storage-weight-confirm-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.48);
+  backdrop-filter: blur(6px);
+}
+
+.storage-weight-confirm-dialog {
+  position: relative;
+  z-index: 1;
+  width: min(460px, 100%);
+  padding: 24px;
+  border: 1px solid rgba(245, 158, 11, 0.22);
+  border-radius: 18px;
+  background: #fffaf3;
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.24);
+}
+
+.storage-weight-confirm-dialog h2 {
+  margin: 0;
+  color: #14213d;
+  font-size: 1.22rem;
+  font-weight: 900;
+}
+
+.storage-weight-confirm-dialog p {
+  margin: 12px 0 0;
+  color: #5f3b1b;
+  font-size: 0.98rem;
+  line-height: 1.75;
+}
+
+.storage-weight-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.storage-weight-confirm-actions .button {
+  width: auto;
+  min-height: 42px;
+  padding-inline: 16px;
 }
 
 .storage-weight-icon {
