@@ -3776,7 +3776,9 @@ async function handleMemberships(req, res, supabase, subAction = "") {
     return;
   }
 
-  if (subAction === "advisors") {
+  const membershipView = subAction || String(req.query?.view || "").trim();
+
+  if (membershipView === "advisors") {
     if (req.method !== "GET") {
       methodNotAllowed(res, ["GET"]);
       return;

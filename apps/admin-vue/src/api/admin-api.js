@@ -509,7 +509,7 @@ export function fetchMemberships(filters = {}) {
 }
 
 export function fetchMembershipAdvisors() {
-  return request("/api/admin/memberships/advisors");
+  return request("/api/admin/memberships?view=advisors");
 }
 
 export function grantMembership(payload = {}) {

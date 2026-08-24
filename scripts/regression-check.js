@@ -126,6 +126,8 @@ function checkTransportGroups() {
   expectIncludes(view, "paginate: true", "transport groups use paginated admin loading");
   expectIncludes(view, "normalizeServiceTimeSort(filters.sort)", "transport groups normalize client-side service-time sort");
   expectIncludes(adminVueApi, 'return request(`/api/admin/transport-groups${query ? `?${query}` : ""}`);', "Vue admin transport group list uses the admin aggregate API");
+  expectIncludes(adminVueApi, 'return request("/api/admin/memberships?view=advisors");', "membership advisor options use a Vercel-compatible single-level admin route");
+  expectNotRegex(adminVueApi, /request\("\/api\/admin\/memberships\/advisors"\)/, "membership advisor options do not use an unsupported nested aggregate route");
   expectNotRegex(adminVueApi, /fetchTransportGroups[\s\S]*?request\(`\/api\/transport-groups\$\{query/, "Vue admin transport group list does not use the broken direct list route");
   expectIncludes(api, "paginate", "transport groups API supports pagination");
   expectIncludes(api, '"farthest"', "transport groups API supports farthest service-time sort alias");
@@ -261,7 +263,8 @@ function checkTransportMembershipOwnershipFilter() {
   expectIncludes(listApi, "from(TRANSPORT_MEMBERSHIP_VIEW)", "transport list reads membership view");
   expectIncludes(exportApi, "from(TRANSPORT_MEMBERSHIP_VIEW)", "transport export reads membership view");
   expectNotRegex(listApi, /claims\.find\(row => row\.status === "selected"/, "transport list has no same-user unbound claim inference");
-  expectIncludes(adminApi, 'subAction === "advisors"', "advisor choices use authenticated admin membership route");
+  expectIncludes(adminApi, 'membershipView === "advisors"', "advisor choices use authenticated admin membership route");
+  expectIncludes(adminApi, 'req.query?.view', "advisor choices are dispatched through the single-level membership query route");
   expectIncludes(view, 'membershipCategory: ""', "membership category defaults and resets to all pickup orders");
   expectIncludes(filters, '<option value="">全部接机订单</option>', "membership selector includes all pickup orders");
   expectIncludes(filters, '<option value="linked">全部会员接机订单</option>', "membership selector includes all membership pickup orders");

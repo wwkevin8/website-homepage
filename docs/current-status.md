@@ -2,6 +2,12 @@
 
 ## Latest Task Update
 
+- Date: 2026-08-25
+- Scope: Fixed the Vercel-only 404 for the transport membership advisor option request in the isolated release worktree. The production application remains rolled back to the prior stable deployment; the already-applied read-only production membership view remains available. No production data or Supabase schema was changed by this fix.
+- Summary: The Vue client previously requested `/api/admin/memberships/advisors`. The local helper server explicitly routes every path beginning with `/api/admin/memberships` into `api/admin/[...action].js`, but the deployed Vercel filesystem route did not invoke that aggregate function for the extra path segment and returned a platform `404 NOT_FOUND`. Advisor options now use the stable single-level endpoint `/api/admin/memberships?view=advisors`; the authenticated membership handler dispatches that view without adding a new function or rewrite.
+- Verification: API/test syntax checks, the full regression guard, production Vue build, and `git diff --check` passed. The local-only authenticated membership release test queried the new endpoint through the real local HTTP chain, loaded dynamic active and disabled historical advisors, returned linked=10 / unlinked=2 / advisor=4 / needs-review=2, kept list/export IDs identical, and passed desktop 1440px plus mobile 390px no-overflow checks. Its fixed local fixture was cleaned automatically.
+- Open risks / follow-up: Deploy the committed fix to Vercel preview and confirm the single-level advisor request reaches the Serverless function before considering another production deployment. Do not redeploy production until preview authentication, dynamic advisor loading, filtering, and logs pass.
+
 - Date: 2026-08-24
 - Scope: Prepared and verified an isolated Git release candidate for the admin transport “会员接机归属” filter from `origin/release/transport-storage-preflight`, without carrying changes from the dirty primary worktree. No production database access, migration, or deployment has occurred.
 - Summary: Added an admin-only one-row-per-transport-request membership projection, shared list/export membership filtering, a minimal authenticated dynamic advisor endpoint, and one combined frontend selector containing all pickup orders, all membership pickup orders, combined needs-review, and advisor-specific membership pickup orders. Needs-review includes both unassigned and ambiguous linked orders; same-user unbound claims are not inferred.
