@@ -242,6 +242,40 @@ function checkStorageWorkbench() {
   expectIncludes(api, "applyStorageWorkbenchFilters", "storage workbench server-side filter guard exists");
 }
 
+function checkTransportMembershipOwnershipFilter() {
+  const migration = "supabase/migrations/20260824190000_admin_transport_requests_membership_view.sql";
+  const helperFile = "api/_lib/transport-membership-query.js";
+  const listApi = "api/transport-requests/index.js";
+  const exportApi = "api/transport-requests/export.js";
+  const adminApi = "api/admin/[...action].js";
+  const view = "apps/admin-vue/src/views/TransportRequestsView.vue";
+  const filters = "apps/admin-vue/src/components/TransportRequestFilters.vue";
+  const helper = require(path.join(root, helperFile));
+
+  expectIncludes(migration, "security_invoker = true", "transport membership view uses security invoker");
+  expectIncludes(migration, "security_barrier = true", "transport membership view uses security barrier");
+  expectIncludes(migration, "grant select on table public.admin_transport_requests_membership_view to service_role", "transport membership view grants only service-role read access");
+  expectIncludes(migration, "when count(*) = 1", "transport membership view resolves only one reverse claim");
+  expectIncludes(migration, "reverse_ambiguous", "transport membership view marks ambiguous reverse claims");
+  expectRegex(migration, /coalesce\(\s*entitlement\.advisor_admin_id,\s*entitlement\.created_by_admin_id,\s*entitlement\.granted_by_admin_id,\s*activation_code\.generated_by_admin_id\s*\)/, "transport membership advisor priority is strict");
+  expectIncludes(listApi, "from(TRANSPORT_MEMBERSHIP_VIEW)", "transport list reads membership view");
+  expectIncludes(exportApi, "from(TRANSPORT_MEMBERSHIP_VIEW)", "transport export reads membership view");
+  expectNotRegex(listApi, /claims\.find\(row => row\.status === "selected"/, "transport list has no same-user unbound claim inference");
+  expectIncludes(adminApi, 'subAction === "advisors"', "advisor choices use authenticated admin membership route");
+  expectIncludes(view, 'membershipCategory: ""', "membership category defaults and resets to all pickup orders");
+  expectIncludes(filters, '<option value="">全部接机订单</option>', "membership selector includes all pickup orders");
+  expectIncludes(filters, '<option value="linked">全部会员接机订单</option>', "membership selector includes all membership pickup orders");
+  expectIncludes(filters, '<option value="needs_review">需核查</option>', "membership selector includes combined review bucket");
+  expectNotRegex(filters, /<option value="unlinked">|<option value="unassigned">/, "membership selector hides unlinked and standalone unassigned choices");
+
+  const review = helper.normalizeTransportMembershipFilters({ membership_advisor_id: "needs_review" });
+  if (review.membershipRelation === "linked" && review.membershipAdvisorId === "needs_review") {
+    pass("needs-review forces linked membership relation");
+  } else {
+    fail("needs-review forces linked membership relation", JSON.stringify(review));
+  }
+}
+
 function checkLocalOnlyScripts() {
   const ignored = gitOutput(["check-ignore", "scripts/seed-storage-test-data.js", "scripts/clear-storage-test-data.js"]);
   const expected = [
@@ -279,6 +313,7 @@ function main() {
   checkTransportGroups();
   checkPublicSubmissionSummaryDateTimes();
   checkStorageWorkbench();
+  checkTransportMembershipOwnershipFilter();
   checkLocalOnlyScripts();
 
   if (warnings.length) {

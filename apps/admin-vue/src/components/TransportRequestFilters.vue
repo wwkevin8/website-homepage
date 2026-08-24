@@ -11,6 +11,14 @@ const props = defineProps({
     type: Array,
     default: () => []
   },
+  membershipAdvisorOptions: {
+    type: Array,
+    default: () => []
+  },
+  membershipAdvisorsLoading: {
+    type: Boolean,
+    default: false
+  },
   exporting: {
     type: Boolean,
     default: false
@@ -149,6 +157,19 @@ const operatorSelectOptions = computed(() => {
       <label class="field">
         <span>导入批次</span>
         <input v-model="model.importBatchId" type="search" placeholder="TMI-..." />
+      </label>
+    </div>
+    <div class="transport-request-filter-row transport-request-filter-row--membership">
+      <label class="field">
+        <span>会员接机归属</span>
+        <select v-model="model.membershipCategory" :disabled="membershipAdvisorsLoading">
+          <option value="">全部接机订单</option>
+          <option value="linked">全部会员接机订单</option>
+          <option value="needs_review">需核查</option>
+          <option v-for="advisor in membershipAdvisorOptions" :key="advisor.id" :value="`advisor:${advisor.id}`">
+            {{ advisor.name }}{{ advisor.status !== "active" ? "（已停用）" : "" }}的会员接机订单
+          </option>
+        </select>
       </label>
     </div>
     <div class="transport-request-filter-row transport-request-filter-row--controls">

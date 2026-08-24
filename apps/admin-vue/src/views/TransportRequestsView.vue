@@ -7,6 +7,7 @@ import {
   createManualTransportRequest,
   deleteTransportRequest,
   exportTransportRequests,
+  fetchMembershipAdvisors,
   fetchTransportRequest,
   fetchTransportRequests,
   previewTransportManualImport,
@@ -78,6 +79,7 @@ const defaultFilters = {
   lastOperatedBy: "",
   importBatchId: "",
   source: "",
+  membershipCategory: "",
   dateFrom: "",
   dateTo: "",
   sort: "flight_nearest",
@@ -88,6 +90,9 @@ const filters = reactive({ ...defaultFilters });
 const requests = ref([]);
 const pagination = ref({ page: 1, page_size: defaultFilters.pageSize, total: 0, total_pages: 0 });
 const operatorOptions = ref([]);
+const membershipAdvisorOptions = ref([]);
+const membershipAdvisorsLoading = ref(false);
+const membershipAdvisorsError = ref("");
 const selectedIds = ref([]);
 const loading = ref(false);
 const exporting = ref(false);
@@ -756,8 +761,11 @@ function isOfflineRecordedSaving(row) {
 }
 
 function isMembershipRequest(row) {
-  return Boolean(row?.membership_benefit_claim_id || row?.membership_pickup_claim_id)
-    || Number(row?.membership_discount_amount || 0) > 0;
+  return row?.is_membership_order === true || row?.membership_relation === "linked";
+}
+
+function membershipNeedsReview(row) {
+  return ["unassigned", "ambiguous"].includes(row?.membership_advisor_resolution);
 }
 
 function requestRowClass(row) {
@@ -778,6 +786,13 @@ function groupHref(row) {
 }
 
 function buildFilterQuery() {
+  const membershipCategory = String(filters.membershipCategory || "").trim();
+  const membershipAdvisorId = membershipCategory.startsWith("advisor:")
+    ? membershipCategory.slice("advisor:".length)
+    : membershipCategory === "needs_review"
+      ? membershipCategory
+      : "";
+  const membershipRelation = membershipCategory === "linked" || membershipAdvisorId ? "linked" : "";
   return {
     search: filters.search.trim(),
     service_type: filters.serviceType,
@@ -789,6 +804,8 @@ function buildFilterQuery() {
     last_operated_by: filters.lastOperatedBy,
     import_batch_id: filters.importBatchId.trim(),
     source: filters.source,
+    membership_relation: membershipRelation,
+    membership_advisor_id: membershipAdvisorId,
     date_from: filters.dateFrom,
     date_to: filters.dateTo,
     sort: filters.sort
@@ -827,6 +844,20 @@ async function loadRequests(page = pagination.value.page || 1) {
     error.value = err.message || "接机送机订单加载失败。";
   } finally {
     loading.value = false;
+  }
+}
+
+async function loadMembershipAdvisorOptions() {
+  membershipAdvisorsLoading.value = true;
+  membershipAdvisorsError.value = "";
+  try {
+    const payload = await fetchMembershipAdvisors();
+    membershipAdvisorOptions.value = Array.isArray(payload?.items) ? payload.items : [];
+  } catch (err) {
+    membershipAdvisorOptions.value = [];
+    membershipAdvisorsError.value = err.message || "会员接机归属中的顾问选项加载失败";
+  } finally {
+    membershipAdvisorsLoading.value = false;
   }
 }
 
@@ -1749,6 +1780,7 @@ function closeOperationLog() {
 }
 
 onMounted(() => {
+  loadMembershipAdvisorOptions();
   loadRequests(1);
 });
 
@@ -1770,6 +1802,14 @@ watch(
   ],
   () => {
     selectedIds.value = [];
+  }
+);
+
+watch(
+  () => filters.membershipCategory,
+  () => {
+    selectedIds.value = [];
+    loadRequests(1);
   }
 );
 
@@ -1819,12 +1859,15 @@ watch(
     <TransportRequestFilters
       v-model="filters"
       :operator-options="operatorOptions"
+      :membership-advisor-options="membershipAdvisorOptions"
+      :membership-advisors-loading="membershipAdvisorsLoading"
       :exporting="exporting"
       @submit="submitFilters"
       @reset="resetFilters"
       @export="handleExportFiltered"
     />
 
+    <p v-if="membershipAdvisorsError" class="inline-notice inline-notice--danger">{{ membershipAdvisorsError }}</p>
     <p v-if="notice" class="inline-notice">{{ notice }}</p>
 
     <LoadingState v-if="loading">正在加载接机送机订单...</LoadingState>
@@ -1856,7 +1899,10 @@ watch(
           <span class="cell-truncate" :title="formatDateTime(row.created_at)">{{ formatDateTime(row.created_at) }}</span>
         </template>
         <template #cell-order_no="{ row }">
-          <strong class="cell-truncate" :title="displayValue(row.order_no)">{{ displayValue(row.order_no) }}</strong>
+          <span class="cell-stack">
+            <strong class="cell-truncate" :title="displayValue(row.order_no)">{{ displayValue(row.order_no) }}</strong>
+            <StatusBadge v-if="membershipNeedsReview(row)" tone="warning">会员关联待核查</StatusBadge>
+          </span>
         </template>
         <template #cell-student="{ row }">
           <span class="cell-stack" :title="studentTitle(row)">
@@ -1947,7 +1993,10 @@ watch(
           <span class="locked-cell" :title="lockTitle()">{{ rowServiceTimeRange(row) }}</span>
         </template>
         <template #cell-wb_student_name="{ row }">
-          <input v-model="ensureWorkbenchDraft(row).student_name" class="workbench-input" />
+          <span class="cell-stack">
+            <input v-model="ensureWorkbenchDraft(row).student_name" class="workbench-input" />
+            <StatusBadge v-if="membershipNeedsReview(row)" tone="warning">会员关联待核查</StatusBadge>
+          </span>
         </template>
         <template #cell-wb_phone="{ row }">
           <input v-model="ensureWorkbenchDraft(row).phone" class="workbench-input" />

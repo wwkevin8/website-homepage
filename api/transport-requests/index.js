@@ -4,7 +4,12 @@ const { ok, created, badRequest, parseJsonBody, methodNotAllowed, serverError } 
 const { applyRequestFilters, mapRequestPayload, deriveRequestDisplayFlags } = require("../_lib/transport");
 const { createPickupRequestWithGroup } = require("../_lib/transport-group-lifecycle");
 const { logAdminOperation } = require("../_lib/orders");
-const { getCurrentMembershipCycle, LIVE_CLAIM_STATUSES } = require("../_lib/membership");
+const {
+  TRANSPORT_MEMBERSHIP_VIEW,
+  normalizeTransportMembershipFilters,
+  applyTransportMembershipFilters,
+  isTransportMembershipViewMissing
+} = require("../_lib/transport-membership-query");
 
 function isPerfLogEnabled() {
   return process.env.NODE_ENV !== "production";
@@ -57,9 +62,16 @@ const REQUEST_LIST_SELECT = [
   "manual_payment_status",
   "membership_benefit_claim_id",
   "membership_discount_amount",
+  "membership_relation",
+  "is_membership_order",
+  "resolved_membership_claim_id",
+  "membership_entitlement_id",
+  "effective_membership_advisor_id",
+  "membership_claim_resolution",
+  "membership_advisor_resolution",
   "created_at",
-  "transport_group_members(group_id,is_initiator,request_id)",
-  "site_users(email)"
+  "transport_group_members",
+  "site_users"
 ].join(", ");
 
 const REQUEST_COMPACT_SELECT = [
@@ -90,8 +102,15 @@ const REQUEST_COMPACT_SELECT = [
   "manual_payment_status",
   "membership_benefit_claim_id",
   "membership_discount_amount",
+  "membership_relation",
+  "is_membership_order",
+  "resolved_membership_claim_id",
+  "membership_entitlement_id",
+  "effective_membership_advisor_id",
+  "membership_claim_resolution",
+  "membership_advisor_resolution",
   "created_at",
-  "transport_group_members(group_id,is_initiator,request_id)"
+  "transport_group_members"
 ].join(", ");
 
 const MANUAL_IMPORT_COLUMNS = new Set([
@@ -147,6 +166,11 @@ function isMissingManualImportColumnError(error) {
     "transport_requests.membership_benefit_claim_id",
     "transport_requests.membership_discount_amount"
   ].some(marker => message.includes(marker));
+}
+
+function isRangeNotSatisfiableError(error) {
+  const message = `${error?.message || ""} ${error?.details || ""}`.toLowerCase();
+  return error?.code === "PGRST103" || message.includes("requested range not satisfiable");
 }
 
 function resolveAdminDisplayName(adminUser = {}) {
@@ -293,66 +317,6 @@ async function attachDuplicateFutureFlags(supabase, items) {
   });
 }
 
-async function attachPickupMembershipClaimFlags(supabase, items) {
-  const siteUserIds = Array.from(
-    new Set(
-      (items || [])
-        .filter(item => item?.service_type === "pickup")
-        .map(item => item.site_user_id)
-        .filter(Boolean)
-    )
-  );
-
-  if (!siteUserIds.length) {
-    return items || [];
-  }
-
-  const { data, error } = await supabase
-    .from("membership_benefit_claims")
-    .select("id, site_user_id, status, linked_order_id, linked_order_no, membership_discount_amount, extra_charge_amount, final_price, created_at")
-    .eq("membership_cycle", getCurrentMembershipCycle())
-    .eq("benefit_type", "pickup")
-    .in("status", LIVE_CLAIM_STATUSES)
-    .in("site_user_id", siteUserIds)
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    throw error;
-  }
-
-  const claimsByUser = new Map();
-  (data || []).forEach(claim => {
-    const userClaims = claimsByUser.get(claim.site_user_id) || [];
-    userClaims.push(claim);
-    claimsByUser.set(claim.site_user_id, userClaims);
-  });
-
-  return (items || []).map(item => {
-    if (item?.service_type !== "pickup" || !item.site_user_id || item.membership_benefit_claim_id) {
-      return item;
-    }
-
-    const claims = claimsByUser.get(item.site_user_id) || [];
-    const claim = claims.find(row => (
-      (row.linked_order_id && String(row.linked_order_id) === String(item.id))
-      || (row.linked_order_no && String(row.linked_order_no) === String(item.order_no))
-    )) || claims.find(row => row.status === "selected" && !row.linked_order_id && !row.linked_order_no);
-
-    if (!claim) {
-      return item;
-    }
-
-    return {
-      ...item,
-      membership_pickup_claim_id: claim.id,
-      membership_pickup_claim_status: claim.status,
-      membership_inferred_from_claim: true,
-      membership_discount_amount: item.membership_discount_amount ?? claim.membership_discount_amount ?? 0,
-      membership_final_price: claim.final_price ?? null
-    };
-  });
-}
-
 function applyRequestFiltersCompat(query, queryParams, includeManualImportColumns) {
   const nextQueryParams = includeManualImportColumns
     ? queryParams
@@ -370,22 +334,24 @@ async function runListQuery(supabase, queryParams, options = {}) {
   const paginate = options.paginate === true;
   const page = options.page || 1;
   const pageSize = options.pageSize || 10;
+  const membershipFilters = options.membershipFilters || normalizeTransportMembershipFilters(queryParams);
   const selectColumns = compact
     ? (includeManualImportColumns ? REQUEST_COMPACT_SELECT : REQUEST_COMPACT_SELECT_LEGACY)
     : (includeManualImportColumns ? REQUEST_LIST_SELECT : REQUEST_LIST_SELECT_LEGACY);
 
   let query = supabase
-    .from("transport_requests")
+    .from(TRANSPORT_MEMBERSHIP_VIEW)
     .select(selectColumns, paginate ? { count: "exact" } : undefined);
 
   applyRequestFiltersCompat(query, queryParams, includeManualImportColumns);
+  applyTransportMembershipFilters(query, membershipFilters);
   applyRequestSort(query, queryParams.sort);
 
   if (queryParams.grouped === "true") {
-    query.not("transport_group_members", "is", null);
+    query.eq("is_grouped", true);
   }
   if (queryParams.grouped === "false") {
-    query.is("transport_group_members", null);
+    query.eq("is_grouped", false);
   }
 
   if (paginate) {
@@ -414,11 +380,18 @@ module.exports = async function handler(req, res) {
       const compact = String(queryParams.compact || "").toLowerCase() === "true";
       const page = Math.max(Number.parseInt(queryParams.page, 10) || 1, 1);
       const pageSize = Math.min(Math.max(Number.parseInt(queryParams.page_size, 10) || 10, 1), 100);
+      let membershipFilters;
+      try {
+        membershipFilters = normalizeTransportMembershipFilters(queryParams);
+      } catch (filterError) {
+        badRequest(res, filterError.message);
+        return;
+      }
       const shouldLoadOperatorOptions = !compact && (!paginate || page === 1);
 
       const queryStartedAt = nowMs();
       let [listResult, operatorOptions] = await Promise.all([
-        runListQuery(supabase, queryParams, { compact, paginate, page, pageSize, includeManualImportColumns: true }),
+        runListQuery(supabase, queryParams, { compact, paginate, page, pageSize, membershipFilters, includeManualImportColumns: true }),
         shouldLoadOperatorOptions ? listOperatorOptions(supabase) : Promise.resolve(null)
       ]);
       let manualImportColumnsAvailable = true;
@@ -429,10 +402,39 @@ module.exports = async function handler(req, res) {
           paginate,
           page,
           pageSize,
+          membershipFilters,
           includeManualImportColumns: false
         });
       }
-      const { data, error, count } = listResult;
+      if (listResult.error && isTransportMembershipViewMissing(listResult.error)) {
+        throw new Error("接送机会员关联视图尚未安装，请先应用对应数据库迁移");
+      }
+      let effectivePage = page;
+      let { data, error, count } = listResult;
+      if (paginate && isRangeNotSatisfiableError(error) && page > 1) {
+        const firstPageResult = await runListQuery(supabase, queryParams, {
+          compact,
+          paginate,
+          page: 1,
+          pageSize,
+          membershipFilters,
+          includeManualImportColumns: manualImportColumnsAvailable
+        });
+        ({ data, error, count } = firstPageResult);
+      }
+      const totalPages = count ? Math.ceil(count / pageSize) : 0;
+      if (paginate && totalPages > 0 && page > totalPages && (!error || isRangeNotSatisfiableError(error))) {
+        effectivePage = totalPages;
+        const validPageResult = await runListQuery(supabase, queryParams, {
+          compact,
+          paginate,
+          page: effectivePage,
+          pageSize,
+          membershipFilters,
+          includeManualImportColumns: manualImportColumnsAvailable
+        });
+        ({ data, error, count } = validPageResult);
+      }
       const baseQueryMs = nowMs() - queryStartedAt;
       if (error) {
         throw error;
@@ -440,8 +442,7 @@ module.exports = async function handler(req, res) {
 
       const baseItems = (data || []).map(item => deriveRequestDisplayFlags(item));
       const duplicateFutureStartedAt = nowMs();
-      const duplicateEnrichedItems = compact ? baseItems : await attachDuplicateFutureFlags(supabase, baseItems);
-      const items = compact ? duplicateEnrichedItems : await attachPickupMembershipClaimFlags(supabase, duplicateEnrichedItems);
+      const items = compact ? baseItems : await attachDuplicateFutureFlags(supabase, baseItems);
       const duplicateFutureMs = compact ? 0 : nowMs() - duplicateFutureStartedAt;
       const rows = Array.isArray(items) ? items.length : 0;
 
@@ -454,7 +455,7 @@ module.exports = async function handler(req, res) {
         enrichmentMs: duplicateFutureMs,
         totalMs: nowMs() - startedAt,
         rows,
-        page: paginate ? page : null,
+        page: paginate ? effectivePage : null,
         pageSize: paginate ? pageSize : null,
         compact,
         manualImportColumnsAvailable,
@@ -471,7 +472,7 @@ module.exports = async function handler(req, res) {
         items,
         ...(Array.isArray(operatorOptions) ? { operator_options: operatorOptions } : {}),
         pagination: {
-          page,
+          page: count ? effectivePage : 1,
           page_size: pageSize,
           total: count || 0,
           total_pages: count ? Math.ceil(count / pageSize) : 0

@@ -3732,9 +3732,76 @@ async function handleManagerDetailWithAdmin(req, res, supabase, adminUser, id, s
   methodNotAllowed(res, []);
 }
 
+function resolveMembershipEffectiveAdvisorId(entitlement = {}, activationCodeById = new Map()) {
+  if (entitlement.advisor_admin_id) return String(entitlement.advisor_admin_id);
+  if (entitlement.created_by_admin_id) return String(entitlement.created_by_admin_id);
+  if (entitlement.granted_by_admin_id) return String(entitlement.granted_by_admin_id);
+  const activationCodeId = entitlement.metadata?.activation_code_id;
+  const activationCode = activationCodeId ? activationCodeById.get(String(activationCodeId)) : null;
+  return activationCode?.generated_by_admin_id ? String(activationCode.generated_by_admin_id) : "";
+}
+
+async function loadAllMembershipAdvisorRows(createQuery, batchSize = 1000) {
+  const rows = [];
+  for (let from = 0; ; from += batchSize) {
+    const { data, error } = await createQuery().range(from, from + batchSize - 1);
+    if (error) throw error;
+    const batch = data || [];
+    rows.push(...batch);
+    if (batch.length < batchSize) return rows;
+  }
+}
+
+async function loadMembershipAdvisorActivationCodes(supabase, entitlements = [], batchSize = 200) {
+  const activationCodeIds = Array.from(new Set(entitlements
+    .map(entitlement => entitlement.metadata?.activation_code_id)
+    .filter(Boolean)
+    .map(String)));
+  const activationCodeById = new Map();
+  for (let offset = 0; offset < activationCodeIds.length; offset += batchSize) {
+    const batch = activationCodeIds.slice(offset, offset + batchSize);
+    const { data, error } = await supabase
+      .from("membership_activation_codes")
+      .select("id, generated_by_admin_id")
+      .in("id", batch);
+    if (error) throw error;
+    (data || []).forEach(code => activationCodeById.set(String(code.id), code));
+  }
+  return activationCodeById;
+}
+
 async function handleMemberships(req, res, supabase, subAction = "") {
   const adminUser = await requireAdminUser(req, res, supabase);
   if (!adminUser) {
+    return;
+  }
+
+  if (subAction === "advisors") {
+    if (req.method !== "GET") {
+      methodNotAllowed(res, ["GET"]);
+      return;
+    }
+    const entitlementRows = await loadAllMembershipAdvisorRows(() => supabase
+      .from("membership_entitlements")
+      .select("advisor_admin_id, created_by_admin_id, granted_by_admin_id, metadata")
+      .order("id", { ascending: true }));
+    const activationCodeById = await loadMembershipAdvisorActivationCodes(supabase, entitlementRows);
+    const historicalAdvisorIds = new Set(entitlementRows
+      .map(item => resolveMembershipEffectiveAdvisorId(item, activationCodeById))
+      .filter(Boolean));
+    const { data: admins, error: adminError } = await supabase
+      .from("admin_users")
+      .select("id, name, username, email, status")
+      .order("name", { ascending: true });
+    if (adminError) throw adminError;
+    const items = (admins || [])
+      .filter(admin => admin.status === "active" || historicalAdvisorIds.has(String(admin.id)))
+      .map(admin => ({
+        id: admin.id,
+        name: admin.name || admin.username || admin.email || "未知管理员",
+        status: admin.status || ""
+      }));
+    ok(res, { items });
     return;
   }
 

@@ -1248,6 +1248,11 @@ textarea {
   grid-template-columns: repeat(6, minmax(140px, 1fr));
 }
 
+.transport-request-filter-row--membership {
+  grid-template-columns: minmax(240px, 360px);
+  justify-content: start;
+}
+
 .transport-request-filter-row--controls {
   grid-template-columns: minmax(180px, 1fr) minmax(90px, 120px) minmax(320px, 4fr);
 }
@@ -1705,6 +1710,7 @@ textarea {
   .transport-request-filter-row,
   .transport-request-filter-row--primary,
   .transport-request-filter-row--secondary,
+  .transport-request-filter-row--membership,
   .transport-request-filter-row--controls {
     grid-template-columns: repeat(3, minmax(150px, 1fr));
   }
@@ -5275,13 +5281,19 @@ textarea {
     grid-column: 1 / -1;
   }
 
-  .transport-request-filter-panel .transport-request-filter-row--secondary {
+  .transport-request-filter-panel .transport-request-filter-row--secondary,
+  .transport-request-filter-panel .transport-request-filter-row--membership {
     display: none;
   }
 
-  .transport-request-filter-panel.is-mobile-filter-expanded .transport-request-filter-row--secondary {
+  .transport-request-filter-panel.is-mobile-filter-expanded .transport-request-filter-row--secondary,
+  .transport-request-filter-panel.is-mobile-filter-expanded .transport-request-filter-row--membership {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .transport-request-filter-panel.is-mobile-filter-expanded .transport-request-filter-row--membership .field {
+    grid-column: 1 / -1;
   }
 
   .transport-request-filter-panel__actions {

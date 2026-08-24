@@ -1,7 +1,13 @@
 const { getSupabaseAdmin } = require("../_lib/supabase");
 const { requireAdminUser } = require("../_lib/admin-auth");
-const { serverError, methodNotAllowed } = require("../_lib/http");
+const { serverError, methodNotAllowed, badRequest } = require("../_lib/http");
 const { applyRequestFilters, deriveRequestDisplayFlags } = require("../_lib/transport");
+const {
+  TRANSPORT_MEMBERSHIP_VIEW,
+  normalizeTransportMembershipFilters,
+  applyTransportMembershipFilters,
+  isTransportMembershipViewMissing
+} = require("../_lib/transport-membership-query");
 
 const REQUEST_EXPORT_SELECT = [
   "id",
@@ -29,9 +35,16 @@ const REQUEST_EXPORT_SELECT = [
   "last_operated_at",
   "membership_benefit_claim_id",
   "membership_discount_amount",
+  "membership_relation",
+  "is_membership_order",
+  "resolved_membership_claim_id",
+  "membership_entitlement_id",
+  "effective_membership_advisor_id",
+  "membership_claim_resolution",
+  "membership_advisor_resolution",
   "created_at",
-  "transport_group_members(group_id,is_initiator,request_id)",
-  "site_users(email)"
+  "transport_group_members",
+  "site_users"
 ].join(", ");
 
 const MEMBERSHIP_COLUMNS = new Set([
@@ -224,33 +237,43 @@ module.exports = async function handler(req, res) {
 
   try {
     const queryParams = req.query || {};
+    let membershipFilters;
+    try {
+      membershipFilters = normalizeTransportMembershipFilters(queryParams);
+    } catch (filterError) {
+      badRequest(res, filterError.message);
+      return;
+    }
     const buildQuery = selectColumns => {
       let query = supabase
-        .from("transport_requests")
-        .select(selectColumns)
-        .limit(5000);
+        .from(TRANSPORT_MEMBERSHIP_VIEW)
+        .select(selectColumns);
 
       const ids = parseIdList(queryParams.ids);
       if (ids.length) {
         query.in("id", ids);
       } else {
         applyRequestFilters(query, queryParams);
+        applyTransportMembershipFilters(query, membershipFilters);
       }
       applyRequestSort(query, queryParams.sort);
 
       if (!ids.length && queryParams.grouped === "true") {
-        query.not("transport_group_members", "is", null);
+        query.eq("is_grouped", true);
       }
       if (!ids.length && queryParams.grouped === "false") {
-        query.is("transport_group_members", null);
+        query.eq("is_grouped", false);
       }
 
-      return query;
+      return query.limit(5000);
     };
 
     let { data, error } = await buildQuery(REQUEST_EXPORT_SELECT);
     if (error && isMissingMembershipColumnError(error)) {
       ({ data, error } = await buildQuery(REQUEST_EXPORT_SELECT_LEGACY));
+    }
+    if (error && isTransportMembershipViewMissing(error)) {
+      throw new Error("接送机会员关联视图尚未安装，请先应用对应数据库迁移");
     }
     if (error) {
       throw error;

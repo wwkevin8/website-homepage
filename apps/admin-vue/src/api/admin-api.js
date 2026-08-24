@@ -508,6 +508,10 @@ export function fetchMemberships(filters = {}) {
   return request(`/api/admin/memberships${query ? `?${query}` : ""}`);
 }
 
+export function fetchMembershipAdvisors() {
+  return request("/api/admin/memberships/advisors");
+}
+
 export function grantMembership(payload = {}) {
   return request("/api/admin/memberships", {
     method: "POST",
