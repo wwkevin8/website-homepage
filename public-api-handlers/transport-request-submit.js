@@ -208,7 +208,7 @@ module.exports = async function handler(req, res) {
         terminal: request.terminal,
         flightNo: request.flight_no,
         flightDatetime: request.flight_datetime,
-        pickupDatetime: request.preferred_time_start || request.flight_datetime,
+        pickupDatetime: request.flight_datetime,
         destination: request.location_to
       });
     } catch (emailError) {

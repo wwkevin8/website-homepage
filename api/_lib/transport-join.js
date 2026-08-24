@@ -48,7 +48,7 @@ function locationsMatch(a, b) {
 }
 
 function getEffectivePickupTime(source) {
-  return source?.preferred_time_start || source?.flight_datetime || null;
+  return source?.flight_datetime || null;
 }
 
 function buildJoinDraft(body, siteUser) {
@@ -68,8 +68,6 @@ function buildJoinDraft(body, siteUser) {
     flight_datetime: body.flight_datetime,
     location_from: body.location_from || (serviceType === "dropoff" ? "" : body.airport_name || body.airport_code),
     location_to: body.location_to || (serviceType === "dropoff" ? body.airport_name || body.airport_code : ""),
-    preferred_time_start: body.preferred_time_start || body.flight_datetime,
-    preferred_time_end: body.preferred_time_end || null,
     shareable: true,
     status: "published",
     notes: body.notes || null

@@ -172,9 +172,6 @@
     if (form.elements.flight_datetime) {
       form.elements.flight_datetime.min = dateTimeMin;
     }
-    if (form.elements.preferred_time) {
-      form.elements.preferred_time.min = dateTimeMin;
-    }
     if (form.elements.deadline_date) {
       form.elements.deadline_date.min = deadlineMin;
     }
@@ -187,17 +184,11 @@
 
   function validateTimeFields(form, constraints) {
     const flightField = form.elements.flight_datetime;
-    const preferredField = form.elements.preferred_time;
     const deadlineField = form.elements.deadline_date;
 
     if (flightField) {
       const invalidFlight = flightField.value && constraints.dateTimeMin && flightField.value < constraints.dateTimeMin;
       flightField.setCustomValidity(invalidFlight ? "抵达/起飞日期和时间必须晚于当前英国时间。" : "");
-    }
-
-    if (preferredField) {
-      const invalidPreferred = preferredField.value && constraints.dateTimeMin && preferredField.value < constraints.dateTimeMin;
-      preferredField.setCustomValidity(invalidPreferred ? "接送期望时间段必须晚于当前英国时间。" : "");
     }
 
     if (deadlineField) {
@@ -255,7 +246,6 @@
       `航站楼: ${data.terminal}`,
       `航班号: ${data.flight_no}`,
       `航班时间: ${formatDateTimeLocalText(data.flight_datetime)}`,
-      `期望时间: ${formatDateTimeLocalText(data.preferred_time)}`,
       `同行人数: ${data.passenger_count_label}`,
       `截止日期: ${data.deadline_date || "-"}`,
       `行李: ${data.luggage_text}`,
@@ -490,7 +480,7 @@
       if (!item || item.status === "closed") {
         return false;
       }
-      const time = new Date(item.flight_datetime || item.preferred_time_start || "").getTime();
+      const time = new Date(item.flight_datetime || "").getTime();
       return !Number.isNaN(time) && time > now;
     });
   }
@@ -767,7 +757,6 @@
         terminal,
         flight_no: form.flight_no.value.trim(),
         flight_datetime: form.flight_datetime.value,
-        preferred_time: form.preferred_time.value,
         passenger_count_label: passengerCount,
         deadline_date: form.deadline_date.value,
         luggage_text: luggageText,
@@ -800,8 +789,6 @@
         flight_datetime: summaryData.flight_datetime,
         location_from: serviceMode === "dropoff" ? address : `${airportMeta.name} ${terminal}`.trim(),
         location_to: serviceMode === "dropoff" ? `${airportMeta.name} ${terminal}`.trim() : address,
-        preferred_time_start: summaryData.preferred_time,
-        preferred_time_end: null,
         shareable: true,
         notes: [
           `原始服务类型: ${summaryData.service_mode_label}`,

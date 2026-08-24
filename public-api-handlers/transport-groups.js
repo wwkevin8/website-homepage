@@ -14,8 +14,6 @@ const PUBLIC_GROUP_LIST_COLUMNS = [
   "airport_name",
   "terminal",
   "flight_time_reference",
-  "preferred_time_start",
-  "preferred_time_end",
   "vehicle_type",
   "max_passengers",
   "visible_on_frontend",
@@ -64,20 +62,19 @@ function applySort(query, sort) {
   if (sort === "farthest") {
     query
       .order("group_date", { ascending: false })
-      .order("preferred_time_start", { ascending: false, nullsFirst: false })
+      .order("flight_time_reference", { ascending: false, nullsFirst: false })
       .order("created_at", { ascending: false });
     return;
   }
 
   query
     .order("group_date", { ascending: true })
-    .order("preferred_time_start", { ascending: true, nullsFirst: false })
+    .order("flight_time_reference", { ascending: true, nullsFirst: false })
     .order("created_at", { ascending: false });
 }
 
 function getPublicGroupTimeMs(group) {
-  const value = group?.preferred_time_start
-    || group?.flight_time_reference
+  const value = group?.flight_time_reference
     || group?.flight_datetime
     || group?.group_date
     || "";

@@ -261,7 +261,6 @@ async function submitPickupOrder(page, baseUrl, runId, variant, screenshotPrefix
   await page.getByText("已自动带入并锁定账号资料", { exact: false }).waitFor({ timeout: 10000 });
 
   const dateTime = futureDateTimeLocal(30, 10, variant.minute);
-  const preferredTime = futureDateTimeLocal(30, 10, variant.minute + 10);
   const deadlineDate = futureDate(2);
   const flightNo = `${variant.flightPrefix}${String(Date.now()).slice(-4)}`;
 
@@ -270,9 +269,7 @@ async function submitPickupOrder(page, baseUrl, runId, variant, screenshotPrefix
   await page.locator('input[name="terminal"]').fill("T1");
   await page.locator('input[name="flight_no"]').fill(flightNo);
   await page.locator('input[name="flight_datetime"]').fill(dateTime);
-  await page.locator('input[name="preferred_time"]').fill(preferredTime);
   await page.locator('input[name="deadline_date"]').fill(deadlineDate);
-  await page.locator('input[name="share_goal"][value="2"]').check();
   await page.locator('input[name="luggage_option"]').first().check();
   await page.locator('input[name="nottingham_address"]').fill(variant.address);
   await page.locator('input[name="fallback_accept"][value="accept"]').check();
@@ -308,7 +305,6 @@ async function submitPickupOrder(page, baseUrl, runId, variant, screenshotPrefix
     orderNo: submitPayload.data.orderNo,
     groupId: submitPayload.data.groupId,
     flightDateTimeIso: toIsoString(dateTime),
-    preferredTimeIso: toIsoString(preferredTime),
     flightNo,
     address: variant.address
   };
@@ -492,7 +488,6 @@ async function createJoinPayloadFromBoardItem(targetItem, runId) {
     terminal,
     flight_no: `QJ${String(Date.now()).slice(-4)}`,
     flight_datetime: targetItem.flight_datetime,
-    preferred_time_start: targetItem.preferred_time_start || targetItem.flight_datetime,
     passenger_count: 1,
     luggage_count: 1,
     location_from: targetItem.location_from,
@@ -537,6 +532,12 @@ async function main() {
   const runId = `pw_flow_${Date.now()}`;
   const baseUrl = await resolveBaseUrl();
   process.env.PLAYWRIGHT_BASE_URL = baseUrl;
+  const baseHostname = new URL(baseUrl).hostname;
+  if (["localhost", "127.0.0.1", "::1"].includes(baseHostname)) {
+    process.env.SUPABASE_URL = process.env.LOCAL_SUPABASE_URL || "";
+    process.env.SUPABASE_ANON_KEY = process.env.LOCAL_SUPABASE_ANON_KEY || "";
+    process.env.SUPABASE_SERVICE_ROLE_KEY = process.env.LOCAL_SUPABASE_SERVICE_ROLE_KEY || "";
+  }
   const user1 = await ensureQaUser(runId, "u1");
   const user2 = await ensureQaUser(runId, "u2");
   const user3 = await ensureQaUser(runId, "u3");
@@ -692,7 +693,7 @@ async function main() {
       method: "PATCH",
       body: {
         group_date: futureDate(31),
-        preferred_time_start: toIsoString(updatedGroupPreferredTime)
+        flight_time_reference: toIsoString(updatedGroupPreferredTime)
       }
     });
 
@@ -701,8 +702,8 @@ async function main() {
     if (!publicGroupItem) {
       throw new Error("Public transport board does not include regrouped group");
     }
-    if (new Date(publicGroupItem.preferred_time_start).getTime() !== new Date(updatedGroup.preferred_time_start).getTime()) {
-      throw new Error("Public transport board did not reflect updated group preferred time");
+    if (new Date(publicGroupItem.flight_time_reference).getTime() !== new Date(updatedGroup.flight_time_reference).getTime()) {
+      throw new Error("Public transport board did not reflect updated group flight reference time");
     }
     if (Number(publicGroupItem.current_average_price_gbp || 0) !== regroupedPrice || Number(publicGroupItem.current_passenger_count || 0) !== 2) {
       throw new Error("Public transport board price/count did not stay in sync");
@@ -955,7 +956,7 @@ async function main() {
         remainingSeatsAfterCapacityUpdate: updatedMaxPassengers - 2,
         passengerCountAfterRemoval: 1,
         updatedRequestFlightDatetime: updatedRequest.flight_datetime,
-        updatedGroupPreferredTimeStart: updatedGroup.preferred_time_start,
+        updatedGroupFlightTimeReference: updatedGroup.flight_time_reference,
         closedGroupStatus: closedGroup.status,
         joinPreviewAllowed: true,
         joinSubmitPassengerCount: Number(joinSubmit.nextPassengerCount || 0),

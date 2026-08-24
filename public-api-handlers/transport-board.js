@@ -31,8 +31,7 @@ function applySort(query, sort) {
 }
 
 function getBoardItemServiceTimeMs(item) {
-  const value = item?.preferred_time_start
-    || item?.flight_time_reference
+  const value = item?.flight_time_reference
     || item?.flight_datetime
     || "";
   const parsed = new Date(value).getTime();
@@ -73,7 +72,7 @@ function mapBoardItem(item, membersByGroup, groupStats) {
   const terminalValues = uniqueNonEmpty(activeMembers.map(member => member.transport_requests?.terminal));
   const flightValues = uniqueNonEmpty(activeMembers.map(member => member.transport_requests?.flight_no));
   const arrivalRange = formatArrivalRange(activeMembers.map(member => member.transport_requests?.flight_datetime));
-  const pickupTime = item.preferred_time_start || item.flight_time_reference || item.flight_datetime || null;
+  const pickupTime = item.flight_time_reference || item.flight_datetime || null;
   const pricingSeason = getPricingSeason(pickupTime || item.created_at);
   const airportCode = String(item.airport_code || "").trim().toUpperCase();
   const airportPricing = PICKUP_PRICING[pricingSeason]?.[airportCode] || null;
@@ -118,7 +117,6 @@ function mapBoardItem(item, membersByGroup, groupStats) {
     terminal_values: terminalValues,
     flight_no_values: flightValues,
     flight_datetime: item.flight_datetime,
-    preferred_time_start: item.preferred_time_start || null,
     flight_time_reference: item.flight_time_reference || null,
     passenger_count: item.passenger_count,
     current_passenger_count: resolvedPassengerCount,
@@ -286,13 +284,13 @@ module.exports = async function handler(req, res) {
     if (groupIds.length) {
       let groupQuery = await supabase
         .from("transport_groups")
-        .select("group_id, id, status, group_date, preferred_time_start, flight_time_reference")
+        .select("group_id, id, status, group_date, flight_time_reference")
         .in("group_id", groupIds);
 
       if (groupQuery.error && isMissingColumnError(groupQuery.error, "transport_groups.group_id")) {
         groupQuery = await supabase
           .from("transport_groups")
-          .select("id, status, group_date, preferred_time_start, flight_time_reference")
+          .select("id, status, group_date, flight_time_reference")
           .in("id", groupIds);
       }
 
@@ -305,7 +303,6 @@ module.exports = async function handler(req, res) {
         {
           status: item.status,
           displayGroupId: item.group_id || deriveDisplayGroupId(item.id, item.group_date),
-          preferred_time_start: item.preferred_time_start || null,
           flight_time_reference: item.flight_time_reference || null
         }
       ]));
@@ -314,7 +311,6 @@ module.exports = async function handler(req, res) {
         const resolved = groupStatusMap.get(item.group_id) || null;
         item.group_status = resolved?.status || null;
         item.group_id = resolved?.displayGroupId || deriveDisplayGroupId(item.group_id, item.flight_datetime);
-        item.preferred_time_start = resolved?.preferred_time_start || null;
         item.flight_time_reference = resolved?.flight_time_reference || null;
       });
 

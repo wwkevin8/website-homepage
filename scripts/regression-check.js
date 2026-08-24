@@ -162,27 +162,29 @@ function formatDateTimeLocalTextForRegression(value) {
 }
 
 function checkPublicSubmissionSummaryDateTimes() {
+  const pickupFormHtml = "pickup-form.html";
   const pickupForm = "pickup-form.js";
   const transportPublic = "transport-public.js";
+  const joinHelper = "api/_lib/transport-join.js";
 
   expectIncludes(pickupForm, "function formatDateTimeLocalText(value)", "pickup summary has local datetime text formatter");
   expectIncludes(pickupForm, "`航班时间: ${formatDateTimeLocalText(data.flight_datetime)}`", "pickup summary flight time uses raw datetime-local text");
-  expectIncludes(pickupForm, "`期望时间: ${formatDateTimeLocalText(data.preferred_time)}`", "pickup summary preferred time uses raw datetime-local text");
   expectNotRegex(pickupForm, /航班时间:\s*\$\{formatDateTime\(data\.flight_datetime\)\}/, "pickup summary flight time avoids timezone formatter");
-  expectNotRegex(pickupForm, /期望时间:\s*\$\{formatDateTime\(data\.preferred_time\)\}/, "pickup summary preferred time avoids timezone formatter");
+  expectNotRegex(pickupFormHtml, /name=["']preferred_time["']|接送期望时间段/, "pickup form no longer renders preferred time field");
+  expectNotRegex(pickupForm, /preferred_time(?:_start|_end)?/, "pickup frontend no longer reads or submits preferred time");
 
   expectIncludes(transportPublic, "function formatDateTimeLocalText(value)", "join summary has local datetime text formatter");
   expectIncludes(transportPublic, "flightDatetimeText: formatDateTimeLocalText(payload.flight_datetime)", "join summary flight time uses raw datetime-local text");
-  expectIncludes(transportPublic, "preferredTimeText: formatDateTimeLocalText(payload.preferred_time_start || referenceDateTime)", "join summary preferred time uses raw datetime-local text");
   expectNotRegex(transportPublic, /Shared\.formatDateTime\(payload\.flight_datetime\)/, "join summary flight time avoids shared timezone formatter");
-  expectNotRegex(transportPublic, /Shared\.formatDateTime\(payload\.preferred_time_start\s*\|\|\s*referenceDateTime\)/, "join summary preferred time avoids shared timezone formatter");
+  expectNotRegex(transportPublic, /preferred_time(?:_start|_end)?|接送期望时间/, "join frontend no longer renders, reads, or submits preferred time");
+  expectIncludes(joinHelper, "return source?.flight_datetime || null;", "join evaluator uses actual flight datetime");
+  expectNotRegex(joinHelper, /body\.preferred_time|source\?\.preferred_time_start/, "join backend no longer derives or matches on preferred time");
 
   const sampleFlight = formatDateTimeLocalTextForRegression("2026-09-18T19:30");
-  const samplePreferred = formatDateTimeLocalTextForRegression("2026-09-18T21:00");
-  if (sampleFlight === "2026/09/18 19:30" && samplePreferred === "2026/09/18 21:00") {
+  if (sampleFlight === "2026/09/18 19:30") {
     pass("datetime-local summary samples keep the customer-entered wall time");
   } else {
-    fail("datetime-local summary samples keep the customer-entered wall time", `${sampleFlight}, ${samplePreferred}`);
+    fail("datetime-local summary samples keep the customer-entered wall time", sampleFlight);
   }
 }
 

@@ -94,7 +94,7 @@
   }
 
   function getPickupTimeText(item) {
-    const explicitPickupTime = item?.preferred_time_start || item?.flight_time_reference || null;
+    const explicitPickupTime = item?.flight_time_reference || item?.flight_datetime || null;
     if (explicitPickupTime) {
       return Shared.formatDateTime(explicitPickupTime);
     }
@@ -462,7 +462,7 @@
   }
 
   function getJoinReferenceDateTime(item) {
-    return item?.preferred_time_start || item?.flight_time_reference || item?.flight_datetime || "";
+    return item?.flight_time_reference || item?.flight_datetime || "";
   }
 
   function buildJoinSummaryText(summary) {
@@ -478,7 +478,6 @@
       `航站楼：${summary.terminal || "-"}`,
       `航班号：${summary.flightNo || "-"}`,
       `${summary.timeLabel}：${summary.flightDatetimeText || "-"}`,
-      `接送期望时间：${summary.preferredTimeText || "-"}`,
       `拼车截至日期：${summary.deadlineDate || "-"}`,
       `同行人数：${summary.passengerCount}`,
       `行李数：${summary.luggageCount}`,
@@ -527,7 +526,6 @@
     const airportLabel = getAirportLabel(item);
     const terminalLabel = getTerminalLabel(item);
     const referenceDateTime = getJoinReferenceDateTime(item);
-    const fixedPreferredTime = toLondonDateTimeLocalValue(referenceDateTime);
     const deadlineDate = toLondonDateValue(referenceDateTime);
     const passengerCount = Number(item.passenger_count || 1) || 1;
     return `
@@ -562,10 +560,6 @@
             <span>${Shared.escapeHtml(timingLabel)}</span>
             <input name="flight_datetime" type="datetime-local" required>
             <small class="pickup-join-field-hint">如与当前拼车组时间相差较大，系统会显示风险提醒，但不阻止提交。</small>
-          </label>
-          <label>
-            <span>接送期望时间</span>
-            <input name="preferred_time_start" value="${Shared.escapeHtml(fixedPreferredTime)}" readonly>
           </label>
           ${UK_TIME_NOTICE_HTML}
           <label>
@@ -612,7 +606,7 @@
       ["服务类型", Shared.serviceLabel(item.service_type)],
       ["机场", getAirportLabel(item)],
       ["航站楼情况", getTerminalLabel(item)],
-      [item.preferred_time_start || item.flight_time_reference ? "接送机时间" : "接送机时间范围", timeRange || "--"],
+      [item.flight_time_reference || item.flight_datetime ? "接送机时间" : "接送机时间范围", timeRange || "--"],
       ["当前人数", `${Number(item.current_passenger_count || item.passenger_count || 0)}人`],
       ["剩余座位", `${Number(item.remaining_passenger_count || 0)}位`],
       ["当前平均价格", item.current_average_price_gbp ? `£${Number(item.current_average_price_gbp).toFixed(2)}` : "£0.00"],
@@ -672,7 +666,6 @@
       email: formData.get("email"),
       flight_no: formData.get("flight_no"),
       flight_datetime: formData.get("flight_datetime"),
-      preferred_time_start: formData.get("preferred_time_start"),
       airport_code: formData.get("airport_code"),
       airport_name: formData.get("airport_name"),
       terminal: formData.get("terminal"),
@@ -757,7 +750,7 @@
       if (!item || item.status === "closed") {
         return false;
       }
-      const time = new Date(item.flight_datetime || item.preferred_time_start || "").getTime();
+      const time = new Date(item.flight_datetime || "").getTime();
       return !Number.isNaN(time) && time > now;
     });
   }
@@ -930,7 +923,6 @@
           terminal: payload.terminal || terminalLabel,
           flightNo: payload.flight_no,
           flightDatetimeText: formatDateTimeLocalText(payload.flight_datetime),
-          preferredTimeText: formatDateTimeLocalText(payload.preferred_time_start || referenceDateTime),
           deadlineDate: deadlineDate || "--",
           passengerCount: 1,
           luggageCount: payload.luggage_count,

@@ -81,8 +81,8 @@ async function logFrontendJoinTimeRisk(supabase, { siteUser, request, targetRequ
   }
 
   try {
-    const orderTime = evaluation.orderTime || request.preferred_time_start || request.flight_datetime;
-    const targetGroupTime = evaluation.targetGroupTime || group.preferred_time_start || group.flight_time_reference || targetRequest.preferred_time_start || targetRequest.flight_datetime;
+    const orderTime = evaluation.orderTime || request.flight_datetime;
+    const targetGroupTime = evaluation.targetGroupTime || group.flight_time_reference || targetRequest.flight_datetime;
     const distanceText = formatTimeDistance(evaluation.timeDistanceMinutes) || "未知";
     await logAdminOperation(supabase, {
       admin_user_id: null,
@@ -237,7 +237,7 @@ module.exports = async function handler(req, res) {
         terminal: request.terminal,
         flightNo: request.flight_no,
         flightDatetime: request.flight_datetime,
-        pickupDatetime: request.preferred_time_start || request.flight_datetime,
+        pickupDatetime: request.flight_datetime,
         destination: request.service_type === "dropoff" ? request.location_from : request.location_to
       });
     } catch (emailError) {

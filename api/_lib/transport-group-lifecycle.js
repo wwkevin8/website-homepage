@@ -117,7 +117,7 @@ function isAdjacentServiceDateWithinWindow(groupDate, serviceDate, distanceHours
 }
 
 function deriveServiceDateFromTimes(times = {}) {
-  const source = times.preferred_time_start || times.flight_datetime;
+  const source = times.flight_datetime || times.preferred_time_start;
   if (!source) {
     throw buildTransportLifecycleError("preferred_time_start or flight_datetime is required", 400);
   }
@@ -179,7 +179,7 @@ function summarizeCandidateGroup(group, stats, warnings = []) {
 }
 
 function getGroupDateFromRequest(request) {
-  return getIsoDatePart(request.preferred_time_start || request.flight_datetime || request.preferred_time_end || request.created_at);
+  return getIsoDatePart(request.flight_datetime || request.preferred_time_start || request.preferred_time_end || request.created_at);
 }
 
 function getGroupPayloadFromRequest(request, groupId) {
@@ -194,7 +194,7 @@ function getGroupPayloadFromRequest(request, groupId) {
     location_from: request.location_from,
     location_to: request.location_to,
     flight_time_reference: request.flight_datetime,
-    preferred_time_start: request.preferred_time_start || request.flight_datetime,
+    preferred_time_start: request.preferred_time_start || null,
     preferred_time_end: request.preferred_time_end,
     max_passengers: DEFAULT_GROUP_MAX_PASSENGERS,
     visible_on_frontend: !isClosed,
@@ -227,7 +227,7 @@ async function createGroupForRequest(supabase, request, options = {}) {
         location_from: request.location_from,
         location_to: request.location_to,
         flight_time_reference: request.flight_datetime,
-        preferred_time_start: request.preferred_time_start || request.flight_datetime,
+        preferred_time_start: request.preferred_time_start || null,
         preferred_time_end: request.preferred_time_end,
         max_passengers: DEFAULT_GROUP_MAX_PASSENGERS,
         visible_on_frontend: request.status !== "closed",
@@ -693,8 +693,8 @@ function validateGroupJoinShape(request, group, stats, times = {}, options = {})
     throw buildTransportLifecycleError("target group capacity is not enough", 409);
   }
 
-  const targetGroupTime = group.preferred_time_start || group.flight_time_reference;
-  const referenceTime = times.preferred_time_start || times.flight_datetime;
+  const targetGroupTime = group.flight_time_reference;
+  const referenceTime = times.flight_datetime;
   const distance = hoursApart(referenceTime, targetGroupTime);
   if (distance === null) {
     throw buildTransportLifecycleError("target group time is outside the allowed window", 400);
@@ -777,13 +777,13 @@ async function findTimeAdjustCandidateGroups(supabase, request, times = {}, opti
 
   const { data, error } = await supabase
     .from("transport_groups_public_view")
-    .select("group_id, service_type, group_date, airport_code, terminal, location_from, location_to, preferred_time_start, current_passenger_count, remaining_passenger_count, status")
+    .select("group_id, service_type, group_date, airport_code, terminal, location_from, location_to, flight_time_reference, current_passenger_count, remaining_passenger_count, status")
     .eq("service_type", request.service_type)
     .eq("airport_code", request.airport_code)
     .in("group_date", getServiceDateCandidates(serviceDate))
     .in("status", [GROUP_STATUS.SINGLE_MEMBER, GROUP_STATUS.ACTIVE, "open"])
     .gte("remaining_passenger_count", passengerCount)
-    .order("preferred_time_start", { ascending: true, nullsFirst: false })
+    .order("flight_time_reference", { ascending: true, nullsFirst: false })
     .limit(options.limit || 20);
 
   if (error) {
@@ -812,7 +812,7 @@ async function findTimeAdjustCandidateGroups(supabase, request, times = {}, opti
       });
       candidates.push({
         ...summarizeCandidateGroup(group, stats, validation.warnings),
-        time_distance_hours: hoursApart(times.preferred_time_start || times.flight_datetime, group.preferred_time_start || group.flight_time_reference)
+        time_distance_hours: hoursApart(times.flight_datetime, group.flight_time_reference)
       });
     } catch (candidateError) {
       if (candidateError.statusCode >= 500) {
@@ -917,7 +917,7 @@ async function syncGroupState(supabase, groupId, options = {}) {
     updatePayload.location_from = representative.location_from;
     updatePayload.location_to = representative.location_to;
     updatePayload.flight_time_reference = representative.flight_datetime;
-    updatePayload.preferred_time_start = representative.preferred_time_start || representative.flight_datetime;
+    updatePayload.preferred_time_start = representative.preferred_time_start || null;
     updatePayload.preferred_time_end = representative.preferred_time_end;
     updatePayload.visible_on_frontend = representative.status !== "closed";
   }
