@@ -261,7 +261,6 @@ async function submitPickupOrder(page, baseUrl, runId, variant, screenshotPrefix
   await page.getByText("已自动带入并锁定账号资料", { exact: false }).waitFor({ timeout: 10000 });
 
   const dateTime = futureDateTimeLocal(30, 10, variant.minute);
-  const deadlineDate = futureDate(2);
   const flightNo = `${variant.flightPrefix}${String(Date.now()).slice(-4)}`;
 
   await page.locator('input[name="service_mode"][value="pickup"]').check();
@@ -269,7 +268,6 @@ async function submitPickupOrder(page, baseUrl, runId, variant, screenshotPrefix
   await page.locator('input[name="terminal"]').fill("T1");
   await page.locator('input[name="flight_no"]').fill(flightNo);
   await page.locator('input[name="flight_datetime"]').fill(dateTime);
-  await page.locator('input[name="deadline_date"]').fill(deadlineDate);
   await page.locator('input[name="luggage_option"]').first().check();
   await page.locator('input[name="nottingham_address"]').fill(variant.address);
   await page.locator('input[name="fallback_accept"][value="accept"]').check();

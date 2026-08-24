@@ -172,11 +172,15 @@ function checkPublicSubmissionSummaryDateTimes() {
   expectNotRegex(pickupForm, /航班时间:\s*\$\{formatDateTime\(data\.flight_datetime\)\}/, "pickup summary flight time avoids timezone formatter");
   expectNotRegex(pickupFormHtml, /name=["']preferred_time["']|接送期望时间段/, "pickup form no longer renders preferred time field");
   expectNotRegex(pickupForm, /preferred_time(?:_start|_end)?/, "pickup frontend no longer reads or submits preferred time");
+  expectNotRegex(pickupFormHtml, /name=["']deadline_date["']|拼车截止日期/, "pickup form no longer renders carpool deadline field");
+  expectNotRegex(pickupForm, /deadline_date|截止日期/, "pickup frontend no longer validates, summarizes, or stores carpool deadline");
 
   expectIncludes(transportPublic, "function formatDateTimeLocalText(value)", "join summary has local datetime text formatter");
   expectIncludes(transportPublic, "flightDatetimeText: formatDateTimeLocalText(payload.flight_datetime)", "join summary flight time uses raw datetime-local text");
   expectNotRegex(transportPublic, /Shared\.formatDateTime\(payload\.flight_datetime\)/, "join summary flight time avoids shared timezone formatter");
   expectNotRegex(transportPublic, /preferred_time(?:_start|_end)?|接送期望时间/, "join frontend no longer renders, reads, or submits preferred time");
+  expectNotRegex(transportPublic, /deadline_date|deadlineDate|拼车截至日期/, "join frontend no longer renders or summarizes carpool deadline");
+  expectNotRegex("scripts/playwright-transport-flow.js", /deadline_date|deadlineDate/, "transport flow test no longer fills removed carpool deadline field");
   expectIncludes(joinHelper, "return source?.flight_datetime || null;", "join evaluator uses actual flight datetime");
   expectNotRegex(joinHelper, /body\.preferred_time|source\?\.preferred_time_start/, "join backend no longer derives or matches on preferred time");
 

@@ -418,37 +418,6 @@
     return value ? Shared.escapeHtml(value) : '<span class="pickup-join-static-empty">未填写</span>';
   }
 
-  function toLondonDateTimeLocalValue(value) {
-    if (!value) {
-      return "";
-    }
-    const parsed = new Date(value);
-    if (Number.isNaN(parsed.getTime())) {
-      return "";
-    }
-    const parts = new Intl.DateTimeFormat("en-CA", {
-      timeZone: "Europe/London",
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false
-    }).formatToParts(parsed).reduce((accumulator, part) => {
-      if (part.type !== "literal") {
-        accumulator[part.type] = part.value;
-      }
-      return accumulator;
-    }, {});
-
-    return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}`;
-  }
-
-  function toLondonDateValue(value) {
-    const dateTimeValue = toLondonDateTimeLocalValue(value);
-    return dateTimeValue ? dateTimeValue.slice(0, 10) : "";
-  }
-
   function formatDateTimeLocalText(value) {
     if (!value) {
       return "--";
@@ -459,10 +428,6 @@
     }
     const [, year, month, day, hour, minute] = match;
     return `${year}/${month}/${day} ${hour}:${minute}`;
-  }
-
-  function getJoinReferenceDateTime(item) {
-    return item?.flight_time_reference || item?.flight_datetime || "";
   }
 
   function buildJoinSummaryText(summary) {
@@ -478,7 +443,6 @@
       `航站楼：${summary.terminal || "-"}`,
       `航班号：${summary.flightNo || "-"}`,
       `${summary.timeLabel}：${summary.flightDatetimeText || "-"}`,
-      `拼车截至日期：${summary.deadlineDate || "-"}`,
       `同行人数：${summary.passengerCount}`,
       `行李数：${summary.luggageCount}`,
       `详细地址：${summary.address || "-"}`,
@@ -525,8 +489,6 @@
     const routeSummaryText = "已隐藏，提交后由客服协调";
     const airportLabel = getAirportLabel(item);
     const terminalLabel = getTerminalLabel(item);
-    const referenceDateTime = getJoinReferenceDateTime(item);
-    const deadlineDate = toLondonDateValue(referenceDateTime);
     const passengerCount = Number(item.passenger_count || 1) || 1;
     return `
       <form id="pickupJoinForm" class="pickup-join-form">
@@ -562,10 +524,6 @@
             <small class="pickup-join-field-hint">如与当前拼车组时间相差较大，系统会显示风险提醒，但不阻止提交。</small>
           </label>
           ${UK_TIME_NOTICE_HTML}
-          <label>
-            <span>拼车截至日期</span>
-            <input name="deadline_date" value="${Shared.escapeHtml(deadlineDate)}" readonly>
-          </label>
           <label>
             <span>行李数</span>
             <select name="luggage_count">
@@ -844,8 +802,6 @@
     }
     const airportLabel = getAirportLabel(modalItem);
     const terminalLabel = getTerminalLabel(modalItem);
-    const referenceDateTime = getJoinReferenceDateTime(modalItem);
-    const deadlineDate = toLondonDateValue(referenceDateTime);
     const timingLabel = modalItem.service_type === "dropoff" ? "起飞日期" : "抵达日期";
     content.innerHTML = buildJoinForm(modalItem, profile);
     modal.hidden = false;
@@ -923,7 +879,6 @@
           terminal: payload.terminal || terminalLabel,
           flightNo: payload.flight_no,
           flightDatetimeText: formatDateTimeLocalText(payload.flight_datetime),
-          deadlineDate: deadlineDate || "--",
           passengerCount: 1,
           luggageCount: payload.luggage_count,
           address: payload.location_to || payload.location_from || "-",

@@ -166,34 +166,21 @@
     }
 
     const dateTimeMin = toDateTimeLocalValue(nextMinuteParts);
-    const tomorrowParts = addLondonDays(nowParts, 1);
-    const deadlineMin = toDateInputValue(tomorrowParts);
-
     if (form.elements.flight_datetime) {
       form.elements.flight_datetime.min = dateTimeMin;
     }
-    if (form.elements.deadline_date) {
-      form.elements.deadline_date.min = deadlineMin;
-    }
 
     return {
-      dateTimeMin,
-      deadlineMin
+      dateTimeMin
     };
   }
 
   function validateTimeFields(form, constraints) {
     const flightField = form.elements.flight_datetime;
-    const deadlineField = form.elements.deadline_date;
 
     if (flightField) {
       const invalidFlight = flightField.value && constraints.dateTimeMin && flightField.value < constraints.dateTimeMin;
       flightField.setCustomValidity(invalidFlight ? "抵达/起飞日期和时间必须晚于当前英国时间。" : "");
-    }
-
-    if (deadlineField) {
-      const invalidDeadline = deadlineField.value && constraints.deadlineMin && deadlineField.value < constraints.deadlineMin;
-      deadlineField.setCustomValidity(invalidDeadline ? "拼车截止日期必须晚于今天，至少从明天开始。" : "");
     }
   }
 
@@ -247,7 +234,6 @@
       `航班号: ${data.flight_no}`,
       `航班时间: ${formatDateTimeLocalText(data.flight_datetime)}`,
       `同行人数: ${data.passenger_count_label}`,
-      `截止日期: ${data.deadline_date || "-"}`,
       `行李: ${data.luggage_text}`,
       `地址: ${data.nottingham_address}`,
       `拼车失败是否接受其他方案: ${data.fallback_accept}`,
@@ -736,7 +722,6 @@
       const fallbackAcceptLabel = fallbackAccept === "accept" ? "接受" : "不接受";
 
       const notesExtra = [
-        `截止日期: ${form.deadline_date.value || "-"}`,
         `同行人数: ${passengerCount}`,
         `行李: ${luggageText}`,
         `拼车失败是否接受其他方案: ${fallbackAcceptLabel}`
@@ -758,7 +743,6 @@
         flight_no: form.flight_no.value.trim(),
         flight_datetime: form.flight_datetime.value,
         passenger_count_label: passengerCount,
-        deadline_date: form.deadline_date.value,
         luggage_text: luggageText,
         nottingham_address: address,
         fallback_accept: fallbackAcceptLabel,
