@@ -59,6 +59,17 @@
     button.append(content);
   }
 
+  function recordSubmitTiming(flow, stage, outcome, startedAt) {
+    const durationMs = Math.max(0, Math.round(performance.now() - startedAt));
+    console.info({
+      event: "transport_submit_timing",
+      flow,
+      stage,
+      outcome,
+      durationMs
+    });
+  }
+
   async function renderPickupMembershipHint() {
     const hint = $("#pickupMembershipHint");
     if (!hint) {
@@ -241,15 +252,6 @@
     ].join("\n");
   }
 
-  function generateReferenceNumber() {
-    if (window.crypto && typeof window.crypto.getRandomValues === "function") {
-      const values = new Uint32Array(1);
-      window.crypto.getRandomValues(values);
-      return String(100000000 + (values[0] % 900000000));
-    }
-    return String(100000000 + Math.floor(Math.random() * 900000000));
-  }
-
   function renderSummary(node, text, options = {}) {
     const pre = document.createElement("pre");
     pre.className = "carpool-summary-pre";
@@ -260,10 +262,8 @@
     if (options.referenceNumber || options.groupId || options.status) {
       const emphasis = document.createElement("div");
       emphasis.className = "carpool-summary-emphasis";
-      const statusLabel = options.status === "error" ? "提交失败" : "提交成功";
-      const statusCopy = options.status === "error"
-        ? "请检查上面的失败原因后重新提交。"
-        : "邮件已通知，请尽快联系客服，并把姓名、Group ID、订单编号发给客服审核。";
+      const statusLabel = "提交成功";
+      const statusCopy = "我们已收到你的信息，请保存登记信息并尽快联系客服确认安排。";
       const qrBlock = options.status === "success"
         ? `
           <div class="carpool-summary-qr">
@@ -307,18 +307,33 @@
       });
     } catch (error) {
       if (window.location.protocol === "file:") {
-        throw new Error("本地预览请先运行 npm run dev，再刷新当前页面。");
+        const previewError = new Error("本地预览请先运行 npm run dev，再刷新当前页面。");
+        previewError.submissionOutcome = "uncertain";
+        throw previewError;
       }
+      error.submissionOutcome = "uncertain";
       throw error;
     }
 
-    const result = await response.json().catch(() => ({
-      data: null,
-      error: { message: "服务器返回了无效数据。" }
-    }));
+    let result;
+    try {
+      result = await response.json();
+    } catch (error) {
+      const invalidResponseError = new Error("服务器返回了无法识别的数据。");
+      invalidResponseError.submissionOutcome = response.ok ? "uncertain" : "failure";
+      throw invalidResponseError;
+    }
 
     if (!response.ok) {
-      throw new Error(result.error?.message || "提交失败。");
+      const responseError = new Error(result.error?.message || "提交失败。");
+      responseError.submissionOutcome = "failure";
+      throw responseError;
+    }
+
+    if (![200, 201].includes(response.status) || result?.error || !String(result?.data?.orderNo || "").trim()) {
+      const uncertainError = new Error("成功响应中缺少有效登记编号。");
+      uncertainError.submissionOutcome = "uncertain";
+      throw uncertainError;
     }
 
     return result.data;
@@ -507,6 +522,7 @@
     renderPickupMembershipHint();
 
     const form = $("#carpoolBookingForm");
+    const summaryCard = $("#carpoolSummaryCard");
     const summaryBox = $("#carpoolSummaryBox");
     const summaryModalElements = ensureSummaryModalElements();
     const summaryModal = summaryModalElements.modal;
@@ -606,8 +622,7 @@
     const submitButtonIdleText = submitButton?.textContent?.trim() || "提交";
 
     function unlockSubmission() {
-      submissionLocked = false;
-      if (submitInFlight) {
+      if (submissionLocked || submitInFlight) {
         return;
       }
       if (submitButton) {
@@ -616,13 +631,65 @@
       }
     }
 
-    function setSubmitLoading(isLoading) {
+    function setSubmitLoading(isLoading, label = "提交中...") {
       submitInFlight = isLoading;
       if (!submitButton) {
         return;
       }
       submitButton.disabled = isLoading || submissionLocked;
-      setCarButtonState(submitButton, isLoading ? "提交中..." : submitButtonIdleText, isLoading);
+      setCarButtonState(submitButton, isLoading ? label : submitButtonIdleText, isLoading);
+    }
+
+    function hideSummary() {
+      latestSummary = "";
+      if (summaryCard) {
+        summaryCard.hidden = true;
+      }
+      summaryBox.replaceChildren();
+      summaryModalBox?.replaceChildren();
+      copyButton.disabled = true;
+      if (copyModalButton) {
+        copyModalButton.disabled = true;
+      }
+      closeSummaryModal();
+    }
+
+    function clearVerificationActions() {
+      form.querySelector("#carpoolVerificationActions")?.remove();
+    }
+
+    function buildVerificationText(summaryData, attemptedAt) {
+      return [
+        "提交结果待核查",
+        `提交尝试时间：${attemptedAt}`,
+        "流程类型：发起接送机／拼车登记",
+        `姓名：${summaryData.student_name || "-"}`,
+        `联系电话／微信：${summaryData.phone || summaryData.wechat || "-"}`,
+        `服务类型：${summaryData.service_mode_label || "-"}`,
+        `航班号：${summaryData.flight_no || "-"}`,
+        `航班时间：${formatDateTimeLocalText(summaryData.flight_datetime)}`
+      ].join("\n");
+    }
+
+    function showUncertainActions(summaryData, attemptedAt) {
+      clearVerificationActions();
+      const actions = document.createElement("div");
+      actions.id = "carpoolVerificationActions";
+      actions.className = "carpool-verification-actions";
+      actions.innerHTML = `
+        <button class="button button-secondary" type="button" data-copy-verification>复制核查信息</button>
+        <button class="button button-secondary" type="button" data-open-contact>联系客服</button>
+      `;
+      submitButton?.before(actions);
+      actions.querySelector("[data-copy-verification]")?.addEventListener("click", async event => {
+        try {
+          await navigator.clipboard.writeText(buildVerificationText(summaryData, attemptedAt));
+          event.currentTarget.textContent = "核查信息已复制";
+        } catch (error) {
+          event.currentTarget.textContent = "复制失败，请手动记录";
+        }
+      });
+      actions.querySelector("[data-open-contact]")?.addEventListener("click", () => fab?.click());
     }
 
     form.addEventListener("input", function () {
@@ -686,6 +753,7 @@
     form.addEventListener("submit", async function (event) {
       event.preventDefault();
       setMessage(messageNode, "", "");
+      clearVerificationActions();
 
       if (submitInFlight) {
         return;
@@ -749,16 +817,6 @@
         notes_extra: notesExtra
       };
 
-      latestSummary = buildSummary(summaryData);
-      renderSummary(summaryBox, latestSummary);
-      if (summaryModalBox) {
-        renderSummary(summaryModalBox, latestSummary);
-      }
-      copyButton.disabled = false;
-      if (copyModalButton) {
-        copyModalButton.disabled = false;
-      }
-
       const payload = {
         service_type: serviceMode === "dropoff" ? "dropoff" : "pickup",
         student_name: summaryData.student_name,
@@ -780,29 +838,43 @@
         ].join(" | ")
       };
 
-      setSubmitLoading(true);
+      hideSummary();
+      setSubmitLoading(true, "核查中...");
+      setMessage(messageNode, "正在核查是否已有相同登记，请勿重复提交……", "");
 
+      const duplicateCheckStartedAt = performance.now();
       try {
         const existingRequests = await listMyFutureTransportRequests();
         const promptText = buildFutureOrderPrompt(payload.service_type, existingRequests);
         if (promptText && !window.confirm(promptText)) {
+          recordSubmitTiming("request", "duplicate_check", "cancelled", duplicateCheckStartedAt);
           setMessage(messageNode, "已取消提交。", "error");
           setSubmitLoading(false);
           return;
         }
+        recordSubmitTiming("request", "duplicate_check", "success", duplicateCheckStartedAt);
       } catch (error) {
+        recordSubmitTiming("request", "duplicate_check", "failure", duplicateCheckStartedAt);
         setMessage(messageNode, `提交前检查失败：${error.message}`, "error");
         setSubmitLoading(false);
         return;
       }
 
+      const attemptedAt = new Date().toLocaleString("zh-CN", { timeZone: "Europe/London", hour12: false });
+      setSubmitLoading(true, "提交中...");
+      setMessage(messageNode, "正在提交，请勿关闭页面或重复点击……", "");
+      const createStartedAt = performance.now();
       try {
         const created = await submitPayload(payload);
-        const referenceNumber = String(created.orderNo || "").trim() || generateReferenceNumber();
-        const groupId = String(created.groupId || "").trim() || "-";
+        recordSubmitTiming("request", "create", "success", createStartedAt);
+        const referenceNumber = String(created.orderNo || "").trim();
+        const groupId = String(created.groupId || "").trim();
         submissionLocked = true;
-        latestSummary = `${latestSummary}\n\n提交状态: 提交成功\n登记编号: ${referenceNumber}\nGroup ID: ${groupId}\n邮件状态: 邮件已通知\n请尽快联系客服，并把姓名、Group ID、订单编号发给客服审核。`;
-        setMessage(messageNode, `提交成功，登记编号：${referenceNumber}，Group ID：${groupId}。邮件已通知，请尽快联系客服。`, "success");
+        latestSummary = `${buildSummary(summaryData)}\n\n提交状态: 提交成功\n登记编号: ${referenceNumber}${groupId ? `\nGroup ID: ${groupId}` : ""}`;
+        setSubmitLoading(false);
+        submitButton.disabled = true;
+        setCarButtonState(submitButton, "已提交", false);
+        setMessage(messageNode, `提交成功。我们已收到你的信息，请保存下方登记信息。登记编号：${referenceNumber}${groupId ? `，Group ID：${groupId}` : ""}。`, "success");
         renderSummary(summaryBox, latestSummary, {
           status: "success",
           referenceNumber,
@@ -815,21 +887,29 @@
             groupId
           });
         }
-        openSummaryModal();
-      } catch (error) {
-        latestSummary = `${latestSummary}\n\n提交状态: 提交失败\n失败原因: ${error.message}`;
-        setMessage(messageNode, `提交失败：${error.message}`, "error");
-        renderSummary(summaryBox, latestSummary, {
-          status: "error"
-        });
-        if (summaryModalBox) {
-          renderSummary(summaryModalBox, latestSummary, {
-            status: "error"
-          });
+        if (summaryCard) {
+          summaryCard.hidden = false;
+        }
+        copyButton.disabled = false;
+        if (copyModalButton) {
+          copyModalButton.disabled = false;
         }
         openSummaryModal();
-      } finally {
-        setSubmitLoading(false);
+      } catch (error) {
+        const outcome = error.submissionOutcome === "failure" ? "failure" : "uncertain";
+        recordSubmitTiming("request", "create", outcome, createStartedAt);
+        hideSummary();
+        if (outcome === "failure") {
+          setMessage(messageNode, `提交失败，本次信息尚未成功登记，请稍后重试。${error.message ? ` ${error.message}` : ""}`, "error");
+          setSubmitLoading(false);
+        } else {
+          submissionLocked = true;
+          setSubmitLoading(false);
+          submitButton.disabled = true;
+          setCarButtonState(submitButton, "待核查", false);
+          setMessage(messageNode, "提交结果暂时无法确认，请勿重复提交，并联系客服核查。", "error");
+          showUncertainActions(summaryData, attemptedAt);
+        }
       }
     });
   });

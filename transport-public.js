@@ -49,6 +49,17 @@
     button.append(content);
   }
 
+  function recordSubmitTiming(flow, stage, outcome, startedAt) {
+    const durationMs = Math.max(0, Math.round(performance.now() - startedAt));
+    console.info({
+      event: "transport_submit_timing",
+      flow,
+      stage,
+      outcome,
+      durationMs
+    });
+  }
+
   function normalizeResponse(payload) {
     return {
       items: Array.isArray(payload?.items) ? payload.items : [],
@@ -455,14 +466,14 @@
   function buildJoinSuccessView(summary) {
     return `
       <div class="pickup-join-form">
-        <section class="pickup-join-section">
+        <section class="pickup-join-section pickup-join-confirmed">
           <h3>提交成功</h3>
+          <p>我们已收到你的信息，请保存下方登记信息。</p>
           <p>订单编号：${Shared.escapeHtml(summary.orderNo || "--")}</p>
-          <p>Group ID：${Shared.escapeHtml(summary.groupId || "--")}</p>
-          <p>邮件状态：邮件已通知，请尽快联系客服。</p>
+          ${summary.groupId ? `<p>Group ID：${Shared.escapeHtml(summary.groupId)}</p>` : ""}
         </section>
         <section class="pickup-join-section">
-          <h3>提交摘要</h3>
+          <h3>提交成功 · 请核对登记信息</h3>
           <pre class="pickup-join-summary-pre">${Shared.escapeHtml(buildJoinSummaryText(summary))}</pre>
         </section>
         <section class="pickup-join-section pickup-join-success-section">
@@ -473,10 +484,51 @@
           </div>
         </section>
         <div class="pickup-join-actions">
+          <button class="button button-primary" type="button" disabled>已提交</button>
           <button class="button button-primary" type="button" data-join-close>我知道了</button>
         </div>
       </div>
     `;
+  }
+
+  function buildJoinVerificationText(profile, payload, groupId, attemptedAt) {
+    return [
+      "提交结果待核查",
+      `提交尝试时间：${attemptedAt}`,
+      "流程类型：加入拼车",
+      `姓名：${profile.nickname || "-"}`,
+      `联系电话／微信：${profile.phone || profile.wechat || "-"}`,
+      `服务类型：${Shared.serviceLabel(payload.service_type)}`,
+      `目标 Group ID：${groupId || "-"}`,
+      `航班号：${payload.flight_no || "-"}`,
+      `航班时间：${formatDateTimeLocalText(payload.flight_datetime)}`
+    ].join("\n");
+  }
+
+  function renderJoinUncertain(node, profile, payload, groupId, attemptedAt) {
+    if (!node) {
+      return;
+    }
+    node.innerHTML = `
+      <p class="pickup-join-error">提交结果暂时无法确认，请勿重复提交，并联系客服核查。</p>
+      <div class="pickup-join-verification-actions">
+        <button class="button button-secondary" type="button" data-copy-verification>复制核查信息</button>
+        <a class="button button-secondary" href="${Shared.escapeHtml(Shared.getWechatContactHref())}">联系客服</a>
+        <button class="button button-secondary" type="button" data-copy-wechat>复制客服微信 Nottsngn</button>
+      </div>
+    `;
+    node.querySelector("[data-copy-verification]")?.addEventListener("click", async event => {
+      try {
+        await navigator.clipboard.writeText(buildJoinVerificationText(profile, payload, groupId, attemptedAt));
+        event.currentTarget.textContent = "核查信息已复制";
+      } catch (error) {
+        event.currentTarget.textContent = "复制失败，请手动记录";
+      }
+    });
+    node.querySelector("[data-copy-wechat]")?.addEventListener("click", async event => {
+      const copied = await Shared.copyWechatId();
+      event.currentTarget.textContent = copied ? "客服微信已复制" : "客服微信：Nottsngn";
+    });
   }
 
   function buildJoinForm(item, profile = {}) {
@@ -824,13 +876,13 @@
       setCarButtonState(previewButton, isLoading ? "检查中..." : previewButtonIdleText, isLoading);
     }
 
-    function setSubmitLoading(isLoading) {
+    function setSubmitLoading(isLoading, label = "加入中...") {
       submitInFlight = isLoading;
       if (!submitButton) {
         return;
       }
       submitButton.disabled = isLoading;
-      setCarButtonState(submitButton, isLoading ? "加入中..." : submitButtonIdleText, isLoading);
+      setCarButtonState(submitButton, isLoading ? label : submitButtonIdleText, isLoading);
     }
 
     previewButton.addEventListener("click", async () => {
@@ -853,20 +905,43 @@
       if (submitInFlight) {
         return;
       }
-      setSubmitLoading(true);
+      setSubmitLoading(true, "核查中...");
       if (evaluationNode) {
-        evaluationNode.innerHTML = "<p>正在提交，请勿重复点击。</p>";
+        evaluationNode.innerHTML = "<p>正在核查是否已有相同登记，请勿重复提交……</p>";
       }
+      const payload = serializeJoinForm(form);
+      const duplicateCheckStartedAt = performance.now();
       try {
-        const payload = serializeJoinForm(form);
         const existingRequests = await listMyFutureTransportRequests();
         const promptText = buildFutureOrderPrompt(payload.service_type, existingRequests);
         if (promptText && !window.confirm(promptText)) {
+          recordSubmitTiming("join", "duplicate_check", "cancelled", duplicateCheckStartedAt);
           renderEvaluation(evaluationNode, "已取消提交。", true);
           setSubmitLoading(false);
           return;
         }
+        recordSubmitTiming("join", "duplicate_check", "success", duplicateCheckStartedAt);
+      } catch (error) {
+        recordSubmitTiming("join", "duplicate_check", "failure", duplicateCheckStartedAt);
+        renderEvaluation(evaluationNode, `提交前检查失败：${error.message}`, true);
+        setSubmitLoading(false);
+        return;
+      }
+
+      const attemptedAt = new Date().toLocaleString("zh-CN", { timeZone: "Europe/London", hour12: false });
+      setSubmitLoading(true, "提交中...");
+      if (evaluationNode) {
+        evaluationNode.innerHTML = "<p>正在提交，请勿关闭页面或重复点击……</p>";
+      }
+      const createStartedAt = performance.now();
+      try {
         const result = await Api.submitJoinPickup(payload);
+        if (!String(result?.orderNo || "").trim()) {
+          const uncertainError = new Error("成功响应中缺少有效登记编号。");
+          uncertainError.submissionOutcome = "uncertain";
+          throw uncertainError;
+        }
+        recordSubmitTiming("join", "create", "success", createStartedAt);
         const summary = {
           nickname: profile.nickname,
           email: profile.email,
@@ -887,8 +962,17 @@
         };
         content.innerHTML = buildJoinSuccessView(summary);
       } catch (error) {
-        renderEvaluation(evaluationNode, error.message, true);
-        setSubmitLoading(false);
+        const outcome = error.submissionOutcome === "failure" ? "failure" : "uncertain";
+        recordSubmitTiming("join", "create", outcome, createStartedAt);
+        if (outcome === "failure") {
+          renderEvaluation(evaluationNode, `提交失败，本次信息尚未成功登记，请稍后重试。${error.message ? ` ${error.message}` : ""}`, true);
+          setSubmitLoading(false);
+        } else {
+          submitInFlight = false;
+          submitButton.disabled = true;
+          setCarButtonState(submitButton, "待核查", false);
+          renderJoinUncertain(evaluationNode, profile, payload, modalItem.group_id, attemptedAt);
+        }
       }
     });
   }

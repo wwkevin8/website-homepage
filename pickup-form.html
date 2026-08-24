@@ -187,12 +187,11 @@
           </div>
         </form>
 
-        <aside class="carpool-summary-card">
-          <p class="carpool-eyebrow">提交摘要</p>
-          <h3>提交后会在这里生成摘要</h3>
-          <p class="carpool-summary-text">无论提交成功还是失败，摘要都会保留在页面上，方便复制给客服。</p>
+        <aside class="carpool-summary-card" id="carpoolSummaryCard" hidden>
+          <p class="carpool-eyebrow">提交成功</p>
+          <h3>提交成功 · 请核对登记信息</h3>
+          <p class="carpool-summary-text">我们已收到你的信息，请保存下方登记信息。</p>
           <div class="carpool-summary-box" id="carpoolSummaryBox">
-            <p class="carpool-summary-placeholder">暂未生成摘要。</p>
           </div>
           <div class="carpool-summary-actions">
             <button class="button button-secondary" type="button" id="copyCarpoolSummary" disabled>复制摘要</button>
@@ -224,11 +223,10 @@
     <div class="carpool-summary-modal-backdrop" data-carpool-summary-close></div>
     <div class="carpool-summary-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="carpoolSummaryModalTitle">
       <button class="carpool-summary-modal-close" id="carpoolSummaryModalClose" type="button" aria-label="关闭提交摘要弹窗">×</button>
-      <p class="carpool-eyebrow">提交摘要</p>
-      <h2 id="carpoolSummaryModalTitle" style="margin:0 0 12px;font-size:30px;color:#143b8b;">提交结果与客服信息</h2>
-      <p class="carpool-summary-text">提交后请保存这份摘要，并按弹窗里的提示尽快联系客服。</p>
+      <p class="carpool-eyebrow">提交成功</p>
+      <h2 id="carpoolSummaryModalTitle" style="margin:0 0 12px;font-size:30px;color:#143b8b;">提交成功 · 请核对登记信息</h2>
+      <p class="carpool-summary-text">我们已收到你的信息，请保存下方登记信息。</p>
       <div class="carpool-summary-box carpool-summary-box-modal" id="carpoolSummaryModalBox">
-        <p class="carpool-summary-placeholder">暂未生成摘要。</p>
       </div>
       <div class="carpool-summary-actions">
         <button class="button button-secondary" type="button" id="copyCarpoolSummaryModal" disabled>复制摘要</button>

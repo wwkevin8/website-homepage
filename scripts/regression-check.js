@@ -165,6 +165,7 @@ function checkPublicSubmissionSummaryDateTimes() {
   const pickupFormHtml = "pickup-form.html";
   const pickupForm = "pickup-form.js";
   const transportPublic = "transport-public.js";
+  const transportApi = "transport-api.js";
   const joinHelper = "api/_lib/transport-join.js";
 
   expectIncludes(pickupForm, "function formatDateTimeLocalText(value)", "pickup summary has local datetime text formatter");
@@ -174,12 +175,29 @@ function checkPublicSubmissionSummaryDateTimes() {
   expectNotRegex(pickupForm, /preferred_time(?:_start|_end)?/, "pickup frontend no longer reads or submits preferred time");
   expectNotRegex(pickupFormHtml, /name=["']deadline_date["']|拼车截止日期/, "pickup form no longer renders carpool deadline field");
   expectNotRegex(pickupForm, /deadline_date|截止日期/, "pickup frontend no longer validates, summarizes, or stores carpool deadline");
+  expectRegex(pickupFormHtml, /id="carpoolSummaryCard"\s+hidden/, "pickup summary is hidden before a confirmed submission");
+  expectNotRegex(pickupFormHtml, /提交后会在这里生成摘要|无论提交成功还是失败|暂未生成摘要/, "pickup page has no pre-submit summary placeholder copy");
+  expectIncludes(pickupForm, "正在核查是否已有相同登记，请勿重复提交……", "pickup submit distinguishes duplicate checking state");
+  expectIncludes(pickupForm, "正在提交，请勿关闭页面或重复点击……", "pickup submit distinguishes create state");
+  expectIncludes(pickupForm, 'event: "transport_submit_timing"', "pickup submit records sanitized stage timings");
+  expectIncludes(pickupForm, 'setCarButtonState(submitButton, "已提交", false)', "pickup success permanently labels the button as submitted");
+  expectIncludes(pickupForm, "提交结果暂时无法确认，请勿重复提交，并联系客服核查。", "pickup uncertain result blocks repeat submission and routes to support");
+  expectIncludes(pickupForm, "复制核查信息", "pickup uncertain result provides verification copy action");
+  expectNotRegex(pickupForm, /generateReferenceNumber|Math\.random\(\).*900000000/, "pickup success never invents a registration number");
 
   expectIncludes(transportPublic, "function formatDateTimeLocalText(value)", "join summary has local datetime text formatter");
   expectIncludes(transportPublic, "flightDatetimeText: formatDateTimeLocalText(payload.flight_datetime)", "join summary flight time uses raw datetime-local text");
   expectNotRegex(transportPublic, /Shared\.formatDateTime\(payload\.flight_datetime\)/, "join summary flight time avoids shared timezone formatter");
   expectNotRegex(transportPublic, /preferred_time(?:_start|_end)?|接送期望时间/, "join frontend no longer renders, reads, or submits preferred time");
   expectNotRegex(transportPublic, /deadline_date|deadlineDate|拼车截至日期/, "join frontend no longer renders or summarizes carpool deadline");
+  expectIncludes(transportPublic, "正在核查是否已有相同登记，请勿重复提交……", "join submit distinguishes duplicate checking state");
+  expectIncludes(transportPublic, "正在提交，请勿关闭页面或重复点击……", "join submit distinguishes create state");
+  expectIncludes(transportPublic, 'event: "transport_submit_timing"', "join submit records sanitized stage timings");
+  expectIncludes(transportPublic, "提交成功 · 请核对登记信息", "join summary is success-only and clearly titled");
+  expectIncludes(transportPublic, "提交结果暂时无法确认，请勿重复提交，并联系客服核查。", "join uncertain result blocks repeat submission and routes to support");
+  expectIncludes(transportPublic, "复制核查信息", "join uncertain result provides verification copy action");
+  expectIncludes(transportApi, "acceptedStatuses: [200, 201]", "join creation only accepts explicit success statuses");
+  expectIncludes(transportApi, 'submissionOutcome = "uncertain"', "transport API identifies uncertain transport responses");
   expectNotRegex("scripts/playwright-transport-flow.js", /deadline_date|deadlineDate/, "transport flow test no longer fills removed carpool deadline field");
   expectIncludes(joinHelper, "return source?.flight_datetime || null;", "join evaluator uses actual flight datetime");
   expectNotRegex(joinHelper, /body\.preferred_time|source\?\.preferred_time_start/, "join backend no longer derives or matches on preferred time");

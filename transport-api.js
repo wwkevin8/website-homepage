@@ -22,6 +22,7 @@
   }
 
   async function request(url, options) {
+    const { acceptedStatuses, ...fetchOptions } = options || {};
     let response;
     try {
       response = await fetch(resolveUrl(url), {
@@ -29,18 +30,35 @@
         headers: {
           "Content-Type": "application/json"
         },
-        ...options
+        ...fetchOptions
       });
     } catch (error) {
       if (window.location.protocol === "file:") {
-        throw new Error("本地预览请先运行 `npm run dev`，再刷新当前页面。");
+        const previewError = new Error("本地预览请先运行 `npm run dev`，再刷新当前页面。");
+        previewError.submissionOutcome = "uncertain";
+        throw previewError;
       }
+      error.submissionOutcome = "uncertain";
       throw error;
     }
 
-    const payload = await response.json().catch(() => ({ data: null, error: { message: "Invalid server response" } }));
+    let payload;
+    try {
+      payload = await response.json();
+    } catch (error) {
+      const invalidResponseError = new Error("Invalid server response");
+      invalidResponseError.submissionOutcome = response.ok ? "uncertain" : "failure";
+      throw invalidResponseError;
+    }
     if (!response.ok) {
-      throw new Error(translateErrorMessage(payload.error?.message || "Request failed"));
+      const responseError = new Error(translateErrorMessage(payload.error?.message || "Request failed"));
+      responseError.submissionOutcome = "failure";
+      throw responseError;
+    }
+    if (Array.isArray(acceptedStatuses) && !acceptedStatuses.includes(response.status)) {
+      const unexpectedStatusError = new Error("Unexpected success response status");
+      unexpectedStatusError.submissionOutcome = "uncertain";
+      throw unexpectedStatusError;
     }
     return payload.data;
   }
@@ -186,6 +204,7 @@
     submitJoinPickup(payload) {
       return request("/api/public/transport-join-submit", {
         method: "POST",
+        acceptedStatuses: [200, 201],
         body: JSON.stringify(payload)
       });
     }

@@ -8694,8 +8694,37 @@ body.storage-receipt-open {
 }
 
 .carpool-submit-button:disabled {
-  cursor: wait;
+  cursor: not-allowed;
   opacity: 0.7;
+}
+
+.carpool-submit-button.button-is-loading:disabled {
+  cursor: wait;
+}
+
+.carpool-summary-card[hidden] {
+  display: none !important;
+}
+
+.carpool-verification-actions,
+.pickup-join-verification-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.carpool-verification-actions {
+  flex: 1 1 100%;
+}
+
+.pickup-join-confirmed {
+  border: 1px solid rgba(22, 96, 59, 0.2);
+  background: #ecfdf3;
+  color: #16603b;
+}
+
+.pickup-join-verification-actions {
+  margin-top: 12px;
 }
 
 .carpool-summary-box {
