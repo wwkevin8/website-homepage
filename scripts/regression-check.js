@@ -102,6 +102,25 @@ function checkTransportRequests() {
   expectNotRegex(detail, /DetailSection\s+title="操作区"|title="操作区"/, "transport request detail has no operation section");
 }
 
+function checkMembershipAdvisorFilter() {
+  const view = "apps/admin-vue/src/views/MembershipsView.vue";
+  const adminVueApi = "apps/admin-vue/src/api/admin-api.js";
+  const adminApi = "api/admin/[...action].js";
+
+  expectIncludes(view, "fetchMembershipAdvisors", "membership page loads dynamic advisor choices");
+  expectIncludes(view, 'advisor_admin_id: filters.advisorAdminId', "membership page sends the selected advisor to the backend");
+  expectIncludes(view, '<option value="unassigned">未分配</option>', "membership advisor filter includes unassigned memberships");
+  expectIncludes(view, 'advisor.status !== "active" ? "（已停用）" : ""', "inactive historical advisors are labelled in the membership filter");
+  expectIncludes(adminVueApi, 'return request("/api/admin/memberships?view=advisors");', "membership page uses the deployed single-level advisor route");
+  expectNotRegex(adminVueApi, /request\("\/api\/admin\/memberships\/advisors"\)/, "membership page avoids the unsupported nested advisor route");
+  expectRegex(adminApi, /if \(entitlement\.advisor_admin_id\)[\s\S]*if \(entitlement\.created_by_admin_id\)[\s\S]*if \(entitlement\.granted_by_admin_id\)[\s\S]*generated_by_admin_id/, "membership advisor resolution keeps strict short-circuit priority");
+  expectIncludes(adminApi, 'const advisorFilter = String(queryParams.advisor_admin_id || "").trim();', "membership API accepts the advisor filter");
+  expectIncludes(adminApi, '{ search: safeSearch, loadAll: true }', "membership search is not capped at the shared 100-user lookup limit");
+  expectIncludes(adminApi, 'select("*", { count: "exact" })', "membership batch queries use exact counts across PostgREST pages");
+  expectIncludes(adminApi, "filterMembershipEntitlements(filteredEntitlements", "membership filters run before pagination");
+  expectIncludes(adminApi, "paginateMembershipItems(filteredEntitlements", "membership totals and page items use one filtered collection");
+}
+
 function checkTransportGroups() {
   const view = "apps/admin-vue/src/views/TransportGroupsView.vue";
   const filters = "apps/admin-vue/src/components/TransportGroupFilters.vue";
@@ -313,6 +332,7 @@ function main() {
   console.log("Regression stability check");
   checkLegacyEntrypoints();
   checkTransportRequests();
+  checkMembershipAdvisorFilter();
   checkTransportGroups();
   checkPublicSubmissionSummaryDateTimes();
   checkStorageWorkbench();

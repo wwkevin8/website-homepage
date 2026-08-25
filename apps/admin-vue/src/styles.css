@@ -1332,7 +1332,7 @@ textarea {
 }
 
 .membership-filter-panel {
-  grid-template-columns: minmax(220px, 1.35fr) minmax(120px, 0.75fr) minmax(150px, 0.9fr) minmax(150px, 0.9fr) minmax(90px, 120px);
+  grid-template-columns: minmax(180px, 1.15fr) minmax(110px, 0.7fr) minmax(130px, 0.82fr) minmax(130px, 0.82fr) minmax(140px, 0.9fr) minmax(80px, 100px);
 }
 
 .membership-code-filter-panel {

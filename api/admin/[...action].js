@@ -1265,34 +1265,46 @@ async function fetchRelatedStorageOrderForBoxOrder(supabase, item = {}) {
   return null;
 }
 
-async function querySiteUsersWithFallback(supabase, { search = "", ids = [] } = {}) {
+async function querySiteUsersWithFallback(supabase, { search = "", ids = [], loadAll = false } = {}) {
   let selectedColumns = ["id", "public_user_id", "email", "phone", "nickname", "wechat_id", "created_at"];
   let searchColumns = ["public_user_id", "email", "phone", "nickname", "wechat_id"];
   const safeSearch = String(search || "").replace(/,/g, " ").trim();
 
   for (let attempt = 0; attempt < 10; attempt += 1) {
-    let query = supabase
-      .from("site_users")
-      .select(selectedColumns.join(", "))
-      .limit(100);
+    const createQuery = () => {
+      let query = supabase
+        .from("site_users")
+        .select(selectedColumns.join(", "), loadAll ? { count: "exact" } : undefined);
 
-    if (safeSearch) {
-      const parts = searchColumns
-        .filter(column => selectedColumns.includes(column))
-        .map(column => `${column}.ilike.%${safeSearch}%`);
-      if (!parts.length) {
-        return [];
+      if (safeSearch) {
+        const parts = searchColumns
+          .filter(column => selectedColumns.includes(column))
+          .map(column => `${column}.ilike.%${safeSearch}%`);
+        if (!parts.length) {
+          return null;
+        }
+        query = query.or(parts.join(","));
       }
-      query = query.or(parts.join(","));
-    }
 
-    if (ids.length) {
-      query = query.in("id", ids);
-    }
+      if (ids.length) {
+        query = query.in("id", ids);
+      }
+      return loadAll ? query.order("id", { ascending: true }) : query.limit(100);
+    };
 
-    const { data, error } = await query;
-    if (!error) {
-      return data || [];
+    const query = createQuery();
+    if (!query) return [];
+    let error;
+    if (loadAll) {
+      try {
+        return await loadAllMembershipAdvisorRows(createQuery);
+      } catch (queryError) {
+        error = queryError;
+      }
+    } else {
+      const result = await query;
+      if (!result.error) return result.data || [];
+      error = result.error;
     }
 
     const missingColumn = extractMissingColumnName(error, "site_users");
@@ -1312,6 +1324,13 @@ async function findStorageSearchSiteUserIds(supabase, search) {
     return [];
   }
   const users = await querySiteUsersWithFallback(supabase, { search: safeSearch });
+  return users.map(user => user.id).filter(Boolean);
+}
+
+async function findMembershipSearchSiteUserIds(supabase, search) {
+  const safeSearch = String(search || "").trim();
+  if (!safeSearch) return [];
+  const users = await querySiteUsersWithFallback(supabase, { search: safeSearch, loadAll: true });
   return users.map(user => user.id).filter(Boolean);
 }
 
@@ -3741,18 +3760,54 @@ function resolveMembershipEffectiveAdvisorId(entitlement = {}, activationCodeByI
   return activationCode?.generated_by_admin_id ? String(activationCode.generated_by_admin_id) : "";
 }
 
+function paginateMembershipItems(items = [], requestedPage = 1, pageSize = 20) {
+  const total = items.length;
+  const totalPages = total ? Math.ceil(total / pageSize) : 0;
+  const page = totalPages ? Math.min(Math.max(requestedPage, 1), totalPages) : 1;
+  const from = (page - 1) * pageSize;
+  return {
+    pageItems: items.slice(from, from + pageSize),
+    pagination: { page, page_size: pageSize, total, total_pages: totalPages }
+  };
+}
+
+function filterMembershipEntitlements(entitlements = [], allClaims = [], activationCodeById = new Map(), filters = {}) {
+  const { advisorFilter = "", benefitType = "", claimStatus = "", displayStatus = "" } = filters;
+  let items = entitlements;
+  if (advisorFilter) {
+    items = items.filter(entitlement => {
+      const effectiveAdvisorId = resolveMembershipEffectiveAdvisorId(entitlement, activationCodeById);
+      return advisorFilter === "unassigned" ? !effectiveAdvisorId : effectiveAdvisorId === advisorFilter;
+    });
+  }
+  let matchingClaims = allClaims;
+  if (benefitType) matchingClaims = matchingClaims.filter(claim => claim.benefit_type === benefitType);
+  if (claimStatus) matchingClaims = matchingClaims.filter(claim => claim.status === claimStatus);
+  if (benefitType || claimStatus) {
+    const matchingClaimEntitlementIds = new Set(matchingClaims.map(claim => String(claim.entitlement_id)));
+    items = items.filter(item => matchingClaimEntitlementIds.has(String(item.id)));
+  }
+  if (displayStatus === "unused") {
+    const claimedEntitlementIds = new Set(allClaims.map(claim => String(claim.entitlement_id)));
+    items = items.filter(item => item.status === "active" && !claimedEntitlementIds.has(String(item.id)));
+  }
+  return { items, matchingClaims };
+}
+
 async function loadAllMembershipAdvisorRows(createQuery, batchSize = 1000) {
   const rows = [];
-  for (let from = 0; ; from += batchSize) {
-    const { data, error } = await createQuery().range(from, from + batchSize - 1);
+  let from = 0;
+  for (;;) {
+    const { data, error, count } = await createQuery().range(from, from + batchSize - 1);
     if (error) throw error;
     const batch = data || [];
     rows.push(...batch);
-    if (batch.length < batchSize) return rows;
+    from += batch.length;
+    if (!batch.length || (Number.isFinite(count) && from >= count)) return rows;
   }
 }
 
-async function loadMembershipAdvisorActivationCodes(supabase, entitlements = [], batchSize = 200) {
+async function loadMembershipAdvisorActivationCodes(supabase, entitlements = [], batchSize = 100) {
   const activationCodeIds = Array.from(new Set(entitlements
     .map(entitlement => entitlement.metadata?.activation_code_id)
     .filter(Boolean)
@@ -3762,12 +3817,33 @@ async function loadMembershipAdvisorActivationCodes(supabase, entitlements = [],
     const batch = activationCodeIds.slice(offset, offset + batchSize);
     const { data, error } = await supabase
       .from("membership_activation_codes")
-      .select("id, generated_by_admin_id")
+      .select("id, code_prefix, generated_by_admin_id, notes, member_birthday, created_at, redeemed_at")
       .in("id", batch);
     if (error) throw error;
     (data || []).forEach(code => activationCodeById.set(String(code.id), code));
   }
   return activationCodeById;
+}
+
+async function loadMembershipClaimsForEntitlements(supabase, entitlementIds = [], membershipCycle = "", directIdLimit = 100) {
+  const uniqueIds = Array.from(new Set(entitlementIds.filter(Boolean).map(String)));
+  if (!uniqueIds.length) return [];
+  if (uniqueIds.length <= directIdLimit) {
+    return loadAllMembershipAdvisorRows(() => supabase
+      .from("membership_benefit_claims")
+      .select("*", { count: "exact" })
+      .in("entitlement_id", uniqueIds)
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: true }));
+  }
+  const relevantIds = new Set(uniqueIds);
+  const cycleClaims = await loadAllMembershipAdvisorRows(() => supabase
+    .from("membership_benefit_claims")
+    .select("*", { count: "exact" })
+    .eq("membership_cycle", membershipCycle)
+    .order("created_at", { ascending: false })
+    .order("id", { ascending: true }));
+  return cycleClaims.filter(claim => relevantIds.has(String(claim.entitlement_id)));
 }
 
 async function handleMemberships(req, res, supabase, subAction = "") {
@@ -3785,7 +3861,7 @@ async function handleMemberships(req, res, supabase, subAction = "") {
     }
     const entitlementRows = await loadAllMembershipAdvisorRows(() => supabase
       .from("membership_entitlements")
-      .select("advisor_admin_id, created_by_admin_id, granted_by_admin_id, metadata")
+      .select("advisor_admin_id, created_by_admin_id, granted_by_admin_id, metadata", { count: "exact" })
       .order("id", { ascending: true }));
     const activationCodeById = await loadMembershipAdvisorActivationCodes(supabase, entitlementRows);
     const historicalAdvisorIds = new Set(entitlementRows
@@ -3863,62 +3939,54 @@ async function handleMemberships(req, res, supabase, subAction = "") {
   const benefitType = String(queryParams.benefit_type || "").trim();
   const claimStatus = String(queryParams.claim_status || "").trim();
   const displayStatus = String(queryParams.display_status || "").trim();
+  const advisorFilter = String(queryParams.advisor_admin_id || "").trim();
   const search = String(queryParams.search || "").trim();
-  const matchingUserIds = search ? await findStorageSearchSiteUserIds(supabase, search) : [];
+  const matchingUserIds = search ? await findMembershipSearchSiteUserIds(supabase, search) : [];
 
-  let query = supabase
-    .from("membership_entitlements")
-    .select("*", { count: "exact" })
-    .eq("membership_cycle", cycle)
-    .order("created_at", { ascending: false });
-  if (entitlementActionId) {
-    query = query.eq("id", entitlementActionId);
-  }
-  if (status) {
-    query = query.eq("status", status);
-  }
+  const createEntitlementsQuery = () => {
+    let query = supabase
+      .from("membership_entitlements")
+      .select("*", { count: "exact" })
+      .eq("membership_cycle", cycle)
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: true });
+    if (entitlementActionId) query = query.eq("id", entitlementActionId);
+    if (status) query = query.eq("status", status);
+    return query;
+  };
   if (search) {
     if (!matchingUserIds.length) {
       ok(res, {
         items: [],
-        pagination: { page, page_size: pageSize, total: 0, total_pages: 0 }
+        pagination: { page: 1, page_size: pageSize, total: 0, total_pages: 0 }
       });
       return;
     }
-    query = query.in("site_user_id", matchingUserIds);
   }
 
-  const from = (page - 1) * pageSize;
-  const to = from + pageSize - 1;
-  const { data, error, count } = await query.range(from, to);
-  if (error) {
-    throw error;
+  let filteredEntitlements = await loadAllMembershipAdvisorRows(createEntitlementsQuery);
+  if (search) {
+    const matchingUserIdSet = new Set(matchingUserIds.map(String));
+    filteredEntitlements = filteredEntitlements.filter(item => matchingUserIdSet.has(String(item.site_user_id)));
   }
-
-  const entitlements = data || [];
+  const allEntitlementIds = filteredEntitlements.map(item => item.id).filter(Boolean);
+  const activationCodeById = await loadMembershipAdvisorActivationCodes(supabase, filteredEntitlements);
+  const allClaims = await loadMembershipClaimsForEntitlements(supabase, allEntitlementIds, cycle);
+  const filteredResult = filterMembershipEntitlements(filteredEntitlements, allClaims, activationCodeById, {
+    advisorFilter,
+    benefitType,
+    claimStatus,
+    displayStatus
+  });
+  filteredEntitlements = filteredResult.items;
+  const matchingClaims = filteredResult.matchingClaims;
+  const { pageItems: entitlements, pagination } = paginateMembershipItems(filteredEntitlements, page, pageSize);
   const entitlementIds = entitlements.map(item => item.id);
   const userIds = entitlements.map(item => item.site_user_id).filter(Boolean);
-  let claims = [];
+  const pageEntitlementIds = new Set(entitlementIds.map(String));
+  const claims = matchingClaims.filter(claim => pageEntitlementIds.has(String(claim.entitlement_id)));
   let auditLogs = [];
   let birthdayReminders = [];
-  if (entitlementIds.length) {
-    let claimsQuery = supabase
-      .from("membership_benefit_claims")
-      .select("*")
-      .in("entitlement_id", entitlementIds)
-      .order("created_at", { ascending: false });
-    if (benefitType) {
-      claimsQuery = claimsQuery.eq("benefit_type", benefitType);
-    }
-    if (claimStatus) {
-      claimsQuery = claimsQuery.eq("status", claimStatus);
-    }
-    const claimsResult = await claimsQuery;
-    if (claimsResult.error) {
-      throw claimsResult.error;
-    }
-    claims = claimsResult.data || [];
-  }
   if (entitlementIds.length) {
     const claimIds = claims.map(claim => claim.id).filter(Boolean);
     let auditQuery = supabase
@@ -3979,21 +4047,6 @@ async function handleMemberships(req, res, supabase, subAction = "") {
       birthdayReminderByEntitlement.set(key, reminder);
     }
   });
-  const activationCodeIds = Array.from(new Set(entitlements
-    .map(entitlement => entitlement.metadata?.activation_code_id)
-    .filter(Boolean)
-    .map(String)));
-  let activationCodeById = new Map();
-  if (activationCodeIds.length) {
-    const { data: activationCodes, error: activationCodeError } = await supabase
-      .from("membership_activation_codes")
-      .select("id, code_prefix, generated_by_admin_id, notes, member_birthday, created_at, redeemed_at")
-      .in("id", activationCodeIds);
-    if (activationCodeError) {
-      throw activationCodeError;
-    }
-    activationCodeById = new Map((activationCodes || []).map(code => [String(code.id), code]));
-  }
   const adminIds = Array.from(new Set(entitlements
     .flatMap(entitlement => {
       const activationCodeId = entitlement.metadata?.activation_code_id;
@@ -4028,11 +4081,7 @@ async function handleMemberships(req, res, supabase, subAction = "") {
       .map(entitlement => {
         const activationCodeId = entitlement.metadata?.activation_code_id;
         const activationCode = activationCodeId ? activationCodeById.get(String(activationCodeId)) : null;
-        const advisorId = entitlement.advisor_admin_id
-          || entitlement.created_by_admin_id
-          || entitlement.granted_by_admin_id
-          || activationCode?.generated_by_admin_id
-          || null;
+        const advisorId = resolveMembershipEffectiveAdvisorId(entitlement, activationCodeById) || null;
         const enrichedAuditLogs = (auditLogsByEntitlement.get(String(entitlement.id)) || [])
           .map(log => ({
             ...log,
@@ -4063,25 +4112,8 @@ async function handleMemberships(req, res, supabase, subAction = "") {
               }
             : null
         };
-      })
-      .filter(item => {
-        if (!benefitType && !claimStatus) {
-          return true;
-        }
-        return Boolean(item.claim);
-      })
-      .filter(item => {
-        if (displayStatus === "unused") {
-          return item.status === "active" && !item.claim;
-        }
-        return true;
       }),
-    pagination: {
-      page,
-      page_size: pageSize,
-      total: count || 0,
-      total_pages: count ? Math.ceil(count / pageSize) : 0
-    }
+    pagination
   });
 }
 
@@ -4558,4 +4590,11 @@ module.exports = async function handler(req, res) {
   } catch (error) {
     serverError(res, error);
   }
+};
+
+module.exports.__membershipListTest = {
+  resolveMembershipEffectiveAdvisorId,
+  filterMembershipEntitlements,
+  paginateMembershipItems,
+  loadAllMembershipAdvisorRows
 };

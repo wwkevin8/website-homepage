@@ -6,6 +6,7 @@ import {
   deleteMembership,
   deleteMembershipCode,
   fetchMembershipBirthdays,
+  fetchMembershipAdvisors,
   fetchMembershipCodes,
   fetchMemberships,
   fetchUsers,
@@ -60,6 +61,7 @@ const filters = reactive({
   cycle: CURRENT_CYCLE,
   status: "",
   benefitType: "",
+  advisorAdminId: "",
   pageSize: 10
 });
 
@@ -82,6 +84,8 @@ const memberships = ref([]);
 const membershipPagination = ref({ page: 1, page_size: filters.pageSize, total: 0, total_pages: 0 });
 const membershipLoading = ref(false);
 const membershipError = ref("");
+const membershipAdvisors = ref([]);
+const membershipAdvisorsError = ref("");
 const codes = ref([]);
 const codePagination = ref({ page: 1, page_size: codeFilters.pageSize, total: 0, total_pages: 0 });
 const codeLoading = ref(false);
@@ -289,6 +293,7 @@ function buildMembershipQuery(page) {
     cycle: filters.cycle.trim() || CURRENT_CYCLE,
     status: selectedStatus === "expired" ? "expired" : selectedStatus === "unused" ? "active" : "",
     benefit_type: filters.benefitType,
+    advisor_admin_id: filters.advisorAdminId,
     claim_status: claimStatuses.includes(selectedStatus) ? selectedStatus : "",
     display_status: selectedStatus
   };
@@ -649,6 +654,17 @@ async function loadMemberships(page = membershipPagination.value.page || 1) {
   }
 }
 
+async function loadMembershipAdvisors() {
+  membershipAdvisorsError.value = "";
+  try {
+    const payload = await fetchMembershipAdvisors();
+    membershipAdvisors.value = Array.isArray(payload?.items) ? payload.items : [];
+  } catch (err) {
+    membershipAdvisors.value = [];
+    membershipAdvisorsError.value = err.message || "所属顾问选项加载失败";
+  }
+}
+
 async function loadCodes(page = codePagination.value.page || 1) {
   codeLoading.value = true;
   codeError.value = "";
@@ -698,6 +714,7 @@ function resetMembershipFilters() {
     cycle: CURRENT_CYCLE,
     status: "",
     benefitType: "",
+    advisorAdminId: "",
     pageSize: 10
   });
   loadMemberships(1);
@@ -718,6 +735,7 @@ function resetCodeFilters() {
 }
 
 onMounted(() => {
+  loadMembershipAdvisors();
   loadMemberships(1);
   loadCodes(1);
   loadBirthdays();
@@ -797,6 +815,16 @@ onUnmounted(() => {
             <option value="welcome_pack">新生礼包</option>
           </select>
         </label>
+        <label class="field">
+          <span>所属顾问</span>
+          <select v-model="filters.advisorAdminId">
+            <option value="">全部</option>
+            <option value="unassigned">未分配</option>
+            <option v-for="advisor in membershipAdvisors" :key="advisor.id" :value="advisor.id">
+              {{ advisor.name }}{{ advisor.status !== "active" ? "（已停用）" : "" }}
+            </option>
+          </select>
+        </label>
         <label class="field field--compact">
           <span>每页</span>
           <select v-model.number="filters.pageSize" @change="loadMemberships(1)">
@@ -810,10 +838,11 @@ onUnmounted(() => {
           <button class="secondary-button" type="reset">重置</button>
         </div>
       </form>
+      <div v-if="membershipAdvisorsError" class="inline-notice inline-notice--danger">{{ membershipAdvisorsError }}</div>
 
       <LoadingState v-if="membershipLoading">正在加载会员权益数据...</LoadingState>
       <ErrorState v-else-if="membershipError" :message="membershipError" />
-      <EmptyState v-else-if="!hasMemberships" title="暂无会员数据" description="可以调整搜索、周期、状态或权益类型后重试。" />
+      <EmptyState v-else-if="!hasMemberships" title="暂无会员数据" description="可以调整搜索、周期、状态、权益类型或所属顾问后重试。" />
       <template v-else>
         <AdminTable :columns="membershipColumns" :rows="memberships" row-clickable @row-click="openMembershipDetail($event, 'overview')">
           <template #cell-user="{ row }">
