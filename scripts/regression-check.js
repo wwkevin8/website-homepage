@@ -134,6 +134,7 @@ function checkTransportGroups() {
   const joinHelper = "api/_lib/transport-join.js";
   const groupStats = "api/_lib/transport-group-stats.js";
   const lifecycle = "api/_lib/transport-group-lifecycle.js";
+  const atomicJoinMigration = "supabase/migrations/20260828164011_transport_join_atomic_idempotency.sql";
   const publicGroupViewMigration = "supabase/migrations/20260828213000_transport_public_group_active_member_counts.sql";
 
   expectRegex(view, /validity:\s*"active"/, "transport groups default to active groups");
@@ -172,6 +173,9 @@ function checkTransportGroups() {
   expectIncludes("scripts/test-transport-join-p0.js", "all members may be non-shareable", "P0 regression covers groups whose members are all non-shareable");
   expectIncludes(joinHelper, "group?.max_passengers", "join-carpool evaluator uses the group's actual capacity");
   expectIncludes(joinHelper, "group?.visible_on_frontend === true", "join-carpool evaluator requires an explicitly public group");
+  expectRegex(joinHelper, /\[\s*"single_member"\s*,\s*"active"\s*,\s*"open"\s*\]\.includes\(groupStatus\)/, "JS join evaluator allows single_member, active, and open Groups");
+  expectRegex(atomicJoinMigration, /v_group\.status\s+not\s+in\s*\(\s*'single_member'\s*,\s*'active'\s*,\s*'open'\s*\)/i, "atomic RPC uses the same Group status allowlist as the JS evaluator");
+  expectNotRegex(atomicJoinMigration, /v_group\.status\s+not\s+in\s*\([^)]*'(?:draft|full|closed|cancelled)'/i, "atomic RPC does not allow blocked Group states");
   expectIncludes(groupStats, "localeCompare", "join target selection is deterministic across member query order");
   expectIncludes(joinSubmit, "transport_frontend_join_time_risk_confirmed", "frontend large-time-gap joins are logged after success");
   expectIncludes(joinSubmit, 'supabase.rpc("join_transport_group_atomic"', "public submit delegates final state, duplicate, and capacity checks to the atomic RPC");

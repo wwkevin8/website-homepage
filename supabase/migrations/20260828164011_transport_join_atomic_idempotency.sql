@@ -125,7 +125,7 @@ begin
   where m.request_id = p_target_request_id
   for update of g;
   if not found then raise exception using errcode = 'P0001', message = 'transport_join_target_not_found'; end if;
-  if v_group.status not in ('single_member', 'active') then raise exception using errcode = 'P0001', message = 'transport_join_group_not_open'; end if;
+  if v_group.status not in ('single_member', 'active', 'open') then raise exception using errcode = 'P0001', message = 'transport_join_group_not_open'; end if;
   if v_group.visible_on_frontend is not true then raise exception using errcode = 'P0001', message = 'transport_join_group_hidden'; end if;
   if coalesce(v_group.flight_time_reference, v_target.flight_datetime) <= now() then raise exception using errcode = 'P0001', message = 'transport_join_group_expired'; end if;
   if v_group.service_type <> v_service_type then raise exception using errcode = 'P0001', message = 'transport_join_service_mismatch'; end if;

@@ -6,6 +6,19 @@ const { buildJoinDraft, evaluateJoin } = require("../api/_lib/transport-join");
 const { buildGroupStats } = require("../api/_lib/transport-group-stats");
 const { _test: boardTest } = require("../public-api-handlers/transport-board");
 
+const atomicJoinMigration = fs.readFileSync(
+  path.join(__dirname, "../supabase/migrations/20260828164011_transport_join_atomic_idempotency.sql"),
+  "utf8"
+);
+const rpcJoinableStatusMatch = atomicJoinMigration.match(/if\s+v_group\.status\s+not\s+in\s*\(([^)]*)\)/i);
+assert.ok(rpcJoinableStatusMatch, "atomic join RPC must expose an inspectable Group status allowlist");
+const rpcJoinableStatuses = [...rpcJoinableStatusMatch[1].matchAll(/'([^']+)'/g)].map(match => match[1]);
+const jsJoinableStatuses = ["single_member", "active", "open"];
+assert.deepEqual(rpcJoinableStatuses, jsJoinableStatuses, "JS evaluator and atomic RPC Group status allowlists must stay aligned");
+for (const status of ["draft", "full", "closed", "cancelled"]) {
+  assert.equal(rpcJoinableStatuses.includes(status), false, `${status} must not enter the atomic RPC allowlist`);
+}
+
 const publicGroupViewMigration = fs.readFileSync(
   path.join(__dirname, "../supabase/migrations/20260828213000_transport_public_group_active_member_counts.sql"),
   "utf8"
@@ -138,10 +151,10 @@ assert.equal(
   "technical target order status and shareable must not override an open group"
 );
 
-for (const status of ["single_member", "active", "open"]) {
+for (const status of jsJoinableStatuses) {
   assert.equal(evaluate({ members: threePeople, groupOverrides: { status } }).joinable, true, `${status} must be joinable`);
 }
-for (const status of ["full", "closed", "cancelled"]) {
+for (const status of ["draft", "full", "closed", "cancelled"]) {
   assert.equal(evaluate({ members: threePeople, groupOverrides: { status } }).joinable, false, `${status} must be blocked`);
 }
 assert.equal(evaluate({ members: threePeople, groupOverrides: { visible_on_frontend: false } }).joinable, false, "hidden group must be blocked");

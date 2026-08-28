@@ -137,7 +137,7 @@ function futureIso(offsetMinutes = 0) {
   return new Date(Date.now() + 14 * 86400000 + offsetMinutes * 60000).toISOString();
 }
 
-async function createFixture({ label, serviceType = "pickup", maxPassengers = 5, passengers = [3], shareable = false }) {
+async function createFixture({ label, serviceType = "pickup", maxPassengers = 5, passengers = [3], shareable = false, groupStatus = null }) {
   const flightTime = futureIso(created.groups.length * 20);
   const groupId = `GRP-${marker.slice(-10)}-${label}`.slice(0, 40).toUpperCase();
   const { data: group, error: groupError } = await supabase.from("transport_groups").insert({
@@ -153,7 +153,7 @@ async function createFixture({ label, serviceType = "pickup", maxPassengers = 5,
     preferred_time_start: flightTime,
     max_passengers: maxPassengers,
     visible_on_frontend: true,
-    status: passengers.reduce((a, b) => a + b, 0) >= maxPassengers ? "full" : "active",
+    status: groupStatus || (passengers.reduce((a, b) => a + b, 0) >= maxPassengers ? "full" : "active"),
     notes: marker
   }).select("*").single();
   if (groupError) throw groupError;
@@ -327,6 +327,54 @@ async function main() {
     assert.equal(state.passengers, 4);
     results.push({ test: `${serviceType}_preview_submit`, status: "pass", members: state.memberCount, passengers: state.passengers });
   }
+
+  const singleMemberFixture = await createFixture({ label: "singlemember", groupStatus: "single_member", maxPassengers: 5, passengers: [3], shareable: false });
+  const singleMemberUser = await createUser("singlemember");
+  const singleMemberPreview = await callHandler(preview, singleMemberUser.id, joinPayload(singleMemberFixture));
+  assert.equal(singleMemberPreview.status, 200);
+  assert.equal(singleMemberPreview.body.data.evaluation.joinable, true);
+  const singleMemberSubmit = await callHandler(submit, singleMemberUser.id, joinPayload(singleMemberFixture));
+  assert.equal(singleMemberSubmit.status, 201);
+  created.requests.push(singleMemberSubmit.body.data.requestId);
+  const singleMemberState = await groupState(singleMemberFixture);
+  assert.equal(singleMemberState.memberCount, 2);
+  assert.equal(singleMemberState.passengers, 4);
+  results.push({ test: "single_member_preview_submit", response: 201, members: 2, passengers: 4 });
+
+  for (const serviceType of ["pickup", "dropoff"]) {
+    const fixture = await createFixture({ label: `open${serviceType}`, serviceType, groupStatus: "open", maxPassengers: 5, passengers: [3], shareable: false });
+    const user = await createUser(`open${serviceType}`);
+    const payload = { ...joinPayload(fixture), submission_id: crypto.randomUUID() };
+    const previewResult = await callHandler(preview, user.id, payload);
+    assert.equal(previewResult.status, 200);
+    assert.equal(previewResult.body.data.evaluation.joinable, true);
+    const submitResult = await callHandler(submit, user.id, payload);
+    assert.equal(submitResult.status, 201);
+    created.requests.push(submitResult.body.data.requestId);
+    const replayResult = await callHandler(submit, user.id, payload);
+    assert.equal(replayResult.status, 200);
+    assert.equal(replayResult.body.data.requestId, submitResult.body.data.requestId);
+    const state = await groupState(fixture);
+    assert.equal(state.memberCount, 2);
+    assert.equal(state.passengers, 4);
+    results.push({ test: `open_${serviceType}_preview_submit_replay`, responses: [200, 201, 200], members: 2, passengers: 4 });
+  }
+
+  const openRaceFixture = await createFixture({ label: "openrace", groupStatus: "open", maxPassengers: 4, passengers: [3], shareable: false });
+  const openRaceUsers = [await createUser("openraceA"), await createUser("openraceB")];
+  const openRaceResponses = await Promise.all(openRaceUsers.map(user => callHandler(submit, user.id, {
+    ...joinPayload(openRaceFixture),
+    submission_id: crypto.randomUUID()
+  })));
+  for (const response of openRaceResponses) if (response.status === 201) created.requests.push(response.body.data.requestId);
+  assert.equal(openRaceResponses.filter(response => response.status === 201).length, 1);
+  assert.equal(openRaceResponses.filter(response => response.status === 409).length, 1);
+  assert.equal(openRaceResponses.filter(response => response.status === 400).length, 0);
+  assert.equal(openRaceResponses.filter(response => response.status === 500).length, 0);
+  const openRaceState = await groupState(openRaceFixture);
+  assert.equal(openRaceState.memberCount, 2);
+  assert.equal(openRaceState.passengers, 4);
+  results.push({ test: "open_concurrent_last_seat", responses: openRaceResponses.map(response => response.status), members: 2, passengers: 4 });
 
   for (const maxPassengers of [4, 5, 6]) {
     const fixture = await createFixture({ label: `cap${maxPassengers}`, maxPassengers, passengers: [3], shareable: false });
@@ -509,6 +557,7 @@ async function main() {
   });
 
   for (const scenario of [
+    { label: "statedraft", patch: { status: "draft" }, code: "transport_join_group_not_open" },
     { label: "statefull", patch: { status: "full" }, code: "transport_join_group_not_open" },
     { label: "stateclosed", patch: { status: "closed" }, code: "transport_join_group_not_open" },
     { label: "statecancelled", patch: { status: "cancelled" }, code: "transport_join_group_not_open" },
