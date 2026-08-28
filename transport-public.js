@@ -10,7 +10,6 @@
   const DEFAULT_PREVIEW_SIZE = 9;
   const MODAL_ID = "pickupJoinModal";
   const CUSTOMER_SERVICE_QR_SRC = "./img/pickup-service-qr.jpg";
-  const UK_TIME_NOTICE_HTML = '<p class="pickup-join-grid-wide pickup-join-field-hint" style="margin: 2px 0 8px 18px; color: #d92d20; font-weight: 600; background: linear-gradient(90deg, #e11d48, #f97316, #eab308, #22c55e, #06b6d4, #3b82f6, #8b5cf6); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">时间请统一填写英国当地时间。系统默认按英国时间保存和显示，请不要填写中国时间；如填写中国时间可能会导致接送机安排错误。</p>';
   const detailCache = new Map();
 
   function setCarButtonState(button, label, isLoading) {
@@ -362,7 +361,6 @@
           <h3>你的加入信息</h3>
           <label><span>航班号</span><input name="flight_no" required></label>
           <label><span>${Shared.escapeHtml(timingLabel)}</span><input name="flight_datetime" type="datetime-local" required></label>
-          ${UK_TIME_NOTICE_HTML}
           <label><span>机场代码</span><input name="airport_code" value="${Shared.escapeHtml(item.airport_code || "")}" required></label>
           <label><span>机场名称</span><input name="airport_name" value="${Shared.escapeHtml(getAirportLabel(item))}" required></label>
           <label><span>航站楼</span><input name="terminal" value="${Shared.escapeHtml(item.terminal || "")}"></label>
@@ -575,7 +573,6 @@
             <input name="flight_datetime" type="datetime-local" required>
             <small class="pickup-join-field-hint">如与当前拼车组时间相差较大，系统会显示风险提醒，但不阻止提交。</small>
           </label>
-          ${UK_TIME_NOTICE_HTML}
           <label>
             <span>行李数</span>
             <select name="luggage_count">
@@ -866,6 +863,16 @@
     const submitButtonIdleText = submitButton?.textContent || "确认加入拼车";
     let previewInFlight = false;
     let submitInFlight = false;
+    let joinSubmissionId = "";
+    let joinSubmissionFingerprint = "";
+
+    function createSubmissionId() {
+      if (window.crypto?.randomUUID) return window.crypto.randomUUID();
+      return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, token => {
+        const value = Math.floor(Math.random() * 16);
+        return (token === "x" ? value : (value & 0x3) | 0x8).toString(16);
+      });
+    }
 
     function setPreviewLoading(isLoading) {
       previewInFlight = isLoading;
@@ -910,6 +917,12 @@
         evaluationNode.innerHTML = "<p>正在核查是否已有相同登记，请勿重复提交……</p>";
       }
       const payload = serializeJoinForm(form);
+      const nextFingerprint = JSON.stringify(payload);
+      if (!joinSubmissionId || joinSubmissionFingerprint !== nextFingerprint) {
+        joinSubmissionId = createSubmissionId();
+        joinSubmissionFingerprint = nextFingerprint;
+      }
+      payload.submission_id = joinSubmissionId;
       const duplicateCheckStartedAt = performance.now();
       try {
         const existingRequests = await listMyFutureTransportRequests();
@@ -965,6 +978,8 @@
         const outcome = error.submissionOutcome === "failure" ? "failure" : "uncertain";
         recordSubmitTiming("join", "create", outcome, createStartedAt);
         if (outcome === "failure") {
+          joinSubmissionId = "";
+          joinSubmissionFingerprint = "";
           renderEvaluation(evaluationNode, `提交失败，本次信息尚未成功登记，请稍后重试。${error.message ? ` ${error.message}` : ""}`, true);
           setSubmitLoading(false);
         } else {

@@ -77,6 +77,7 @@ function buildJoinDraft(body, siteUser) {
 function buildJoinResult({
   joinable,
   reason,
+  errorCode = null,
   surchargeGbp,
   currentPassengerCount,
   nextPassengerCount,
@@ -90,12 +91,15 @@ function buildJoinResult({
   targetGroupTime = null,
   orderTime = null
 }) {
+  const maxPassengers = Number(group?.max_passengers || 0);
   return {
     joinable,
     reason,
+    errorCode,
     surchargeGbp,
     currentPassengerCount,
-    remainingPassengerCount: Math.max(DEFAULT_GROUP_MAX_PASSENGERS - currentPassengerCount, 0),
+    maxPassengerCount: maxPassengers,
+    remainingPassengerCount: Math.max(maxPassengers - currentPassengerCount, 0),
     nextPassengerCount,
     sameAirport,
     sameTerminal,
@@ -501,13 +505,21 @@ function evaluateJoinWindowAware({ targetRequest, group, activeMembers, joinPayl
 }
 
 function evaluateJoinWindowAwareRelaxed({ targetRequest, group, activeMembers, joinPayload, activeFutureRequests = [] }) {
-  const currentPassengerCount = activeMembers.reduce((sum, item) => sum + Number(item.transport_requests?.passenger_count || 0), 0);
+  const effectiveActiveMembers = (activeMembers || []).filter(item => {
+    const status = String(item.transport_requests?.status || "").trim().toLowerCase();
+    return Boolean(item.transport_requests) && !["closed", "cancelled"].includes(status);
+  });
+  const currentPassengerCount = effectiveActiveMembers.reduce((sum, item) => {
+    return sum + Number(item.transport_requests?.passenger_count || item.passenger_count_snapshot || 0);
+  }, 0);
+  const maxPassengers = Number(group?.max_passengers || 0);
   const nextPassengerCount = currentPassengerCount + Number(joinPayload.passenger_count || 0);
   const sameServiceType = String(targetRequest.service_type || "").trim() === String(joinPayload.service_type || "").trim();
   const sameAirport = String(targetRequest.airport_code || "").trim().toUpperCase() === String(joinPayload.airport_code || "").trim().toUpperCase();
   const sameTerminal = String(targetRequest.terminal || "").trim().toUpperCase() === String(joinPayload.terminal || "").trim().toUpperCase();
   const groupStatus = String(group?.status || "").trim().toLowerCase();
-  const effectiveTargetDate = getEffectivePickupTime(targetRequest) || targetRequest.flight_datetime;
+  const groupVisibleOnFrontend = group?.visible_on_frontend === true;
+  const effectiveTargetDate = group?.flight_time_reference || getEffectivePickupTime(targetRequest) || targetRequest.flight_datetime;
   const effectiveJoinDate = getEffectivePickupTime(joinPayload) || joinPayload.flight_datetime;
   const targetDatePart = getIsoDatePart(effectiveTargetDate);
   const joinDatePart = getIsoDatePart(effectiveJoinDate);
@@ -523,38 +535,45 @@ function evaluateJoinWindowAwareRelaxed({ targetRequest, group, activeMembers, j
 
   let joinable = true;
   let reason = "";
+  let errorCode = null;
   let surchargeGbp = 0;
 
   if (!sameServiceType) {
     joinable = false;
     reason = "服务类型不同，无法加入当前拼车组。";
+    errorCode = "transport_join_service_mismatch";
   } else if (!sameAirport) {
     joinable = false;
     reason = "机场不同，无法加入当前拼车组。";
+    errorCode = "transport_join_airport_mismatch";
   } else if (["full", "closed", "cancelled"].includes(groupStatus)) {
     joinable = false;
     reason = "当前拼车组已满员、关闭或取消，无法加入。";
-  } else if (groupStatus && !["single_member", "active", "open"].includes(groupStatus)) {
+    errorCode = "transport_join_group_not_open";
+  } else if (!["single_member", "active", "open"].includes(groupStatus)) {
     joinable = false;
     reason = "当前拼车组状态不可加入。";
+    errorCode = "transport_join_group_not_open";
+  } else if (!groupVisibleOnFrontend) {
+    joinable = false;
+    reason = "当前拼车组未公开开放，无法加入。";
+    errorCode = "transport_join_group_hidden";
+  } else if (new Date(effectiveTargetDate).getTime() <= Date.now()) {
+    joinable = false;
+    reason = "当前拼车组已过期。";
+    errorCode = "transport_join_group_expired";
   } else if (!sameDate && !allowCrossMidnightDateMismatch) {
     joinable = false;
     reason = joinPayload.service_type === "dropoff" ? "送机日期不同，无法拼车。" : "接机日期不同，无法拼车。";
-  } else if (!["published", "matched"].includes(targetRequest.status)) {
-    joinable = false;
-    reason = "当前拼车组状态不可加入。";
-  } else if (!targetRequest.shareable) {
-    joinable = false;
-    reason = "当前拼车组不接受拼车。";
-  } else if (new Date(targetRequest.flight_datetime).getTime() <= Date.now()) {
-    joinable = false;
-    reason = "当前拼车组已过期。";
+    errorCode = "transport_join_invalid_date";
   } else if (sameTypeRequest) {
     joinable = false;
     reason = `当前账号已存在一张未来有效${joinPayload.service_type === "dropoff" ? "送机" : "接机"}单（${sameTypeRequest.order_no}），同一账号同类服务一次只保留一张有效单。`;
-  } else if (nextPassengerCount > DEFAULT_GROUP_MAX_PASSENGERS) {
+    errorCode = "transport_join_existing_future_request";
+  } else if (maxPassengers < 1 || nextPassengerCount > maxPassengers) {
     joinable = false;
-    reason = `加入后总人数将超过 ${DEFAULT_GROUP_MAX_PASSENGERS} 人。`;
+    reason = `加入后总人数将超过 ${maxPassengers} 人。`;
+    errorCode = "transport_join_group_full";
   }
 
   if (joinable && !sameTerminal) {
@@ -590,6 +609,7 @@ function evaluateJoinWindowAwareRelaxed({ targetRequest, group, activeMembers, j
   return buildJoinResult({
     joinable,
     reason,
+    errorCode,
     surchargeGbp,
     currentPassengerCount,
     nextPassengerCount,

@@ -644,7 +644,7 @@ async function getGroupCapacityStats(supabase, groupId, group = null) {
   const currentPassengerCount = activeMembers.reduce((sum, member) => {
     return sum + Number(member.transport_requests?.passenger_count || member.passenger_count_snapshot || 0);
   }, 0);
-  const maxPassengers = Number(group?.max_passengers || DEFAULT_GROUP_MAX_PASSENGERS);
+  const maxPassengers = Number(group?.max_passengers || 0);
 
   return {
     members,
@@ -989,9 +989,33 @@ async function createPickupRequestWithGroup(supabase, requestPayload, options = 
   }
 }
 
-async function addRequestToGroup(supabase, groupId, request) {
+function assertGroupAcceptsMember(group, stats, request, options = {}) {
+  const status = String(group?.status || "").trim().toLowerCase();
+  const requestedPassengerCount = Number(request?.passenger_count || 0);
+  const maxPassengers = Number(group?.max_passengers || DEFAULT_GROUP_MAX_PASSENGERS);
+  if (!JOINABLE_GROUP_STATUSES.has(status)) {
+    throw buildTransportLifecycleError("target group status is not joinable", 409);
+  }
+  if (options.requirePublicJoinable === true && group?.visible_on_frontend !== true) {
+    throw buildTransportLifecycleError("target group is not publicly joinable", 409);
+  }
+  const serviceTime = group?.flight_time_reference || request?.flight_datetime;
+  if (options.requirePublicJoinable === true && new Date(serviceTime).getTime() <= Date.now()) {
+    throw buildTransportLifecycleError("target group service time has expired", 409);
+  }
+  if (!requestedPassengerCount || requestedPassengerCount < 1) {
+    throw buildTransportLifecycleError("request passenger_count is invalid", 400);
+  }
+  if (Number(stats?.current_passenger_count || 0) + requestedPassengerCount > maxPassengers) {
+    throw buildTransportLifecycleError("target group capacity is not enough", 409);
+  }
+}
+
+async function addRequestToGroup(supabase, groupId, request, options = {}) {
   const group = await getGroupByBusinessId(supabase, groupId);
   const memberGroupId = group.group_id || group.group_ref || groupId;
+  const beforeInsertStats = await getGroupCapacityStats(supabase, memberGroupId, group);
+  assertGroupAcceptsMember(group, beforeInsertStats, request, options);
   const { error } = await supabase
     .from("transport_group_members")
     .insert({
@@ -1016,6 +1040,21 @@ async function addRequestToGroup(supabase, groupId, request) {
     }
   } else if (error) {
     throw error;
+  }
+
+  const afterInsertStats = await getGroupCapacityStats(supabase, memberGroupId, group);
+  if (afterInsertStats.current_passenger_count > afterInsertStats.max_passengers) {
+    const rollback = await supabase
+      .from("transport_group_members")
+      .delete()
+      .eq("group_id", memberGroupId)
+      .eq("request_id", request.id);
+    if (rollback.error) {
+      throw buildTransportLifecycleError("target group exceeded capacity and membership rollback failed", 500, {
+        rollback_error: rollback.error.message || String(rollback.error)
+      });
+    }
+    throw buildTransportLifecycleError("target group capacity changed before join completed", 409);
   }
 
   return syncGroupState(supabase, memberGroupId);

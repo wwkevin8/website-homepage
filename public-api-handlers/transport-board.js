@@ -1,6 +1,6 @@
 const { getSupabaseAdmin } = require("../api/_lib/supabase");
 const { ok, methodNotAllowed, serverError } = require("../api/_lib/http");
-const { PUBLIC_REQUEST_STATUSES, deriveDisplayGroupId, DEFAULT_GROUP_MAX_PASSENGERS } = require("../api/_lib/transport");
+const { PUBLIC_REQUEST_STATUSES, deriveDisplayGroupId } = require("../api/_lib/transport");
 const { cleanupEmptyTransportGroups } = require("../api/_lib/transport-group-lifecycle");
 const { loadGroupStatsMap, parseLuggageDisplay, uniqueNonEmpty, getPricingSeason, roundCurrency, formatArrivalRange, PICKUP_PRICING } = require("../api/_lib/transport-group-stats");
 
@@ -64,11 +64,44 @@ function filterFutureBoardItems(items, includePast) {
   });
 }
 
+function isPublicJoinableGroup(item, remainingPassengerCount) {
+  const status = String(item?.group_status || "").trim().toLowerCase();
+  const serviceTime = item?.flight_time_reference || item?.flight_datetime || null;
+  const serviceTimeMs = serviceTime ? new Date(serviceTime).getTime() : NaN;
+  return ["single_member", "active", "open"].includes(status)
+    && item?.group_visible_on_frontend === true
+    && Number.isFinite(serviceTimeMs)
+    && serviceTimeMs > Date.now()
+    && Number(remainingPassengerCount || 0) > 0;
+}
+
+function filterPublicSourceRows(rows) {
+  return (rows || []).filter(item => item?.group_id || item?.shareable === true);
+}
+
+function dedupeGroupedBoardItems(items) {
+  const selected = new Map();
+  (items || []).forEach(item => {
+    const key = item?.group_id ? `group:${item.group_id}` : `request:${item?.id || ""}`;
+    const current = selected.get(key);
+    if (!current
+      || item?.id === item?.join_target_request_id
+      || (current?.id !== current?.join_target_request_id && String(item?.id || "").localeCompare(String(current?.id || "")) < 0)) {
+      selected.set(key, item);
+    }
+  });
+  return Array.from(selected.values());
+}
+
 function mapBoardItem(item, membersByGroup, groupStats) {
   const members = membersByGroup.get(item.group_id) || [];
-  const activeMembers = members.filter(member => member.transport_requests?.status !== "closed");
+  const activeMembers = members.filter(member => {
+    const status = String(member.transport_requests?.status || "").toLowerCase();
+    return Boolean(member.transport_requests) && !["closed", "cancelled"].includes(status);
+  });
   const currentPassengerCount = activeMembers.reduce((sum, member) => sum + Number(member.transport_requests?.passenger_count || 0), 0);
-  const remainingPassengerCount = Math.max(DEFAULT_GROUP_MAX_PASSENGERS - currentPassengerCount, 0);
+  const maxPassengerCount = Number(groupStats?.max_passengers || 0);
+  const remainingPassengerCount = Math.max(maxPassengerCount - currentPassengerCount, 0);
   const terminalValues = uniqueNonEmpty(activeMembers.map(member => member.transport_requests?.terminal));
   const flightValues = uniqueNonEmpty(activeMembers.map(member => member.transport_requests?.flight_no));
   const arrivalRange = formatArrivalRange(activeMembers.map(member => member.transport_requests?.flight_datetime));
@@ -98,10 +131,12 @@ function mapBoardItem(item, membersByGroup, groupStats) {
   const effectiveStats = groupStats || {};
   const resolvedPassengerCount = Number(effectiveStats.current_passenger_count ?? currentPassengerCount);
   const resolvedRemainingPassengerCount = Number(effectiveStats.remaining_passenger_count ?? remainingPassengerCount);
-  const joinable = ["published", "matched"].includes(item.status)
-    && item.shareable
-    && new Date(item.flight_datetime).getTime() > Date.now()
-    && resolvedRemainingPassengerCount > 0;
+  const joinable = item.group_id
+    ? isPublicJoinableGroup(item, resolvedRemainingPassengerCount)
+    : ["published", "matched"].includes(item.status)
+      && item.shareable === true
+      && new Date(item.flight_datetime).getTime() > Date.now()
+      && resolvedRemainingPassengerCount > 0;
   const joinReason = joinable ? "" : (resolvedRemainingPassengerCount <= 0 ? "已满" : "需联系客服");
 
   return {
@@ -212,8 +247,7 @@ module.exports = async function handler(req, res) {
       .from("transport_requests")
       .select("id, service_type, airport_code, airport_name, terminal, flight_no, flight_datetime, passenger_count, shareable, status, created_at, transport_group_members(*)")
       .in("status", PUBLIC_REQUEST_STATUSES)
-      .or("source.is.null,source.neq.admin_manual")
-      .eq("shareable", true);
+      .or("source.is.null,source.neq.admin_manual");
 
     if (String(queryParams.effective || "").trim().toLowerCase() !== "all") {
       query.gte("flight_datetime", nowIso);
@@ -273,10 +307,10 @@ module.exports = async function handler(req, res) {
       });
     }
 
-    let rows = (data || []).map(item => ({
+    let rows = filterPublicSourceRows((data || []).map(item => ({
       ...item,
       group_id: memberMapByRequest.get(item.id) || item.transport_group_members?.[0]?.group_id || null
-    }));
+    })));
     const groupIds = Array.from(new Set(rows.map(item => item.group_id).filter(Boolean)));
     const membersByGroup = new Map();
     const groupStatsById = new Map();
@@ -284,7 +318,7 @@ module.exports = async function handler(req, res) {
     if (groupIds.length) {
       let groupQuery = await supabase
         .from("transport_groups")
-        .select("group_id, id, status, group_date, flight_time_reference")
+        .select("group_id, id, status, visible_on_frontend, max_passengers, group_date, flight_time_reference")
         .in("group_id", groupIds);
 
       if (groupQuery.error && isMissingColumnError(groupQuery.error, "transport_groups.group_id")) {
@@ -302,6 +336,8 @@ module.exports = async function handler(req, res) {
         item.group_id || item.id,
         {
           status: item.status,
+          visible_on_frontend: item.visible_on_frontend,
+          max_passengers: item.max_passengers,
           displayGroupId: item.group_id || deriveDisplayGroupId(item.id, item.group_date),
           flight_time_reference: item.flight_time_reference || null
         }
@@ -310,6 +346,8 @@ module.exports = async function handler(req, res) {
       rows.forEach(item => {
         const resolved = groupStatusMap.get(item.group_id) || null;
         item.group_status = resolved?.status || null;
+        item.group_visible_on_frontend = resolved?.visible_on_frontend === true;
+        item.max_passengers = Number(resolved?.max_passengers || 0);
         item.group_id = resolved?.displayGroupId || deriveDisplayGroupId(item.group_id, item.flight_datetime);
         item.flight_time_reference = resolved?.flight_time_reference || null;
       });
@@ -342,8 +380,11 @@ module.exports = async function handler(req, res) {
       rows = rows.filter(item => String(item.group_id || "").toUpperCase().includes(groupKeyword));
     }
 
-    const publicItems = rows
-      .map(item => mapBoardItem(item, membersByGroup, groupStatsById.get(item.group_id)))
+    const publicItems = dedupeGroupedBoardItems(rows
+      .map(item => ({
+        ...mapBoardItem(item, membersByGroup, groupStatsById.get(item.group_id)),
+        join_target_request_id: groupStatsById.get(item.group_id)?.join_target_request_id || null
+      })))
       .filter(item => !isFullBoardItem(item));
     const sortedItems = sortBoardItemsByServiceTime(
       filterFutureBoardItems(publicItems, String(queryParams.effective || "").trim().toLowerCase() === "all"),
@@ -364,4 +405,11 @@ module.exports = async function handler(req, res) {
   } catch (error) {
     serverError(res, error);
   }
+};
+
+module.exports._test = {
+  dedupeGroupedBoardItems,
+  filterPublicSourceRows,
+  isPublicJoinableGroup,
+  mapBoardItem
 };

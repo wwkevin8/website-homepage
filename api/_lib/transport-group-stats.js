@@ -1,5 +1,3 @@
-const { DEFAULT_GROUP_MAX_PASSENGERS } = require("./transport");
-
 function nowMs() {
   return Number(process.hrtime.bigint() / 1000000n);
 }
@@ -91,7 +89,7 @@ function normalizePricingMembers(members, options = {}) {
     if (!activeOnly) {
       return true;
     }
-    return member.transport_requests.status !== "closed";
+    return !["closed", "cancelled"].includes(String(member.transport_requests.status || "").toLowerCase());
   });
 }
 
@@ -101,10 +99,12 @@ function computeTransportGroupPricingSnapshot(group, members, options = {}) {
   const currentPassengerCount = displayMembers.reduce((sum, member) => {
     return sum + Number(member.transport_requests?.passenger_count || member.passenger_count_snapshot || 0);
   }, 0);
-  const maxPassengers = Number(group?.max_passengers || DEFAULT_GROUP_MAX_PASSENGERS);
+  const maxPassengers = Number(group?.max_passengers || 0);
   const terminals = uniqueNonEmpty(displayRequests.map(request => request.terminal));
   const flightNos = uniqueNonEmpty(displayRequests.map(request => request.flight_no));
-  const joinTargetRequestId = displayRequests.find(request => request.id)?.id || null;
+  const joinTargetRequestId = displayRequests
+    .filter(request => request.id)
+    .sort((left, right) => String(left.id).localeCompare(String(right.id)))[0]?.id || null;
   const pricingSeason = getPricingSeason(group?.group_date || displayRequests[0]?.flight_datetime || group?.created_at);
   const airportCode = String(group?.airport_code || displayRequests[0]?.airport_code || "").trim().toUpperCase();
   const airportPricing = PICKUP_PRICING[pricingSeason]?.[airportCode] || null;
@@ -124,6 +124,7 @@ function computeTransportGroupPricingSnapshot(group, members, options = {}) {
     group_total_price_gbp: totalPriceGbp,
     per_person_price_gbp: averagePriceGbp,
     current_passenger_count: currentPassengerCount,
+    max_passengers: maxPassengers,
     remaining_passenger_count: Math.max(maxPassengers - currentPassengerCount, 0),
     current_average_price_gbp: averagePriceGbp,
     total_price_gbp: totalPriceGbp,
@@ -145,6 +146,7 @@ function buildGroupStats(group, members, options = {}) {
 
   return {
     current_passenger_count: pricing.current_passenger_count,
+    max_passengers: pricing.max_passengers,
     remaining_passenger_count: pricing.remaining_passenger_count,
     current_average_price_gbp: pricing.current_average_price_gbp,
     total_price_gbp: pricing.total_price_gbp,

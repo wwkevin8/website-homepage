@@ -84,7 +84,7 @@ module.exports = async function handler(req, res) {
     const evaluation = evaluateJoin({
       targetRequest: request,
       group,
-      activeMembers: members.filter(item => item.transport_requests?.status !== "closed"),
+      activeMembers: members,
       joinPayload: joinDraft,
       activeFutureRequests: activeTransportRequests
     });

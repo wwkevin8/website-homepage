@@ -1,17 +1,81 @@
 const { getSupabaseAdmin } = require("../api/_lib/supabase");
-const { created, badRequest, parseJsonBody, methodNotAllowed, serverError, unauthorized } = require("../api/_lib/http");
+const crypto = require("node:crypto");
+const { created, ok, badRequest, parseJsonBody, methodNotAllowed, serverError, unauthorized, sendJson } = require("../api/_lib/http");
 const { getAuthenticatedUser } = require("../api/_lib/user-auth");
 const { getProfileCompletionState } = require("../api/_lib/user-profile");
 const { buildJoinDraft, evaluateJoin } = require("../api/_lib/transport-join");
-const { createRequestRecord, addRequestToGroup, getGroupByBusinessId, getGroupMembersWithRequests } = require("../api/_lib/transport-group-lifecycle");
+const { getGroupByBusinessId, getGroupMembersWithRequests } = require("../api/_lib/transport-group-lifecycle");
 const { sendTransportOrderSubmissionEmail } = require("../api/_lib/transport-order-submission-email");
 const { logAdminOperation } = require("../api/_lib/orders");
 const {
-  bindClaimToOrder,
   calculateMembershipDiscount,
   getActiveClaim,
   getCurrentMembershipCycle
 } = require("../api/_lib/membership");
+
+function buildSubmissionHash(siteUserId, groupId, targetRequestId, joinDraft) {
+  const normalized = {
+    site_user_id: siteUserId,
+    group_id: groupId,
+    target_request_id: targetRequestId,
+    service_type: joinDraft.service_type,
+    airport_code: joinDraft.airport_code,
+    airport_name: joinDraft.airport_name,
+    terminal: joinDraft.terminal,
+    location_from: joinDraft.location_from,
+    location_to: joinDraft.location_to,
+    flight_datetime: joinDraft.flight_datetime,
+    passenger_count: joinDraft.passenger_count,
+    luggage_count: joinDraft.luggage_count,
+    student_name: joinDraft.student_name,
+    email: joinDraft.email,
+    phone: joinDraft.phone,
+    wechat: joinDraft.wechat,
+    flight_no: joinDraft.flight_no,
+    notes: joinDraft.notes
+  };
+  return crypto.createHash("sha256").update(JSON.stringify(normalized)).digest("hex");
+}
+
+function sendJoinRpcError(res, error) {
+  const message = String(error?.message || "");
+  const conflicts = {
+    transport_join_submission_conflict: "本次提交内容已发生变化，请重新开始提交。",
+    transport_join_existing_future_request: "您已有同类型的未来有效订单。",
+    transport_join_group_full: "当前拼车组已满。",
+    transport_group_capacity_exceeded: "当前拼车组已满。",
+    transport_join_group_not_open: "当前拼车组不可加入。",
+    transport_join_group_hidden: "当前拼车组不可加入。",
+    transport_join_group_expired: "当前拼车组服务时间已过。",
+    transport_join_membership_claim_unavailable: "会员权益当前不可用。"
+  };
+  const conflictCode = Object.keys(conflicts).find(code => message.includes(code));
+  if (conflictCode) {
+    sendJson(res, 409, { data: null, error: { message: conflicts[conflictCode], code: conflictCode } });
+    return;
+  }
+  if (message.includes("transport_join_invalid_") || message.includes("transport_join_target_not_found") || message.includes("transport_join_service_mismatch") || message.includes("transport_join_airport_mismatch")) {
+    badRequest(res, "提交信息无效，请重新核对。", { code: message });
+    return;
+  }
+  serverError(res, error);
+}
+
+function sendJoinEvaluationError(res, evaluation) {
+  const inputErrorCodes = new Set([
+    "transport_join_service_mismatch",
+    "transport_join_airport_mismatch",
+    "transport_join_invalid_date"
+  ]);
+  const payload = {
+    data: null,
+    error: {
+      message: evaluation.reason,
+      code: evaluation.errorCode || "transport_join_invalid_request"
+    }
+  };
+  sendJson(res, inputErrorCodes.has(evaluation.errorCode) ? 400 : 409, payload);
+}
 
 async function getTargetRequestContext(supabase, requestId) {
   const { data: request, error } = await supabase
@@ -153,18 +217,16 @@ module.exports = async function handler(req, res) {
       location_from: body.location_from || targetRequest.location_from,
       location_to: body.location_to || targetRequest.location_to
     }, siteUser);
-    const activeTransportRequests = await listActiveFutureTransportRequests(supabase, siteUser.id);
-
     const evaluation = evaluateJoin({
       targetRequest,
       group,
-      activeMembers: members.filter(item => item.transport_requests?.status !== "closed"),
+      activeMembers: members,
       joinPayload: joinDraft,
-      activeFutureRequests: activeTransportRequests
+      activeFutureRequests: []
     });
 
     if (!evaluation.joinable) {
-      badRequest(res, evaluation.reason, evaluation);
+      sendJoinEvaluationError(res, evaluation);
       return;
     }
 
@@ -183,21 +245,27 @@ module.exports = async function handler(req, res) {
           membership_discount_breakdown_json: membershipDiscount.breakdown
         }
       : {};
-
-    const request = await createRequestRecord(supabase, {
-      ...joinDraft,
-      ...membershipPatch,
-      site_user_id: siteUser.id,
-      email_verified_snapshot: true,
-      profile_verified_snapshot: true
-    });
-
-    try {
-      await addRequestToGroup(supabase, group.group_id, request);
-    } catch (error) {
-      await supabase.from("transport_requests").delete().eq("id", request.id);
-      throw error;
+    const submissionId = String(body.submission_id || "").trim() || crypto.randomUUID();
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(submissionId)) {
+      badRequest(res, "submission_id 格式无效。");
+      return;
     }
+    const payloadHash = buildSubmissionHash(siteUser.id, group.group_id, targetRequest.id, joinDraft);
+    const rpcResult = await supabase.rpc("join_transport_group_atomic", {
+      p_site_user_id: siteUser.id,
+      p_submission_id: submissionId,
+      p_payload_hash: payloadHash,
+      p_target_request_id: targetRequest.id,
+      p_request: joinDraft,
+      p_membership_claim_id: membershipDiscount?.eligible ? membershipClaim.id : null,
+      p_membership: membershipPatch
+    });
+    if (rpcResult.error) {
+      sendJoinRpcError(res, rpcResult.error);
+      return;
+    }
+    const atomicResult = rpcResult.data || {};
+    const request = { ...joinDraft, id: atomicResult.request_id, order_no: atomicResult.order_no };
 
     await logFrontendJoinTimeRisk(supabase, {
       siteUser,
@@ -207,26 +275,9 @@ module.exports = async function handler(req, res) {
       evaluation
     });
 
-    let boundMembershipClaim = null;
-    if (membershipDiscount?.eligible && membershipClaim?.id) {
-      try {
-        boundMembershipClaim = await bindClaimToOrder(
-          supabase,
-          membershipClaim.id,
-          "transport_requests",
-          request.id,
-          request.order_no,
-          membershipDiscount
-        );
-      } catch (bindError) {
-        await supabase.from("transport_requests").delete().eq("id", request.id);
-        badRequest(res, bindError.message || "Membership benefit is no longer available for this order");
-        return;
-      }
-    }
-
     let submissionEmail = null;
     try {
+      if (atomicResult.replayed) throw Object.assign(new Error("idempotent replay"), { skipEmail: true });
       submissionEmail = await sendTransportOrderSubmissionEmail(req, {
         recipientEmail: siteUser.email || request.email,
         studentName: request.student_name || siteUser.nickname || "",
@@ -242,26 +293,30 @@ module.exports = async function handler(req, res) {
       });
     } catch (emailError) {
       submissionEmail = {
-        skipped: false,
+        skipped: Boolean(emailError?.skipEmail),
         error: emailError && emailError.message ? emailError.message : "Failed to send join confirmation email"
       };
     }
 
-    created(res, {
+    const responsePayload = {
       requestId: request.id,
       orderNo: request.order_no,
       groupId: group.group_id,
+      submissionId,
+      idempotentReplay: Boolean(atomicResult.replayed),
       surchargeGbp: evaluation.surchargeGbp,
       nextPassengerCount: evaluation.nextPassengerCount,
       warnings: evaluation.warnings || [],
       timeDistanceMinutes: evaluation.timeDistanceMinutes ?? null,
       status: "matched",
-      membershipBenefitClaimId: boundMembershipClaim?.id || null,
+      membershipBenefitClaimId: membershipDiscount?.eligible ? membershipClaim.id : null,
       membershipDiscountAmount: membershipDiscount?.membershipDiscountAmount || 0,
       extraChargeAmount: membershipDiscount?.extraChargeAmount || 0,
       finalPrice: membershipDiscount?.finalPrice ?? null,
       submissionEmail
-    });
+    };
+    if (atomicResult.replayed) ok(res, responsePayload);
+    else created(res, responsePayload);
   } catch (error) {
     serverError(res, error);
   }

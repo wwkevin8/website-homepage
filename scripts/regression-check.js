@@ -132,7 +132,9 @@ function checkTransportGroups() {
   const joinPreview = "public-api-handlers/transport-join-preview.js";
   const joinSubmit = "public-api-handlers/transport-join-submit.js";
   const joinHelper = "api/_lib/transport-join.js";
+  const groupStats = "api/_lib/transport-group-stats.js";
   const lifecycle = "api/_lib/transport-group-lifecycle.js";
+  const publicGroupViewMigration = "supabase/migrations/20260828213000_transport_public_group_active_member_counts.sql";
 
   expectRegex(view, /validity:\s*"active"/, "transport groups default to active groups");
   expectRegex(view, /sort:\s*"service_time_asc"/, "transport groups default to nearest upcoming service time");
@@ -157,17 +159,33 @@ function checkTransportGroups() {
   expectIncludes(publicBoard, "cleanupEmptyTransportGroups", "public transport board list runs empty-group cleanup before listing");
   expectIncludes(publicBoard, "sortBoardItemsByServiceTime", "public transport board sorts final rendered rows by service time");
   expectIncludes(publicBoard, "filterFutureBoardItems", "public transport board filters active rows by final service time");
+  expectIncludes(publicBoard, "filterPublicSourceRows", "public board separates grouped requests from standalone request privacy filtering");
+  expectIncludes(publicBoard, "isPublicJoinableGroup", "grouped board items use group-level joinability");
+  expectIncludes(publicBoard, "group_visible_on_frontend", "grouped board items require explicit frontend visibility");
+  expectNotRegex(publicBoard, /\.eq\(\s*["']shareable["']\s*,\s*true\s*\)/, "public board does not require a shareable member as the source of a grouped item");
+  expectNotRegex(publicBoard, /const joinable = \[[^;]+item\.shareable/s, "member request shareable does not control grouped board joinability");
   expectIncludes(joinPreview, "evaluateJoin", "join-carpool preview uses join evaluator");
   expectIncludes(joinSubmit, "evaluateJoin", "join-carpool submit uses join evaluator");
   expectIncludes(joinHelper, "evaluateJoinWindowAwareRelaxed", "join-carpool evaluator uses relaxed time-difference behavior");
   expectIncludes(joinHelper, "large_time_gap", "join-carpool evaluator returns large-time-gap warnings");
   expectIncludes(joinHelper, "cross_midnight_date_mismatch", "join-carpool evaluator warns for allowed cross-midnight joins");
+  expectIncludes("scripts/test-transport-join-p0.js", "all members may be non-shareable", "P0 regression covers groups whose members are all non-shareable");
+  expectIncludes(joinHelper, "group?.max_passengers", "join-carpool evaluator uses the group's actual capacity");
+  expectIncludes(joinHelper, "group?.visible_on_frontend === true", "join-carpool evaluator requires an explicitly public group");
+  expectIncludes(groupStats, "localeCompare", "join target selection is deterministic across member query order");
   expectIncludes(joinSubmit, "transport_frontend_join_time_risk_confirmed", "frontend large-time-gap joins are logged after success");
+  expectIncludes(joinSubmit, 'supabase.rpc("join_transport_group_atomic"', "public submit delegates final state, duplicate, and capacity checks to the atomic RPC");
+  expectNotRegex(joinSubmit, /createRequestRecord|addRequestToGroup/, "public submit no longer uses non-transactional request/member writes");
   expectIncludes(lifecycle, "cleanupEmptyTransportGroups", "empty-group cleanup helper exists");
   expectIncludes(lifecycle, "DEFAULT_EMPTY_GROUP_GRACE_MINUTES = 10", "empty-group cleanup keeps the 10-minute grace window");
   expectIncludes(lifecycle, "active_member_count", "empty-group cleanup uses effective active members, not stale closed members");
   expectIncludes(lifecycle, "buildTimeDistanceWarning", "backend transfer uses warnings for large time gaps");
+  expectIncludes(lifecycle, "beforeInsertStats", "final membership write rechecks capacity before insert");
+  expectIncludes(lifecycle, "afterInsertStats.current_passenger_count > afterInsertStats.max_passengers", "final membership write rolls back a concurrent over-capacity insert");
   expectNotRegex(lifecycle, /distance\s*>\s*MAX_TIME_ADJUST_CANDIDATE_HOURS\)\s*\{\s*throw buildTransportLifecycleError\("target group time is outside the allowed window"/, "backend transfer no longer hard-blocks large time gaps");
+  expectRegex(publicGroupViewMigration, /select\s+g\.id\s+as\s+id\s*,\s*g\.group_id\s*,/i, "public Group view preserves UUID id followed by text group_id");
+  expectNotRegex(publicGroupViewMigration, /select\s+g\.group_id\s+as\s+id\s*,/i, "public Group view never aliases text group_id as UUID id");
+  expectRegex(publicGroupViewMigration, /r\.status\s+not\s+in\s*\(\s*'closed'\s*,\s*'cancelled'\s*\)/i, "public Group view excludes inactive Requests from aggregates");
 }
 
 function formatDateTimeLocalTextForRegression(value) {
