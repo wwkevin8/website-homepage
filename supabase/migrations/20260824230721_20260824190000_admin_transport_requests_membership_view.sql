@@ -117,3 +117,5 @@ notify pgrst, 'reload schema';
 -- Rollback (run explicitly if this feature is removed):
 -- revoke all on table public.admin_transport_requests_membership_view from service_role, public, anon, authenticated;
 -- drop view if exists public.admin_transport_requests_membership_view;
+
+;

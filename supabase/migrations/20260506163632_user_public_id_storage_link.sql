@@ -161,4 +161,4 @@ create index if not exists idx_storage_orders_student_email
   on storage_orders(student_email);
 
 create index if not exists idx_storage_orders_wechat_id
-  on storage_orders(wechat_id);
+  on storage_orders(wechat_id);;

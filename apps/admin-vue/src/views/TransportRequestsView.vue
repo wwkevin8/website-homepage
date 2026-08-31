@@ -1,16 +1,18 @@
 <script setup>
-import { computed, onMounted, reactive, ref, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
 import readXlsxFile from "read-excel-file";
 import {
   bulkSetTransportRequestsOfflineRecorded,
   commitTransportManualImport,
   createManualTransportRequest,
+  createMembershipManualTransportRequest,
   deleteTransportRequest,
   exportTransportRequests,
   fetchMembershipAdvisors,
   fetchTransportRequest,
   fetchTransportRequests,
   previewTransportManualImport,
+  searchMembershipManualMembers,
   updateTransportRequest,
   updateTransportRequestSafeFields
 } from "@/api/admin-api";
@@ -24,6 +26,8 @@ import Pagination from "@/components/Pagination.vue";
 import StatusBadge from "@/components/StatusBadge.vue";
 import TransportOrderChangeDrawer from "@/components/TransportOrderChangeDrawer.vue";
 import TransportRequestFilters from "@/components/TransportRequestFilters.vue";
+import TransportMembershipModal from "@/components/TransportMembershipModal.vue";
+import { useSessionStore } from "@/stores/session";
 import importColumns from "../../../../shared/transport-manual-import-columns.json";
 
 const columns = [
@@ -41,14 +45,16 @@ const columns = [
   { key: "wb_itinerary_address", label: "行程地址", width: "220px" },
   { key: "wb_passenger_count", label: "人数", width: "68px" },
   { key: "wb_luggage_count", label: "行李", width: "68px" },
+  { key: "wb_offline_recorded", label: "是否已记录", width: "118px" },
   { key: "wb_group_status", label: "拼车状态/组", width: "138px" },
   { key: "wb_contact_status", label: "联系状态", width: "112px" },
   { key: "wb_payment_collection_status", label: "收款状态", width: "120px" },
+  { key: "wb_operation_log_mobile", label: "\u64cd\u4f5c\u8bb0\u5f55", width: "86px" },
   { key: "wb_deposit_amount_gbp", label: "已收全款/定金", width: "128px" },
-  { key: "wb_offline_recorded", label: "是否已记录", width: "118px" },
   { key: "wb_admin_note", label: "客服备注", width: "220px" },
   { key: "wb_last_operation", label: "最后操作", width: "132px" },
-  { key: "wb_actions", label: "操作", width: "220px", className: "is-actions", sticky: "end" }
+  { key: "wb_membership", label: "会员权益", width: "132px" },
+  { key: "wb_actions", label: "操作", width: "260px", className: "is-actions", sticky: "end" }
 ];
 
 const legacyColumns = [
@@ -87,6 +93,7 @@ const defaultFilters = {
 };
 
 const filters = reactive({ ...defaultFilters });
+const sessionStore = useSessionStore();
 const requests = ref([]);
 const pagination = ref({ page: 1, page_size: defaultFilters.pageSize, total: 0, total_pages: 0 });
 const operatorOptions = ref([]);
@@ -113,6 +120,24 @@ const manualGroupChecking = ref(false);
 const manualGroupConfirmedId = ref("");
 const manualGroupMessage = ref("");
 const manualSubmitAttempted = ref(false);
+const manualEntryType = ref("ordinary");
+const membershipSearch = ref("");
+const membershipSearching = ref(false);
+const membershipSearchError = ref("");
+const membershipSearchCompleted = ref(false);
+const membershipCandidates = ref([]);
+const membershipSearchPagination = ref({ page: 1, total: 0, total_pages: 0, capped: false });
+const membershipSelectedMember = ref(null);
+const membershipSelectedEntitlement = ref(null);
+const membershipReason = ref("会员通过微信等方式提供航班信息，由管理员代为补录。");
+const membershipMismatchFields = ref([]);
+const membershipMismatchConfirmed = ref(false);
+const membershipDuplicate = ref(null);
+const membershipDuplicateConfirmed = ref(false);
+const membershipIdempotencyKey = ref("");
+const membershipUncertain = ref(false);
+const membershipDefinitiveFailure = ref(false);
+const membershipSuccess = ref(null);
 const importPreviewing = ref(false);
 const importCommitting = ref(false);
 const importPasteText = ref("");
@@ -130,6 +155,8 @@ const operationLogOpen = ref(false);
 const operationLogTarget = ref(null);
 const operationLogLoadingId = ref("");
 const operationLogError = ref("");
+const membershipTarget = ref(null);
+const workbenchAutoSaveTimers = new Map();
 
 const IMPORT_COLUMNS = importColumns;
 const IMPORT_TEMPLATE_HEADERS = IMPORT_COLUMNS.map(column => column.label);
@@ -217,6 +244,12 @@ const deleteDialogWarning = computed(() => deleteDialogIsTestDelete.value
 const manualAddressLabel = computed(() => manualForm.service_type === "dropoff" ? "上车地址 / 接人地址" : "目的地地址");
 const manualRequiredErrors = computed(() => {
   const errors = [];
+  if (manualEntryType.value === "membership") {
+    if (!membershipSelectedMember.value) errors.push("必须明确选择会员");
+    if (!membershipSelectedEntitlement.value) errors.push("必须选择一条可用接机权益");
+    else if (!membershipSelectedEntitlement.value.available) errors.push(membershipSelectedEntitlement.value.reason || "所选接机权益不可用");
+    if (!String(membershipReason.value || "").trim()) errors.push("补录原因必填");
+  }
   if (!manualForm.service_type) errors.push("服务类型必填");
   if (!String(manualForm.student_name || "").trim()) errors.push("学生姓名必填");
   if (!String(manualForm.phone || "").trim() && !String(manualForm.wechat || "").trim()) errors.push("手机号/微信号至少填一个");
@@ -230,6 +263,14 @@ const manualRequiredErrors = computed(() => {
   if (manualForm.group_action === "join_existing" && !String(manualForm.target_group_id || "").trim()) errors.push("目标拼车组编号必填");
   return errors;
 });
+const isMembershipManual = computed(() => manualEntryType.value === "membership");
+const membershipAdvisorName = computed(() => membershipSelectedEntitlement.value?.advisor?.name || "未分配");
+const membershipSubmitDisabled = computed(() => Boolean(
+  manualSaving.value
+  || manualRequiredErrors.value.length
+  || (membershipMismatchFields.value.length && !membershipMismatchConfirmed.value)
+  || (membershipDuplicate.value && !membershipDuplicateConfirmed.value)
+));
 const manualFieldErrors = computed(() => {
   if (!manualSubmitAttempted.value) return {};
   const errors = {};
@@ -367,7 +408,7 @@ function logActionLabel(log) {
     transport_request_group_changed: "更换拼车组",
     transport_request_removed_from_group: "移出拼车组"
   };
-  return labels[log?.action] || displayValue(log?.action);
+  return log?.action_label || labels[log?.action] || (String(log?.action || "").startsWith("transport_membership_") ? "会员权益信息已更新" : "订单信息已更新");
 }
 
 function logFieldLabel(field) {
@@ -430,6 +471,7 @@ function formatLogValue(field, value) {
     return labels[value] || displayValue(value);
   }
   if (typeof value === "boolean") return value ? "是" : "否";
+  if (typeof value === "object") return "结构化信息已更新";
   const text = String(value);
   if (/^[0-9a-f]{8}-[0-9a-f-]{20,}$/i.test(text)) return `${text.slice(0, 8)}...`;
   return text.length > 42 ? `${text.slice(0, 39)}...` : text;
@@ -471,6 +513,18 @@ function logChangedFields(log) {
     }))
     .filter(item => item.beforeText !== item.afterText)
     .slice(0, 5);
+}
+
+function conciseLogAction(log) {
+  if (log?.display_summary) return log.display_summary;
+  const changes = logChangedFields(log);
+  if (!changes.length) {
+    return logActionLabel(log);
+  }
+  const changeText = changes
+    .map(item => `${item.label}: ${item.beforeText} -> ${item.afterText}`)
+    .join("; ");
+  return `${logActionLabel(log)} - ${changeText}`;
 }
 
 function toDateTimeLocalValue(value) {
@@ -695,6 +749,26 @@ function isRowSaving(row) {
   return rowSavingIds.value.includes(draftKey(row));
 }
 
+function clearWorkbenchAutoSave(key) {
+  const timer = workbenchAutoSaveTimers.get(key);
+  if (timer) {
+    window.clearTimeout(timer);
+    workbenchAutoSaveTimers.delete(key);
+  }
+}
+
+function queueWorkbenchAutoSave(row) {
+  const key = draftKey(row);
+  if (!key) return;
+  clearWorkbenchAutoSave(key);
+  workbenchAutoSaveTimers.set(key, window.setTimeout(() => {
+    workbenchAutoSaveTimers.delete(key);
+    if (isWorkbenchRowDirty(row)) {
+      saveWorkbenchRow(row);
+    }
+  }, 450));
+}
+
 function formatImportDateTimeValue(value) {
   const date = value instanceof Date
     ? value
@@ -765,7 +839,27 @@ function isMembershipRequest(row) {
 }
 
 function membershipNeedsReview(row) {
-  return ["unassigned", "ambiguous"].includes(row?.membership_advisor_resolution);
+  return row?.membership_advisor_resolution === "ambiguous";
+}
+
+function membershipEntryLabel(row) {
+  if (!isPickupService(row)) return "不适用";
+  if (membershipNeedsReview(row) || !["direct", "unlinked"].includes(row?.membership_claim_resolution)) return "需核查";
+  if (["used", "manual"].includes(row?.membership_claim_status)) return "权益已使用";
+  return isMembershipRequest(row) ? "已关联" : "未关联";
+}
+
+function openMembershipModal(row) {
+  if (!isPickupService(row)) return;
+  membershipTarget.value = row;
+}
+
+function closeMembershipModal() {
+  membershipTarget.value = null;
+}
+
+async function handleMembershipSaved() {
+  await loadRequests(pagination.value.page || 1);
 }
 
 function requestRowClass(row) {
@@ -792,7 +886,11 @@ function buildFilterQuery() {
     : membershipCategory === "needs_review"
       ? membershipCategory
       : "";
-  const membershipRelation = membershipCategory === "linked" || membershipAdvisorId ? "linked" : "";
+  const membershipRelation = membershipCategory === "linked"
+    ? "linked"
+    : membershipAdvisorId
+      ? "linked"
+      : "";
   return {
     search: filters.search.trim(),
     service_type: filters.serviceType,
@@ -995,6 +1093,105 @@ function resetManualForm() {
   manualGroupConfirmedId.value = "";
   manualGroupMessage.value = "";
   manualSubmitAttempted.value = false;
+  manualEntryType.value = "ordinary";
+  resetMembershipManualState(true);
+}
+
+function generateManualMembershipKey() {
+  if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, char => {
+    const value = Math.random() * 16 | 0;
+    return (char === "x" ? value : (value & 3 | 8)).toString(16);
+  });
+}
+
+function resetMembershipManualState(clearReason = false) {
+  membershipSearch.value = "";
+  membershipSearching.value = false;
+  membershipSearchError.value = "";
+  membershipSearchCompleted.value = false;
+  membershipCandidates.value = [];
+  membershipSearchPagination.value = { page: 1, total: 0, total_pages: 0, capped: false };
+  membershipSelectedMember.value = null;
+  membershipSelectedEntitlement.value = null;
+  membershipMismatchFields.value = [];
+  membershipMismatchConfirmed.value = false;
+  membershipDuplicate.value = null;
+  membershipDuplicateConfirmed.value = false;
+  membershipIdempotencyKey.value = "";
+  membershipUncertain.value = false;
+  membershipDefinitiveFailure.value = false;
+  membershipSuccess.value = null;
+  if (clearReason) membershipReason.value = "会员通过微信等方式提供航班信息，由管理员代为补录。";
+}
+
+function changeManualEntryType(nextType) {
+  if (nextType === manualEntryType.value || manualSaving.value || membershipUncertain.value) return;
+  if (manualEntryType.value === "membership" && (membershipSelectedMember.value || membershipSearch.value.trim())) {
+    if (!window.confirm("切换回普通补录会保留航班和联系信息，但会清空已选会员、权益、原因确认和幂等状态。确认切换？")) return;
+  }
+  manualEntryType.value = nextType;
+  resetMembershipManualState(true);
+  manualPreview.value = null;
+  manualErrorMessage.value = "";
+  manualSubmitAttempted.value = false;
+  if (nextType === "membership") {
+    manualForm.service_type = "pickup";
+    manualForm.shareable = false;
+    membershipIdempotencyKey.value = generateManualMembershipKey();
+  }
+}
+
+async function searchMembershipManual(page = 1) {
+  if (membershipSearch.value.trim().length < 2) {
+    membershipSearchError.value = "请输入至少 2 个字符搜索会员。";
+    return;
+  }
+  membershipSearching.value = true;
+  membershipSearchError.value = "";
+  membershipSearchCompleted.value = false;
+  try {
+    const result = await searchMembershipManualMembers(membershipSearch.value.trim(), page, 10);
+    membershipCandidates.value = result?.items || [];
+    membershipSearchPagination.value = result?.pagination || { page, total: 0, total_pages: 0, capped: false };
+    membershipSearchCompleted.value = true;
+  } catch (err) {
+    membershipCandidates.value = [];
+    membershipSearchError.value = "会员搜索失败，请重试。";
+  } finally {
+    membershipSearching.value = false;
+  }
+}
+
+function selectMembershipManualMember(member) {
+  membershipSelectedMember.value = member;
+  membershipSelectedEntitlement.value = null;
+  membershipMismatchFields.value = [];
+  membershipMismatchConfirmed.value = false;
+  membershipDuplicate.value = null;
+  membershipDuplicateConfirmed.value = false;
+  membershipDefinitiveFailure.value = false;
+  membershipIdempotencyKey.value = generateManualMembershipKey();
+}
+
+function reselectMembershipManualMember() {
+  membershipSelectedMember.value = null;
+  membershipSelectedEntitlement.value = null;
+  membershipMismatchFields.value = [];
+  membershipMismatchConfirmed.value = false;
+  membershipDuplicate.value = null;
+  membershipDuplicateConfirmed.value = false;
+  membershipIdempotencyKey.value = generateManualMembershipKey();
+}
+
+function selectMembershipManualEntitlement(entitlement) {
+  if (!entitlement?.available) return;
+  membershipSelectedEntitlement.value = entitlement;
+  membershipMismatchFields.value = [];
+  membershipMismatchConfirmed.value = false;
+  membershipDuplicate.value = null;
+  membershipDuplicateConfirmed.value = false;
+  membershipIdempotencyKey.value = generateManualMembershipKey();
 }
 
 function openManualDialog() {
@@ -1005,6 +1202,10 @@ function openManualDialog() {
 }
 
 function closeManualDialog() {
+  if (membershipUncertain.value) {
+    manualErrorMessage.value = "本次提交结果尚未确认，请先使用同一幂等键重试核查，不能直接开始新补录。";
+    return;
+  }
   if (!manualSaving.value) {
     showManualDialog.value = false;
   }
@@ -1034,6 +1235,26 @@ function buildManualRow() {
     admin_note: manualForm.notes,
     拼车组处理: manualGroupActionLabel(manualForm.group_action),
     目标拼车组编号: manualForm.group_action === "join_existing" ? manualForm.target_group_id : ""
+  };
+}
+
+function buildMembershipManualRow() {
+  return {
+    service_type: "pickup",
+    student_name: manualForm.student_name,
+    phone: manualForm.phone,
+    wechat: manualForm.wechat,
+    email: manualForm.email,
+    passenger_count: manualForm.passenger_count,
+    luggage_count: manualForm.luggage_count,
+    luggage_note: manualForm.luggage_note,
+    airport_code: manualForm.airport_code,
+    terminal: manualForm.terminal,
+    flight_no: manualForm.flight_no,
+    flight_datetime: manualForm.flight_datetime,
+    service_time: manualForm.service_time,
+    address: manualForm.address,
+    notes: manualForm.notes
   };
 }
 
@@ -1092,6 +1313,31 @@ async function submitManualForm() {
   notice.value = "";
   error.value = "";
   try {
+    if (isMembershipManual.value) {
+      if (!membershipIdempotencyKey.value) membershipIdempotencyKey.value = generateManualMembershipKey();
+      const entitlement = membershipSelectedEntitlement.value;
+      const result = await createMembershipManualTransportRequest({
+        idempotency_key: membershipIdempotencyKey.value,
+        site_user_id: membershipSelectedMember.value.id,
+        entitlement_id: entitlement.id,
+        claim_id: entitlement.claim?.id || null,
+        row: buildMembershipManualRow(),
+        group_action: manualForm.group_action,
+        target_group_id: manualForm.group_action === "join_existing" ? manualForm.target_group_id : "",
+        reason: membershipReason.value.trim(),
+        confirm_contact_mismatch: membershipMismatchConfirmed.value,
+        confirm_duplicate: membershipDuplicateConfirmed.value
+      });
+      membershipUncertain.value = false;
+      membershipDefinitiveFailure.value = false;
+      const memberName = membershipSelectedMember.value.nickname || membershipSelectedMember.value.public_user_id;
+      notice.value = `会员权益补录成功：订单 ${displayValue(result?.order_no)}，拼车组 ${displayValue(result?.group_id)}，会员 ${memberName}，周期 ${entitlement.membership_cycle}，所属顾问 ${entitlement.advisor?.name || "未分配"}。`;
+      showManualDialog.value = false;
+      const currentPage = pagination.value.page || 1;
+      resetManualForm();
+      await loadRequests(currentPage);
+      return;
+    }
     const result = await createManualTransportRequest(buildManualRow(), manualConfirmWarnings.value, {
       group_action: manualForm.group_action,
       target_group_id: manualForm.group_action === "join_existing" ? manualForm.target_group_id : ""
@@ -1101,6 +1347,31 @@ async function submitManualForm() {
     resetManualForm();
     await loadRequests(1);
   } catch (err) {
+    if (isMembershipManual.value) {
+      const details = err.body?.error?.details || {};
+      const code = details?.code || "";
+      if (!err.status || err.status >= 500) {
+        membershipUncertain.value = true;
+        manualErrorMessage.value = "本次提交结果尚未确认。请不要修改表单；点击提交可使用同一幂等键核查并重试原请求。";
+      } else {
+        membershipDefinitiveFailure.value = true;
+        if (code === "contact_mismatch") {
+          membershipMismatchFields.value = Array.isArray(details.fields) ? details.fields : [];
+          membershipMismatchConfirmed.value = false;
+        } else if (code === "possible_duplicate") {
+          membershipDuplicate.value = details.duplicate || {};
+          membershipDuplicateConfirmed.value = false;
+        } else if (code === "exact_duplicate") {
+          membershipDuplicate.value = { exact: true, order_no: details.order_no || "已有有效订单" };
+        } else if (["group_full", "group_unavailable", "group_incompatible"].includes(code)) {
+          manualForm.target_group_id = "";
+          manualGroupConfirmedId.value = "";
+        }
+        manualErrorMessage.value = err.message || "会员权益补录未完成，请核对后重试。";
+      }
+      notice.value = manualErrorMessage.value;
+      return;
+    }
     manualPreview.value = err.body?.error?.details || null;
     if (manualPreview.value?.warnings?.length) {
       notice.value = "存在黄色提示，确认后可再次提交。";
@@ -1686,6 +1957,7 @@ async function saveWorkbenchRow(row) {
   const id = requestActionId(row);
   const key = draftKey(row);
   if (!id || !key || isRowSaving(row)) return;
+  clearWorkbenchAutoSave(key);
 
   const payload = normalizedDraftPayload(row);
   if (!payload.student_name) {
@@ -1766,10 +2038,16 @@ async function openOperationLog(row) {
   try {
     operationLogTarget.value = await fetchRequestDetailForRow(row);
   } catch (err) {
-    operationLogError.value = err.message || "记录加载失败，请重试";
+    console.error("transport_operation_log_load_failed", err);
+    operationLogError.value = "操作记录加载失败，请重试。";
   } finally {
     operationLogLoadingId.value = "";
   }
+}
+
+function retryOperationLog() {
+  if (!operationLogTarget.value || operationLogLoadingId.value) return;
+  openOperationLog(operationLogTarget.value);
 }
 
 function closeOperationLog() {
@@ -1782,6 +2060,11 @@ function closeOperationLog() {
 onMounted(() => {
   loadMembershipAdvisorOptions();
   loadRequests(1);
+});
+
+onBeforeUnmount(() => {
+  workbenchAutoSaveTimers.forEach(timer => window.clearTimeout(timer));
+  workbenchAutoSaveTimers.clear();
 });
 
 watch(
@@ -1810,6 +2093,36 @@ watch(
   () => {
     selectedIds.value = [];
     loadRequests(1);
+  }
+);
+
+watch(
+  () => [
+    manualForm.student_name,
+    manualForm.phone,
+    manualForm.wechat,
+    manualForm.email,
+    manualForm.flight_no,
+    manualForm.flight_datetime,
+    manualForm.service_time,
+    manualForm.airport_code,
+    manualForm.terminal,
+    manualForm.address,
+    manualForm.passenger_count,
+    manualForm.luggage_count,
+    manualForm.group_action,
+    manualForm.target_group_id
+  ],
+  () => {
+    if (!isMembershipManual.value || membershipUncertain.value) return;
+    membershipMismatchFields.value = [];
+    membershipMismatchConfirmed.value = false;
+    membershipDuplicate.value = null;
+    membershipDuplicateConfirmed.value = false;
+    if (membershipDefinitiveFailure.value) {
+      membershipIdempotencyKey.value = generateManualMembershipKey();
+      membershipDefinitiveFailure.value = false;
+    }
   }
 );
 
@@ -1868,6 +2181,7 @@ watch(
     />
 
     <p v-if="membershipAdvisorsError" class="inline-notice inline-notice--danger">{{ membershipAdvisorsError }}</p>
+
     <p v-if="notice" class="inline-notice">{{ notice }}</p>
 
     <LoadingState v-if="loading">正在加载接机送机订单...</LoadingState>
@@ -1962,7 +2276,7 @@ watch(
             <button class="table-action-button" type="button" :disabled="itineraryChangeLoadingId === String(requestActionId(row))" @click="openItineraryChangeDrawer(row)">
               {{ itineraryChangeLoadingId === String(requestActionId(row)) ? "加载中..." : "调整行程" }}
             </button>
-            <button class="table-action-button" type="button" :disabled="operationLogLoadingId === String(requestActionId(row))" @click="openOperationLog(row)">
+            <button class="table-action-button transport-operation-log-action" type="button" :disabled="operationLogLoadingId === String(requestActionId(row))" @click="openOperationLog(row)">
               {{ operationLogLoadingId === String(requestActionId(row)) ? "加载中" : "操作记录" }}
             </button>
             <button
@@ -1994,12 +2308,12 @@ watch(
         </template>
         <template #cell-wb_student_name="{ row }">
           <span class="cell-stack">
-            <input v-model="ensureWorkbenchDraft(row).student_name" class="workbench-input" />
+            <input v-model="ensureWorkbenchDraft(row).student_name" class="workbench-input" @change="queueWorkbenchAutoSave(row)" />
             <StatusBadge v-if="membershipNeedsReview(row)" tone="warning">会员关联待核查</StatusBadge>
           </span>
         </template>
         <template #cell-wb_phone="{ row }">
-          <input v-model="ensureWorkbenchDraft(row).phone" class="workbench-input" />
+          <input v-model="ensureWorkbenchDraft(row).phone" class="workbench-input" @change="queueWorkbenchAutoSave(row)" />
         </template>
         <template #cell-wb_service_type="{ row }">
           <span class="locked-cell" :title="lockTitle()">{{ serviceLabel(row.service_type) }}</span>
@@ -2033,20 +2347,36 @@ watch(
           </span>
         </template>
         <template #cell-wb_contact_status="{ row }">
-          <select v-model="ensureWorkbenchDraft(row).contact_status" class="workbench-input">
+          <select v-model="ensureWorkbenchDraft(row).contact_status" class="workbench-input" @change="queueWorkbenchAutoSave(row)">
             <option value="uncontacted">未联系</option>
             <option value="contacted">已联系</option>
           </select>
         </template>
         <template #cell-wb_payment_collection_status="{ row }">
-          <select v-model="ensureWorkbenchDraft(row).payment_collection_status" class="workbench-input">
+          <select v-model="ensureWorkbenchDraft(row).payment_collection_status" class="workbench-input" @change="queueWorkbenchAutoSave(row)">
             <option value="unpaid">未收款</option>
             <option value="deposit_paid">已付定金</option>
             <option value="fully_paid">已付全款</option>
           </select>
         </template>
+        <template #cell-wb_membership="{ row }">
+          <span v-if="!isPickupService(row)" class="detail-muted">不适用</span>
+          <button v-else class="table-action-button transport-membership-entry" type="button" @click="openMembershipModal(row)">
+            {{ membershipEntryLabel(row) }}
+          </button>
+        </template>
+        <template #cell-wb_operation_log_mobile="{ row }">
+          <button
+            class="table-action-button transport-operation-log-mobile-action"
+            type="button"
+            :disabled="operationLogLoadingId === String(requestActionId(row))"
+            @click="openOperationLog(row)"
+          >
+            {{ operationLogLoadingId === String(requestActionId(row)) ? "\u52a0\u8f7d\u4e2d..." : "\u64cd\u4f5c\u8bb0\u5f55" }}
+          </button>
+        </template>
         <template #cell-wb_deposit_amount_gbp="{ row }">
-          <input v-model="ensureWorkbenchDraft(row).deposit_amount_gbp" class="workbench-input" min="0" step="0.01" type="number" />
+          <input v-model="ensureWorkbenchDraft(row).deposit_amount_gbp" class="workbench-input" min="0" step="0.01" type="number" @change="queueWorkbenchAutoSave(row)" />
         </template>
         <template #cell-wb_offline_recorded="{ row }">
           <button
@@ -2062,7 +2392,7 @@ watch(
           </button>
         </template>
         <template #cell-wb_admin_note="{ row }">
-          <textarea v-model="ensureWorkbenchDraft(row).admin_note" class="workbench-input workbench-note" rows="2"></textarea>
+          <textarea v-model="ensureWorkbenchDraft(row).admin_note" class="workbench-input workbench-note" rows="2" @change="queueWorkbenchAutoSave(row)"></textarea>
         </template>
         <template #cell-wb_last_operation="{ row }">
           <span class="cell-stack" :title="[row.last_operated_by, formatDateTime(row.last_operated_at)].filter(Boolean).join(' / ') || '--'">
@@ -2081,20 +2411,20 @@ watch(
               {{ itineraryChangeLoadingId === String(requestActionId(row)) ? "加载中..." : "调整行程" }}
             </button>
             <button
-              class="table-action-button"
-              type="button"
-              :disabled="operationLogLoadingId === String(requestActionId(row))"
-              @click="openOperationLog(row)"
-            >
-              {{ operationLogLoadingId === String(requestActionId(row)) ? "加载中" : "操作记录" }}
-            </button>
-            <button
               class="table-action-button table-action-button--danger"
               type="button"
               :disabled="deletingId === String(requestActionId(row))"
               @click="openDeleteDialog(row)"
             >
               {{ deletingId === String(requestActionId(row)) ? "处理中..." : requestDangerActionLabel(row) }}
+            </button>
+            <button
+              class="table-action-button transport-operation-log-action"
+              type="button"
+              :disabled="operationLogLoadingId === String(requestActionId(row))"
+              @click="openOperationLog(row)"
+            >
+              {{ operationLogLoadingId === String(requestActionId(row)) ? "加载中" : "操作记录" }}
             </button>
             <button
               v-if="isWorkbenchRowDirty(row)"
@@ -2122,6 +2452,13 @@ watch(
       @close="closeItineraryChangeDrawer"
       @saved="handleItineraryChangeSaved"
     />
+    <TransportMembershipModal
+      :open="Boolean(membershipTarget)"
+      :request="membershipTarget"
+      :admin-role="sessionStore.admin?.role || ''"
+      @close="closeMembershipModal"
+      @saved="handleMembershipSaved"
+    />
     <div v-if="operationLogOpen" class="membership-modal transport-log-drawer" role="dialog" aria-modal="true" aria-label="操作记录">
       <button class="membership-modal__backdrop" type="button" aria-label="关闭" @click="closeOperationLog"></button>
       <div class="membership-modal__panel transport-log-drawer__panel">
@@ -2132,24 +2469,20 @@ watch(
           </div>
           <button class="table-action-button" type="button" :disabled="Boolean(operationLogLoadingId)" @click="closeOperationLog">关闭</button>
         </header>
-        <p v-if="operationLogError" class="inline-notice inline-notice--error">{{ operationLogError }}</p>
         <p v-if="operationLogLoadingId" class="detail-muted">加载中</p>
+        <div v-else-if="operationLogError" class="inline-notice inline-notice--error">
+          <p>{{ operationLogError }}</p>
+          <button class="table-action-button" type="button" @click="retryOperationLog">重试</button>
+        </div>
         <div v-else-if="!operationLogs.length" class="transport-empty-box">暂无操作记录</div>
         <div v-else class="transport-log-drawer__body">
           <article v-for="log in operationLogs" :key="log.id || `${log.action}-${log.created_at}`" class="transport-log-card">
-            <div class="transport-log-card__meta">
-              <strong>{{ logActionLabel(log) }}</strong>
-              <span>{{ logAdminName(log) }} · {{ formatLogDateTime(log.created_at) }}</span>
+            <time>{{ formatLogDateTime(log.created_at) }}</time>
+            <div>
+              <strong>{{ conciseLogAction(log) }}</strong>
+              <p v-for="detail in (log.display_details || [])" :key="`${detail.label}-${detail.value}`">{{ detail.label }}：{{ detail.value }}</p>
             </div>
-            <ul v-if="logChangedFields(log).length" class="transport-log-change-list">
-              <li v-for="item in logChangedFields(log)" :key="`${log.id || log.action}-${item.field}`">
-                <span>{{ item.label }}</span>
-                <strong>{{ item.beforeText }}</strong>
-                <em>→</em>
-                <strong>{{ item.afterText }}</strong>
-              </li>
-            </ul>
-            <p v-else class="transport-log-card__empty">无可见字段变化</p>
+            <span>{{ logAdminName(log) }}</span>
           </article>
         </div>
       </div>
@@ -2157,13 +2490,22 @@ watch(
     <ConfirmDialog
       :open="showManualDialog"
       title="补录接送机订单"
-      :confirm-label="manualConfirmWarnings ? '确认黄色提示并补录' : '提交补录'"
+      :confirm-label="isMembershipManual && membershipUncertain ? '使用同一幂等键重试核查' : manualConfirmWarnings ? '确认黄色提示并补录' : isMembershipManual ? '提交会员权益补录' : '提交补录'"
       :loading="manualSaving"
       panel-class="confirm-dialog__panel--wide"
-      :confirm-disabled="false"
+      :confirm-disabled="isMembershipManual ? membershipSubmitDisabled : false"
       @cancel="closeManualDialog"
       @confirm="submitManualForm"
     >
+      <section class="manual-entry-mode" aria-label="补录类型">
+        <button type="button" :class="{ 'is-active': manualEntryType === 'ordinary' }" :disabled="manualSaving || membershipUncertain" @click="changeManualEntryType('ordinary')">
+          <strong>普通补录</strong><span>保持现有补录流程</span>
+        </button>
+        <button type="button" :class="{ 'is-active': manualEntryType === 'membership' }" :disabled="manualSaving || membershipUncertain" @click="changeManualEntryType('membership')">
+          <strong>会员权益补录</strong><span>会员身份、权益与顾问真实关联</span>
+        </button>
+      </section>
+      <p v-if="membershipUncertain" class="membership-manual-alert membership-manual-alert--warning">本次提交结果尚未确认。表单已锁定；再次提交会沿用同一个幂等键，不会创建第二张订单。</p>
       <div v-if="manualSubmitAttempted && manualRequiredErrors.length" class="import-error-box">
         <strong>必填项未完成</strong>
         <ul>
@@ -2174,7 +2516,33 @@ watch(
         <strong>补录失败</strong>
         <p>{{ manualErrorMessage }}</p>
       </div>
-      <div class="manual-import-sections">
+      <div class="manual-import-sections" :class="{ 'is-locked': membershipUncertain }" :inert="membershipUncertain || undefined">
+        <section v-if="isMembershipManual" class="manual-import-section membership-manual-section">
+          <div class="membership-manual-heading"><div><h4>1. 明确选择会员与接机权益</h4><p class="manual-section-hint">姓名仅用于返回候选。即使只有一个结果，也必须手动选择。</p></div><button v-if="membershipSelectedMember" class="table-action-button" type="button" @click="reselectMembershipManualMember">重新选择会员</button></div>
+          <template v-if="!membershipSelectedMember">
+            <div class="membership-manual-search"><input v-model="membershipSearch" placeholder="会员编号、手机号、邮箱、微信号或姓名" @keyup.enter="searchMembershipManual(1)" /><button class="primary-button" type="button" :disabled="membershipSearching" @click="searchMembershipManual(1)">{{ membershipSearching ? "搜索中…" : "搜索会员" }}</button></div>
+            <p v-if="membershipSearchError" class="membership-manual-alert membership-manual-alert--danger">{{ membershipSearchError }}</p>
+            <p v-else-if="membershipSearchCompleted && !membershipCandidates.length" class="membership-manual-empty">没有找到匹配会员，请更换关键词。</p>
+            <div v-else-if="membershipCandidates.length" class="membership-manual-candidates">
+              <article v-for="member in membershipCandidates" :key="member.id" class="membership-manual-candidate">
+                <div><strong>{{ member.nickname || "未填写姓名" }}</strong><span>{{ member.public_user_id || "会员编号未记录" }}</span></div>
+                <dl><div><dt>手机</dt><dd>{{ member.phone_masked || "--" }}</dd></div><div><dt>邮箱</dt><dd>{{ member.email_masked || "--" }}</dd></div><div><dt>微信</dt><dd>{{ member.wechat_id || "--" }}</dd></div></dl>
+                <button class="table-action-button" type="button" @click="selectMembershipManualMember(member)">明确选择此会员</button>
+              </article>
+            </div>
+            <div v-if="membershipSearchPagination.total_pages > 1" class="membership-manual-pagination"><button type="button" :disabled="membershipSearchPagination.page <= 1" @click="searchMembershipManual(membershipSearchPagination.page - 1)">上一页</button><span>{{ membershipSearchPagination.page }} / {{ membershipSearchPagination.total_pages }}</span><button type="button" :disabled="membershipSearchPagination.page >= membershipSearchPagination.total_pages" @click="searchMembershipManual(membershipSearchPagination.page + 1)">下一页</button></div>
+          </template>
+          <template v-else>
+            <div class="membership-manual-identity"><div><span>已选会员</span><strong>{{ membershipSelectedMember.nickname || "未填写姓名" }}</strong><small>{{ membershipSelectedMember.public_user_id || "会员编号未记录" }}</small></div><div><span>手机</span><strong>{{ membershipSelectedMember.phone_masked || "--" }}</strong></div><div><span>邮箱</span><strong>{{ membershipSelectedMember.email_masked || "--" }}</strong></div><div><span>微信</span><strong>{{ membershipSelectedMember.wechat_id || "--" }}</strong></div></div>
+            <p v-if="!membershipSelectedMember.entitlements?.length" class="membership-manual-alert membership-manual-alert--danger">该会员没有有效会员资格，不能进行会员权益补录。</p>
+            <label v-for="entitlement in membershipSelectedMember.entitlements" :key="entitlement.id" :class="['membership-manual-entitlement', { 'is-selected': membershipSelectedEntitlement?.id === entitlement.id, 'is-disabled': !entitlement.available }]">
+              <input type="radio" name="manual-membership-entitlement" :disabled="!entitlement.available" :checked="membershipSelectedEntitlement?.id === entitlement.id" @change="selectMembershipManualEntitlement(entitlement)" />
+              <span><strong>{{ entitlement.membership_cycle }} · {{ entitlement.status }}</strong><small>有效期 {{ entitlement.valid_from || "--" }} 至 {{ entitlement.valid_until || "--" }}</small><small>所属顾问：{{ entitlement.advisor?.name || "未分配" }}</small><em>{{ entitlement.reason }}</em></span>
+            </label>
+            <p v-if="membershipSelectedEntitlement?.creates_claim" class="membership-manual-alert membership-manual-alert--warning">该会员尚未选择本周期权益。提交后将把本周期权益选择为“接机”。</p>
+            <p v-if="membershipSelectedEntitlement" class="membership-manual-advisor">所属顾问：<strong>{{ membershipAdvisorName }}</strong><span>所属顾问将根据会员权益自动确定，不可手动修改。</span></p>
+          </template>
+        </section>
         <section class="manual-import-section">
           <h4>学生信息</h4>
           <p class="manual-section-hint">手机号和微信号至少填写一个。</p>
@@ -2194,10 +2562,18 @@ watch(
               <input v-model="manualForm.wechat" placeholder="手机号/微信号至少填一个" />
               <small v-if="manualFieldErrors.contact" class="field-error">{{ manualFieldErrors.contact }}</small>
             </label>
+            <label v-if="isMembershipManual" class="field">
+              <span>邮箱</span>
+              <input v-model="manualForm.email" type="email" />
+            </label>
             <label class="field">
               <span>人数 *</span>
               <input v-model.number="manualForm.passenger_count" min="1" required type="number" />
               <small v-if="manualFieldErrors.passenger_count" class="field-error">{{ manualFieldErrors.passenger_count }}</small>
+            </label>
+            <label v-if="isMembershipManual" class="field">
+              <span>行李数量</span>
+              <input v-model.number="manualForm.luggage_count" min="0" type="number" />
             </label>
           </div>
         </section>
@@ -2267,6 +2643,13 @@ watch(
               <small v-if="manualFieldErrors.target_group_id" class="field-error">{{ manualFieldErrors.target_group_id }}</small>
             </label>
           </div>
+        </section>
+
+        <section v-if="isMembershipManual" class="manual-import-section membership-manual-section">
+          <h4>4. 补录原因与风险确认</h4>
+          <label class="field"><span>补录原因 *</span><textarea v-model="membershipReason" rows="3" placeholder="请说明管理员代会员补录的实际原因"></textarea></label>
+          <div v-if="membershipMismatchFields.length" class="membership-manual-alert membership-manual-alert--warning"><strong>订单联系方式与会员资料不一致</strong><p>不一致项目：{{ membershipMismatchFields.map(item => ({ phone: '手机号', email: '邮箱', wechat: '微信号', student_name: '姓名' }[item] || item)).join('、') }}</p><label><input v-model="membershipMismatchConfirmed" type="checkbox" /> 我已重新核对所选会员，确认继续补录，且不会修改会员档案</label></div>
+          <div v-if="membershipDuplicate" :class="['membership-manual-alert', membershipDuplicate.exact ? 'membership-manual-alert--danger' : 'membership-manual-alert--warning']"><strong>{{ membershipDuplicate.exact ? '明确重复，已阻止提交' : '检测到可能重复订单' }}</strong><p>已有订单：{{ membershipDuplicate.order_no || '请查看订单列表核查' }}</p><button v-if="membershipDuplicate.order_no" class="table-action-button" type="button" @click="filters.search = membershipDuplicate.order_no; showManualDialog = false; loadRequests(1)">查看已有订单</button><label v-if="!membershipDuplicate.exact"><input v-model="membershipDuplicateConfirmed" type="checkbox" /> 我已核查，确认不是重复订单并继续补录</label></div>
         </section>
 
       </div>

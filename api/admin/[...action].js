@@ -4150,6 +4150,38 @@ async function handleMembershipClaimAction(req, res, supabase, claimId, subActio
     return;
   }
   if (action === "unbind-order") {
+    const { data: currentClaim, error: currentClaimError } = await supabase
+      .from("membership_benefit_claims")
+      .select("id,benefit_type,status,linked_order_table,linked_order_id")
+      .eq("id", actionClaimId)
+      .maybeSingle();
+    if (currentClaimError) throw currentClaimError;
+    if (currentClaim?.benefit_type === "storage") {
+      const idempotencyKey = String(body.idempotency_key || body.idempotencyKey || "").trim();
+      const expectedOrderId = String(body.expected_storage_order_id || body.expectedStorageOrderId || currentClaim.linked_order_id || "").trim();
+      const expectedClaimStatus = String(body.expected_claim_status || body.expectedClaimStatus || currentClaim.status || "").trim();
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(idempotencyKey)) {
+        badRequest(res, "A valid idempotency key is required");
+        return;
+      }
+      const { data: operation, error: operationError } = await supabase.rpc("admin_unbind_storage_membership_claim_atomic", {
+        p_admin_user_id: adminUser.id,
+        p_idempotency_key: idempotencyKey,
+        p_claim_id: actionClaimId,
+        p_expected_storage_order_id: expectedOrderId,
+        p_expected_claim_status: expectedClaimStatus,
+        p_reason: body.reason || body.note || ""
+      });
+      if (operationError) throw operationError;
+      const { data: claim, error: claimError } = await supabase
+        .from("membership_benefit_claims")
+        .select("*")
+        .eq("id", actionClaimId)
+        .maybeSingle();
+      if (claimError) throw claimError;
+      ok(res, { claim, operation });
+      return;
+    }
     const claim = await releaseClaimOrderBinding(supabase, {
       claim_id: actionClaimId,
       admin_user_id: adminUser.id,

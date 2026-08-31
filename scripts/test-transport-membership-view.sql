@@ -39,8 +39,8 @@ insert into public.membership_entitlements
   (id, site_user_id, membership_cycle, status, advisor_admin_id, created_by_admin_id, granted_by_admin_id, metadata, notes)
 values
   ('21000000-0000-4000-8000-000000000002', '11000000-0000-4000-8000-000000000002', '2090-02', 'active', 'a1000000-0000-4000-8000-000000000001', 'b2000000-0000-4000-8000-000000000002', 'c3000000-0000-4000-8000-000000000003', '{"activation_code_id":"ac000000-0000-4000-8000-000000000001"}', 'LOCAL TEST short circuit'),
-  ('21000000-0000-4000-8000-000000000003', '11000000-0000-4000-8000-000000000003', '2090-03', 'active', null, 'b2000000-0000-4000-8000-000000000002', 'c3000000-0000-4000-8000-000000000003', '{}', 'LOCAL TEST created fallback'),
-  ('21000000-0000-4000-8000-000000000004', '11000000-0000-4000-8000-000000000004', '2090-04', 'active', null, null, 'c3000000-0000-4000-8000-000000000003', '{}', 'LOCAL TEST granted fallback'),
+  ('21000000-0000-4000-8000-000000000003', '11000000-0000-4000-8000-000000000003', '2090-03', 'active', null, 'b2000000-0000-4000-8000-000000000002', 'c3000000-0000-4000-8000-000000000003', '{"activation_code_id":"ac000000-0000-4000-8000-000000000001"}', 'LOCAL TEST created fallback'),
+  ('21000000-0000-4000-8000-000000000004', '11000000-0000-4000-8000-000000000004', '2090-04', 'active', null, null, 'c3000000-0000-4000-8000-000000000003', '{"activation_code_id":"ac000000-0000-4000-8000-000000000001"}', 'LOCAL TEST granted fallback'),
   ('21000000-0000-4000-8000-000000000005', '11000000-0000-4000-8000-000000000005', '2090-05', 'active', null, null, null, '{"activation_code_id":"ac000000-0000-4000-8000-000000000001"}', 'LOCAL TEST activation fallback'),
   ('21000000-0000-4000-8000-000000000006', '11000000-0000-4000-8000-000000000006', '2090-06', 'active', null, null, null, '{}', 'LOCAL TEST unassigned'),
   ('21000000-0000-4000-8000-000000000007', '11000000-0000-4000-8000-000000000007', '2090-07', 'active', 'a1000000-0000-4000-8000-000000000001', null, null, '{}', 'LOCAL TEST reverse unique'),
@@ -105,36 +105,64 @@ declare
   partition_count integer;
 begin
   select * into row_record from public.admin_transport_requests_membership_view where id='31000000-0000-4000-8000-000000000001';
-  assert row_record.membership_relation='unlinked' and row_record.membership_advisor_resolution is null, 'ordinary unlinked failed';
+  assert row_record.membership_relation='unlinked' and row_record.membership_advisor_resolution is null and row_record.effective_membership_advisor_id is null, 'ordinary unlinked failed';
+
   select * into row_record from public.admin_transport_requests_membership_view where id='31000000-0000-4000-8000-000000000002';
-  assert row_record.membership_claim_resolution='direct' and row_record.membership_advisor_resolution='assigned' and row_record.effective_membership_advisor_id='a1000000-0000-4000-8000-000000000001', 'direct/short circuit failed';
+  assert row_record.membership_claim_resolution='direct' and row_record.membership_relation='linked' and row_record.membership_advisor_resolution='assigned' and row_record.effective_membership_advisor_id='a1000000-0000-4000-8000-000000000001', 'direct/short circuit failed';
+  assert not exists (select 1 from public.admin_transport_requests_membership_view where id=row_record.id and effective_membership_advisor_id in ('b2000000-0000-4000-8000-000000000002','c3000000-0000-4000-8000-000000000003','d4000000-0000-4000-8000-000000000004')), 'short circuit leaked';
+
   assert (select effective_membership_advisor_id from public.admin_transport_requests_membership_view where id='31000000-0000-4000-8000-000000000003')='b2000000-0000-4000-8000-000000000002', 'created fallback failed';
   assert (select effective_membership_advisor_id from public.admin_transport_requests_membership_view where id='31000000-0000-4000-8000-000000000004')='c3000000-0000-4000-8000-000000000003', 'granted fallback failed';
   assert (select effective_membership_advisor_id from public.admin_transport_requests_membership_view where id='31000000-0000-4000-8000-000000000005')='d4000000-0000-4000-8000-000000000004', 'activation fallback failed';
   assert (select membership_advisor_resolution from public.admin_transport_requests_membership_view where id='31000000-0000-4000-8000-000000000006')='unassigned', 'unassigned failed';
   assert (select membership_claim_resolution from public.admin_transport_requests_membership_view where id='31000000-0000-4000-8000-000000000007')='reverse_unique', 'reverse unique failed';
+
   select * into row_record from public.admin_transport_requests_membership_view where id='31000000-0000-4000-8000-000000000008';
-  assert row_record.membership_claim_resolution='reverse_ambiguous' and row_record.membership_advisor_resolution='ambiguous', 'reverse ambiguous failed';
+  assert row_record.membership_claim_resolution='reverse_ambiguous' and row_record.membership_relation='linked' and row_record.membership_advisor_resolution='ambiguous' and row_record.effective_membership_advisor_id is null, 'reverse ambiguous failed';
   assert (select count(*) from public.admin_transport_requests_membership_view where id=row_record.id)=1, 'ambiguous duplicated order';
+
   assert (select membership_relation from public.admin_transport_requests_membership_view where id='31000000-0000-4000-8000-000000000010')='unlinked', 'same-user unbound inference leaked';
-  assert (select effective_membership_advisor_id from public.admin_transport_requests_membership_view where id='31000000-0000-4000-8000-000000000011')='a1000000-0000-4000-8000-000000000001', 'old-cycle claim failed';
+  assert (select effective_membership_advisor_id from public.admin_transport_requests_membership_view where id='31000000-0000-4000-8000-000000000011')='a1000000-0000-4000-8000-000000000001', 'old-cycle claim did not retain old entitlement';
+  assert (select effective_membership_advisor_id from public.admin_transport_requests_membership_view where id='31000000-0000-4000-8000-000000000012')='a1000000-0000-4000-8000-000000000001', 'transfer initial advisor failed';
+
   update public.membership_entitlements set advisor_admin_id='b2000000-0000-4000-8000-000000000002' where id='21000000-0000-4000-8000-000000000012';
-  assert (select effective_membership_advisor_id from public.admin_transport_requests_membership_view where id='31000000-0000-4000-8000-000000000012')='b2000000-0000-4000-8000-000000000002', 'live transfer failed';
-  assert (select membership_advisor_resolution from public.admin_transport_requests_membership_view where id='31000000-0000-4000-8000-000000000013')='assigned', 'disabled advisor failed';
-  assert not exists (select id from public.admin_transport_requests_membership_view where order_no like 'LOCAL-TEST-VIEW-%' group by id having count(*) > 1), 'one-order-one-row failed';
+  assert (select effective_membership_advisor_id from public.admin_transport_requests_membership_view where id='31000000-0000-4000-8000-000000000012')='b2000000-0000-4000-8000-000000000002', 'transfer did not update live';
+  assert not exists (select 1 from public.admin_transport_requests_membership_view where id='31000000-0000-4000-8000-000000000012' and effective_membership_advisor_id='a1000000-0000-4000-8000-000000000001'), 'transfer remained in old advisor';
+
+  select * into row_record from public.admin_transport_requests_membership_view where id='31000000-0000-4000-8000-000000000013';
+  assert row_record.effective_membership_advisor_id='e5000000-0000-4000-8000-000000000005' and row_record.membership_advisor_resolution='assigned', 'disabled advisor failed';
+
+  assert not exists (
+    select id from public.admin_transport_requests_membership_view
+    where order_no like 'LOCAL-TEST-VIEW-%' group by id having count(*) > 1
+  ), 'one-order-one-row failed';
+
   select count(*) into linked_count from public.admin_transport_requests_membership_view where order_no like 'LOCAL-TEST-VIEW-%' and membership_relation='linked';
-  select count(*) into partition_count from public.admin_transport_requests_membership_view where order_no like 'LOCAL-TEST-VIEW-%' and membership_relation='linked' and membership_advisor_resolution in ('assigned','unassigned','ambiguous');
+  select count(*) into partition_count from public.admin_transport_requests_membership_view
+   where order_no like 'LOCAL-TEST-VIEW-%' and membership_relation='linked'
+     and membership_advisor_resolution in ('assigned','unassigned','ambiguous');
   assert linked_count=partition_count, 'membership partition incomplete';
+  assert not exists (
+    select 1 from public.admin_transport_requests_membership_view
+     where order_no like 'LOCAL-TEST-VIEW-%'
+       and ((membership_advisor_resolution='assigned' and effective_membership_advisor_id is null)
+         or (membership_advisor_resolution in ('unassigned','ambiguous') and effective_membership_advisor_id is not null))
+  ), 'advisor buckets overlap';
 end $$;
 
-select order_no, membership_relation, membership_claim_resolution, membership_advisor_resolution, effective_membership_advisor_id
-from public.admin_transport_requests_membership_view where order_no like 'LOCAL-TEST-VIEW-%' order by order_no;
+select order_no, membership_relation, membership_claim_resolution,
+       membership_advisor_resolution, effective_membership_advisor_id,
+       resolved_membership_claim_id, membership_entitlement_id
+from public.admin_transport_requests_membership_view
+where order_no like 'LOCAL-TEST-VIEW-%'
+order by order_no;
 
 rollback;
 
-select current_state.order_count = baseline.order_count as rollback_order_count_unchanged,
-       current_state.content_hash = baseline.content_hash as rollback_content_unchanged,
-       current_state.order_count
+select
+  current_state.order_count = baseline.order_count as rollback_order_count_unchanged,
+  current_state.content_hash = baseline.content_hash as rollback_content_unchanged,
+  current_state.order_count
 from local_test_baseline baseline
 cross join lateral (
   select count(*)::bigint as order_count,

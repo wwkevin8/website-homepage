@@ -246,6 +246,46 @@ export function fetchTransportRequest(id) {
   return request(`/api/transport-requests/${encodeURIComponent(id)}`);
 }
 
+export function createMembershipManualTransportRequest(payload = {}) {
+  return request("/api/transport-manual-import/membership", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+}
+
+export function fetchTransportMembershipContext(id) {
+  return request(`/api/transport-requests/${encodeURIComponent(id)}/membership`);
+}
+
+export function searchTransportMembershipMembers(requestId, search, page = 1, pageSize = 10) {
+  const params = new URLSearchParams({
+    request_id: requestId,
+    search,
+    page: String(page),
+    page_size: String(pageSize)
+  });
+  return request(`/api/transport-membership-members?${params.toString()}`);
+}
+
+export function searchMembershipManualMembers(search, page = 1, pageSize = 10) {
+  const params = new URLSearchParams({
+    purpose: "manual_create",
+    search,
+    page: String(page),
+    page_size: String(pageSize)
+  });
+  return request(`/api/transport-membership-members?${params.toString()}`);
+}
+
+export function manageTransportMembership(id, payload = {}) {
+  return request(`/api/transport-requests/${encodeURIComponent(id)}/membership`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+}
+
 export function updateTransportRequest(id, payload = {}) {
   return request(`/api/transport-requests/${encodeURIComponent(id)}`, {
     method: "PATCH",

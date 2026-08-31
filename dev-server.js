@@ -195,6 +195,10 @@ function toApiModulePath(urlPathname) {
     return path.join(ROOT, "api", "transport-manual-import", "manual.js");
   }
 
+  if (urlPathname === "/api/transport-manual-import/membership") {
+    return path.join(ROOT, "api", "transport-manual-import", "membership.js");
+  }
+
   if (/^\/api\/transport-requests\/[^/]+$/.test(urlPathname)) {
     return path.join(ROOT, "api", "transport-requests", "[id].js");
   }
@@ -213,6 +217,14 @@ function toApiModulePath(urlPathname) {
 
   if (/^\/api\/transport-requests\/[^/]+\/recreate$/.test(urlPathname)) {
     return path.join(ROOT, "api", "transport-requests", "[id]", "recreate.js");
+  }
+
+  if (urlPathname === "/api/transport-membership-members") {
+    return path.join(ROOT, "api", "transport-membership-members.js");
+  }
+
+  if (/^\/api\/transport-requests\/[^/]+\/membership$/.test(urlPathname)) {
+    return path.join(ROOT, "api", "transport-requests", "[id]", "membership.js");
   }
 
   if (urlPathname === "/api/transport-groups") {
@@ -288,6 +300,11 @@ function applyRouteParams(req, urlPathname) {
   const recreateMatch = urlPathname.match(/^\/api\/transport-requests\/([^/]+)\/recreate$/);
   if (recreateMatch) {
     req.query = { ...(req.query || {}), id: recreateMatch[1] };
+  }
+
+  const membershipMatch = urlPathname.match(/^\/api\/transport-requests\/([^/]+)\/membership$/);
+  if (membershipMatch) {
+    req.query = { ...(req.query || {}), id: membershipMatch[1] };
   }
 
   const groupMembersMatch = urlPathname.match(/^\/api\/transport-groups\/([^/]+)\/members$/);

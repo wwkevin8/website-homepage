@@ -19,4 +19,4 @@ create index if not exists idx_storage_orders_storage_pickup_order_no
 
 create index if not exists idx_storage_orders_box_delivery_date
   on public.storage_orders(box_delivery_date desc)
-  where box_delivery_date is not null;
+  where box_delivery_date is not null;;

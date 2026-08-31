@@ -567,7 +567,10 @@ async function unbindMembershipOrder(row) {
   actionLoading.value = `unbind:${row.id}`;
   try {
     await updateMembershipClaim(claimId, "unbind-order", {
-      reason: "admin_unbound_deleted_order"
+      reason: "管理员解除寄存订单会员权益关联",
+      idempotency_key: window.crypto.randomUUID(),
+      expected_storage_order_id: row.claim?.linked_order_id,
+      expected_claim_status: row.claim?.status
     });
     setActionNotice(`已更新会员权益记录：${actionSubject(row)}`);
     await loadMemberships(membershipPagination.value.page || 1);

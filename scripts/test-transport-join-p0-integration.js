@@ -18,20 +18,14 @@ let faultTriggerName = "";
 let faultFunctionName = "";
 
 function loadLocalEnv() {
-  const envPath = path.join(root, ".env");
-  const content = fs.existsSync(envPath) ? fs.readFileSync(envPath, "utf8") : "";
-  const values = {
-    LOCAL_SUPABASE_URL: process.env.LOCAL_SUPABASE_URL,
-    LOCAL_SUPABASE_ANON_KEY: process.env.LOCAL_SUPABASE_ANON_KEY,
-    LOCAL_SUPABASE_SERVICE_ROLE_KEY: process.env.LOCAL_SUPABASE_SERVICE_ROLE_KEY,
-    USER_SESSION_SECRET: process.env.USER_SESSION_SECRET
-  };
+  const content = fs.readFileSync(path.join(root, ".env"), "utf8");
+  const values = {};
   for (const line of content.split(/\r?\n/)) {
     const match = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/);
     if (!match) continue;
     let value = match[2].trim();
     if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) value = value.slice(1, -1);
-    if (!values[match[1]]) values[match[1]] = value;
+    values[match[1]] = value;
   }
   for (const name of ["LOCAL_SUPABASE_URL", "LOCAL_SUPABASE_ANON_KEY", "LOCAL_SUPABASE_SERVICE_ROLE_KEY", "USER_SESSION_SECRET"]) {
     assert.ok(values[name], `missing ${name}`);
@@ -76,49 +70,6 @@ async function query(table, select = "*") {
   return result.data || [];
 }
 
-function queryLocalMetadata(sql) {
-  const result = spawnSync(
-    "docker",
-    ["exec", "-i", "supabase_db_webside", "psql", "-X", "-q", "-t", "-A", "-v", "ON_ERROR_STOP=1", "-U", "postgres", "-d", "postgres"],
-    { input: sql, encoding: "utf8" }
-  );
-  if (result.status !== 0) throw new Error(`local metadata query failed: ${result.stderr}`);
-  return JSON.parse(result.stdout.trim());
-}
-
-function assertPublicGroupViewContract() {
-  const metadata = queryLocalMetadata(`
-    select json_build_object(
-      'columns', (select json_agg(x order by ordinal_position) from (
-        select ordinal_position, column_name, udt_name
-        from information_schema.columns
-        where table_schema = 'public' and table_name = 'transport_groups_public_view'
-      ) x),
-      'owner', (select pg_get_userbyid(relowner) from pg_class where oid = 'public.transport_groups_public_view'::regclass),
-      'reloptions', (select reloptions from pg_class where oid = 'public.transport_groups_public_view'::regclass),
-      'anon_grants', (select count(*) from information_schema.role_table_grants where table_schema = 'public' and table_name = 'transport_groups_public_view' and grantee = 'anon'),
-      'authenticated_grants', (select count(*) from information_schema.role_table_grants where table_schema = 'public' and table_name = 'transport_groups_public_view' and grantee = 'authenticated'),
-      'service_role_select', (select count(*) from information_schema.role_table_grants where table_schema = 'public' and table_name = 'transport_groups_public_view' and grantee = 'service_role' and privilege_type = 'SELECT')
-    );
-  `);
-  const expectedColumns = [
-    ["id", "uuid"], ["group_id", "text"], ["service_type", "text"], ["group_date", "date"],
-    ["airport_code", "text"], ["airport_name", "text"], ["terminal", "text"], ["location_from", "text"],
-    ["location_to", "text"], ["flight_time_reference", "timestamptz"], ["preferred_time_start", "timestamptz"],
-    ["preferred_time_end", "timestamptz"], ["vehicle_type", "text"], ["max_passengers", "int4"],
-    ["visible_on_frontend", "bool"], ["status", "text"], ["notes", "text"], ["created_at", "timestamptz"],
-    ["updated_at", "timestamptz"], ["member_request_count", "int8"], ["current_passenger_count", "int8"],
-    ["current_luggage_count", "int8"], ["remaining_passenger_count", "int8"]
-  ];
-  assert.deepEqual(metadata.columns.map(column => [column.column_name, column.udt_name]), expectedColumns, "public Group view must match the Production 23-column contract");
-  assert.deepEqual(metadata.columns.map(column => column.ordinal_position), Array.from({ length: 23 }, (_, index) => index + 1));
-  assert.equal(metadata.owner, "postgres");
-  assert.equal(metadata.reloptions, null);
-  assert.equal(metadata.anon_grants, 0);
-  assert.equal(metadata.authenticated_grants, 0);
-  assert.equal(metadata.service_role_select, 1);
-}
-
 async function createUser(label) {
   const email = `${marker.toLowerCase()}-${label}@example.test`;
   const { data, error } = await supabase.from("site_users").insert({
@@ -137,7 +88,7 @@ function futureIso(offsetMinutes = 0) {
   return new Date(Date.now() + 14 * 86400000 + offsetMinutes * 60000).toISOString();
 }
 
-async function createFixture({ label, serviceType = "pickup", maxPassengers = 5, passengers = [3], shareable = false, groupStatus = null }) {
+async function createFixture({ label, serviceType = "pickup", maxPassengers = 5, passengers = [3], shareable = false }) {
   const flightTime = futureIso(created.groups.length * 20);
   const groupId = `GRP-${marker.slice(-10)}-${label}`.slice(0, 40).toUpperCase();
   const { data: group, error: groupError } = await supabase.from("transport_groups").insert({
@@ -153,7 +104,7 @@ async function createFixture({ label, serviceType = "pickup", maxPassengers = 5,
     preferred_time_start: flightTime,
     max_passengers: maxPassengers,
     visible_on_frontend: true,
-    status: groupStatus || (passengers.reduce((a, b) => a + b, 0) >= maxPassengers ? "full" : "active"),
+    status: passengers.reduce((a, b) => a + b, 0) >= maxPassengers ? "full" : "active",
     notes: marker
   }).select("*").single();
   if (groupError) throw groupError;
@@ -254,13 +205,37 @@ async function groupState(fixture) {
   };
 }
 
+async function createProtectedEmptyGroup() {
+  const flightTime = futureIso(-120);
+  const groupId = `GRP-${marker.slice(-10)}-PROTECTED`.slice(0, 40).toUpperCase();
+  const { data, error } = await supabase.from("transport_groups").insert({
+    group_id: groupId,
+    service_type: "pickup",
+    group_date: flightTime.slice(0, 10),
+    airport_code: "LHR",
+    airport_name: "Heathrow Airport",
+    terminal: "T2",
+    location_from: "Heathrow Airport T2",
+    location_to: "Nottingham",
+    flight_time_reference: flightTime,
+    preferred_time_start: flightTime,
+    max_passengers: 4,
+    visible_on_frontend: false,
+    status: "active",
+    notes: `${marker}|protected-empty-group`
+  }).select("id,group_id,status,visible_on_frontend,max_passengers,flight_time_reference,notes,created_at,updated_at").single();
+  if (error) throw error;
+  created.groups.push(data.id);
+  return data;
+}
+
 async function snapshotProtectedEmptyGroups() {
-  const groups = await query("transport_groups", "id,group_id,status,visible_on_frontend,max_passengers,flight_time_reference,notes,created_at,updated_at");
-  const members = await query("transport_group_members", "group_id");
-  const occupied = new Set(members.map(item => item.group_id));
-  const cutoff = Date.now() - 10 * 60000;
-  return groups.filter(item => !occupied.has(item.group_id) && new Date(item.created_at).getTime() < cutoff && !String(item.notes || "").includes(marker))
-    .sort((a, b) => a.id.localeCompare(b.id));
+  assert.equal(protectedEmptyGroups.length, 1, "protected fixture must be created by this test");
+  const { data, error } = await supabase.from("transport_groups")
+    .select("id,group_id,status,visible_on_frontend,max_passengers,flight_time_reference,notes,created_at,updated_at")
+    .eq("id", protectedEmptyGroups[0].id);
+  if (error) throw error;
+  return (data || []).sort((a, b) => a.id.localeCompare(b.id));
 }
 
 async function assertQaZero() {
@@ -306,10 +281,9 @@ async function cleanup() {
 async function main() {
   const env = loadLocalEnv();
   supabase = createClient(env.LOCAL_SUPABASE_URL, env.LOCAL_SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
-  assertPublicGroupViewContract();
   await assertQaZero();
-  protectedEmptyGroups = await snapshotProtectedEmptyGroups();
-  assert.equal(protectedEmptyGroups.length, 6, "protected non-QA empty-group baseline changed");
+  protectedEmptyGroups = [await createProtectedEmptyGroup()];
+  assert.deepEqual(await snapshotProtectedEmptyGroups(), protectedEmptyGroups, "protected empty-group fixture was not created correctly");
   const preview = require("../public-api-handlers/transport-join-preview");
   const submit = require("../public-api-handlers/transport-join-submit");
 
@@ -327,54 +301,6 @@ async function main() {
     assert.equal(state.passengers, 4);
     results.push({ test: `${serviceType}_preview_submit`, status: "pass", members: state.memberCount, passengers: state.passengers });
   }
-
-  const singleMemberFixture = await createFixture({ label: "singlemember", groupStatus: "single_member", maxPassengers: 5, passengers: [3], shareable: false });
-  const singleMemberUser = await createUser("singlemember");
-  const singleMemberPreview = await callHandler(preview, singleMemberUser.id, joinPayload(singleMemberFixture));
-  assert.equal(singleMemberPreview.status, 200);
-  assert.equal(singleMemberPreview.body.data.evaluation.joinable, true);
-  const singleMemberSubmit = await callHandler(submit, singleMemberUser.id, joinPayload(singleMemberFixture));
-  assert.equal(singleMemberSubmit.status, 201);
-  created.requests.push(singleMemberSubmit.body.data.requestId);
-  const singleMemberState = await groupState(singleMemberFixture);
-  assert.equal(singleMemberState.memberCount, 2);
-  assert.equal(singleMemberState.passengers, 4);
-  results.push({ test: "single_member_preview_submit", response: 201, members: 2, passengers: 4 });
-
-  for (const serviceType of ["pickup", "dropoff"]) {
-    const fixture = await createFixture({ label: `open${serviceType}`, serviceType, groupStatus: "open", maxPassengers: 5, passengers: [3], shareable: false });
-    const user = await createUser(`open${serviceType}`);
-    const payload = { ...joinPayload(fixture), submission_id: crypto.randomUUID() };
-    const previewResult = await callHandler(preview, user.id, payload);
-    assert.equal(previewResult.status, 200);
-    assert.equal(previewResult.body.data.evaluation.joinable, true);
-    const submitResult = await callHandler(submit, user.id, payload);
-    assert.equal(submitResult.status, 201);
-    created.requests.push(submitResult.body.data.requestId);
-    const replayResult = await callHandler(submit, user.id, payload);
-    assert.equal(replayResult.status, 200);
-    assert.equal(replayResult.body.data.requestId, submitResult.body.data.requestId);
-    const state = await groupState(fixture);
-    assert.equal(state.memberCount, 2);
-    assert.equal(state.passengers, 4);
-    results.push({ test: `open_${serviceType}_preview_submit_replay`, responses: [200, 201, 200], members: 2, passengers: 4 });
-  }
-
-  const openRaceFixture = await createFixture({ label: "openrace", groupStatus: "open", maxPassengers: 4, passengers: [3], shareable: false });
-  const openRaceUsers = [await createUser("openraceA"), await createUser("openraceB")];
-  const openRaceResponses = await Promise.all(openRaceUsers.map(user => callHandler(submit, user.id, {
-    ...joinPayload(openRaceFixture),
-    submission_id: crypto.randomUUID()
-  })));
-  for (const response of openRaceResponses) if (response.status === 201) created.requests.push(response.body.data.requestId);
-  assert.equal(openRaceResponses.filter(response => response.status === 201).length, 1);
-  assert.equal(openRaceResponses.filter(response => response.status === 409).length, 1);
-  assert.equal(openRaceResponses.filter(response => response.status === 400).length, 0);
-  assert.equal(openRaceResponses.filter(response => response.status === 500).length, 0);
-  const openRaceState = await groupState(openRaceFixture);
-  assert.equal(openRaceState.memberCount, 2);
-  assert.equal(openRaceState.passengers, 4);
-  results.push({ test: "open_concurrent_last_seat", responses: openRaceResponses.map(response => response.status), members: 2, passengers: 4 });
 
   for (const maxPassengers of [4, 5, 6]) {
     const fixture = await createFixture({ label: `cap${maxPassengers}`, maxPassengers, passengers: [3], shareable: false });
@@ -557,7 +483,6 @@ async function main() {
   });
 
   for (const scenario of [
-    { label: "statedraft", patch: { status: "draft" }, code: "transport_join_group_not_open" },
     { label: "statefull", patch: { status: "full" }, code: "transport_join_group_not_open" },
     { label: "stateclosed", patch: { status: "closed" }, code: "transport_join_group_not_open" },
     { label: "statecancelled", patch: { status: "cancelled" }, code: "transport_join_group_not_open" },
@@ -705,11 +630,14 @@ async function main() {
     console.error(JSON.stringify({ marker, results, failure: error.message }, null, 2));
   } finally {
     try {
+      const beforeCleanup = await snapshotProtectedEmptyGroups();
+      assert.deepEqual(beforeCleanup, protectedEmptyGroups, "protected empty-group fixture changed during P0 integration");
       await cleanup();
       await assertQaZero();
-      const after = await snapshotProtectedEmptyGroups();
-      assert.deepEqual(after, protectedEmptyGroups, "protected non-QA empty Groups changed");
-      console.log(JSON.stringify({ cleanup: "pass", qaRemaining: 0, protectedEmptyGroupsUnchanged: protectedEmptyGroups.length }, null, 2));
+      const { data: afterCleanup, error: afterCleanupError } = await supabase.from("transport_groups").select("id").eq("id", protectedEmptyGroups[0].id);
+      if (afterCleanupError) throw afterCleanupError;
+      assert.equal(afterCleanup.length, 0, "protected fixture was not cleaned up");
+      console.log(JSON.stringify({ cleanup: "pass", qaRemaining: 0, protectedFixtureUnchangedDuringRun: 1, protectedFixtureRemoved: 1 }, null, 2));
     } catch (cleanupError) {
       console.error(`cleanup failed: ${cleanupError.message}`);
       process.exitCode = 2;

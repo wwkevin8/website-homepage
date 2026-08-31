@@ -86,6 +86,36 @@ async function resolveBaseUrl() {
   throw new Error("Could not find a reachable base URL. Set PLAYWRIGHT_BASE_URL or start the local dev server.");
 }
 
+async function cleanupQaTransportFlowUsers(userIds) {
+  const supabase = getSupabaseAdmin();
+  const { data: requests, error: requestsError } = await supabase.from("transport_requests").select("id").in("site_user_id", userIds);
+  if (requestsError) throw requestsError;
+  const requestIds = (requests || []).map(item => item.id);
+  let groupIds = [];
+  if (requestIds.length) {
+    const { data: members, error: membersError } = await supabase.from("transport_group_members").select("group_id").in("request_id", requestIds);
+    if (membersError) throw membersError;
+    groupIds = [...new Set((members || []).map(item => item.group_id).filter(Boolean))];
+    const operationDelete = await supabase.from("admin_operation_logs").delete().in("target_id", requestIds);
+    if (operationDelete.error) throw operationDelete.error;
+    const requestDelete = await supabase.from("transport_requests").delete().in("id", requestIds);
+    if (requestDelete.error) throw requestDelete.error;
+  }
+  for (const groupId of groupIds) {
+    const { count, error: countError } = await supabase.from("transport_group_members").select("id", { count: "exact", head: true }).eq("group_id", groupId);
+    if (countError) throw countError;
+    if (count === 0) {
+      const groupDelete = await supabase.from("transport_groups").delete().eq("group_id", groupId);
+      if (groupDelete.error) throw groupDelete.error;
+    }
+  }
+  const userDelete = await supabase.from("site_users").delete().in("id", userIds);
+  if (userDelete.error) throw userDelete.error;
+  const { count: remaining, error: remainingError } = await supabase.from("site_users").select("id", { count: "exact", head: true }).in("id", userIds);
+  if (remainingError) throw remainingError;
+  if (remaining !== 0) throw new Error(`transport flow QA cleanup left ${remaining} users`);
+}
+
 function slug(value) {
   return String(value || "").replace(/[^a-zA-Z0-9_-]/g, "-");
 }
@@ -258,7 +288,11 @@ async function submitPickupOrder(page, baseUrl, runId, variant, screenshotPrefix
     timeout: 30000
   });
 
-  await page.getByText("已自动带入并锁定账号资料", { exact: false }).waitFor({ timeout: 10000 });
+  const lockedIdentityFields = ["student_name", "email", "wechat", "phone"];
+  await page.waitForFunction(fieldNames => fieldNames.every(name => {
+    const field = document.querySelector(`[name="${name}"]`);
+    return Boolean(field?.value && field.readOnly && field.getAttribute("aria-readonly") === "true");
+  }), lockedIdentityFields, { timeout: 10000 });
 
   const dateTime = futureDateTimeLocal(30, 10, variant.minute);
   const flightNo = `${variant.flightPrefix}${String(Date.now()).slice(-4)}`;
@@ -993,6 +1027,7 @@ async function main() {
     console.log(JSON.stringify(summary, null, 2));
   } finally {
     await browser.close();
+    await cleanupQaTransportFlowUsers([user1.id, user2.id, user3.id, user4.id, user5.id]);
   }
 }
 

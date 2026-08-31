@@ -1383,6 +1383,7 @@ async function createManualRequestWithGroupHandling(supabase, adminUser, row = {
 
 module.exports = {
   normalizeRow,
+  validateRequired,
   parseDateTimeDetailed,
   previewRows,
   commitRows,

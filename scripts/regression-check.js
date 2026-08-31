@@ -134,8 +134,7 @@ function checkTransportGroups() {
   const joinHelper = "api/_lib/transport-join.js";
   const groupStats = "api/_lib/transport-group-stats.js";
   const lifecycle = "api/_lib/transport-group-lifecycle.js";
-  const atomicJoinMigration = "supabase/migrations/20260828164011_transport_join_atomic_idempotency.sql";
-  const publicGroupViewMigration = "supabase/migrations/20260828213000_transport_public_group_active_member_counts.sql";
+  const p0Integration = "scripts/test-transport-join-p0-integration.js";
 
   expectRegex(view, /validity:\s*"active"/, "transport groups default to active groups");
   expectRegex(view, /sort:\s*"service_time_asc"/, "transport groups default to nearest upcoming service time");
@@ -174,8 +173,9 @@ function checkTransportGroups() {
   expectIncludes(joinHelper, "group?.max_passengers", "join-carpool evaluator uses the group's actual capacity");
   expectIncludes(joinHelper, "group?.visible_on_frontend === true", "join-carpool evaluator requires an explicitly public group");
   expectRegex(joinHelper, /\[\s*"single_member"\s*,\s*"active"\s*,\s*"open"\s*\]\.includes\(groupStatus\)/, "JS join evaluator allows single_member, active, and open Groups");
-  expectRegex(atomicJoinMigration, /v_group\.status\s+not\s+in\s*\(\s*'single_member'\s*,\s*'active'\s*,\s*'open'\s*\)/i, "atomic RPC uses the same Group status allowlist as the JS evaluator");
-  expectNotRegex(atomicJoinMigration, /v_group\.status\s+not\s+in\s*\([^)]*'(?:draft|full|closed|cancelled)'/i, "atomic RPC does not allow blocked Group states");
+  expectIncludes(p0Integration, "full_rejection", "P0 integration verifies blocked/full Groups cannot be joined");
+  expectIncludes(p0Integration, "concurrent_last_seat", "P0 integration verifies atomic final-seat protection");
+  expectIncludes(p0Integration, "createProtectedEmptyGroup", "P0 integration creates its own protected empty-group fixture");
   expectIncludes(groupStats, "localeCompare", "join target selection is deterministic across member query order");
   expectIncludes(joinSubmit, "transport_frontend_join_time_risk_confirmed", "frontend large-time-gap joins are logged after success");
   expectIncludes(joinSubmit, 'supabase.rpc("join_transport_group_atomic"', "public submit delegates final state, duplicate, and capacity checks to the atomic RPC");
@@ -187,9 +187,8 @@ function checkTransportGroups() {
   expectIncludes(lifecycle, "beforeInsertStats", "final membership write rechecks capacity before insert");
   expectIncludes(lifecycle, "afterInsertStats.current_passenger_count > afterInsertStats.max_passengers", "final membership write rolls back a concurrent over-capacity insert");
   expectNotRegex(lifecycle, /distance\s*>\s*MAX_TIME_ADJUST_CANDIDATE_HOURS\)\s*\{\s*throw buildTransportLifecycleError\("target group time is outside the allowed window"/, "backend transfer no longer hard-blocks large time gaps");
-  expectRegex(publicGroupViewMigration, /select\s+g\.id\s+as\s+id\s*,\s*g\.group_id\s*,/i, "public Group view preserves UUID id followed by text group_id");
-  expectNotRegex(publicGroupViewMigration, /select\s+g\.group_id\s+as\s+id\s*,/i, "public Group view never aliases text group_id as UUID id");
-  expectRegex(publicGroupViewMigration, /r\.status\s+not\s+in\s*\(\s*'closed'\s*,\s*'cancelled'\s*\)/i, "public Group view excludes inactive Requests from aggregates");
+  expectIncludes(publicBoard, '.select("group_id, id, status, visible_on_frontend, max_passengers, group_date, flight_time_reference")', "public board preserves UUID id and text group_id as separate fields");
+  expectRegex(groupStats, /!\["closed",\s*"cancelled"\]\.includes/, "public Group aggregates exclude inactive Requests");
 }
 
 function formatDateTimeLocalTextForRegression(value) {
@@ -286,7 +285,7 @@ function checkStorageWorkbench() {
 }
 
 function checkTransportMembershipOwnershipFilter() {
-  const migration = "supabase/migrations/20260824190000_admin_transport_requests_membership_view.sql";
+  const migration = "supabase/migrations/20260830120000_transport_membership_atomic_linking.sql";
   const helperFile = "api/_lib/transport-membership-query.js";
   const listApi = "api/transport-requests/index.js";
   const exportApi = "api/transport-requests/export.js";
@@ -350,6 +349,20 @@ function checkLocalOnlyScripts() {
   }
 }
 
+function checkStorageMembershipAtomicUnbind() {
+  const migration = "supabase/migrations/20260830140000_storage_membership_atomic_unbind.sql";
+  const adminApi = "api/admin/[...action].js";
+  const storageDetail = "apps/admin-vue/src/views/StorageOrderDetailView.vue";
+  expectIncludes(migration, "admin_unbind_storage_membership_claim_atomic", "storage membership unlink has a dedicated atomic RPC");
+  expectIncludes(migration, "set search_path = public, pg_temp", "storage membership unlink RPC fixes its search path");
+  expectRegex(migration, /revoke all on function[\s\S]*from public, anon, authenticated/i, "storage membership unlink RPC denies public frontend roles");
+  expectIncludes(migration, "update public.storage_orders", "storage membership unlink clears the order side in the transaction");
+  expectIncludes(migration, "update public.membership_benefit_claims", "storage membership unlink clears the claim side in the transaction");
+  expectNotRegex(migration, /set\s+(membership_discount_amount|extra_charge_amount|final_price|estimated_total_price)\s*=/i, "storage membership unlink does not rewrite financial fields");
+  expectIncludes(adminApi, 'supabase.rpc("admin_unbind_storage_membership_claim_atomic"', "legacy storage unbind HTTP entry delegates to the atomic RPC");
+  expectIncludes(storageDetail, 'storage_membership_claim_unbound: "已解除会员寄存权益关联"', "storage membership unlink has a Chinese operation label");
+}
+
 function main() {
   console.log("Regression stability check");
   checkLegacyEntrypoints();
@@ -359,6 +372,7 @@ function main() {
   checkPublicSubmissionSummaryDateTimes();
   checkStorageWorkbench();
   checkTransportMembershipOwnershipFilter();
+  checkStorageMembershipAtomicUnbind();
   checkLocalOnlyScripts();
 
   if (warnings.length) {

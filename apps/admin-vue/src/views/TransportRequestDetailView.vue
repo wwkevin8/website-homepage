@@ -242,7 +242,13 @@ function logActionLabel(log) {
     transport_request_removed_from_group: "移出当前组",
     transport_group_created_from_request: "从订单创建拼车组"
   };
-  return labels[log?.action] || displayValue(log?.action);
+  return log?.action_label || labels[log?.action] || (String(log?.action || "").startsWith("transport_membership_") ? "会员权益信息已更新" : "订单信息已更新");
+}
+
+function safeLogValue(value) {
+  if (value === null || value === undefined || value === "") return "--";
+  if (typeof value === "object") return "结构化信息已更新";
+  return String(value);
 }
 
 function logChangedFields(log) {
@@ -427,10 +433,16 @@ onMounted(() => {
       <div v-else class="transport-log-drawer__body">
         <article v-for="log in operationLogs" :key="log.id || `${log.action}-${log.created_at}`" class="transport-log-card">
           <div class="transport-log-card__meta">
-            <strong>{{ logActionLabel(log) }}</strong>
+            <strong>{{ log.display_summary || logActionLabel(log) }}</strong>
             <span>{{ logAdminName(log) }} / {{ formatDateTime(log.created_at) }}</span>
           </div>
-          <table class="transport-log-table">
+          <dl v-if="log.display_details?.length" class="transport-operation-log-grid">
+            <div v-for="detail in log.display_details" :key="`${detail.label}-${detail.value}`">
+              <dt>{{ detail.label }}</dt>
+              <dd>{{ detail.value }}</dd>
+            </div>
+          </dl>
+          <table v-if="!log.display_summary" class="transport-log-table">
             <thead>
               <tr>
                 <th>操作类型</th>
@@ -445,8 +457,8 @@ onMounted(() => {
               <tr v-for="item in logChangedFields(log)" :key="`${log.id || log.action}-${item.field}`">
                 <td>{{ logActionLabel(log) }}</td>
                 <td>{{ item.label || item.field || "--" }}</td>
-                <td>{{ displayValue(item.before) }}</td>
-                <td>{{ displayValue(item.after) }}</td>
+                <td>{{ safeLogValue(item.before) }}</td>
+                <td>{{ safeLogValue(item.after) }}</td>
                 <td>{{ logAdminName(log) }}</td>
                 <td>{{ formatDateTime(log.created_at) }}</td>
               </tr>

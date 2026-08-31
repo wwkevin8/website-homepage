@@ -51,4 +51,4 @@ set
   )
 from safe_matches
 where so.id = safe_matches.storage_order_id
-  and so.site_user_id is null;
+  and so.site_user_id is null;;

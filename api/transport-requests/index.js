@@ -363,6 +363,18 @@ async function runListQuery(supabase, queryParams, options = {}) {
   return query;
 }
 
+async function attachMembershipClaimStatuses(supabase, items = []) {
+  const claimIds = [...new Set(items.map(item => item.resolved_membership_claim_id || item.membership_benefit_claim_id).filter(Boolean))];
+  if (!claimIds.length) return items;
+  const { data, error } = await supabase.from("membership_benefit_claims").select("id,status").in("id", claimIds);
+  if (error) throw error;
+  const statusById = new Map((data || []).map(claim => [String(claim.id), claim.status]));
+  return items.map(item => ({
+    ...item,
+    membership_claim_status: statusById.get(String(item.resolved_membership_claim_id || item.membership_benefit_claim_id)) || null
+  }));
+}
+
 module.exports = async function handler(req, res) {
   const startedAt = nowMs();
   const supabase = getSupabaseAdmin();
@@ -440,7 +452,7 @@ module.exports = async function handler(req, res) {
         throw error;
       }
 
-      const baseItems = (data || []).map(item => deriveRequestDisplayFlags(item));
+      const baseItems = await attachMembershipClaimStatuses(supabase, (data || []).map(item => deriveRequestDisplayFlags(item)));
       const duplicateFutureStartedAt = nowMs();
       const items = compact ? baseItems : await attachDuplicateFutureFlags(supabase, baseItems);
       const duplicateFutureMs = compact ? 0 : nowMs() - duplicateFutureStartedAt;

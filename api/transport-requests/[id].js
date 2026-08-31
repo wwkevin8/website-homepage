@@ -4,7 +4,7 @@ const { ok, badRequest, parseJsonBody, methodNotAllowed, serverError, sendJson }
 const { mapRequestPayload, deriveRequestDisplayFlags, closeExpiredRequests, syncGroupStatus } = require("../_lib/transport");
 const { removeRequestFromGroup, backfillMissingPickupGroups, transferRequestToExistingGroup, findTimeAdjustCandidateGroups } = require("../_lib/transport-group-lifecycle");
 const { logAdminOperation } = require("../_lib/orders");
-const { releaseClaimOrderBinding } = require("../_lib/membership");
+const { formatTransportOperationLogs } = require("../_lib/transport-operation-logs");
 
 const AUDIT_FIELD_LABELS = {
   service_type: "服务类型",
@@ -314,13 +314,13 @@ async function fetchRequestOperationLogs(supabase, requestId) {
     throw error;
   }
 
-  return data || [];
+  return formatTransportOperationLogs(supabase, data || []);
 }
 
 async function getRequestWithContext(supabase, id) {
   let result = await supabase
     .from("transport_requests")
-    .select("*, transport_group_members(*), site_users(email)")
+    .select("*, transport_group_members(*), site_users!transport_requests_site_user_id_fkey(email)")
     .eq("id", id)
     .limit(1);
 
@@ -333,7 +333,7 @@ async function getRequestWithContext(supabase, id) {
   if (!data) {
     result = await supabase
       .from("transport_requests")
-      .select("*, transport_group_members(*), site_users(email)")
+      .select("*, transport_group_members(*), site_users!transport_requests_site_user_id_fkey(email)")
       .eq("order_no", id)
       .limit(1);
 
@@ -829,6 +829,20 @@ module.exports = async function handler(req, res) {
       await backfillMissingPickupGroups(supabase);
       await closeExpiredRequests(supabase);
       const existing = await getExistingRequestRow(supabase, id);
+      const { data: reverseMembershipClaims, error: reverseMembershipClaimsError } = await supabase
+        .from("membership_benefit_claims")
+        .select("id")
+        .eq("linked_order_table", "transport_requests")
+        .eq("linked_order_id", existing.id)
+        .in("status", ["selected", "reserved", "used", "manual"])
+        .limit(2);
+      if (reverseMembershipClaimsError) {
+        throw reverseMembershipClaimsError;
+      }
+      if (existing.membership_benefit_claim_id || (reverseMembershipClaims || []).length) {
+        badRequest(res, "该接机订单仍关联会员权益。请先通过原子会员权益解绑操作解除关联，再删除订单。");
+        return;
+      }
       const groupLifecycle = await removeRequestFromGroup(supabase, existing.id, {
         regroup: false
       });
@@ -842,25 +856,28 @@ module.exports = async function handler(req, res) {
         throw error;
       }
 
-      const releasedMembershipClaim = await releaseClaimOrderBinding(supabase, {
-        claim_id: existing.membership_benefit_claim_id,
-        order_table: "transport_requests",
-        order_id: existing.id,
-        order_no: existing.order_no,
-        admin_user_id: adminUser.id || null,
-        reason: "transport_request_deleted"
-      });
-
       ok(res, {
         ...existing,
-        group_lifecycle: groupLifecycle,
-        released_membership_claim: releasedMembershipClaim
+        group_lifecycle: groupLifecycle
       });
       return;
     }
 
     methodNotAllowed(res, ["GET", "PATCH", "DELETE"]);
   } catch (error) {
+    if (req.method === "GET") {
+      console.error("transport_request_detail_failed", {
+        request_id: id,
+        message: error?.message || String(error),
+        code: error?.code || null,
+        details: error?.details || null
+      });
+      sendJson(res, 500, {
+        data: null,
+        error: { message: "接送机订单详情加载失败，请重试" }
+      });
+      return;
+    }
     serverError(res, error);
   }
 };

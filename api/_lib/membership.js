@@ -621,6 +621,23 @@ async function releaseClaimOrderBinding(supabase, options = {}) {
     throw beforeError;
   }
   const before = Array.isArray(beforeRows) ? (beforeRows[0] || null) : beforeRows;
+  let referencedByTransportRequest = false;
+  if (before?.id) {
+    const { data: transportReferences, error: transportReferencesError } = await supabase
+      .from("transport_requests")
+      .select("id")
+      .eq("membership_benefit_claim_id", before.id)
+      .limit(1);
+    if (transportReferencesError) {
+      throw transportReferencesError;
+    }
+    referencedByTransportRequest = Array.isArray(transportReferences) && transportReferences.length > 0;
+  }
+  if (before?.linked_order_table === "transport_requests" || referencedByTransportRequest) {
+    const atomicOnlyError = new Error("Transport membership claims must be unlinked through the atomic transport membership operation");
+    atomicOnlyError.code = "TRANSPORT_MEMBERSHIP_ATOMIC_UNLINK_REQUIRED";
+    throw atomicOnlyError;
+  }
   if (!before || before.status !== "reserved") {
     return null;
   }

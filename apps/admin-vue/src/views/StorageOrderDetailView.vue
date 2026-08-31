@@ -732,6 +732,7 @@ function operationActionLabel(action) {
     storage_order_deleted: "删除寄存订单",
     storage_orders_marked_offline_recorded: "标记已线下记录",
     storage_orders_unmarked_offline_recorded: "取消线下记录",
+    storage_membership_claim_unbound: "已解除会员寄存权益关联",
     order_status_updated: "修改订单状态"
   }[String(action || "")] || displayValue(action);
 }
