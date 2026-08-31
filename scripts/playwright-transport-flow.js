@@ -729,6 +729,19 @@ async function main() {
       }
     });
 
+    const repricedRequest1 = await fetchMyRequestByOrder(userPage1, orderInfo1.orderNo);
+    const repricedRequest2 = await fetchMyRequestByOrder(userPage2, orderInfo2.orderNo);
+    const repricedAdminGroup = await apiRequest(adminPage, `/api/transport-groups/${encodeURIComponent(orderInfo1.groupId)}`);
+    const repricedAveragePrice = Number(repricedRequest1.current_average_price_gbp || 0);
+    const adminGroupAveragePrice = Number(repricedAdminGroup.payment_summary?.average_price_gbp || 0);
+    if (
+      !repricedAveragePrice ||
+      repricedAveragePrice !== Number(repricedRequest2.current_average_price_gbp || 0) ||
+      repricedAveragePrice !== adminGroupAveragePrice
+    ) {
+      throw new Error(`Personal center and administrator group detail did not reflect the repriced group date: user1=${repricedAveragePrice}, user2=${repricedRequest2.current_average_price_gbp}, admin=${adminGroupAveragePrice}`);
+    }
+
     const publicBoard = await apiRequest(adminPage, `/api/public/transport-board?group_id=${encodeURIComponent(orderInfo1.groupId)}&page=1&limit=20`);
     const publicGroupItem = (publicBoard.items || []).find(item => item.group_id === orderInfo1.groupId);
     if (!publicGroupItem) {
@@ -737,7 +750,7 @@ async function main() {
     if (new Date(publicGroupItem.flight_time_reference).getTime() !== new Date(updatedGroup.flight_time_reference).getTime()) {
       throw new Error("Public transport board did not reflect updated group flight reference time");
     }
-    if (Number(publicGroupItem.current_average_price_gbp || 0) !== regroupedPrice || Number(publicGroupItem.current_passenger_count || 0) !== 2) {
+    if (Number(publicGroupItem.current_average_price_gbp || 0) !== repricedAveragePrice || Number(publicGroupItem.current_passenger_count || 0) !== 2) {
       throw new Error("Public transport board price/count did not stay in sync");
     }
 
@@ -984,6 +997,7 @@ async function main() {
         initialPassengerCount: 1,
         regroupedPassengerCount: 2,
         regroupedAveragePriceGbp: regroupedPrice,
+        repricedAveragePriceGbp: repricedAveragePrice,
         updatedMaxPassengers,
         remainingSeatsAfterCapacityUpdate: updatedMaxPassengers - 2,
         passengerCountAfterRemoval: 1,

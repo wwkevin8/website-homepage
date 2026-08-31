@@ -375,6 +375,23 @@ function checkVercelMembershipPublicRoutes() {
   expectNotRegex(explicitRoute, /membershipRedeemCodeHandler|membershipBenefitSelectionHandler|\.from\(|\.rpc\(/, "public membership deployment route does not duplicate business logic");
 }
 
+function checkTransportGroupPriceConsistency() {
+  const stats = "api/_lib/transport-group-stats.js";
+  const personal = "public-api-handlers/my-transport-requests.js";
+  const board = "public-api-handlers/transport-board.js";
+  const adminGroups = "api/transport-groups/index.js";
+  const flow = "scripts/playwright-transport-flow.js";
+  const matrix = "scripts/test-transport-group-pricing-consistency.js";
+  expectIncludes(stats, "computeTransportGroupPricingSnapshot", "transport group price has one authoritative calculator");
+  expectIncludes(personal, "loadGroupStatsMap", "personal transport requests use authoritative group pricing");
+  expectIncludes(board, "loadGroupStatsMap", "public transport board uses authoritative group pricing");
+  expectIncludes(adminGroups, "loadGroupStatsMap", "administrator group list uses authoritative group pricing");
+  expectIncludes(flow, "repricedAveragePrice", "transport flow refreshes consumers after a group date reprices the current quote");
+  expectIncludes(flow, "adminGroupAveragePrice", "transport flow compares personal and administrator current group prices");
+  expectIncludes(matrix, "membership_does_not_change_public_group_quote", "group price matrix keeps membership discounts out of the public quote");
+  expectIncludes(matrix, "financial_fields_unchanged", "group price matrix preserves payment and member financial fields");
+}
+
 function main() {
   console.log("Regression stability check");
   checkLegacyEntrypoints();
@@ -386,6 +403,7 @@ function main() {
   checkTransportMembershipOwnershipFilter();
   checkStorageMembershipAtomicUnbind();
   checkVercelMembershipPublicRoutes();
+  checkTransportGroupPriceConsistency();
   checkLocalOnlyScripts();
 
   if (warnings.length) {
