@@ -243,7 +243,9 @@ async function loginAdmin(page, baseUrl) {
   await page.getByRole("textbox", { name: "账号" }).fill(username);
   await page.getByRole("textbox", { name: "密码" }).fill(password);
   await page.getByRole("button", { name: "登录后台" }).click();
-  await page.waitForURL("**/admin/transport/requests", { timeout: 15000 });
+  await page.waitForURL("**/admin/transport/requests", {
+    timeout: Number(process.env.PLAYWRIGHT_ADMIN_LOGIN_TIMEOUT_MS || 15000)
+  });
 }
 
 async function apiRequest(page, url, options = {}) {
@@ -314,7 +316,7 @@ async function submitPickupOrder(page, baseUrl, runId, variant, screenshotPrefix
 
   const submitResponsePromise = page.waitForResponse(
     response => response.url().includes("/api/public/transport-request-submit") && response.request().method() === "POST",
-    { timeout: 20000 }
+    { timeout: Number(process.env.PLAYWRIGHT_RESPONSE_TIMEOUT_MS || 20000) }
   );
 
   await page.getByRole("button", { name: "提交" }).click();
