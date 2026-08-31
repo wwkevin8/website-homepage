@@ -292,7 +292,7 @@ async function submitPickupOrder(page, baseUrl, runId, variant, screenshotPrefix
   await page.waitForFunction(fieldNames => fieldNames.every(name => {
     const field = document.querySelector(`[name="${name}"]`);
     return Boolean(field?.value && field.readOnly && field.getAttribute("aria-readonly") === "true");
-  }), lockedIdentityFields, { timeout: 10000 });
+  }), lockedIdentityFields, { timeout: Number(process.env.PLAYWRIGHT_IDENTITY_TIMEOUT_MS || 10000) });
 
   const dateTime = futureDateTimeLocal(30, 10, variant.minute);
   const flightNo = `${variant.flightPrefix}${String(Date.now()).slice(-4)}`;

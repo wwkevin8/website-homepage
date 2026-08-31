@@ -388,6 +388,7 @@ function checkTransportGroupPriceConsistency() {
   expectIncludes(adminGroups, "loadGroupStatsMap", "administrator group list uses authoritative group pricing");
   expectIncludes(flow, "repricedAveragePrice", "transport flow refreshes consumers after a group date reprices the current quote");
   expectIncludes(flow, "adminGroupAveragePrice", "transport flow compares personal and administrator current group prices");
+  expectIncludes(flow, "PLAYWRIGHT_IDENTITY_TIMEOUT_MS", "protected Preview transport flow uses a configurable condition timeout instead of a fixed delay");
   expectIncludes(matrix, "membership_does_not_change_public_group_quote", "group price matrix keeps membership discounts out of the public quote");
   expectIncludes(matrix, "financial_fields_unchanged", "group price matrix preserves payment and member financial fields");
 }
