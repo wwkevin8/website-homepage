@@ -368,6 +368,13 @@ function checkStorageMembershipAtomicUnbind() {
   expectIncludes(storageDetail, 'storage_membership_claim_unbound: "已解除会员寄存权益关联"', "storage membership unlink has a Chinese operation label");
 }
 
+function checkVercelMembershipPublicRoutes() {
+  const explicitRoute = "api/public/membership/[action].js";
+  expectIncludes(explicitRoute, 'require("../[...action]")', "Vercel exposes public membership multi-segment routes through the existing aggregate handler");
+  expectIncludes(explicitRoute, "membership/${action}", "public membership route preserves the aggregate membership action namespace");
+  expectNotRegex(explicitRoute, /membershipRedeemCodeHandler|membershipBenefitSelectionHandler|\.from\(|\.rpc\(/, "public membership deployment route does not duplicate business logic");
+}
+
 function main() {
   console.log("Regression stability check");
   checkLegacyEntrypoints();
@@ -378,6 +385,7 @@ function main() {
   checkStorageWorkbench();
   checkTransportMembershipOwnershipFilter();
   checkStorageMembershipAtomicUnbind();
+  checkVercelMembershipPublicRoutes();
   checkLocalOnlyScripts();
 
   if (warnings.length) {
