@@ -352,6 +352,8 @@ function checkLocalOnlyScripts() {
 function checkStorageMembershipAtomicUnbind() {
   const migration = "supabase/migrations/20260830140000_storage_membership_atomic_unbind.sql";
   const adminApi = "api/admin/[...action].js";
+  const sharedHandler = "api/_lib/storage-membership-unbind.js";
+  const explicitRoute = "api/admin/membership-claims/[claimId]/unbind-order.js";
   const storageDetail = "apps/admin-vue/src/views/StorageOrderDetailView.vue";
   expectIncludes(migration, "admin_unbind_storage_membership_claim_atomic", "storage membership unlink has a dedicated atomic RPC");
   expectIncludes(migration, "set search_path = public, pg_temp", "storage membership unlink RPC fixes its search path");
@@ -359,7 +361,10 @@ function checkStorageMembershipAtomicUnbind() {
   expectIncludes(migration, "update public.storage_orders", "storage membership unlink clears the order side in the transaction");
   expectIncludes(migration, "update public.membership_benefit_claims", "storage membership unlink clears the claim side in the transaction");
   expectNotRegex(migration, /set\s+(membership_discount_amount|extra_charge_amount|final_price|estimated_total_price)\s*=/i, "storage membership unlink does not rewrite financial fields");
-  expectIncludes(adminApi, 'supabase.rpc("admin_unbind_storage_membership_claim_atomic"', "legacy storage unbind HTTP entry delegates to the atomic RPC");
+  expectIncludes(adminApi, "handleStorageMembershipUnbind", "legacy storage unbind HTTP entry delegates to the shared handler");
+  expectIncludes(sharedHandler, 'supabase.rpc(\n    "admin_unbind_storage_membership_claim_atomic"', "shared storage unbind handler delegates to the atomic RPC");
+  expectIncludes(explicitRoute, "handleStorageMembershipUnbind", "Vercel exposes an explicit multi-segment storage unbind route");
+  expectNotRegex(explicitRoute, /\.from\(|\.rpc\(|requireAdminUser|parseJsonBody/, "explicit storage unbind route does not duplicate business logic");
   expectIncludes(storageDetail, 'storage_membership_claim_unbound: "已解除会员寄存权益关联"', "storage membership unlink has a Chinese operation label");
 }
 
