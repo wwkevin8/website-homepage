@@ -2,6 +2,12 @@
 
 ## Latest Task Update
 
+- Date: 2026-09-02
+- Scope: Prepared the isolated Preview candidate for the admin “调整行程” no-response regression. No Production deployment, database migration, production data write, email or payment change was performed.
+- Summary: The detail GET no longer runs global pickup-group backfill or expired-order closure before returning one order. The admin client now times out detail reads after 15 seconds with a Chinese error, and the latest row click remains actionable instead of being silently blocked by another row's pending request. Existing itinerary rules, modal styling, close-order behavior and operation-log behavior are unchanged.
+- Verification: The source change is isolated on a clean branch from `origin/release/transport-storage-preflight`; local build, syntax, regression and diff checks are required before commit and Preview deployment. Preview browser acceptance remains pending.
+- Open risks / follow-up: Stop at Preview after authenticated testing of at least three real orders. Production deployment requires separate explicit authorization.
+
 - Date: 2026-08-31
 - Scope: Completed the isolated pricing diagnosis and Preview release acceptance without changing any pricing formula, payment field, membership discount or database migration. Production application deployment remains intentionally pending a separate release instruction.
 - Summary: `current_average_price_gbp` is the current live group quote per passenger and is computed by the shared `loadGroupStatsMap` / `computeTransportGroupPricingSnapshot` path for personal requests, the public board and administrator group consumers. The observed £105 was the two-passenger LHR peak-season quote before the QA flow moved the group date from September into October; £100 was the correctly recomputed normal-season quote after that date change. The flow now refreshes both personal orders and administrator group detail after repricing before comparing them with the public board. Protected-Preview waits are configurable condition/response timeouts rather than fixed sleeps.

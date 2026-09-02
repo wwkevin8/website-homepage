@@ -455,8 +455,6 @@ module.exports = async function handler(req, res) {
         });
         return;
       }
-      await backfillMissingPickupGroups(supabase);
-      await closeExpiredRequests(supabase);
       ok(res, await getRequestDetailWithLogs(supabase, id));
       return;
     }

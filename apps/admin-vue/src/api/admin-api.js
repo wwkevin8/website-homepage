@@ -243,7 +243,18 @@ export function createManualTransportRequest(row = {}, confirmWarnings = false, 
 }
 
 export function fetchTransportRequest(id) {
-  return request(`/api/transport-requests/${encodeURIComponent(id)}`);
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), 15000);
+  return request(`/api/transport-requests/${encodeURIComponent(id)}`, {
+    signal: controller.signal
+  }).catch(error => {
+    if (error?.name === "AbortError") {
+      throw new Error("订单详情加载超时，请稍后重试。");
+    }
+    throw error;
+  }).finally(() => {
+    window.clearTimeout(timeoutId);
+  });
 }
 
 export function createMembershipManualTransportRequest(payload = {}) {

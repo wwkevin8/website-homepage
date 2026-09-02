@@ -151,6 +151,7 @@ const rowSavingIds = ref([]);
 const rowErrorMessages = reactive({});
 const itineraryChangeTarget = ref(null);
 const itineraryChangeLoadingId = ref("");
+let itineraryChangeAttempt = 0;
 const operationLogOpen = ref(false);
 const operationLogTarget = ref(null);
 const operationLogLoadingId = ref("");
@@ -2004,16 +2005,27 @@ async function fetchRequestDetailForRow(row) {
 
 async function openItineraryChangeDrawer(row) {
   const id = requestActionId(row);
-  if (!id || itineraryChangeLoadingId.value) return;
+  if (!id) {
+    notice.value = `未找到订单 ${displayValue(row?.order_no || row?.id)} 的 ID，无法调整行程。`;
+    return;
+  }
+  const attempt = ++itineraryChangeAttempt;
   itineraryChangeLoadingId.value = String(id);
   notice.value = "";
   error.value = "";
   try {
-    itineraryChangeTarget.value = await fetchRequestDetailForRow(row);
+    const detail = await fetchRequestDetailForRow(row);
+    if (attempt === itineraryChangeAttempt) {
+      itineraryChangeTarget.value = detail;
+    }
   } catch (err) {
-    notice.value = err.message || "订单详情加载失败，请稍后重试。";
+    if (attempt === itineraryChangeAttempt) {
+      notice.value = err.message || "订单详情加载失败，请稍后重试。";
+    }
   } finally {
-    itineraryChangeLoadingId.value = "";
+    if (attempt === itineraryChangeAttempt) {
+      itineraryChangeLoadingId.value = "";
+    }
   }
 }
 

@@ -89,6 +89,8 @@ function checkTransportRequests() {
   const filters = "apps/admin-vue/src/components/TransportRequestFilters.vue";
   const detail = "apps/admin-vue/src/views/TransportRequestDetailView.vue";
   const api = "api/transport-requests/index.js";
+  const detailApi = "api/transport-requests/[id].js";
+  const adminApiClient = "apps/admin-vue/src/api/admin-api.js";
 
   expectRegex(view, /status:\s*"active"/, "transport requests default to active orders");
   expectRegex(view, /sort:\s*"flight_nearest"/, "transport requests default to nearest flight/service time");
@@ -100,6 +102,9 @@ function checkTransportRequests() {
   expectNotRegex(view, /切为未记录|标记已记录/, "transport request offline-recorded rows do not show extra action text");
   expectIncludes(api, 'if (sort === "flight_nearest")', "transport request API supports nearest sort");
   expectNotRegex(detail, /DetailSection\s+title="操作区"|title="操作区"/, "transport request detail has no operation section");
+  expectNotRegex(detailApi, /if\s*\(req\.method === "GET"\)[\s\S]*?await\s+(?:backfillMissingPickupGroups|closeExpiredRequests)\(supabase\)[\s\S]*?if\s*\(req\.method === "PATCH"\)/, "transport request detail GET does not run global maintenance");
+  expectIncludes(adminApiClient, "订单详情加载超时，请稍后重试。", "transport request detail fetch reports timeout in Chinese");
+  expectIncludes(view, "itineraryChangeAttempt", "transport itinerary loading cannot globally block another row");
 }
 
 function checkMembershipAdvisorFilter() {
